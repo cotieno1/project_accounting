@@ -42,13 +42,23 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _env_bool('DEBUG', default=True)
+_on_railway = bool(os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_PUBLIC_DOMAIN'))
+DEBUG = _env_bool('DEBUG', default=not _on_railway)
 
 ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS')
+_railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '').strip()
+if _railway_domain and _railway_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_railway_domain)
+if _on_railway and '.railway.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.railway.app')
 if not ALLOWED_HOSTS and not DEBUG:
     ALLOWED_HOSTS = ['.railway.app']
 
 CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+if _railway_domain:
+    _railway_origin = f'https://{_railway_domain}'
+    if _railway_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_railway_origin)
 
 
 # Application definition
