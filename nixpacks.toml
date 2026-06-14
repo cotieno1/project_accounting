@@ -1,8 +1,2 @@
 [phases.setup]
 nixPkgs = ["cairo", "pkg-config", "freetype", "libjpeg_turbo", "zlib"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt"]
-
-[start]
-cmd = "gunicorn UN_accounting_system.wsgi:application --bind 0.0.0.0:$PORT"
