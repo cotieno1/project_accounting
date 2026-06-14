@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authority to Incur Expense - {{ active_task.project_id }}</title>
+    {% include "includes/lpo_document_styles.html" %}
+</head>
+<body class="pioneer-doc-print" onload="window.print()">
+<div class="lpo-paper"><div class="doc">
+    <div class="brand-bar"></div>
+    {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Authority to Incur Expense / Misc Purchase Order" %}
+    <table class="meta-table">
+        <tr><th>Date</th><th>Task ID</th><th>Status</th></tr>
+        <tr><td>{% now "F j, Y" %}</td><td>{{ active_task.project_id }}</td><td>Pending authorization</td></tr>
+    </table>
+    <table class="parties">
+        <tr><th>To</th><th>From</th></tr>
+        <tr><td><div class="party-name">General Manager</div></td><td><div class="party-name">Mr. Omambo</div><div class="muted">Logistics / Operations</div></td></tr>
+    </table>
+    <div class="terms"><strong>Request</strong>Please authorize disbursement of cash for the following ad-hoc operational requirements. Receipts will be provided upon purchase. Project: {{ active_task.description }}.</div>
+    <table class="lines">
+        <thead>
+            <tr>
+                <th>No.</th>
+                <th>Description</th>
+                <th>UOM</th>
+                <th>Qty</th>
+                <th>Est. Unit Price</th>
+                <th>Total (US$)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in batch.items %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.uom }}</td>
+                <td>{{ item.qty }}</td>
+                <td>{{ item.unit_price }}</td>
+                <td>{{ item.total }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No items added to this draft.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="grand-label">Requested disbursement total (US$)</td>
+                <td class="grand-value">{{ actual|floatformat:2 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <table class="signatures"><tr>
+        <td><div class="line">Mr. Omambo (Messenger)</div><div class="hint">Requested &amp; acknowledged</div></td>
+        <td style="width:10%"></td>
+        <td><div class="line">General Manager</div><div class="hint">Authorized — budget lock</div></td>
+    </tr></table>
+    <p class="footer-note">MPO — Task {{ active_task.project_id }}</p>
+</div></div>
+</body>
+</html>

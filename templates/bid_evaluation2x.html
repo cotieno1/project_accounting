@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pioneer | Evaluation & Budget Formulation Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #2563eb; --primary-hover: #1d4ed8; --dark: #0a0f1d; --card: #1e293b; 
+            --border: #334155; --success: #10b981; --warning: #f59e0b; --text: #f1f5f9;
+            --text-muted: #94a3b8; --accent: #6366f1;
+        }
+        
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Layout Framework */
+        .sidebar { width: 280px; background: #070b14; border-right: 1px solid var(--border); padding: 30px 20px; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
+        .nav-label { font-size: 10px; font-weight: 800; color: var(--primary); letter-spacing: 1.5px; margin-bottom: 12px; display: block; text-transform: uppercase; }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .top-bar { height: 70px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 40px; justify-content: space-between; background: rgba(10, 15, 29, 0.8); flex-shrink: 0; }
+        
+        /* Master Split Workspace Layout */
+        .workspace-scroller { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 25px; }
+        .evaluation-grid { display: grid; grid-template-columns: 1fr 380px; gap: 25px; }
+        
+        /* Content Panes */
+        .table-pane { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+        .budget-card { background: #070b14; border: 1px solid var(--border); padding: 25px; border-radius: 12px; display: flex; flex-direction: column; }
+        
+        /* Vault Panel & Interactive Cockpit Sub-components */
+        .selection-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; background: #111827; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 5px; }
+        .vault-pane { background: var(--card); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+        #vault-container { max-height: 250px; overflow-y: auto; outline: none; background: #0f172a; }
+        
+        .vault-row { cursor: pointer; transition: 0.1s ease-in-out; }
+        .vault-row:hover { background: rgba(99, 102, 241, 0.1); }
+        
+        /* State Machine Visualization Styles */
+        .vault-row.highlighted { background: rgba(37, 99, 235, 0.25); border-left: 3px solid var(--primary); }
+        .vault-row.locked { background: rgba(16, 185, 129, 0.2) !important; font-weight: bold; }
+        
+        .monitor-pane { background: #070b14; border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; min-height: 250px; justify-content: center; }
+        
+        /* Interactive Core Controls */
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #111827; color: var(--text-muted); font-size: 11px; text-transform: uppercase; padding: 15px; text-align: left; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+        td { padding: 14px 15px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); font-size: 13px; }
+        
+        .input-price { background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px 12px; width: 110px; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
+        .input-price:focus { border-color: var(--primary); outline: none; }
+        
+        .monitor-pane input[type="number"] { background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; width: 100%; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .monitor-pane input[type="number"]:focus { border-color: var(--success); outline: none; }
+        
+        select { background: #0f172a; color: white; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 13px; cursor: pointer; }
+        
+        /* Pricing & Action Typography Buttons */
+        .total-display { font-size: 26px; font-weight: 700; color: var(--success); margin: 8px 0 15px 0; font-family: monospace; }
+        .btn-submit { background: var(--primary); color: white; border: none; padding: 16px; width: 100%; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; text-transform: uppercase; transition: 0.2s; }
+        .btn-submit:hover { background: var(--primary-hover); }
+        
+        .btn-action { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase; margin-top: 15px; }
+        .btn-success { background: var(--success); color: white; }
+        select, input[type="number"] { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; font-size: 13px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        
+        /* Sidebar Layout Framework with Isolated Scroll Context */
+.sidebar { 
+    width: 280px; 
+    background: #070b14; 
+    border-right: 1px solid var(--border); 
+    padding: 30px 20px; 
+    flex-shrink: 0; 
+    display: flex; 
+    flex-direction: column; 
+    
+    /* FIX: Force sidebar to constrain itself to the viewport height and activate native scrolling */
+    height: 100vh;
+    box-sizing: border-box;
+    overflow-y: auto; 
+    overflow-x: hidden;
+}
+
+/* Ensure the layout framework supports structural isolation side-by-side */
+body { 
+    margin: 0; 
+    font-family: 'Inter', sans-serif; 
+    background: var(--dark); 
+    color: var(--text); 
+    display: flex; 
+    height: 100vh; 
+    overflow: hidden; /* Stops the main body wrapper from double-scrolling */
+}
+
+/* Custom scrollbar matching your dark terminal aesthetics for the sidebar container */
+.sidebar::-webkit-scrollbar { 
+    width: 4px; 
+}
+.sidebar::-webkit-scrollbar-thumb { 
+    background: rgba(51, 65, 85, 0.6); /* Subtle slate border tint match */
+    border-radius: 10px; 
+}
+		
+		
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="color: var(--primary); margin:0 0 40px 0; letter-spacing: -1px;">PIONEER EVAL</h2>
+    
+    <span class="nav-label">I. Task Selection Panel</span>
+    <div style="margin-bottom: 25px;">
+        <select onchange="window.location.href='?task_id=' + this.value;" style="width: 100%;">
+            {% for t in tasks %}
+                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
+                    {{ t.project_id }}
+                </option>
+            {% empty %}
+                <option disabled>No active tasks loaded</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <span class="nav-label">II. Baseline Target</span>
+    <div style="background: #030712; padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+        <small style="color: var(--text-muted); font-size: 9px; display: block; text-transform: uppercase;">Current Actual Cost</small>
+        <span style="color: var(--accent); font-weight: 700; font-size: 15px;">US$ {{ active_task.actual_cost|default:"0.00" }}</span>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <div>
+            <h3 style="margin:0;">Step 1: Budget, Bid Evaluation & Award Cockpit</h3>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);">
+            TASK REF: <span style="color: var(--text); font-weight: 700; text-transform: uppercase;">{{ active_task.project_id }}</span>
+        </div>
+    </div>
+
+    <div class="workspace-scroller">
+        
+        <div class="selection-workspace">
+            <div class="vault-pane">
+                <div style="padding: 15px; background: #070b14; border-bottom: 1px solid var(--border);">
+                    <span class="nav-label" style="margin:0;">III. Select Lowest Bidder Targets</span>
+                </div>
+                <div id="vault-container" tabindex="0">
+                    <table>
+                        <tbody>
+                            {% for s in suppliers %}
+                            <tr class="vault-row" data-sid="{{ s.id }}" data-name="{{ s.description }}" onclick="handleManualSelect(this)">
+                                <td style="padding: 15px; font-size: 13px; font-weight: 500;">{{ s.description }}</td>
+                                <td style="padding: 15px; text-align: right; color: var(--text-muted); font-size: 11px;">#{{ s.id }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="monitor-pane">
+                <div id="monitor-empty" style="display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.5;">
+                    <div style="font-size: 40px; margin-bottom: 20px;">📡</div>
+                    <p style="margin:0; font-size:13px;">Select or use Arrows + Enter to lock target bidder.</p>
+                </div>
+
+                
+            </div>
+        </div>
+
+        <form method="POST" action="" style="margin: 0;">
+            {% csrf_token %}
+            <div class="evaluation-grid">
+                
+                <div class="table-pane">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 45%;">Item Description / Technical Specs</th>
+                                <th style="width: 15%;">Req. Qty</th>
+                                <th style="width: 17%; color: var(--success);">
+									{{ suppliers.0.description|default:"Supplier 1" }} (US$)
+								</th>
+								
+								<th style="width: 18%; color: var(--warning);">
+									{{ suppliers.1.description|default:"Supplier 2" }} (US$)
+								</th>
+													</tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bom_items %}
+                            <tr>
+                                <td style="font-weight: bold; color: var(--text-muted); text-align: center; width: 40px;">
+                                    {{ forloop.counter }}
+                                </td>
+                                <td style="font-weight: 600;">{{ item.tech_spec_summary }}</td> 
+                                <td style="color: var(--accent); font-weight: bold;">
+                                    {{ item.quantity }}
+                                    <span style="font-size:11px; font-weight:normal; color:var(--text-muted);">{{ item.uom|default:"pcs" }}</span>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="winner_{{ item.id }}" class="input-price evaluation-winner-input" data-id="{{ item.id }}" data-qty="{{ item.quantity }}" oninput="calculateBudget()" placeholder="0.00" required>
+                                    <div style="font-size: 11px; color: var(--success); margin-top: 4px; font-family: monospace;">
+                                        Ext: <span id="s1_line_total_{{ item.id }}">0.00</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="runner_{{ item.id }}" class="input-price evaluation-runner-input" data-id="{{ item.id }}" data-qty="{{ item.quantity }}" oninput="calculateBudget()" placeholder="0.00">
+                                    <div style="font-size: 11px; color: var(--warning); margin-top: 4px; font-family: monospace;">
+                                        Ext: <span id="s2_line_total_{{ item.id }}">0.00</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">No BOM lines registered for evaluation.</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <tr style="background: rgba(99, 102, 241, 0.05); border-top: 2px solid var(--border); font-weight: bold;">
+                                <td style="text-align: center; color: var(--text-muted);">#</td>
+                                <td style="text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; vertical-align: middle;">
+                                    Grand Bid running Totals:
+                                </td>
+                                <td style="color: var(--text-muted); font-size: 11px; vertical-align: middle;">
+                                    {{ bom_items|length }} Lines
+                                </td>
+                                <td style="padding: 12px 15px; color: var(--success); font-size: 14px; font-family: monospace;">
+                                    Total S1:<br>US$ <span id="supplier1_grand_total">0.00</span>
+                                </td>
+                                <td style="padding: 12px 15px; color: var(--warning); font-size: 14px; font-family: monospace;">
+                                    Total S2:<br>US$ <span id="supplier2_grand_total">0.00</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="budget-card">
+                    <h3 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 12px; font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text);">Budget Formulation</h3>
+                    
+                    <label class="nav-label" style="margin-bottom: 5px;">1. Material Sub-Total (S1 Basis)</label>
+                    <div id="material_display" class="total-display">US$ 0.00</div>
+                    <input type="hidden" name="material_total" id="material_val">
+
+                    <label class="nav-label" style="margin-top: 15px; margin-bottom: 8px;">2. Labour Cost Burden</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <select name="labour_mode" id="labour_mode" onchange="calculateBudget()" style="flex: 1;">
+                            <option value="fixed">Manual (Fixed US$)</option>
+                            <option value="percent">Percent Allocation (%)</option>
+                        </select>
+                        <input type="number" step="0.01" id="labour_input" name="labour_input" class="input-price" style="width: 120px;" oninput="calculateBudget()" value="0.00">
+                    </div>
+
+                    <label class="nav-label" style="margin-top: 10px; margin-bottom: 5px;">3. Misc / Logistics Operational Reserve</label>
+                    <input type="number" step="0.01" id="misc_input" name="misc_input" class="input-price" style="width: 100%;" oninput="calculateBudget()" value="0.00">
+
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed var(--border); margin-bottom: 20px;">
+                        <span class="nav-label" style="color: var(--text-muted); margin-bottom: 5px;">Total Fund Disbursement Request</span>
+                        <div id="grand_total_display" class="total-display" style="color: var(--text); font-size: 30px; border-bottom: 3px double var(--success); padding-bottom: 5px;">US$ 0.00</div>
+                        <input type="hidden" name="grand_total" id="grand_total_val">
+                    </div>
+
+                   <button type="submit" name="generate_lpo" class="btn-action btn-success">
+                        ⚡ Approve Evaluation & Process Memorandum
+                   </button>
+                </form>
+                </div>
+                
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    // 1. Matrix Pricing Accumulator Engine (Lowest Total Verification Core)
+    function calculateBudget() {
+        let s1GrandTotal = 0;
+        let s2GrandTotal = 0;
+        
+        const s1Inputs = document.querySelectorAll('.evaluation-winner-input');
+        s1Inputs.forEach((input) => {
+            const id = input.getAttribute('data-id');
+            const qty = parseFloat(input.getAttribute('data-qty')) || 0;
+            const price = parseFloat(input.value) || 0;
+            const lineTotal = qty * price;
+            s1GrandTotal += lineTotal;
+            document.getElementById(`s1_line_total_${id}`).innerText = lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        });
+
+        const s2Inputs = document.querySelectorAll('.evaluation-runner-input');
+        s2Inputs.forEach((input) => {
+            const id = input.getAttribute('data-id');
+            const qty = parseFloat(input.getAttribute('data-qty')) || 0;
+            const price = parseFloat(input.value) || 0;
+            const lineTotal = qty * price;
+            s2GrandTotal += lineTotal;
+            document.getElementById(`s2_line_total_${id}`).innerText = lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        });
+
+        document.getElementById('supplier1_grand_total').innerText = s1GrandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('supplier2_grand_total').innerText = s2GrandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+        // CRITICAL REFACTOR: Dynamically identify the absolute lowest total price as the final material sub-total
+        let lowestMaterialTotal = 0;
+        if (s1GrandTotal > 0 && s2GrandTotal > 0) {
+            lowestMaterialTotal = Math.min(s1GrandTotal, s2GrandTotal);
+        } else {
+            // Graceful fallback value handling while prices are actively being entered into columns
+            lowestMaterialTotal = s1GrandTotal || s2GrandTotal || 0;
+        }
+
+        // Display the true lowest option as the final figure
+        document.getElementById('material_display').innerText = 'US$ ' + lowestMaterialTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('material_val').value = lowestMaterialTotal.toFixed(2);
+
+        let labourMode = document.getElementById('labour_mode').value;
+        let labourInput = parseFloat(document.getElementById('labour_input').value) || 0;
+        
+        // Base the labor percentage strictly on the final lowest figure
+        let actualLabour = (labourMode === 'percent') ? (lowestMaterialTotal * (labourInput / 100)) : labourInput;
+        let misc = parseFloat(document.getElementById('misc_input').value) || 0;
+        
+        // Combine final material baseline with overhead components
+        let grandTotal = lowestMaterialTotal + actualLabour + misc;
+
+        document.getElementById('grand_total_display').innerText = 'US$ ' + grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('grand_total_val').value = grandTotal.toFixed(2);
+
+        // Keep live calculations aligned if selections change across any of the N rows
+        syncMonitorValuesWithMultiSelection();
+    }
+
+    // 2. STATE MATRIX: Unlimited N-Supplier Real-Name Vault Engine
+    let cursor = -1;
+    let selectedSupplierIds = []; 
+    let selectedSupplierNames = []; 
+    
+    const rows = document.querySelectorAll('.vault-row');
+    const vault = document.getElementById('vault-container');
+    const monEmpty = document.getElementById('monitor-empty');
+    const monContent = document.getElementById('monitor-content');
+    const monDisplayName = document.getElementById('mon-display-name');
+    const formSupplierInput = document.getElementById('form-supplier-name');
+    const formSupplierIdInput = document.getElementById('form-supplier-id');
+
+    if(vault) {
+        setTimeout(() => { vault.focus(); }, 100);
+        vault.addEventListener('click', () => { vault.focus(); });
+
+        vault.addEventListener('keydown', (e) => {
+            if (rows.length === 0) return;
+
+            if (e.key === 'ArrowDown') { 
+                e.preventDefault(); 
+                // Infinite vertical looping across all loaded suppliers
+                if (cursor < rows.length - 1) cursor++; else cursor = 0;
+                syncCursorHighlight(); 
+            }
+            else if (e.key === 'ArrowUp') { 
+                e.preventDefault(); 
+                if (cursor > 0) cursor--; else cursor = rows.length - 1;
+                syncCursorHighlight(); 
+            }
+            else if (e.key === ' ' || e.key === 'Enter') { 
+                e.preventDefault(); 
+                toggleSelectionAtIndex(cursor); 
+            }
+        });
+    }
+
+    // Capture manual mouse clicks into the dynamic multi-select array
+    function handleManualSelect(el) {
+        cursor = Array.from(rows).indexOf(el);
+        syncCursorHighlight();
+        toggleSelectionAtIndex(cursor);
+    }
+
+    // Updates navigation border highlighting smoothly
+    function syncCursorHighlight() {
+        if (cursor < 0) return;
+        rows.forEach((r, i) => r.classList.toggle('highlighted', i === cursor));
+        rows[cursor].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    // Toggles the checked status of any real database item in the vault array
+    function toggleSelectionAtIndex(index) {
+        if (index < 0 || index >= rows.length) return;
+        
+        const targetRow = rows[index];
+        // Read strictly from your real attributes setup: data-sid and data-name
+        const sid = targetRow.getAttribute('data-sid');
+        const name = targetRow.getAttribute('data-name');
+        
+        const idIndex = selectedSupplierIds.indexOf(sid);
+
+        if (idIndex > -1) {
+            // Drop it from selection if clicked again (Uncheck)
+            selectedSupplierIds.splice(idIndex, 1);
+            selectedSupplierNames.splice(idIndex, 1);
+            targetRow.classList.remove('locked');
+        } else {
+            // Append it to selection arrays if checked (Check)
+            selectedSupplierIds.push(sid);
+            selectedSupplierNames.push(name);
+            targetRow.classList.add('locked');
+        }
+
+        // Render Monitor Panel using real values string sequences
+        if (selectedSupplierIds.length > 0) {
+            monEmpty.style.display = 'none';
+            monContent.style.display = 'flex';
+            
+            // Show real database descriptive labels clearly inside your cockpit window
+            monDisplayName.innerText = selectedSupplierNames.join(' + ');
+            
+            // Format arrays safely as standard comma strings inside your hidden target forms
+            if (formSupplierInput) formSupplierInput.value = selectedSupplierNames.join(',');
+            if (formSupplierIdInput) formSupplierIdInput.value = selectedSupplierIds.join(',');
+        } else {
+            monEmpty.style.display = 'flex';
+            monContent.style.display = 'none';
+            monDisplayName.innerText = '-';
+            if (formSupplierInput) formSupplierInput.value = '';
+            if (formSupplierIdInput) formSupplierIdInput.value = '';
+        }
+
+        syncMonitorValuesWithMultiSelection();
+    }
+
+    // Sums up combined pricing arrays natively by reading your grid layout totals
+    function syncMonitorValuesWithMultiSelection() {
+        if (selectedSupplierIds.length === 0) return;
+
+        const monUnitPrice = document.getElementById('mon-unit-price');
+        const monMiscExpenses = document.getElementById('mon-misc-expenses');
+        
+        let dynamicCombinedMaterialCost = 0;
+
+        selectedSupplierIds.forEach((sid) => {
+            const rowElement = document.querySelector(`.vault-row[data-sid="${sid}"]`);
+            const elementIndex = Array.from(rows).indexOf(rowElement);
+
+            // Dynamically match row placement sequence to pull matching column sums safely
+            if (elementIndex === 0) {
+                const s1Text = document.getElementById('supplier1_grand_total').innerText;
+                dynamicCombinedMaterialCost += parseFloat(s1Text.replace(/,/g, '') || 0);
+            } else if (elementIndex === 1) {
+                const s2Text = document.getElementById('supplier2_grand_total').innerText;
+                dynamicCombinedMaterialCost += parseFloat(s2Text.replace(/,/g, '') || 0);
+            } else {
+                // Default fallback if evaluating rows deeper down the matrix array
+                dynamicCombinedMaterialCost += parseFloat(document.getElementById('material_val').value || 0);
+            }
+        });
+
+        if (monUnitPrice) {
+            monUnitPrice.value = dynamicCombinedMaterialCost.toFixed(2);
+        }
+        
+        const currentMiscBase = document.getElementById('misc_input').value || "0.00";
+        if (monMiscExpenses) {
+            monMiscExpenses.value = currentMiscBase;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        calculateBudget();
+    });
+</script>
+
+</body>
+</html>

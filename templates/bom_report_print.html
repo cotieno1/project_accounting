@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BOM {{ bom_no }}</title>
+    {% include "includes/lpo_document_styles.html" %}
+</head>
+<body class="pioneer-doc-print">
+<div class="screen-toolbar no-print">
+    <button type="button" onclick="window.print()">Print BOM</button>
+</div>
+<div id="printableBOM" class="lpo-paper"><div class="doc">
+    <div class="brand-bar"></div>
+    {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Bill of Materials" %}
+
+    <div class="memo-block" style="grid-template-columns:120px 1fr;">
+        <strong>To:</strong>
+        <div>General Manager<br><strong>{{ org_name }}</strong><br>
+        {% if org_contact_address %}{{ org_contact_address|linebreaksbr }}{% elif org_registered_address %}{{ org_registered_address|linebreaksbr }}{% endif %}
+        {% if org_phone %}<br>Tel: {{ org_phone }}{% endif %}</div>
+    </div>
+
+    <table class="meta-table">
+        <tr><th>BOM reference</th><th>Task</th></tr>
+        <tr><td class="lpo-no">{{ bom_no }}</td><td>{{ active_task.description }}</td></tr>
+    </table>
+
+    <table class="lines">
+        <thead>
+            <tr>
+                <th class="center">#</th>
+                <th>Description</th>
+                <th class="center">UOM</th>
+                <th class="num">Qty</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in bom_items %}
+            <tr{% if forloop.counter|divisibleby:2 %} class="zebra"{% endif %}>
+                <td class="center">{{ forloop.counter }}</td>
+                <td>{{ item.description }}</td>
+                <td class="center">{{ item.uom }}</td>
+                <td class="num">{{ item.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="signatures"><tr>
+        <td><div class="line">Prepared by</div><div class="hint">Site Engineering</div></td>
+        <td style="width:10%"></td>
+        <td><div class="line">Approved by</div><div class="hint">General Manager</div></td>
+    </tr></table>
+    <p class="footer-note">BOM — {{ bom_no }}</p>
+</div></div>
+<script>window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 400); });</script>
+</body>
+</html>

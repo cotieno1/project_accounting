@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pioneer | Evaluation & Budgeting</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #2563eb; --dark: #0a0f1d; --card: #1e293b; --border: #334155; 
+            --success: #10b981; --warning: #f59e0b; --text: #f1f5f9; --text-muted: #94a3b8;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Header Section */
+        .header { padding: 20px 40px; border-bottom: 1px solid var(--border); background: rgba(10, 15, 29, 0.9); flex-shrink: 0; }
+        
+        /* Main Layout Grid */
+        .container { display: grid; grid-template-columns: 1fr 380px; flex: 1; overflow: hidden; }
+        
+        /* Left Workspace - Scrollable Matrix */
+        .workspace { background: var(--dark); padding: 40px; overflow-y: auto; border-right: 1px solid var(--border); }
+        
+        /* Right Sidebar - Sticky Analytics */
+        .sidebar-budget { background: #070b14; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 8px; overflow: hidden; }
+        th { background: #0f172a; color: var(--primary); font-size: 11px; text-transform: uppercase; padding: 18px 15px; text-align: left; letter-spacing: 1px; border-bottom: 2px solid var(--border); }
+        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        /* Input Field Styling */
+        .input-price { background: #030712; border: 1px solid var(--border); color: var(--success); padding: 10px; width: 130px; border-radius: 6px; font-weight: 600; text-align: right; font-family: monospace; }
+        .input-price:focus { outline: none; border-color: var(--primary); background: #0f172a; }
+
+        /* Sidebar Componentry */
+        .budget-label { font-size: 10px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+        .total-box { background: #030712; padding: 18px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .currency { color: var(--success); font-size: 22px; font-weight: 700; font-family: monospace; }
+        
+        .control-input { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; box-sizing: border-box; }
+        .control-input:focus { outline: none; border-color: var(--primary); }
+        
+        .btn-approve { background: var(--primary); color: white; border: none; padding: 18px; width: 100%; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; margin-top: auto; }
+        .btn-approve:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 style="margin:0;">Ops Evaluation Terminal | <span style="color: var(--primary);">Bid Evaluation & Financial Budget Baseline</span></h2>
+            <small style="color: var(--text-muted);">PROJECT TASK : <span style="color: var(--text);">{{ active_task.description }}</span></small>
+        </div>
+        <div style="text-align: right; display: flex; gap: 25px; align-items: center;">
+            <div>
+                <span class="budget-label" style="margin:0;">Task ID</span>
+                <strong style="color: var(--warning);">{{ active_task.project_id }}</strong>
+            </div>
+            <a href="/rfq-manager/?task_id={{ active_task.project_id }}" style="color: var(--text-muted); text-decoration: none; font-size: 11px; font-weight: 700; border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; background: #070b14; transition: 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">← ESCAPE TO TERMINAL</a>
+        </div>
+    </div>
+</div>
+
+<form method="POST" action="?task_id={{ active_task.project_id }}&phase=evaluate" class="container">
+    {% csrf_token %}
+    
+    <div class="workspace">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Description</th>
+                    <th>Quantity</th>
+                    <th style="color: var(--primary);">{{ supplier_1.description }} (Bid US$)</th>
+                    <th style="color: var(--warning);">{{ supplier_2.description }} (Bid US$)</th>
+                </tr>
+            </thead>
+            
+            <tbody>
+                {% for item in build %}
+                <tr class="eval-row" data-id="{{ item.id }}" data-qty="{{ item.qty }}">
+                    <td style="font-weight: 600; color: var(--text); border-bottom: none; padding-bottom: 5px;">
+                        {{ item.description }}
+                    </td>
+                    
+                    <td style="color: var(--text-muted); font-weight: 700; border-bottom: none; padding-bottom: 5px;">
+                        {{ item.qty }} 
+                        <span style="font-size: 11px; color: var(--primary); text-transform: uppercase;">
+                            {{ item.uom|default:"pcs" }}
+                        </span>
+                    </td>
+
+                    <td style="border-bottom: none; padding-bottom: 5px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="number" step="0.01" name="s1_price_{{ item.id }}" 
+                                   class="input-price s1-field" 
+                                   oninput="syncBudget()" required placeholder="0.00">
+                            <small style="color: var(--text-muted); font-size: 10px; text-transform: lowercase;">Price per {{ item.uom|default:"pc" }}</small>
+                        </div>
+                    </td>
+
+                    <td style="border-bottom: none; padding-bottom: 5px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="number" step="0.01" name="s2_price_{{ item.id }}" 
+                                   class="input-price s2-field" 
+                                   oninput="syncBudget()" placeholder="0.00">
+                            <small style="color: var(--text-muted); font-size: 10px; text-transform: lowercase;">Price per {{ item.uom|default:"pc" }}</small>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr class="total-row-display" style="background: rgba(0, 0, 0, 0.2);">
+                    <td colspan="2" style="padding: 6px 15px; font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                        ↳ Total Line Cost
+                    </td>
+                    <td style="padding: 6px 15px; font-family: monospace; font-weight: 800; font-size: 13px; color: var(--text-muted);" class="s1-line-total">
+                        US$ 0.00
+                    </td>
+                    <td style="padding: 6px 15px; font-family: monospace; font-weight: 800; font-size: 13px; color: var(--text-muted);" class="s2-line-total">
+                        US$ 0.00
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 50px; color: var(--text-muted);">No BOM Items loaded for this task mandate.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+            <tfoot>
+                <tr style="background: #0f172a; border-top: 2px solid var(--border);">
+                    <td colspan="2" style="padding: 18px 15px; font-weight: 800; text-transform: uppercase; font-size: 12px; color: var(--primary);">
+                        📈  Total Bid Price
+                    </td>
+                    <td style="padding: 18px 15px; font-family: monospace; font-weight: 800; font-size: 15px; color: white;" id="s1-wholesale-grand">
+                        US$ 0.00
+                    </td>
+                    <td style="padding: 18px 15px; font-family: monospace; font-weight: 800; font-size: 15px; color: white;" id="s2-wholesale-grand">
+                        US$ 0.00
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="sidebar-budget">
+        <span class="budget-label" id="selection-criteria-label">I. Bid Total (Evaluating...)</span>
+        <div class="total-box">
+            <div id="display-materials" class="currency">US$ 0.00</div>
+            <input type="hidden" name="material_final" id="val-materials" value="0.00">
+        </div>
+
+        <span class="budget-label">II. Labour Cost </span>
+        <div class="total-box">
+            <select name="labour_type" id="labour-mode" onchange="syncBudget()" class="control-input" style="margin-bottom: 12px; font-size: 11px; cursor: pointer;">
+                <option value="fixed">Manual - Fixed Cost (US$)</option>
+                <option value="percent">Percentage of Tot Bid(%)</option>
+            </select>
+            <input type="number" step="0.01" name="labour_value" id="val-labour-input" oninput="syncBudget()" 
+                   class="control-input" placeholder="0.00">
+        </div>
+
+        <span class="budget-label">III. Misc / Contingency</span>
+        <div class="total-box">
+            <input type="number" step="0.01" name="misc_value" id="val-misc-input" oninput="syncBudget()" 
+                   class="control-input" placeholder="US$ Amount">
+        </div>
+
+        <div style="margin-top: 20px; padding: 25px; border: 2px solid var(--success); border-radius: 12px; background: rgba(16, 185, 129, 0.05); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; right: 0; padding: 5px 10px; background: var(--success); color: var(--dark); font-size: 9px; font-weight: 900; text-transform: uppercase;">Verified</div>
+            <span class="budget-label" style="color: var(--success);">Budget & Funding Request</span>
+            <div id="display-grand-total" class="currency" style="font-size: 32px; margin-top: 5px;">US$ 0.00</div>
+            <input type="hidden" name="grand_total" id="val-grand-total" value="0.00">
+        </div>
+
+        <div style="flex: 1;"></div> 
+        <button type="submit" class="btn-approve">📤 SUBMIT Budget/Funding Request</button>
+        
+        <p style="font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 20px; text-transform: uppercase; line-height: 1.4; letter-spacing: 0.5px;">
+            Independent data verification complete.<br>
+            Authorized baseline required prior to LPO dispatch.
+        </p>
+    </div>
+</form>
+
+<script>
+    function syncBudget() {
+        let s1TotalAccumulator = 0;
+        let s2TotalAccumulator = 0;
+        
+        const rows = document.querySelectorAll('.eval-row');
+        
+        rows.forEach(row => {
+            const qty = parseFloat(row.dataset.qty) || 0;
+            
+            const inputS1 = row.querySelector('.s1-field');
+            const inputS2 = row.querySelector('.s2-field');
+            
+            const priceS1 = inputS1 ? (parseFloat(inputS1.value) || 0) : 0;
+            const priceS2 = inputS2 ? (parseFloat(inputS2.value) || 0) : 0;
+            
+            // 1. Process Line Item Accumulations
+            let s1LineTotal = qty * priceS1;
+            let s2LineTotal = qty * priceS2;
+            
+            s1TotalAccumulator += s1LineTotal;
+            s2TotalAccumulator += s2LineTotal;
+            
+            // 2. Direct DOM Targeting of line row display nodes
+            const outputRow = row.nextElementSibling;
+            if (outputRow && outputRow.classList.contains('total-row-display')) {
+                const s1Display = outputRow.querySelector('.s1-line-total');
+                const s2Display = outputRow.querySelector('.s2-line-total');
+                
+                if (s1Display) s1Display.innerText = 'US$ ' + s1LineTotal.toLocaleString('en-US', {minimumFractionDigits: 2});
+                if (s2Display) s2Display.innerText = 'US$ ' + s2LineTotal.toLocaleString('en-US', {minimumFractionDigits: 2});
+            }
+        });
+
+        // 3. Update Wholesale Footers
+        document.getElementById('s1-wholesale-grand').innerText = 'US$ ' + s1TotalAccumulator.toLocaleString('en-US', {minimumFractionDigits: 2});
+        document.getElementById('s2-wholesale-grand').innerText = 'US$ ' + s2TotalAccumulator.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+        // 4. THE WHOLESALE SELECTION MATRIX
+        let finalizedMaterialCost = 0;
+        const criteriaLabel = document.getElementById('selection-criteria-label');
+        
+        if (s1TotalAccumulator > 0 && s2TotalAccumulator > 0) {
+            // Objective Choice: Whichever quote has the lowest wholesale package total is chosen
+            if (s1TotalAccumulator < s2TotalAccumulator) {
+                finalizedMaterialCost = s1TotalAccumulator;
+                criteriaLabel.innerText = "I. Material Total (Winner: Supplier 1)";
+                highlightWinningColumn('s1');
+            } else {
+                finalizedMaterialCost = s2TotalAccumulator;
+                criteriaLabel.innerText = "I. Material Total (Winner: Supplier 2)";
+                highlightWinningColumn('s2');
+            }
+        } else {
+            // Dynamic fallbacks while input transcriptions are in progress
+            finalizedMaterialCost = s1TotalAccumulator || s2TotalAccumulator || 0;
+            criteriaLabel.innerText = "I. Material Total (Transcribing...)";
+            resetColumnHighlights();
+        }
+
+        // 5. Update Global Sidebar Panel
+        document.getElementById('display-materials').innerText = 'US$ ' + finalizedMaterialCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('val-materials').value = finalizedMaterialCost.toFixed(2);
+
+        // 6. Labour Calculation
+        let lMode = document.getElementById('labour-mode').value;
+        let lIn = parseFloat(document.getElementById('val-labour-input').value) || 0;
+        let lCalc = (lMode === 'percent') ? (finalizedMaterialCost * (lIn / 100)) : lIn;
+
+        // 7. Misc Calculation
+        let mCalc = parseFloat(document.getElementById('val-misc-input').value) || 0;
+
+        // 8. Grand Total Convergence
+        let grand = finalizedMaterialCost + lCalc + mCalc;
+        document.getElementById('display-grand-total').innerText = 'US$ ' + grand.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('val-grand-total').value = grand.toFixed(2);
+    }
+
+    function highlightWinningColumn(winner) {
+        const rows = document.querySelectorAll('.total-row-display');
+        
+        // Color code table body sub-rows
+        rows.forEach(row => {
+            const s1Box = row.querySelector('.s1-line-total');
+            const s2Box = row.querySelector('.s2-line-total');
+            
+            if (winner === 's1') {
+                if (s1Box) s1Box.style.color = 'var(--success)';
+                if (s2Box) s2Box.style.color = 'var(--text-muted)';
+            } else {
+                if (s1Box) s1Box.style.color = 'var(--text-muted)';
+                if (s2Box) s2Box.style.color = 'var(--success)';
+            }
+        });
+
+        // Color code table footers
+        const fS1 = document.getElementById('s1-wholesale-grand');
+        const fS2 = document.getElementById('s2-wholesale-grand');
+        if (winner === 's1') {
+            fS1.style.color = 'var(--success)';
+            fS2.style.color = 'var(--text-muted)';
+        } else {
+            fS1.style.color = 'var(--text-muted)';
+            fS2.style.color = 'var(--success)';
+        }
+    }
+
+    function resetColumnHighlights() {
+        const displays = document.querySelectorAll('.s1-line-total, .s2-line-total');
+        displays.forEach(d => d.style.color = 'var(--text-muted)');
+        
+        const fS1 = document.getElementById('s1-wholesale-grand');
+        const fS2 = document.getElementById('s2-wholesale-grand');
+        if (fS1) fS1.style.color = 'white';
+        if (fS2) fS2.style.color = 'white';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        syncBudget();
+    });
+</script>
+</body>
+</html>

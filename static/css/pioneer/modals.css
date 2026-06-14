@@ -1,0 +1,130 @@
+.cockpit-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 11, 20, 0.9);
+    z-index: var(--z-modal);
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+#registerModal,
+#approvalModal {
+    z-index: var(--z-modal-top);
+}
+
+.cockpit-modal-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    width: 580px;
+    max-width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.cockpit-modal-panel h3 {
+    font-size: 17px !important;
+}
+
+.cockpit-modal-panel p {
+    font-size: 14px !important;
+}
+
+.cockpit-modal-panel .nav-label {
+    font-size: 12px;
+}
+
+.cockpit-modal-panel .form-input {
+    font-size: 15px;
+}
+
+.cockpit-modal-panel .btn-action {
+    font-size: 15px;
+    padding: 12px 18px;
+}
+
+.cockpit-modal-panel .line-budget-table th {
+    font-size: 12px;
+    padding: 12px 8px;
+}
+
+.cockpit-modal-panel .line-budget-table td {
+    font-size: 15px;
+    padding: 12px 8px;
+}
+
+.cockpit-modal-panel .budget-row {
+    font-size: 14px !important;
+}
+
+.review-feedback-banner {
+    display: none;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    border: 1px solid var(--border);
+}
+
+.review-feedback-banner.is-info {
+    display: block;
+    background: rgba(37, 99, 235, 0.12);
+    border-color: var(--primary);
+    color: #93c5fd;
+}
+
+.review-feedback-banner.is-error {
+    display: block;
+    background: rgba(239, 68, 68, 0.12);
+    border-color: var(--danger);
+    color: #fca5a5;
+}
+
+.review-feedback-banner.is-success {
+    display: block;
+    background: rgba(16, 185, 129, 0.12);
+    border-color: var(--success);
+    color: #6ee7b7;
+}
+
+.review-feedback-banner.is-warn {
+    display: block;
+    background: rgba(245, 158, 11, 0.12);
+    border-color: var(--warning);
+    color: #fcd34d;
+}
+
+.modal-summary-box {
+    background: var(--surface-deep);
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.modal-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.modal-summary-row:last-child {
+    margin-bottom: 0;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.modal-actions .btn-action {
+    flex: 1;
+}

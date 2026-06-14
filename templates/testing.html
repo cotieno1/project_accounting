@@ -1,0 +1,58 @@
+<div class="selection-workspace">
+    <div class="vault-pane">
+        <div style="padding: 15px; background: #070b14; border-bottom: 1px solid var(--border);">
+            <span class="nav-label" style="margin:0;">III. Select Lowest Bidder Targets</span>
+        </div>
+        <div id="vault-container" tabindex="0">
+            <table>
+                <tbody>
+                    {% for s in suppliers %}
+                    <tr class="vault-row" 
+                        data-sid="{{ s.supplier_id }}" 
+                        data-name="{{ s.description }}" 
+                        data-phone="{{ s.phone }}"
+                        data-email="{{ s.email }}"
+                        onclick="handleManualSelect(this)">
+                        <td style="padding: 15px; font-size: 13px; font-weight: 500;">{{ s.description }}</td>
+                        <td style="padding: 15px; text-align: right; color: var(--text-muted); font-size: 11px;">#{{ s.supplier_id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="monitor-pane">
+        <div id="monitor-empty" style="display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.5;">
+            <div style="font-size: 40px; margin-bottom: 20px;">📡</div>
+            <p style="margin:0; font-size:13px;">Select or use Arrows + Enter to lock target bidder.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================================================ -->
+
+	<form method="POST">
+            {% csrf_token %}
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--text-muted);">Material Description / Spec</label>
+                <input type="text" name="description" placeholder="e.g., High-Tensile Steel Bars D12" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+                <div>
+                    <label style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--text-muted);">Unit (UOM)</label>
+                    <input type="text" name="uom" placeholder="kg, bags, pcs" required>
+                </div>
+                <div>
+                    <label style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--text-muted);">Required Quantity</label>
+                    <input type="number" step="0.01" name="qty" placeholder="0" required>
+                </div>
+				 <div>
+                    <label style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--text-muted);">Bid Price</label>
+                    <input type="number" step="0.01" name="price" placeholder="0.00" required>
+                </div>
+            </div>
+
+            
+	</form>

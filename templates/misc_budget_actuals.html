@@ -1,0 +1,171 @@
+{% extends "layouts/cockpit.html" %}
+{% load static %}
+{% block title %}Pioneer | Misc Budget vs Actuals{% endblock %}
+{% block body_class %}misc-audit{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-budget-actuals.css' %}">
+{% endblock %}
+{% block sidebar %}
+<h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
+<small style="color: var(--muted); display: block; margin: 16px 0;">Purchase Audit · {{ active_task.project_id }}</small>
+<select onchange="window.location.href='?task_id=' + this.value;" class="form-input">
+    {% for t in tasks %}
+    <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|truncatechars:28 }}</option>
+    {% endfor %}
+</select>
+
+<div class="sidebar-block budget-status-panel">
+    <span class="nav-label">Budget snapshot</span>
+    <div class="budget-row">
+        <span class="budget-label">Allocated</span>
+        <span class="budget-value budget-value-ok">{{ currency_symbol }} {{ misc_budget|floatformat:2 }}</span>
+    </div>
+    <div class="budget-row">
+        <span class="budget-label">Locked</span>
+        <span class="budget-value budget-value--actual">{{ currency_symbol }} {{ misc_actuals|floatformat:2 }}</span>
+    </div>
+    <div class="budget-row budget-variance">
+        <span class="budget-label">Variance</span>
+        <span class="budget-value {% if variance_over %}budget-value-over{% else %}budget-value-ok{% endif %}">{{ currency_symbol }} {{ variance|floatformat:2 }}</span>
+    </div>
+</div>
+
+<span class="nav-label nav-label--spaced">Navigation</span>
+<a href="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}" class="btn-action btn-action--block">← Ad-Hoc Requisition Order</a>
+<a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary btn-action--block">Ops Dashboard</a>
+<div class="sidebar-footer">
+    <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="sidebar-back-link">← Dashboard</a>
+</div>
+{% endblock %}
+{% block workspace %}
+    <div class="page-header">
+        <div>
+            <span class="task-id">TASK REF: {{ active_task.project_id }}</span>
+            <h1>{{ active_task.description }}</h1>
+        </div>
+        <button type="button" class="btn-action" onclick="window.print()">🖨️ Print Report</button>
+    </div>
+
+    <div class="panel summary-strip">
+        <div class="summary-cell">
+            <small>Planned Budget</small>
+            <div class="summary-value summary-value--ok">{{ currency_symbol }} {{ misc_budget|floatformat:2 }}</div>
+        </div>
+        <div class="summary-cell">
+            <small>Actual Expenditure (Locked)</small>
+            <div class="summary-value summary-value--actual">{{ currency_symbol }} {{ misc_actuals|floatformat:2 }}</div>
+        </div>
+        <div class="summary-cell">
+            <small>Variance</small>
+            <div class="summary-value {% if variance_over %}summary-value--over{% else %}summary-value--ok{% endif %}">{{ currency_symbol }} {{ variance|floatformat:2 }}</div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="panel panel-dark">
+            <h2 class="panel-title">Budget vs Actuals</h2>
+            <div class="fin-row">
+                <span class="fin-label">Allocated Budget</span>
+                <span class="fin-value fin-value--success">{{ currency_symbol }} {{ misc_budget|floatformat:2 }}</span>
+            </div>
+            <div class="fin-row">
+                <span class="fin-label">Total Locked</span>
+                <span class="fin-value fin-value--warning">{{ currency_symbol }} {{ misc_actuals|floatformat:2 }}</span>
+            </div>
+            <div class="fin-row fin-total-row">
+                <span style="font-weight: 600;">Remaining Balance</span>
+                <span class="fin-value {% if variance_over %}fin-value--danger{% endif %}">{{ currency_symbol }} {{ variance|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2 class="panel-title">Audit Trail: Locked & Disbursed Funds</h2>
+            <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Ref #</th>
+                        <th>Custodian</th>
+                        <th>Status</th>
+                        <th class="num">Amount ({{ currency_symbol }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mro in locked_audit_trail %}
+                    <tr>
+                        <td>{{ mro.updated_at|date:"Y-m-d H:i" }}</td>
+                        <td class="ref-cell">{{ mro.mro_number|default:"PENDING" }}</td>
+                        <td>{{ mro.messenger_name }}</td>
+                        <td>
+                            {% if mro.funding_status == 'LOCKED' %}
+                            <span class="audit-badge audit-badge--warning">LOCKED</span>
+                            {% elif mro.funding_status == 'RECONCILED' %}
+                            <span class="audit-badge audit-badge--success">CLEARED</span>
+                            {% else %}
+                            <span class="audit-badge audit-badge--warning">{{ mro.funding_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="num num--strong">{{ mro.total_amount|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% for mpo in locked_mpos %}
+                    <tr>
+                        <td>{{ mpo.created_at|date:"Y-m-d H:i" }}</td>
+                        <td class="ref-cell">{{ mpo.mpo_number|default:"RO-DRAFT" }}</td>
+                        <td>{{ mpo.messenger_name|default:"Ad-Hoc RO" }}</td>
+                        <td><span class="audit-badge audit-badge--warning">{{ mpo.get_funding_status_display }}</span></td>
+                        <td class="num num--strong">{{ mpo.total_amount|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not locked_audit_trail and not locked_mpos %}
+                    <tr><td colspan="5" class="empty-row">No funds locked or disbursed.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2 class="panel-title">Officer Payment Vouchers (Ad-Hoc Purchases)</h2>
+        <p class="officer-intro">Partial RO purchases paid to employees (cash / M-Pesa). Total disbursed: <strong>{{ currency_symbol }} {{ officer_paid_total|floatformat:2 }}</strong></p>
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Voucher</th>
+                    <th>RO</th>
+                    <th>Officer</th>
+                    <th>Method</th>
+                    <th>Lines</th>
+                    <th class="num">Amount ({{ currency_symbol }})</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pv in officer_vouchers %}
+                <tr>
+                    <td>{{ pv.created_at|date:"Y-m-d H:i" }}</td>
+                    <td style="color: var(--primary);">{{ pv.voucher_no }}</td>
+                    <td>{{ pv.mpo.mpo_number }}</td>
+                    <td>{{ pv.officer_name }}</td>
+                    <td>{{ pv.get_payment_method_display }}</td>
+                    <td style="font-size: 12px;">
+                        {% for ln in pv.lines.all %}
+                        #{{ ln.line_no|default:forloop.counter }} {{ ln.mpo_item.description }} ×{{ ln.qty_purchased|floatformat:0 }}{% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </td>
+                    <td class="num" style="font-weight: 600;">{{ pv.amount|floatformat:2 }}</td>
+                    <td><a href="{% url 'print_adhoc_officer_voucher_view' pv.id %}?return_ro={{ pv.mpo_id }}" target="_blank" style="color: var(--primary);">Print</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align: center; color: var(--muted);">No officer payment vouchers yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <a href="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}" class="back-link">← Back to Ad-Hoc Requisition Order</a>
+    </div>
+{% endblock %}

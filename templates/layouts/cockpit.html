@@ -1,0 +1,19 @@
+{% extends "layouts/base_app.html" %}
+{% load static %}
+
+{% block body %}
+<div class="cockpit-shell" id="cockpitShell">
+    <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Open navigation menu" aria-expanded="false">&#9776;</button>
+    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+    <aside class="sidebar" id="cockpitSidebar">
+        {% block sidebar %}{% endblock %}
+    </aside>
+    <div class="main-content">
+        <div class="workspace-scroller">
+            {% block workspace %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% block modals %}{% endblock %}
+<script src="{% static 'js/cockpit-shell.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pioneer Project Accounting System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --home-bg: #0f172a;
+            --home-surface: #1e293b;
+            --home-text: #e2e8f0;
+            --home-muted: #94a3b8;
+            --home-accent: #38bdf8;
+            --home-primary: #2563eb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--home-bg);
+            color: var(--home-text);
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(15, 23, 42, 0.95);
+            padding: 12px 0;
+        }
+
+        .header-title h1 {
+            font-size: clamp(1.1rem, 4vw, 1.5rem);
+            margin: 0;
+            color: var(--home-text);
+        }
+
+        .header-title span {
+            font-size: 12px;
+            color: var(--home-muted);
+        }
+
+        .hero {
+            min-height: auto;
+            padding: clamp(48px, 12vw, 96px) 0 clamp(40px, 8vw, 64px);
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+        }
+
+        .hero h1 {
+            font-size: clamp(1.75rem, 5vw, 3rem);
+            font-weight: 700;
+            color: var(--home-text);
+        }
+
+        .hero p {
+            color: var(--home-muted);
+            max-width: 36rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background-color: var(--home-primary);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .section {
+            padding: clamp(48px, 8vw, 80px) 0;
+        }
+
+        .section h2 {
+            color: var(--home-text);
+            font-weight: 700;
+        }
+
+        .feature-card,
+        .gl-card {
+            background-color: var(--home-surface);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            height: 100%;
+            color: var(--home-text);
+        }
+
+        .feature-card h5,
+        .gl-card h6 {
+            color: var(--home-accent);
+            font-weight: 700;
+        }
+
+        .feature-card p,
+        .gl-card p {
+            color: var(--home-muted);
+            margin-bottom: 0;
+        }
+
+        .workflow-step {
+            border-left: 3px solid var(--home-primary);
+            padding-left: 20px;
+            margin-bottom: 24px;
+        }
+
+        .workflow-step h5 {
+            color: var(--home-accent);
+        }
+
+        .workflow-step p {
+            color: var(--home-muted);
+            margin-bottom: 0;
+        }
+
+        .section-dark {
+            background: #020617;
+        }
+
+        footer {
+            background: #020617;
+            padding: 24px 16px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .modal-content {
+            background: var(--home-surface);
+            color: var(--home-text);
+            border: 1px solid #334155;
+        }
+
+        .modal-content label {
+            color: var(--home-muted);
+        }
+
+        .modal-content .form-control {
+            background: #0f172a;
+            border-color: #334155;
+            color: var(--home-text);
+        }
+
+        .modal-content .form-control:focus {
+            background: #0f172a;
+            border-color: var(--home-primary);
+            color: var(--home-text);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container px-3">
+        <div class="header-title">
+            <h1>Pioneer Project Financials</h1>
+            <span>Pioneer Construction | Secure Audit Portal</span>
+        </div>
+    </div>
+</nav>
+
+<section class="hero text-center text-lg-start">
+    <div class="container px-3">
+        <h1>Institutional Financial Command Center</h1>
+        <p class="mt-3 mx-auto mx-lg-0">
+            A unified, task-driven accounting system engineered for high-stakes construction projects.
+            From resource planning to final authorization — with absolute transparency.
+        </p>
+        <div class="hero-actions mt-4 justify-content-center justify-content-lg-start">
+            <button class="btn btn-primary btn-lg" type="button" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
+            <a href="#capabilities" class="btn btn-outline-light btn-lg">Learn More</a>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="capabilities">
+    <div class="container px-3 text-center">
+        <h2 class="mb-5">Core Capabilities</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card p-4">
+                    <h5>Task-Centric Accounting</h5>
+                    <p>Every financial action is tied to a project task ensuring precision and accountability.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card p-4">
+                    <h5>Normalization Engine</h5>
+                    <p>Transforms raw inputs (PDFs, emails) into structured, auditable financial data.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card p-4">
+                    <h5>Variance Tracking</h5>
+                    <p>Real-time tracking between estimated and actual costs for strict budget control.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-dark">
+    <div class="container px-3">
+        <h2 class="text-center mb-5">Workflow (A → Z)</h2>
+        <div class="row">
+            <div class="col-md-4 workflow-step">
+                <h5>1. Site Engineer</h5>
+                <p>Initiates Bill of Materials and project task requirements.</p>
+            </div>
+            <div class="col-md-4 workflow-step">
+                <h5>2. General Manager</h5>
+                <p>Processes BOM, runs RFP, selects suppliers, issues LPO.</p>
+            </div>
+            <div class="col-md-4 workflow-step">
+                <h5>3. Project Director</h5>
+                <p>Authorizes financial flows and ensures compliance.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="gl-structure">
+    <div class="container px-3 text-center">
+        <h2 class="mb-5">General Ledger Structure</h2>
+        <div class="row g-4">
+            <div class="col-6 col-md-3">
+                <div class="gl-card p-3">
+                    <h6>A</h6>
+                    <p>Building Materials</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="gl-card p-3">
+                    <h6>B</h6>
+                    <p>Labor (Fixed &amp; Temp)</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="gl-card p-3">
+                    <h6>C</h6>
+                    <p>Monthly Expenses</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="gl-card p-3">
+                    <h6>D</h6>
+                    <p>Misc Expenses</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section text-center">
+    <div class="container px-3">
+        <h2>Precision. Control. Transparency.</h2>
+        <p class="mt-3 text-secondary">Transform how your construction projects manage finances.</p>
+        <button class="btn btn-primary btn-lg mt-3" type="button" data-bs-toggle="modal" data-bs-target="#loginModal">Sign In</button>
+    </div>
+</section>
+
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="loginModalLabel">Secure Login</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" name="username" id="loginUsername" class="form-control" required autocomplete="username">
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" name="password" id="loginPassword" class="form-control" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p class="mb-0">&copy; 2026 Pioneer Project Accounting System | Developed by Charles Otieno</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

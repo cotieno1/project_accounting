@@ -1,0 +1,185 @@
+/* Financial Ops & Supply Chain dashboard */
+body.ops-dashboard { --text-muted: var(--muted); }
+
+.ops-dashboard .ops-brand {
+    margin-bottom: 40px;
+    border-left: 3px solid var(--primary);
+    padding-left: 15px;
+}
+.ops-dashboard .ops-brand h2 {
+    color: var(--primary);
+    margin: 0;
+    letter-spacing: 2px;
+}
+.ops-dashboard .ops-brand small {
+    color: #64748b;
+    font-size: 10px;
+}
+
+.ops-dashboard .nav-section { margin-bottom: 25px; }
+.ops-dashboard .nav-section--adhoc {
+    background: rgba(16, 185, 129, 0.05);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--success);
+    margin-bottom: 30px;
+}
+.ops-dashboard .nav-section--adhoc .nav-label { color: var(--success); margin-bottom: 8px; }
+
+.ops-dashboard .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+.ops-dashboard .nav-link:hover {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--light);
+}
+.ops-dashboard .nav-link.active { background: var(--primary); color: white; }
+.ops-dashboard .nav-link--emph { color: white; font-weight: 600; padding: 8px 0; }
+.ops-dashboard .nav-hint {
+    color: var(--muted);
+    font-size: 10px;
+    display: block;
+    padding-left: 32px;
+    line-height: 1.3;
+    margin-top: 4px;
+}
+
+.ops-dashboard .ops-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.ops-dashboard .ops-header h1 { margin: 0; font-size: 28px; }
+.ops-dashboard .ops-header p { color: var(--muted); margin: 5px 0 0; }
+
+.ops-dashboard .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.ops-dashboard .stat-card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    position: relative;
+}
+.ops-dashboard .stat-card small {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+.ops-dashboard .stat-card h2 { margin: 10px 0 0; font-size: 22px; font-weight: 700; }
+.ops-dashboard .stat-card .trend {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.ops-dashboard .trend-primary { color: var(--primary); }
+.ops-dashboard .trend-warning { color: var(--warning); }
+.ops-dashboard .stat-card--primary { border-top: 4px solid var(--primary); }
+.ops-dashboard .stat-card--warning { border-top: 4px solid var(--warning); }
+.ops-dashboard .stat-card--success { border-top: 4px solid var(--success); }
+.ops-dashboard .stat-card--danger { border-top: 4px solid var(--danger); }
+
+.ops-dashboard .task-switcher { margin-top: 20px; margin-bottom: 25px; }
+.ops-dashboard .task-switcher-label { color: var(--muted); }
+.ops-dashboard .task-switcher select {
+    width: 100%;
+    background: var(--surface-deep);
+    color: white;
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+}
+
+.ops-dashboard .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.ops-dashboard .panel-header h3 { margin: 0; }
+.ops-dashboard .panel-meta { color: var(--primary); font-weight: 700; }
+.ops-dashboard .panel-meta--danger { color: var(--danger); }
+
+.ops-dashboard .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+}
+.ops-dashboard .badge-planning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+.ops-dashboard .badge-execution { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+.ops-dashboard .badge-primary { background: var(--primary); color: white; }
+.ops-dashboard .badge-success { background: var(--success); color: white; }
+
+.ops-dashboard .gl-feed-panel {
+    background: rgba(16, 185, 129, 0.05);
+    border: 1px dashed var(--success);
+}
+.ops-dashboard .gl-feed-panel h4 { margin: 0; color: var(--success); }
+.ops-dashboard .gl-feed-panel p { font-size: 11px; color: var(--muted); }
+.ops-dashboard #gl-feed {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    margin-top: 15px;
+}
+
+.ops-dashboard .ops-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    background: rgba(10, 15, 29, 0.6);
+    backdrop-filter: blur(2px);
+    align-items: flex-start;
+    justify-content: center;
+    padding: 5vh 16px 16px;
+    overflow-y: auto;
+}
+.ops-dashboard .ops-modal-panel {
+    background: var(--card);
+    padding: 40px;
+    border: 1px solid var(--border);
+    width: min(800px, 100%);
+    border-radius: var(--radius-lg);
+}
+.ops-dashboard .ops-modal-title { color: var(--primary); margin-top: 0; }
+.ops-dashboard .ops-modal-intro { color: var(--muted); margin-bottom: 20px; }
+.ops-dashboard .bom-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.ops-dashboard .bom-form-actions {
+    margin-top: 25px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.ops-dashboard .btn-danger { background: var(--danger); }
+
+@media (max-width: 1100px) {
+    .ops-dashboard .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+    .ops-dashboard .stats-grid { grid-template-columns: 1fr; }
+    .ops-dashboard .bom-form-grid { grid-template-columns: 1fr; }
+}

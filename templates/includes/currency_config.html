@@ -1,0 +1,6 @@
+<script>
+window.APP_CURRENCY = {
+    code: "{{ currency_code|default:'USD'|escapejs }}",
+    symbol: "{{ currency_symbol|default:'US$'|escapejs }}"
+};
+</script>

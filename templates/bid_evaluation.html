@@ -1,0 +1,1090 @@
+{% extends "layouts/cockpit.html" %}
+{% load static %}
+{% block title %}Pioneer | Evaluation & Budget Formulation Terminal{% endblock %}
+{% block body_class %}bid-eval{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/bid-evaluation.css' %}">
+{% endblock %}
+{% block sidebar %}
+    <h2 class="bid-eval-brand">PIONEER EVAL</h2>
+    
+    <span class="nav-label">I. Task Selection Panel</span>
+    <div class="task-select-wrap">
+        <select onchange="window.location.href='?task_id=' + this.value;">
+            {% for t in tasks %}
+                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
+                    {{ t.project_id }}
+                </option>
+            {% empty %}
+                <option disabled>No active tasks loaded</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <span class="nav-label">II. Baseline Target</span>
+    <div class="baseline-panel">
+        <small class="baseline-label">Actual Used (Paid / Posted)</small>
+        <span class="baseline-amount">{{ currency_symbol }} {{ task_actual_cost|default:"0.00" }}</span>
+    </div>
+    {% if budget_status.has_budget or budget_status.lpo_count %}
+    <div class="budget-status-panel">
+        <div class="budget-status-row">
+            <span class="budget-status-label">Material (budget)</span>
+            <span class="budget-status-value budget-status-value--material">{{ currency_symbol }} {{ budget_status.material }}</span>
+        </div>
+        <div class="budget-status-row">
+            <span class="budget-status-label">LPO (ordered)</span>
+            <span class="budget-status-value budget-status-value--lpo">{{ currency_symbol }} {{ budget_status.lpo_material }}</span>
+        </div>
+        <div class="budget-status-row">
+            <span class="budget-status-label">Variance</span>
+            <span class="budget-status-variance {% if budget_status.variance_over %}budget-status-variance--over{% else %}budget-status-variance--ok{% endif %}">
+                {{ currency_symbol }} {{ budget_status.material_variance }}
+            </span>
+        </div>
+        <div class="budget-status-row">
+            <span class="budget-status-label">LPO count</span>
+            <span class="budget-status-count">{{ budget_status.lpo_count }}</span>
+        </div>
+    </div>
+    {% endif %}
+    <div class="nav-section">
+        <span class="nav-label">Project Task LPO / Budget Status</span>
+        <button type="button" class="btn-action btn-budget-modal" onclick="openBudgetModal()">Materials: Budget vs Actual &amp; Variance</button>
+        <button type="button" class="btn-action btn-lpo-list" onclick="openLpoListingModal()">LPO Listing ({{ budget_status.lpo_count }})</button>
+        <button type="button" class="btn-action btn-grn-list" onclick="openGrnListingModal()">GRN Listing ({{ grn_count }})</button>
+    </div>
+
+    <div class="sidebar-footer">
+        {% if active_task %}
+        <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="sidebar-back-link">← Back to Dashboard</a>
+        {% else %}
+        <a href="{% url 'ops_dashboard' %}" class="sidebar-back-link">← Back to Dashboard</a>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block workspace %}
+    <div class="top-bar">
+        <div>
+            <h3 style="margin:0;">Step 1: Budget, Bid Evaluation & Award Cockpit</h3>
+            {% if active_task %}
+            <small style="color: var(--text-muted); font-size: 12px;">Task: {{ active_task.project_id }}</small>
+            {% endif %}
+        </div>
+    </div>
+    <div class="bid-workspace-inner">
+        <div class="selection-workspace">
+            <div class="vault-pane">
+                <div class="vault-pane-head">
+                    <span class="nav-label" style="margin:0;">III. Select Two Bidders (min. 2)</span>
+                    <p class="vault-pane-hint">1st click = green chip (Supplier 1); 2nd click = amber chip (Supplier 2). Click again to deselect.</p>
+                </div>
+                <div id="vault-container" tabindex="0">
+                    <table>
+                        <tbody>
+                            {% for s in suppliers %}
+                            <tr class="vault-row" 
+                                data-sid="{{ s.supplier_id }}" 
+                                data-name="{{ s.description }}" 
+                                data-phone="{{ s.phone }}"
+                                data-email="{{ s.email }}"
+                                onclick="handleManualSelect(this)">
+                                <td style="padding: 15px; font-size: 13px; font-weight: 500;">
+                                    {{ s.description }}
+                                    <span class="vault-slot-badge" data-badge-for="{{ s.supplier_id }}" style="display:none;"></span>
+                                </td>
+                                <td style="padding: 15px; text-align: right; color: var(--text-muted); font-size: 11px;">#{{ s.supplier_id }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="monitor-pane">
+                <div id="monitor-empty" class="monitor-empty">
+                    <div style="font-size: 40px; margin-bottom: 20px;">📡</div>
+                    <p style="margin:0; font-size:13px; text-align:center;">Select <strong>two different suppliers</strong> from the vault.</p>
+                    <p id="monitor-count" style="margin:8px 0 0; font-size:12px; color:var(--warning);">0 / 2 selected</p>
+                </div>
+
+                <div id="monitor-content" class="monitor-content">
+                    <div style="padding: 10px; border-radius: 6px; border: 1px solid var(--success); background: rgba(16,185,129,0.08);">
+                        <span class="nav-label" style="margin:0; color:var(--success);">Supplier 1 (Green)</span>
+                        <div style="font-weight:600; margin-top:4px;" id="mon-s1-name">-</div>
+                        <div style="font-size:12px; color:var(--text-muted);" id="mon-s1-contact">-</div>
+                    </div>
+                    <div style="padding: 10px; border-radius: 6px; border: 1px solid var(--warning); background: rgba(245,158,11,0.08);">
+                        <span class="nav-label" style="margin:0; color:var(--warning);">Supplier 2 (Orange)</span>
+                        <div style="font-weight:600; margin-top:4px;" id="mon-s2-name">-</div>
+                        <div style="font-size:12px; color:var(--text-muted);" id="mon-s2-contact">-</div>
+                    </div>
+                    <p id="monitor-award-hint" style="margin:0; font-size:11px; color:var(--text-muted);">LPO will be awarded to the lower grand total after you enter prices.</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{% url 'bid_evaluation_terminal' %}" id="matrix_evaluation_form" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="supplier_names_csv" id="form-supplier-name">
+            <input type="hidden" name="supplier_ids_csv" id="form-supplier-id">
+            <input type="hidden" name="supplier_contact_csv" id="form-supplier-contact">
+            <input type="hidden" name="awarded_supplier_id" id="form-awarded-supplier-id">
+            <input type="hidden" name="after_commit" value="disburse_memo" id="form-after-commit">
+            <input type="hidden" name="items_json_payload" id="items_json_payload">
+            
+            <div class="evaluation-grid">
+                
+                <div class="table-pane">
+                    <div class="table-scroll">
+                    <table id="evaluation_materials_table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 45%;">Item Description / Technical Specs</th>
+                                <th style="width: 15%;">Req. Qty</th>
+                                <th id="th-supplier-1" style="width: 17%; color: var(--success);">
+                                    Supplier 1 ({{ currency_symbol }})
+                                </th>
+                                <th id="th-supplier-2" style="width: 18%; color: var(--warning);">
+                                    Supplier 2 ({{ currency_symbol }})
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bom_items %}
+                            <tr>
+                                <td style="font-weight: bold; color: var(--text-muted); text-align: center; width: 40px;">
+                                    {{ forloop.counter }}
+                                </td>
+                                <td style="font-weight: 600;" class="item-description">{{ item.tech_spec_summary }}</td> 
+                                <td style="color: var(--accent); font-weight: bold;" class="item-qty">
+                                    {{ item.quantity}}
+                                    <span style="font-size:11px; font-weight:normal; color:var(--text-muted);" class="item-uom">{{ item.uom|default:"pcs" }}</span>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" id="input_winner_{{ item.id }}" name="winner_{{ item.id }}" class="input-price evaluation-winner-input" oninput="calculateBudget()" placeholder="0.00" required>
+                                    <div style="font-size: 11px; color: var(--success); margin-top: 4px; font-family: monospace;">
+                                        Ext: <span id="s1_line_total_{{ item.id }}">0.00</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" id="input_runner_{{ item.id }}" name="runner_{{ item.id }}" class="input-price evaluation-runner-input" oninput="calculateBudget()" placeholder="0.00">
+                                    <div style="font-size: 11px; color: var(--warning); margin-top: 4px; font-family: monospace;">
+                                        Ext: <span id="s2_line_total_{{ item.id }}">0.00</span>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <script>
+                                nativeBOMInventory.push({
+                                    id: "{{ item.id|escapejs }}",
+                                    desc: "{{ item.tech_spec_summary|escapejs }}",
+                                    qty: parseFloat("{{ item.quantity|escapejs }}") || 0,
+                                    uom: "{{ item.uom|default:'pcs'|escapejs }}"
+                                });
+                            </script>
+
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">No BOM lines registered for evaluation.</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <tr style="background: rgba(99, 102, 241, 0.05); border-top: 2px solid var(--border); font-weight: bold;">
+                                <td style="text-align: center; color: var(--text-muted);">#</td>
+                                <td style="text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; vertical-align: middle;">
+                                    Grand Bid running Totals:
+                                </td>
+                                <td style="color: var(--text-muted); font-size: 11px; vertical-align: middle;">
+                                    {{ bom_items|length }} Lines
+                                </td>
+                                <td style="padding: 12px 15px; color: var(--success); font-size: 14px; font-family: monospace;">
+                                    Total S1:<br>{{ currency_symbol }} <span id="supplier1_grand_total">0.00</span>
+                                </td>
+                                <td style="padding: 12px 15px; color: var(--warning); font-size: 14px; font-family: monospace;">
+                                    Total S2:<br>{{ currency_symbol }} <span id="supplier2_grand_total">0.00</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div class="budget-card">
+                    <h3 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 12px; font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text);">Budget Formulation</h3>
+                    
+                    <label class="nav-label" style="margin-bottom: 5px;">1. Material Sub-Total (Lowest Basis)</label>
+                    <div id="material_display" class="total-display">{{ currency_symbol }} 0.00</div>
+                    <input type="hidden" name="material_total" id="material_val">
+
+                    <label class="nav-label" style="margin-top: 15px; margin-bottom: 8px;">2. Labour Cost Burden</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 0;">
+                        <select name="labour_mode" id="labour_mode" onchange="calculateBudget()" style="flex: 1; margin-bottom: 20px;">
+                            <option value="fixed">Manual (Fixed {{ currency_symbol }})</option>
+                            <option value="percent">Percent Allocation (%)</option>
+                        </select>
+                        <input type="number" step="0.01" id="labour_input" name="labour_input" class="input-price" style="width: 120px; margin-bottom: 20px;" oninput="calculateBudget()" value="0.00">
+                    </div>
+
+                    <label class="nav-label" style="margin-top: 10px; margin-bottom: 5px;">3. Misc / Logistics Operational Reserve</label>
+                    <input type="number" step="0.01" id="misc_input" name="misc_input" class="input-price" style="width: 100%; margin-bottom: 20px;" oninput="calculateBudget()" value="0.00">
+
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed var(--border); margin-bottom: 20px;">
+                        <span class="nav-label" style="color: var(--text-muted); margin-bottom: 5px;">Total Expected Fund Disbursement</span>
+                        <div id="grand_total_display" class="total-display" style="color: var(--text); font-size: 30px; border-bottom: 3px double var(--success); padding-bottom: 5px;">{{ currency_symbol }} 0.00</div>
+                        <input type="hidden" name="grand_total" id="grand_total_val">
+                    </div>
+					
+
+					<!-- Budget fields (prefix FIXED) -->
+					<input type="hidden" name="budget-material_total_cost" id="id_budget-material_total_cost">
+					<input type="hidden" name="budget-labour_burden" id="id_budget-labour_burden">
+					<input type="hidden" name="budget-misc_reserve" id="id_budget-misc_reserve">
+					<input type="hidden" name="budget-total_authorized_budget" id="id_budget-total_authorized_budget">
+
+					<!-- LPO -->
+					<input type="hidden" name="lpo-total_amount" id="id_lpo-total_amount">
+
+					<!-- GRID STAYS SAME -->
+					
+   
+                    <button type="button" onclick="openReviewModal()" class="btn-action btn-success">
+                        Review Budget
+                    </button>
+						
+                </div>
+                
+            </div>
+        </form>
+    </div>
+{% endblock %}
+{% block modals %}
+<div id="reviewModal">
+    <div class="review-modal-panel">
+        <div class="review-modal-header">
+            <h3>📋 Treasury Pre-Authorization Memorandum</h3>
+            <span class="review-modal-tag">STAGE: REVIEW (v1)</span>
+        </div>
+
+        <div class="review-summary-box">
+            <div class="review-summary-row">
+                <span class="review-summary-label">Task Target ID:</span>
+                <span style="color: #f1f5f9; font-weight: bold;">{{ active_task.project_id }}</span>
+            </div>
+            <div class="review-summary-row">
+                <span class="review-summary-label">Locked Material Cost:</span>
+                <span id="modal_mat_cost" class="review-summary-value review-summary-value--success">{{ currency_symbol }} 0.00</span>
+            </div>
+            <div class="review-summary-row">
+                <span class="review-summary-label">Amended Labor Burden:</span>
+                <span id="modal_labor_cost" class="review-summary-value">{{ currency_symbol }} 0.00</span>
+            </div>
+            <div class="review-summary-row">
+                <span class="review-summary-label">Overhead Reserve:</span>
+                <span id="modal_misc_cost" class="review-summary-value">{{ currency_symbol }} 0.00</span>
+            </div>
+            <div class="review-summary-total">
+                <span class="review-summary-label review-summary-label--emph">Expected Fund Disbursement:</span>
+                <span id="modal_disbursement_total" class="review-summary-value review-summary-value--success">{{ currency_symbol }} 0.00</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label class="nav-label review-directive-label">Executive Amendment Directive</label>
+            <select id="version_action" class="review-version-select">
+                <option value="commit_v1">Approve As-Is (Lock v1 & Commit Ledger)</option>
+                <option value="amend_v2">Reject & Log Version Amendment (Generate v2 Draft)</option>
+            </select>
+        </div>
+        <div class="review-actions">
+            <button type="button" class="review-btn-back" onclick="closeReviewModal()">
+                Back
+            </button>
+            <button type="button" class="review-btn-commit" onclick="finalizeAndSubmit()">
+                Commit Budget/LPO - Disburse Funds
+            </button>
+        </div>
+    </div>
+</div>
+<div id="budgetModal" class="cockpit-modal">
+    <div class="cockpit-modal-panel" style="width: 560px;">
+        <div class="cockpit-modal-header">
+            <h3>Budget vs Actual &amp; Variance</h3>
+            <span class="cockpit-modal-tag">Materials · Task {{ active_task.project_id }}</span>
+        </div>
+        <div style="background: #070b14; padding: 20px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px;">
+            {% if budget_status.has_budget %}
+            <div style="margin-bottom: 14px; font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
+                {{ budget_status.label }} · v{{ budget_status.version }}
+            </div>
+            {% else %}
+            <p style="margin: 0 0 14px; color: var(--warning); font-size: 12px;">No material budget committed yet. Use Review Budget to lock materials baseline.</p>
+            {% endif %}
+
+            <table class="material-variance-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th class="num">Material</th>
+                        <th class="num">LPO</th>
+                        <th class="num">Variance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight:600;color:var(--text);">Materials line</td>
+                        <td class="num" style="color:var(--success);font-family:monospace;">{{ currency_symbol }} {{ budget_status.material }}</td>
+                        <td class="num" style="color:var(--warning);font-family:monospace;">{{ currency_symbol }} {{ budget_status.lpo_material }}</td>
+                        <td class="num" style="font-family:monospace;font-weight:700;{% if budget_status.variance_over %}color:#f87171{% else %}color:var(--success){% endif %};">
+                            {{ currency_symbol }} {{ budget_status.material_variance }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p style="margin: 14px 0 0; font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+                <strong>Material</strong> — authorized materials budget from project budget.<br>
+                <strong>LPO</strong> — cost of ordered items (sum of LPO line totals for this task).<br>
+                <strong>Variance</strong> — Material − LPO ({% if budget_status.variance_over %}over budget{% else %}remaining headroom{% endif %}).
+            </p>
+
+            <div style="border-top: 1px dashed var(--border); margin-top: 18px; padding-top: 14px; font-family: monospace; font-size: 12px; color: var(--text-muted);">
+                <div class="budget-stat-row"><span>Labour (budget line)</span><span>{{ currency_symbol }} {{ budget_status.labour }}</span></div>
+                <div class="budget-stat-row"><span>Misc reserve (budget line)</span><span>{{ currency_symbol }} {{ budget_status.misc }}</span></div>
+                <div class="budget-stat-row"><span>Total authorized (all lines)</span><span style="color:var(--text);">{{ currency_symbol }} {{ budget_status.authorized }}</span></div>
+            </div>
+        </div>
+        <button type="button" onclick="closeBudgetModal()" class="btn-action" style="margin-top: 20px; background: #334155;">Close</button>
+    </div>
+</div>
+
+<div id="lpoListModal" class="cockpit-modal">
+    <div class="cockpit-modal-panel" style="width: 720px; max-height: 85vh; display: flex; flex-direction: column;">
+        <div class="cockpit-modal-header">
+            <h3>LPO Listing</h3>
+            <span class="cockpit-modal-tag">Task {{ active_task.project_id }}</span>
+        </div>
+        <div id="lpo-list-pane" style="flex: 1; overflow-y: auto; min-height: 200px;">
+            <table class="lpo-list-table">
+                <thead>
+                    <tr>
+                        <th>LPO No</th>
+                        <th>Supplier</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Amount ({{ currency_symbol }})</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="lpo-list-tbody"></tbody>
+            </table>
+            <p id="lpo-list-empty" style="display:none;text-align:center;color:var(--text-muted);padding:30px;">No LPOs for this task yet.</p>
+        </div>
+        <div id="lpo-detail-pane" style="display:none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h4 id="lpo-detail-title" style="margin:0;color:var(--primary);font-size:14px;"></h4>
+                <button type="button" onclick="hideLpoDetail()" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;">Back to list</button>
+            </div>
+            <div id="lpo-detail-meta" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;"></div>
+            <table class="lpo-list-table">
+                <thead>
+                    <tr><th>#</th><th>Description</th><th>Qty</th><th>UOM</th><th style="text-align:right;">Unit</th><th style="text-align:right;">Total</th></tr>
+                </thead>
+                <tbody id="lpo-detail-items"></tbody>
+            </table>
+            <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+                <a id="lpo-detail-dispatch" href="#" class="btn-action" style="flex:1;text-align:center;text-decoration:none;line-height:42px;margin-top:0;background:var(--primary);">Open LPO Print View</a>
+                <a id="lpo-detail-print" href="#" target="_blank" class="btn-action" style="flex:1;text-align:center;text-decoration:none;line-height:42px;margin-top:0;background:var(--success);">Print Document</a>
+                <button type="button" id="lpo-detail-grn-btn" class="btn-action" style="flex:1;margin-top:0;background:var(--warning);color:#111;">Record GRN</button>
+                <button type="button" id="lpo-detail-cancel-btn" class="btn-action" style="flex:1;margin-top:0;background:var(--danger);">Cancel LPO</button>
+            </div>
+        </div>
+        <button type="button" onclick="closeLpoListingModal()" class="btn-action" style="margin-top: 16px; background: #334155; flex-shrink: 0;">Close</button>
+    </div>
+</div>
+
+<div id="grnModal" class="cockpit-modal">
+    <div class="cockpit-modal-panel grn-modal-panel" style="width: 920px;">
+        <div class="cockpit-modal-header" style="flex-shrink: 0;">
+            <h3>Goods Received Note (GRN)</h3>
+            <span class="cockpit-modal-tag" id="grn-modal-lpo-tag">LPO</span>
+        </div>
+        <form id="grnForm" method="POST" action="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_grn">
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="lpo_id" id="grn-lpo-id">
+
+            <div class="grn-modal-scroll">
+            <div class="grn-info-grid">
+                <div class="grn-info-box">
+                    <div class="grn-field-label">Task</div>
+                    <div class="grn-info-text"><strong id="grn-task-id"></strong> — <span id="grn-task-desc"></span></div>
+                </div>
+                <div class="grn-info-box">
+                    <div class="grn-field-label">LPO</div>
+                    <div class="grn-info-text"><strong id="grn-lpo-no"></strong> · Issued <span id="grn-lpo-date"></span></div>
+                </div>
+            </div>
+
+            <div class="grn-info-box grn-supplier-box">
+                <div class="grn-field-label">Supplier Account</div>
+                <div id="grn-supplier-name" class="grn-supplier-name"></div>
+                <div class="grn-info-muted">
+                    <span id="grn-supplier-id"></span><br>
+                    <span id="grn-supplier-phone"></span> · <span id="grn-supplier-email"></span><br>
+                    <span id="grn-supplier-address"></span><br>
+                    Bank: <span id="grn-supplier-bank"></span>
+                </div>
+            </div>
+
+            <div class="grn-fields-grid">
+                <div>
+                    <label class="grn-field-label" for="grn-receipt-date">Receipt Date</label>
+                    <input type="date" name="receipt_date" id="grn-receipt-date" class="grn-input" required>
+                </div>
+                <div>
+                    <label class="grn-field-label" for="grn-received-by">Received By (Pioneer Rep)</label>
+                    <input type="text" name="received_by_name" id="grn-received-by" class="grn-input" placeholder="Pioneer representative receiving goods" required>
+                </div>
+                <div>
+                    <label class="grn-field-label" for="grn-supplier-rep">Supplier Representative</label>
+                    <input type="text" name="supplier_rep_name" id="grn-supplier-rep" class="grn-input" placeholder="Name of supplier delivery representative">
+                </div>
+                <div>
+                    <label class="grn-field-label" for="grn-invoice-ref">Invoice No.</label>
+                    <input type="text" name="invoice_ref" id="grn-invoice-ref" class="grn-input" placeholder="Supplier invoice reference" required>
+                </div>
+                <div>
+                    <label class="grn-field-label" for="grn-delivery-note">Delivery Note Ref</label>
+                    <input type="text" name="delivery_note_ref" id="grn-delivery-note" class="grn-input" placeholder="Delivery note / waybill">
+                </div>
+            </div>
+
+            <div class="grn-field-label grn-section-title">Confirm Itemized Receipt (partial or full per line)</div>
+            <table class="grn-lines-table">
+                <thead>
+                    <tr>
+                        <th>RFQ No</th>
+                        <th>Description</th>
+                        <th>Ordered</th>
+                        <th>Already Rcvd</th>
+                        <th>Remaining</th>
+                        <th>UOM</th>
+                        <th style="text-align:right;">Qty Receiving Now</th>
+                    </tr>
+                </thead>
+                <tbody id="grn-lines-body"></tbody>
+            </table>
+            </div>
+
+            <div class="grn-modal-footer">
+                <button type="button" onclick="closeGrnModal()" class="btn-action grn-modal-btn" style="flex:1;background:#334155;margin-top:0;">Back</button>
+                <button type="submit" class="btn-action grn-modal-btn" style="flex:1;background:var(--warning);color:#111;margin-top:0;font-weight:700;">Confirm GRN &amp; Print</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form id="cancelLpoForm" method="POST" action="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}">
+    {% csrf_token %}
+    <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+    <input type="hidden" name="action" value="cancel_lpo">
+    <input type="hidden" name="lpo_id" id="cancel-lpo-id">
+</form>
+
+<div id="grnListModal" class="cockpit-modal">
+    <div class="cockpit-modal-panel" style="width: 820px; max-height: 85vh; display: flex; flex-direction: column;">
+        <div class="cockpit-modal-header">
+            <h3>GRN Listing</h3>
+            <span class="cockpit-modal-tag">Task {{ active_task.project_id }}</span>
+        </div>
+        <div id="grn-list-pane" style="flex: 1; overflow-y: auto; min-height: 200px;">
+            <table class="lpo-list-table">
+                <thead>
+                    <tr>
+                        <th>GRN No</th>
+                        <th>LPO</th>
+                        <th>Invoice</th>
+                        <th>Date</th>
+                        <th>Payment</th>
+                        <th style="text-align:right;">Total invoiced (Gross + Taxes)</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="grn-list-tbody"></tbody>
+            </table>
+            <p id="grn-list-empty" style="display:none;text-align:center;color:var(--text-muted);padding:30px;">No GRNs recorded for this task yet.</p>
+        </div>
+        <div id="grn-detail-pane" style="display:none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h4 id="grn-detail-title" style="margin:0;color:var(--primary);font-size:14px;"></h4>
+                <button type="button" onclick="hideGrnDetail()" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;">Back to list</button>
+            </div>
+            <div id="grn-detail-meta" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;"></div>
+            <table class="lpo-list-table">
+                <thead>
+                    <tr><th>RFQ</th><th>Description</th><th>Item delivered</th><th>UOM</th><th style="text-align:right;">Unit cost ({{ currency_symbol }})</th><th style="text-align:right;">Total invoiced ({{ currency_symbol }})</th></tr>
+                </thead>
+                <tbody id="grn-detail-items"></tbody>
+            </table>
+            <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+                <a id="grn-detail-print" href="#" target="_blank" class="btn-action" style="flex:1;text-align:center;text-decoration:none;line-height:42px;margin-top:0;background:var(--primary);">Print GRN</a>
+                <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}&open_grn_period=1" target="_blank" class="btn-action" style="flex:1;text-align:center;text-decoration:none;line-height:42px;margin-top:0;background:var(--success);">Supplier payment — GM Desk</a>
+            </div>
+        </div>
+        <button type="button" onclick="closeGrnListingModal()" class="btn-action" style="margin-top: 16px; background: #334155; flex-shrink: 0;">Close</button>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    var nativeBOMInventory = [];
+</script>
+{{ lpos_data|json_script:"task-lpos-data" }}
+{{ grns_data|json_script:"task-grns-data" }}
+{{ budget_status|json_script:"task-budget-status" }}
+<script>
+const CURRENCY_SYMBOL = "{{ currency_symbol|escapejs }}";
+function fmtCur(n) {
+    const num = typeof n === 'number' ? n : parseFloat(n);
+    if (Number.isNaN(num)) return CURRENCY_SYMBOL + ' 0.00';
+    return CURRENCY_SYMBOL + ' ' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/* =========================================================
+   GLOBAL STATE & INITIALIZATION
+========================================================= */
+const MIN_SUPPLIERS = 2;
+const rows = document.querySelectorAll('.vault-row');
+const formSupplierInput = document.getElementById('form-supplier-name');
+const formSupplierIdInput = document.getElementById('form-supplier-id');
+const formContactInput = document.getElementById('form-supplier-contact');
+const formAwardedInput = document.getElementById('form-awarded-supplier-id');
+
+/** slot 1 = green column, slot 2 = orange column */
+const pickedSuppliers = { s1: null, s2: null };
+
+document.addEventListener('DOMContentLoaded', () => {
+    calculateBudget();
+    refreshSupplierUI();
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('open_lpo_list') === '1') openLpoListingModal();
+    if (urlParams.get('open_grn_list') === '1') openGrnListingModal();
+});
+
+/* =========================================================
+   CORE BUDGET ENGINE
+========================================================= */
+function num(v) { return parseFloat(v) || 0; }
+
+function calculateBudget() {
+    let s1 = 0, s2 = 0;
+    
+    // Calculate Line Totals
+    document.querySelectorAll('.evaluation-winner-input').forEach(input => {
+        const id = input.id.split('_').pop();
+        const qty = num(input.closest('tr').querySelector('.item-qty').childNodes[0].nodeValue);
+        const price = num(input.value);
+        s1 += (qty * price);
+        const el = document.getElementById(`s1_line_total_${id}`);
+        if (el) el.innerText = (qty * price).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    });
+
+    document.querySelectorAll('.evaluation-runner-input').forEach(input => {
+        const id = input.id.split('_').pop();
+        const qty = num(input.closest('tr').querySelector('.item-qty').childNodes[0].nodeValue);
+        const price = num(input.value);
+        s2 += (qty * price);
+        const el = document.getElementById(`s2_line_total_${id}`);
+        if (el) el.innerText = (qty * price).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    });
+
+    document.getElementById('supplier1_grand_total').innerText = s1.toLocaleString('en-US', { minimumFractionDigits: 2 });
+    document.getElementById('supplier2_grand_total').innerText = s2.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    const lowestMaterial = Math.min(s1 || Infinity, s2 || Infinity);
+    const materialVal = (lowestMaterial === Infinity) ? 0 : lowestMaterial;
+    
+    document.getElementById('material_display').innerText = fmtCur(materialVal);
+    document.getElementById('material_val').value = materialVal.toFixed(2);
+
+    const labour = document.getElementById('labour_mode').value === 'percent' 
+                   ? materialVal * (num(document.getElementById('labour_input').value) / 100) 
+                   : num(document.getElementById('labour_input').value);
+    
+    const grand = materialVal + labour + num(document.getElementById('misc_input').value);
+
+    document.getElementById('grand_total_display').innerText = fmtCur(grand);
+    document.getElementById('grand_total_val').value = grand.toFixed(2);
+
+}
+
+function supplierFromRow(row) {
+    return {
+        sid: row.getAttribute('data-sid'),
+        name: row.getAttribute('data-name'),
+        contact: row.getAttribute('data-phone') + ' | ' + row.getAttribute('data-email'),
+        row: row,
+    };
+}
+
+function slotForSid(sid) {
+    if (pickedSuppliers.s1 && pickedSuppliers.s1.sid === sid) return 's1';
+    if (pickedSuppliers.s2 && pickedSuppliers.s2.sid === sid) return 's2';
+    return null;
+}
+
+function refreshSupplierUI() {
+    rows.forEach(r => {
+        r.classList.remove('selected-s1', 'selected-s2');
+        const badge = r.querySelector('.vault-slot-badge');
+        if (badge) {
+            badge.style.display = 'none';
+            badge.textContent = '';
+            badge.classList.remove('badge-s1', 'badge-s2');
+        }
+    });
+
+    ['s1', 's2'].forEach(slot => {
+        const p = pickedSuppliers[slot];
+        if (!p) return;
+        p.row.classList.add(slot === 's1' ? 'selected-s1' : 'selected-s2');
+        const badge = p.row.querySelector('.vault-slot-badge');
+        if (badge) {
+            badge.style.display = 'inline';
+            badge.textContent = slot === 's1' ? 'S1' : 'S2';
+            badge.classList.add(slot === 's1' ? 'badge-s1' : 'badge-s2');
+        }
+    });
+
+    const count = (pickedSuppliers.s1 ? 1 : 0) + (pickedSuppliers.s2 ? 1 : 0);
+    const countEl = document.getElementById('monitor-count');
+    if (countEl) countEl.textContent = count + ' / ' + MIN_SUPPLIERS + ' selected';
+
+    if (pickedSuppliers.s1) {
+        document.getElementById('th-supplier-1').textContent = pickedSuppliers.s1.name + ' (' + CURRENCY_SYMBOL + ')';
+        document.getElementById('mon-s1-name').textContent = pickedSuppliers.s1.name;
+        document.getElementById('mon-s1-contact').textContent = pickedSuppliers.s1.contact;
+    } else {
+        document.getElementById('th-supplier-1').textContent = 'Supplier 1 (' + CURRENCY_SYMBOL + ')';
+        document.getElementById('mon-s1-name').textContent = '-';
+        document.getElementById('mon-s1-contact').textContent = '-';
+    }
+
+    if (pickedSuppliers.s2) {
+        document.getElementById('th-supplier-2').textContent = pickedSuppliers.s2.name + ' (' + CURRENCY_SYMBOL + ')';
+        document.getElementById('mon-s2-name').textContent = pickedSuppliers.s2.name;
+        document.getElementById('mon-s2-contact').textContent = pickedSuppliers.s2.contact;
+    } else {
+        document.getElementById('th-supplier-2').textContent = 'Supplier 2 (' + CURRENCY_SYMBOL + ')';
+        document.getElementById('mon-s2-name').textContent = '-';
+        document.getElementById('mon-s2-contact').textContent = '-';
+    }
+
+    const ready = pickedSuppliers.s1 && pickedSuppliers.s2;
+    document.getElementById('monitor-empty').style.display = ready ? 'none' : 'flex';
+    document.getElementById('monitor-content').style.display = ready ? 'flex' : 'none';
+
+    if (ready) {
+        const ids = [pickedSuppliers.s1.sid, pickedSuppliers.s2.sid];
+        const names = [pickedSuppliers.s1.name, pickedSuppliers.s2.name];
+        const contacts = [pickedSuppliers.s1.contact, pickedSuppliers.s2.contact];
+        formSupplierIdInput.value = ids.join(',');
+        formSupplierInput.value = names.join(' | ');
+        formContactInput.value = contacts.join(' || ');
+    } else {
+        formSupplierIdInput.value = '';
+        formSupplierInput.value = '';
+        formContactInput.value = '';
+    }
+}
+
+function handleManualSelect(row) {
+    const sid = row.getAttribute('data-sid');
+    const existing = slotForSid(sid);
+
+    if (existing) {
+        pickedSuppliers[existing] = null;
+    } else if (!pickedSuppliers.s1) {
+        pickedSuppliers.s1 = supplierFromRow(row);
+    } else if (!pickedSuppliers.s2) {
+        pickedSuppliers.s2 = supplierFromRow(row);
+    } else {
+        alert('Two suppliers already selected. Click one of them again to remove, then pick another.');
+        return;
+    }
+    refreshSupplierUI();
+}
+
+function getSupplierGrandTotals() {
+    let s1 = 0, s2 = 0;
+    document.querySelectorAll('.evaluation-winner-input').forEach(input => {
+        const qty = num(input.closest('tr').querySelector('.item-qty').childNodes[0].nodeValue);
+        s1 += qty * num(input.value);
+    });
+    document.querySelectorAll('.evaluation-runner-input').forEach(input => {
+        const qty = num(input.closest('tr').querySelector('.item-qty').childNodes[0].nodeValue);
+        s2 += qty * num(input.value);
+    });
+    return { s1, s2 };
+}
+
+function resolveAwardedSupplierId() {
+    if (!pickedSuppliers.s1 || !pickedSuppliers.s2) return '';
+    const totals = getSupplierGrandTotals();
+    return totals.s1 <= totals.s2 ? pickedSuppliers.s1.sid : pickedSuppliers.s2.sid;
+}
+
+/* =========================================================
+   MODAL & SUBMISSION ENGINE
+========================================================= */
+function computedLabour() {
+    const materialVal = num(document.getElementById('material_val').value);
+    return document.getElementById('labour_mode').value === 'percent'
+        ? materialVal * (num(document.getElementById('labour_input').value) / 100)
+        : num(document.getElementById('labour_input').value);
+}
+
+function openReviewModal() {
+    document.getElementById('modal_mat_cost').innerText = document.getElementById('material_display').innerText;
+    document.getElementById('modal_labor_cost').innerText = fmtCur(computedLabour());
+    document.getElementById('modal_misc_cost').innerText = fmtCur(num(document.getElementById('misc_input').value));
+    document.getElementById('modal_disbursement_total').innerText = document.getElementById('grand_total_display').innerText;
+    document.getElementById('reviewModal').style.display = 'flex';
+}
+
+function closeReviewModal() { document.getElementById('reviewModal').style.display = 'none'; }
+
+const taskLposData = JSON.parse(document.getElementById('task-lpos-data').textContent || '[]');
+const taskGrnsData = JSON.parse(document.getElementById('task-grns-data').textContent || '[]');
+let activeLpoDetailId = null;
+
+function lpoStatusBadge(lpo) {
+    if (lpo.is_cancelled) {
+        return '<span class="lpo-status-badge lpo-status-cancelled">Cancelled</span>';
+    }
+    const map = {
+        NONE: ['lpo-status-none', 'Awaiting GRN'],
+        PARTIAL: ['lpo-status-partial', 'Partial GRN'],
+        FULL: ['lpo-status-full', 'Fully Received'],
+    };
+    const [cls, label] = map[lpo.receipt_status] || map.NONE;
+    return `<span class="lpo-status-badge ${cls}">${label}</span>`;
+}
+
+function cancelLpo(lpoId, lpoNo) {
+    if (!confirm(`Cancel LPO ${lpoNo}? The order will be marked cancelled (not deleted).`)) return;
+    document.getElementById('cancel-lpo-id').value = lpoId;
+    document.getElementById('cancelLpoForm').submit();
+}
+
+function openGrnModal(lpoId) {
+    const id = parseInt(lpoId, 10);
+    const lpo = taskLposData.find(x => x.id === id);
+    if (!lpo || lpo.is_cancelled) return;
+    if (lpo.receipt_status === 'FULL') {
+        alert('This LPO is already fully received.');
+        return;
+    }
+
+    document.getElementById('grn-lpo-id').value = lpo.id;
+    document.getElementById('grn-modal-lpo-tag').textContent = lpo.lpo_no;
+    document.getElementById('grn-task-id').textContent = lpo.task_id;
+    document.getElementById('grn-task-desc').textContent = lpo.task_description;
+    document.getElementById('grn-lpo-no').textContent = lpo.lpo_no;
+    document.getElementById('grn-lpo-date').textContent = lpo.date;
+    document.getElementById('grn-supplier-name').textContent = lpo.supplier;
+    document.getElementById('grn-supplier-id').textContent = lpo.supplier_id ? `ID: ${lpo.supplier_id}` : '';
+    document.getElementById('grn-supplier-phone').textContent = lpo.supplier_phone || '—';
+    document.getElementById('grn-supplier-email').textContent = lpo.supplier_email || '—';
+    document.getElementById('grn-supplier-address').textContent = lpo.supplier_address || '—';
+    document.getElementById('grn-supplier-bank').textContent = lpo.supplier_bank || '—';
+    document.getElementById('grn-receipt-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('grn-received-by').value = '';
+    document.getElementById('grn-supplier-rep').value = '';
+    document.getElementById('grn-invoice-ref').value = '';
+    document.getElementById('grn-delivery-note').value = '';
+
+    const tbody = document.getElementById('grn-lines-body');
+    tbody.innerHTML = '';
+    if (!lpo.items.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No LPO line items.</td></tr>';
+    } else {
+        lpo.items.forEach(it => {
+            const remaining = it.qty_remaining;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${it.rfq_no || '—'}</td>
+                <td>${it.desc}</td>
+                <td>${it.qty}</td>
+                <td>${it.qty_received}</td>
+                <td>${remaining}</td>
+                <td>${it.uom}</td>
+                <td style="text-align:right;">
+                    <input type="number" step="0.01" min="0" max="${remaining}"
+                        name="grn_qty_${it.id}" class="grn-qty-input"
+                        placeholder="0" ${remaining <= 0 ? 'disabled' : ''}>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('grnModal').style.display = 'flex';
+}
+
+function closeGrnModal() {
+    document.getElementById('grnModal').style.display = 'none';
+}
+
+function openBudgetModal() {
+    document.getElementById('budgetModal').style.display = 'flex';
+}
+
+function closeBudgetModal() {
+    document.getElementById('budgetModal').style.display = 'none';
+}
+
+function openLpoListingModal() {
+    const tbody = document.getElementById('lpo-list-tbody');
+    const empty = document.getElementById('lpo-list-empty');
+    tbody.innerHTML = '';
+    hideLpoDetail();
+
+    if (!taskLposData.length) {
+        empty.style.display = 'block';
+    } else {
+        empty.style.display = 'none';
+        taskLposData.forEach(lpo => {
+            const tr = document.createElement('tr');
+            tr.className = 'lpo-list-row';
+            if (lpo.is_cancelled) tr.style.opacity = '0.65';
+            const actionCell = lpo.is_cancelled
+                ? `<button type="button" class="lpo-view-btn" data-lpo-id="${lpo.id}">Details</button>`
+                : `<button type="button" class="lpo-view-btn" data-lpo-id="${lpo.id}">Details</button>
+                   <button type="button" class="lpo-grn-btn" data-grn-lpo-id="${lpo.id}">GRN</button>
+                   <button type="button" class="lpo-cancel-btn" data-cancel-lpo-id="${lpo.id}" data-lpo-no="${lpo.lpo_no}">Cancel</button>`;
+            tr.innerHTML = `
+                <td style="font-weight:600;color:var(--primary);">${lpo.lpo_no}</td>
+                <td>${lpo.supplier}</td>
+                <td>${lpo.date}</td>
+                <td>${lpoStatusBadge(lpo)}</td>
+                <td style="text-align:right;font-family:monospace;">${lpo.total}</td>
+                <td style="text-align:right;white-space:nowrap;">${actionCell}</td>
+            `;
+            tr.querySelector('.lpo-view-btn').addEventListener('click', e => {
+                e.stopPropagation();
+                showLpoDetail(lpo.id);
+            });
+            const grnBtn = tr.querySelector('.lpo-grn-btn');
+            if (grnBtn) {
+                grnBtn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    openGrnModal(lpo.id);
+                });
+            }
+            const cancelBtn = tr.querySelector('.lpo-cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    cancelLpo(lpo.id, lpo.lpo_no);
+                });
+            }
+            tr.addEventListener('click', () => showLpoDetail(lpo.id));
+            tbody.appendChild(tr);
+        });
+    }
+    document.getElementById('lpoListModal').style.display = 'flex';
+}
+
+function closeLpoListingModal() {
+    document.getElementById('lpoListModal').style.display = 'none';
+    hideLpoDetail();
+}
+
+function showLpoDetail(lpoId) {
+    const id = parseInt(lpoId, 10);
+    const lpo = taskLposData.find(x => x.id === id);
+    if (!lpo) return;
+    activeLpoDetailId = id;
+
+    document.getElementById('lpo-list-pane').style.display = 'none';
+    const detail = document.getElementById('lpo-detail-pane');
+    detail.style.display = 'block';
+
+    document.getElementById('lpo-detail-title').textContent = lpo.lpo_no + ' — ' + lpo.supplier;
+    document.getElementById('lpo-detail-meta').innerHTML =
+        `Issued: <strong>${lpo.date}</strong> · Total: <strong class="lpo-total-highlight">${fmtCur(lpo.total)}</strong> · Lines: ${lpo.items.length} · ${lpoStatusBadge(lpo)} · GRNs: ${lpo.grn_count}`;
+
+    const itemsBody = document.getElementById('lpo-detail-items');
+    itemsBody.innerHTML = '';
+    if (!lpo.items.length) {
+        itemsBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No line items recorded.</td></tr>';
+    } else {
+        lpo.items.forEach((it, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${it.desc}${it.rfq_no ? ` <span style="color:var(--text-muted);font-size:10px;">(${it.rfq_no})</span>` : ''}</td>
+                <td>${it.qty} <span style="color:var(--text-muted);font-size:10px;">/ rcvd ${it.qty_received}</span></td>
+                <td>${it.uom}</td>
+                <td style="text-align:right;font-family:monospace;">${it.price}</td>
+                <td style="text-align:right;font-family:monospace;">${it.total}</td>
+            `;
+            itemsBody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('lpo-detail-dispatch').href = lpo.dispatch_url;
+    document.getElementById('lpo-detail-print').href = lpo.print_url;
+
+    const grnBtn = document.getElementById('lpo-detail-grn-btn');
+    const cancelBtn = document.getElementById('lpo-detail-cancel-btn');
+    const cancelled = lpo.is_cancelled;
+    const fullyReceived = lpo.receipt_status === 'FULL';
+    grnBtn.style.display = cancelled || fullyReceived ? 'none' : 'block';
+    cancelBtn.style.display = cancelled ? 'none' : 'block';
+    grnBtn.onclick = () => openGrnModal(lpo.id);
+    cancelBtn.onclick = () => cancelLpo(lpo.id, lpo.lpo_no);
+}
+
+function hideLpoDetail() {
+    document.getElementById('lpo-detail-pane').style.display = 'none';
+    document.getElementById('lpo-list-pane').style.display = 'block';
+}
+
+function grnPaymentBadge(grn) {
+    if (grn.has_voucher) return '<span class="grn-pay-badge grn-pay-done">Paid · ' + grn.voucher_no + '</span>';
+    if (!grn.has_invoice) return '<span class="grn-pay-badge grn-pay-noinv">No invoice</span>';
+    return '<span class="grn-pay-badge grn-pay-ready">Pending GM payment</span>';
+}
+
+function openGrnListingModal() {
+    const tbody = document.getElementById('grn-list-tbody');
+    const empty = document.getElementById('grn-list-empty');
+    tbody.innerHTML = '';
+    hideGrnDetail();
+    if (!taskGrnsData.length) {
+        empty.style.display = 'block';
+    } else {
+        empty.style.display = 'none';
+        taskGrnsData.forEach(grn => {
+            const tr = document.createElement('tr');
+            tr.className = 'lpo-list-row';
+            tr.innerHTML = `
+                <td style="font-weight:600;color:var(--accent);">${grn.grn_no}</td>
+                <td>${grn.lpo_no}</td>
+                <td>${grn.invoice_ref || '—'}</td>
+                <td>${grn.receipt_date}</td>
+                <td>${grnPaymentBadge(grn)}</td>
+                <td style="text-align:right;font-family:monospace;">${grn.amount}</td>
+                <td style="text-align:right;white-space:nowrap;">
+                    <button type="button" class="lpo-view-btn grn-view-btn" data-grn-id="${grn.id}">Details</button>
+                </td>`;
+            tr.querySelector('.grn-view-btn').addEventListener('click', e => {
+                e.stopPropagation();
+                showGrnDetail(grn.id);
+            });
+            tr.addEventListener('click', () => showGrnDetail(grn.id));
+            tbody.appendChild(tr);
+        });
+    }
+    document.getElementById('grnListModal').style.display = 'flex';
+}
+
+function closeGrnListingModal() {
+    document.getElementById('grnListModal').style.display = 'none';
+    hideGrnDetail();
+}
+
+function showGrnDetail(grnId) {
+    const grn = taskGrnsData.find(x => x.id === parseInt(grnId, 10));
+    if (!grn) return;
+    document.getElementById('grn-list-pane').style.display = 'none';
+    document.getElementById('grn-detail-pane').style.display = 'block';
+    document.getElementById('grn-detail-title').textContent = grn.grn_no + ' — ' + grn.supplier;
+    document.getElementById('grn-detail-meta').innerHTML =
+        `LPO: <strong>${grn.lpo_no}</strong> · Receipt: <strong>${grn.receipt_date}</strong> · Invoice: <strong>${grn.invoice_ref || '—'}</strong> · ` +
+        `Received by: ${grn.received_by || '—'} · Total invoiced amount (Gross + Taxes): <strong class="grn-total-highlight">${fmtCur(grn.amount)}</strong> · ${grnPaymentBadge(grn)}`;
+    const itemsBody = document.getElementById('grn-detail-items');
+    itemsBody.innerHTML = '';
+    grn.lines.forEach(line => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${line.rfq_no || '—'}</td><td>${line.desc}</td><td>${line.qty}</td><td>${line.uom}</td>
+            <td style="text-align:right;font-family:monospace;">${line.unit_price}</td>
+            <td style="text-align:right;font-family:monospace;">${line.line_total}</td>`;
+        itemsBody.appendChild(tr);
+    });
+    document.getElementById('grn-detail-print').href = grn.print_url;
+}
+
+function hideGrnDetail() {
+    document.getElementById('grn-detail-pane').style.display = 'none';
+    document.getElementById('grn-list-pane').style.display = 'block';
+}
+
+function finalizeAndSubmit() {
+    if (!pickedSuppliers.s1 || !pickedSuppliers.s2) {
+        alert('Please select two suppliers from the vault (green + orange columns).');
+        return;
+    }
+
+    formAwardedInput.value = resolveAwardedSupplierId();
+
+    const items = [];
+
+    document.querySelectorAll('.evaluation-winner-input').forEach(input => {
+
+        const row = input.closest('tr');
+
+        const qty = parseFloat(
+            row.querySelector('.item-qty').childNodes[0].nodeValue
+        );
+
+        const price = parseFloat(input.value || 0);
+
+        if (price > 0) {
+            items.push({
+                desc: row.querySelector('.item-description').innerText,
+                qty: qty,
+                uom: row.querySelector('.item-uom')?.innerText || "pcs",
+                price: price
+            });
+        }
+    });
+
+    document.getElementById("items_json_payload").value =
+        JSON.stringify(items);
+
+    // =========================
+    // BUDGET SYNC
+    // =========================
+    document.getElementById("id_budget-material_total_cost").value =
+        document.getElementById("material_val").value;
+
+    document.getElementById("id_budget-labour_burden").value =
+        computedLabour().toFixed(2);
+
+    document.getElementById("id_budget-misc_reserve").value =
+        document.getElementById("misc_input").value;
+
+    document.getElementById("id_budget-total_authorized_budget").value =
+        document.getElementById("grand_total_val").value;
+
+    // =========================
+    // LPO TOTAL
+    // =========================
+    document.getElementById("id_lpo-total_amount").value =
+        document.getElementById("grand_total_val").value;
+
+    // =========================
+    // SUBMIT
+    // =========================
+    document.getElementById("matrix_evaluation_form").submit();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+<div class="table">
+    <h3>Bank Accounts</h3>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Account</th>
+            <th>Description</th>
+            <th>Action</th>
+        </tr>
+
+        {% for b in banks %}
+        <tr onclick="openBankView({
+            id: '{{ b.bank_account_id }}',
+            account: '{{ b.account_number }}',
+            desc: '{{ b.description }}',
+            address: '{{ b.contact_address }}',
+            phone: '{{ b.phone }}',
+            email: '{{ b.email }}'
+        })">
+            <td>{{ b.bank_account_id }}</td>
+            <td>{{ b.account_number }}</td>
+            <td>{{ b.description }}</td>
+            <td>
+                <a href="{% url 'delete_bank' b.bank_account_id %}">❌</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>

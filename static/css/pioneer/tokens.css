@@ -1,0 +1,80 @@
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --dark: #0a0f1d;
+    --card: #1e293b;
+    --light: #f1f5f9;
+    --text: #f1f5f9;
+    --border: #334155;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --muted: #94a3b8;
+    --accent: #6366f1;
+    --surface-deep: #070b14;
+    --surface-input: #0f172a;
+    --surface-muted: #111827;
+    --sidebar-width: 280px;
+    --layout-max-width: 1920px;
+    --workspace-max-width: 1440px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font-family: "Inter", system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", monospace;
+    --vault-row-h: 44px;
+    --z-sidebar: 200;
+    --z-drawer-backdrop: 190;
+    --z-overlay: 400;
+    --z-modal: 1000;
+    --z-modal-top: 1100;
+
+    /* Extended semantics (command center + shared) */
+    --primary-bright: #60a5fa;
+    --text-strong: #ffffff;
+    --text-muted: var(--muted);
+    --font-base: 17px;
+    --font-sm: 15px;
+    --font-xs: 13px;
+
+    /* Dashboard surfaces */
+    --surface-panel: #141c28;
+    --surface-item: #0f172a;
+    --surface-item-hover: #111b2e;
+    --surface-item-border: #2a3a50;
+    --surface-gradient-start: #243044;
+    --surface-gradient-end: #1a2332;
+    --surface-table-header: #e2e8f0;
+    --surface-table-row-border: #2a3a50;
+    --surface-input-border: #475569;
+    --shadow-dropdown: 0 20px 50px rgba(0, 0, 0, 0.55);
+    --shadow-panel: 0 24px 60px rgba(0, 0, 0, 0.5);
+    --focus-ring: rgba(59, 130, 246, 0.25);
+    --overlay-scrim: rgba(4, 8, 16, 0.92);
+    --toast-success-bg: #065f46;
+    --toast-success-text: #ecfdf5;
+    --toast-error-bg: #7f1d1d;
+    --toast-error-text: #fff1f2;
+    --danger-soft-bg: rgba(248, 113, 113, 0.18);
+    --danger-soft-text: #fecaca;
+    --success-strong: #059669;
+}
+
+/* Command center (dashboard.html) — higher-contrast palette */
+body.command-center {
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --dark: #0b1220;
+    --card: #1a2332;
+    --light: #f8fafc;
+    --text: #f1f5f9;
+    --border: #3d4f66;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --muted: #cbd5e1;
+    --text-muted: #cbd5e1;
+    --surface-deep: #0b1220;
+    --surface-input: #0b1220;
+    --surface-muted: #0f172a;
+}

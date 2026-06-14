@@ -1,0 +1,13 @@
+pls add the task id and name herein :"<div class="sidebar">
+        <h2>PIONEER</h2>
+        <select onchange="window.location.href='?task_id=' + this.value;" class="form-input">
+            {% for t in tasks %}<option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>{% endfor %}
+        </select>
+    </div>
+
+    <div class="main-content">
+        <div class="panel" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+            <div><small style="color:#94a3b8;">PLANNED BUDGET (x)</small><div>US$ {{ budget_x|floatformat:2 }}</div></div>
+            <div><small style="color:#94a3b8;">ACTUAL EXPENDITURE</small><div style="color:#f59e0b;">US$ {{ actual|floatformat:2 }}</div></div>
+            <div><small style="color:#94a3b8;">VARIANCE</small><div style="color:{% if variance < 0 %}#ef4444{% else %}var(--success){% endif %};">US$ {{ variance|floatformat:2 }}</div></div>
+        </div>"

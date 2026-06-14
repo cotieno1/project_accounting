@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en" class="command-center-root">
+<head>
+<meta charset="UTF-8">
+<title>{{ app_short_name }} Command Center</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/pioneer/tokens.css' %}">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/dashboard.css' %}">
+</head>
+
+<body class="command-center">
+
+<!-- HEADER -->
+<div class="header">
+
+    <div class="header-brand">
+        <h2>{{ app_short_name }} Command Center</h2>
+        <small class="header-sub">
+            Your company: <strong>{{ org_name|default:"Not assigned" }}</strong>
+            {% if tenant_count > 1 %} &bull; {{ tenant_count }} companies on this platform{% endif %}
+        </small>
+        {% if can_switch_organization and organization_options %}
+        <div class="org-switcher">
+            <label for="orgSwitcher">Platform admin — switch company:</label>
+            <select id="orgSwitcher" class="master-input">
+                {% for o in organization_options %}
+                <option value="{{ o.org_code }}" {% if o.org_code == active_org_code %}selected{% endif %}>{{ o.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="header-actions">
+        <div class="header-actions-inner">
+            <div class="setup-wrap">
+                <button type="button" class="setup-btn" id="setupMenuBtn" onclick="MasterRegistry.toggleSetupMenu()">System &amp; Accounts Setup</button>
+                <div id="setupDropdown" class="setup-dropdown">
+						<div class="setup-item"><div><strong>Software Setup</strong><small>{{ app_name }} product branding</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openSingleton('app_settings')">Configure</button></div></div>
+						<div class="setup-item"><div><strong>Client Organizations</strong><small>Register each company on the platform (Pioneer, B, C…)</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('organization')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('organization')">List</button></div></div>
+						<div class="setup-item"><div><strong>User Accounts</strong><small>Staff login &amp; roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('user')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('user')">List</button></div></div>
+						<div class="setup-item"><div><strong>User Categories</strong><small>Access roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('role')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('role')">List</button></div></div>
+						<div class="setup-item"><div><strong>Bank Accounts</strong><small>Treasury sources</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('bank')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('bank')">List</button></div></div>
+						<div class="setup-item"><div><strong>Supplier Accounts</strong><small>Vendor master</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('supplier')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('supplier')">List</button></div></div>
+						<div class="setup-item"><div><strong>GL Accounts</strong><small>Chart of accounts</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('gl')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('gl')">List</button></div></div>
+						<div class="setup-item"><div><strong>GL Analysis Codes</strong><small>Analysis categories</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('analysis')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('analysis')">List</button></div></div>
+						<div class="setup-item"><div><strong>Project Tasks</strong><small>Job / task IDs</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('task')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('task')">List</button></div></div>
+						<div class="setup-item"><div><strong>Build Categories</strong><small>Project build types</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('build')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('build')">List</button></div></div>
+						<div class="setup-item"><div><strong>Product Items</strong><small>Inventory catalogue</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('product')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('product')">List</button></div></div>
+                </div>
+            </div>
+
+            <div class="user-info">
+                <strong>{{ username }}</strong><br>
+                <small>{{ role }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+   <div class="nav-tabs">
+        <div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+        <div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
+        <div class="tab" onclick="showSection('budget')">Budget Variance</div>
+        <a href="{% url 'ops_dashboard' %}" class="tab">Financial Ops Dashboard</a>
+    </div>
+
+    <!-- OVERVIEW SECTION -->
+    <div id="overview" class="section">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <small>Cost Performance (CPI)</small>
+                <h2>1.04</h2>
+                <span class="trend-up">▲ 2% Under Budget</span>
+            </div>
+            <div class="kpi-card">
+                <small>Schedule Index (SPI)</small>
+                <h2>0.92</h2>
+                <span class="trend-down">▼ 8% Behind Schedule</span>
+            </div>
+            <div class="kpi-card">
+                <small>Total Committed (LPO)</small>
+                <h2>$452,000</h2>
+            </div>
+            <div class="kpi-card">
+                <small>Global Integrity</small>
+                <div class="integrity-bar"><div class="integrity-fill"></div></div>
+                <small>98.4% Reconciled</small>
+            </div>
+        </div>
+
+        <div class="dashboard-row">
+            <div class="chart-container">
+                <h3>Budget vs. Actual by Project Task</h3>
+                <canvas id="budgetChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Recent Out of Pocket (GM)</h3>
+                <table>
+                    <tr><td>Task</td><td>Amount</td></tr>
+                    <tr><td>Site Security</td><td>$450.00</td></tr>
+                    <tr><td>Emergency Permit</td><td>$1,200.00</td></tr>
+                    <tr><td>Staff Lunch</td><td>$85.00</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="table">
+        <h3>System Activity</h3>
+        <div class="table-scroll">
+        <table>
+            <tr><th>Time</th><th>Action</th><th>Status</th></tr>
+            <tr>
+                <td>13:45</td>
+                <td>Bank Reconciliation</td>
+                <td class="status-success">Complete</td>
+            </tr>
+            <tr>
+                <td>13:40</td>
+                <td>PDF Processing</td>
+                <td class="status-progress">In Progress</td>
+            </tr>
+        </table>
+        </div>
+    </div>
+
+    <div class="modules">
+        {% for module in modules %}
+        <div class="card">
+            <h3>{{ module.name }}</h3>
+            <p>{{ module.description }}</p>
+            <a href="{{ module.url }}" class="btn">Open</a>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+{{ role_options|json_script:"role-options-data" }}
+{{ analysis_options|json_script:"analysis-options-data" }}
+{{ organization_options|json_script:"organization-options-data" }}
+
+<div id="masterListPanel" class="master-overlay">
+    <div class="master-panel">
+        <div class="master-panel-header">
+            <div><h2 id="masterListTitle">Master Registry</h2><p id="masterListSubtitle">List, view, edit and delete</p></div>
+            <button type="button" class="setup-link" onclick="MasterRegistry.closePanels()">Close</button>
+        </div>
+        <div class="master-toolbar">
+            <input type="search" id="masterSearch" class="master-search" placeholder="Search records…">
+            <button type="button" class="master-btn master-btn-success" id="masterListAddBtn">+ Add New</button>
+        </div>
+        <div class="master-table-wrap">
+            <table class="master-table">
+                <thead id="masterTableHead"></thead>
+                <tbody id="masterTableBody"></tbody>
+            </table>
+        </div>
+        <div class="master-footer"><span id="masterRecordCount">0 records</span><span>Esc to close</span></div>
+    </div>
+</div>
+
+<div id="masterFormPanel" class="master-overlay">
+    <div class="master-panel master-panel--form">
+        <div class="master-panel-header">
+            <div><h2 id="masterFormTitle">Add Record</h2><p>Complete all required fields</p></div>
+            <button type="button" class="setup-link" onclick="MasterRegistry.backToList()">Back to list</button>
+        </div>
+        <form id="masterEntityForm">
+            <input type="hidden" id="masterFormMode" value="create">
+            <input type="hidden" id="masterFormPk" value="">
+            <div class="master-form-grid" id="masterFormFields"></div>
+            <div class="master-form-actions">
+                <button type="button" class="master-btn master-btn-ghost" onclick="MasterRegistry.backToList()">Cancel</button>
+                <button type="submit" class="master-btn master-btn-primary" id="masterFormSave">Save Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="masterToast" class="master-toast master-toast-success"></div>
+
+<script>
+var activeEntityType = null;
+const MasterRegistry = (function () {
+    const CFG = {
+        app_settings: {
+            title: "Software Setup",
+            singleton: true,
+            pk: "1",
+            url: "/app-settings/save/",
+            fields: [
+                ["__brand_hdr","Product branding","section",0],
+                ["app_name","Software Name (e.g. Project Accounting)","text",1],
+                ["app_short_name","Short Name (menus &amp; titles)","text",1],
+                ["app_tagline","Tagline","text",0],
+                ["support_email","Support Email","email",0],
+                ["vendor_name","Vendor / Licensor","text",0],
+                ["__currency_hdr","Currency","section",0],
+                ["currency_code","Currency Code (e.g. USD)","text",1,0,"USD"],
+                ["currency_symbol","Currency Symbol (e.g. US$)","text",1,0,"US$"]
+            ]
+        },
+        organization: {
+            title: "Client Organizations",
+            url: "/organization/create/",
+            fields: [
+                ["__org_hdr","Company profile","section",0],
+                ["org_code","Organization Code","text",1,1,"PIONEER"],
+                ["name","Company Name","text",1,0,"Pioneer Contactors Co Ltd"],
+                ["short_name","Short Name","text",1,0,"Pioneer"],
+                ["registered_address","Registered Address","area",0,0,"Optional postal or registered office address"],
+                ["contact_address","Contact / Office Address","area",1,0,"TCC Building, 6th floor, Taleex Junction, Mogadishu"],
+                ["__contact_hdr","Contact details","section",0],
+                ["phone","Contact Phone","text",0,0,"+252 ..."],
+                ["email","Contact Email","email",0,0,"finance@example.com"],
+                ["tax_pin","Tax PIN / VAT No","text",0],
+                ["document_tagline","Document Tagline","text",0,0,"Operations Command"],
+                ["is_default","Platform fallback (if user has no company)","checkbox",0]
+            ]
+        },
+        user: { title: "User Accounts", url: "/users/create/",
+            fields: [
+                ["staff_no","Staff Number","text",1],
+                ["username","Login Username","text",1,1],
+                ["first_name","First Name","text",1],["last_name","Last Name","text",1],
+                ["designation","Designation","text",1],["phone","Phone","text",0],
+                ["email","Email","email",1],["contact_address","Address","area",0],
+                ["organization_id","Client Company","organization",1],
+                ["access_level_id","Role / Access Level","role",0]
+            ],
+            loginFieldsCreate: [
+                ["password","Login Password","password",1],
+                ["password_confirm","Confirm Password","password",1]
+            ],
+            loginFieldsEdit: [
+                ["password","New Password (optional)","password",0],
+                ["password_confirm","Confirm New Password","password",0]
+            ]
+        },
+        role: { title: "User Categories", url: "/roles/create/", fields: [["description","Category Name","text",1]] },
+        bank: { title: "Bank Accounts", url: "/bank/create/", fields: [
+            ["bank_account_id","Bank ID","text",1,1],["account_number","Account Number","text",1],
+            ["description","Bank Name","text",1],["phone","Phone","text",0],["email","Email","email",0],["contact_address","Address","area",0]] },
+        supplier: { title: "Supplier Accounts", url: "/supplier/create/", fields: [
+            ["supplier_id","Supplier ID","text",1,1],["description","Company Name","text",1],
+            ["bank_account_number","Bank A/C","text",0],["phone","Phone","text",0],["email","Email","email",0],["contact_address","Address","area",0]] },
+        gl: { title: "GL Accounts", url: "/gl/create/", fields: [
+            ["gl_account_id","GL Code","text",1,1],["description","Account Name","text",1],
+            ["debit_credit","Dr/Cr","drcr",0],["analysis_category","Analysis","analysis",0],
+            ["currency","Currency","text",0],["amount","Amount","number",0]] },
+        analysis: { title: "GL Analysis Codes", url: "/analysis/create/", fields: [
+            ["category_id","Code","text",1,1],["description","Description","text",1]] },
+        task: { title: "Project Tasks", url: "/task/create/", fields: [
+            ["project_id","Task ID","text",1,1],["description","Description","text",1]] },
+        build: { title: "Build Categories", url: "/build/create/", fields: [
+            ["build_cat_id","Category ID","text",1],["description","Description","text",1]] },
+        product: { title: "Product Items", url: "/product/create/", fields: [
+            ["product_id","Product Code","text",1,1],["description","Description","text",1],
+            ["unit_of_measure","UOM","text",0],["stock_quantity","Stock","number",0]] },
+    };
+    let rows = [], cols = [], roles = [], analysis = [], organizations = [];
+    function csrf() { const e = document.querySelector("[name=csrfmiddlewaretoken]"); return e ? e.value : ""; }
+    function toast(m, t) { const b = document.getElementById("masterToast"); b.textContent = m; b.className = "master-toast master-toast-" + (t||"success") + " master-toast-show"; clearTimeout(b._t); b._t = setTimeout(function(){b.classList.remove("master-toast-show");}, 3500); }
+    function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+    function loadOpts() {
+        var r=document.getElementById("role-options-data"), a=document.getElementById("analysis-options-data"), o=document.getElementById("organization-options-data");
+        if(r) roles=JSON.parse(r.textContent||"[]");
+        if(a) analysis=JSON.parse(a.textContent||"[]");
+        if(o) organizations=JSON.parse(o.textContent||"[]");
+    }
+    function openList(t) { activeEntityType=t; var c=CFG[t]; document.getElementById("setupDropdown").classList.remove("is-open"); document.getElementById("masterListTitle").textContent=c.title; document.getElementById("masterSearch").value=""; document.getElementById("masterListPanel").classList.add("is-open"); document.getElementById("masterFormPanel").classList.remove("is-open"); refresh(); }
+    function closePanels() { document.getElementById("masterListPanel").classList.remove("is-open"); document.getElementById("masterFormPanel").classList.remove("is-open"); }
+    function refresh() { var body=document.getElementById("masterTableBody"); body.innerHTML='<tr><td colspan="12" class="master-empty">Loading...</td></tr>'; fetch("/api/list/"+activeEntityType+"/").then(function(r){return r.json();}).then(function(res){ if(res.status!=="success") throw new Error(res.message||"Failed"); rows=res.data||[]; cols=res.columns||[]; render(); }).catch(function(e){ body.innerHTML='<tr><td colspan="12" class="master-empty master-error">'+esc(e.message)+"</td></tr>"; }); }
+    function render() { var q=(document.getElementById("masterSearch").value||"").trim().toLowerCase(); var filtered=rows.filter(function(r){ return !q || Object.values(r).some(function(v){ return String(v).toLowerCase().indexOf(q)>=0; }); }); document.getElementById("masterTableHead").innerHTML="<tr>"+cols.map(function(c){return "<th>"+esc(c[1])+"</th>";}).join("")+'<th class="master-actions-col">Actions</th></tr>'; var body=document.getElementById("masterTableBody"); if(!filtered.length){ body.innerHTML='<tr><td colspan="12" class="master-empty">No records</td></tr>'; document.getElementById("masterRecordCount").textContent="0 records"; return; } body.innerHTML=filtered.map(function(r){ var pk=r._pk, cells=cols.map(function(c){return "<td>"+esc(r[c[0]])+"</td>";}).join(""); return "<tr>"+cells+'<td class="master-actions-col"><button type="button" class="master-btn master-btn-ghost" onclick="MasterRegistry.viewRecord(\''+pk+'\')">View</button> <button type="button" class="master-btn master-btn-primary" onclick="MasterRegistry.editRecord(\''+pk+'\')">Edit</button> <button type="button" class="master-btn master-btn-danger" onclick="MasterRegistry.deleteRecord(\''+pk+'\')">Delete</button></td></tr>'; }).join(""); document.getElementById("masterRecordCount").textContent=filtered.length+" of "+rows.length+" records"; }
+    function buildUserFields(c, mode) {
+        var fields = c.fields.slice();
+        if (mode === "create" && c.loginFieldsCreate) {
+            fields = fields.slice(0, 2).concat(c.loginFieldsCreate, fields.slice(2));
+            fields.splice(0, 0, ["__login_hdr","Login Access","section",0]);
+        } else if (mode === "edit" && c.loginFieldsEdit) {
+            fields = fields.concat([["__login_hdr","Change Login Password","section",0]]).concat(c.loginFieldsEdit);
+        }
+        return fields;
+    }
+    function fieldHtml(f, mode) {
+        var n=f[0], label=f[1], typ=f[2], req=f[3], pk=f[4], id="mf_"+n, rq=req?" required":"";
+        if (typ==="section") {
+            var hint = "Complete the fields below.";
+            if (n==="__login_hdr") hint = "User signs in at /login/ with username and password below.";
+            if (n==="__brand_hdr") hint = "Shown in app menus, login screen, and browser titles. Example: Project Accounting.";
+            if (n==="__org_hdr") hint = "Each global client on Project Accounting is registered here. Pioneer is one example. Add Company B, C, etc. the same way.";
+            if (n==="__contact_hdr") hint = "Phone and email appear below the address on printed documents.";
+            return '<div class="master-field master-field-hdr" style="grid-column:1/-1;margin-top:4px;"><label>'+label+'</label><p class="master-field-hint">'+hint+'</p></div>';
+        }
+        if (typ==="checkbox") return '<div class="master-field" style="grid-column:1/-1;"><label style="display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0;font-size:15px;"><input type="checkbox" class="master-input" style="width:auto;" name="'+n+'" id="'+id+'" value="1"> '+label+'</label></div>';
+        if (typ==="area") {
+            var ph = f[5] ? ' placeholder="'+esc(f[5])+'"' : '';
+            return '<div class="master-field"><label>'+label+(req?" *":"")+'</label><textarea class="master-input" name="'+n+'" id="'+id+'" rows="3"'+ph+rq+'></textarea></div>';
+        }
+        if (typ==="password") return '<div class="master-field"><label>'+label+(req?" *":"")+'</label><input type="password" autocomplete="new-password" class="master-input" name="'+n+'" id="'+id+'" placeholder="'+(req?"Min. 8 characters": "Leave blank to keep current")+'"'+rq+'></div>';
+        if (typ==="drcr") return '<div class="master-field"><label>'+label+'</label><select class="master-input" name="'+n+'" id="'+id+'"><option value="DR">Debit (DR)</option><option value="CR">Credit (CR)</option></select></div>';
+        if (typ==="role") return '<div class="master-field"><label>'+label+'</label><select class="master-input" name="'+n+'" id="'+id+'"><option value="">Select role</option>'+roles.map(function(r){return '<option value="'+r.id+'">'+esc(r.description)+"</option>";}).join("")+"</select></div>";
+        if (typ==="organization") return '<div class="master-field"><label>'+label+(req?" *":"")+'</label><select class="master-input" name="'+n+'" id="'+id+'"'+rq+'><option value="">Select company</option>'+organizations.map(function(r){return '<option value="'+esc(r.org_code)+'">'+esc(r.name)+"</option>";}).join("")+"</select></div>";
+        if (typ==="analysis") return '<div class="master-field"><label>'+label+'</label><select class="master-input" name="'+n+'" id="'+id+'"><option value="">Select analysis</option>'+analysis.map(function(r){return '<option value="'+esc(r.category_id)+'">'+esc(r.description)+"</option>";}).join("")+"</select></div>";
+        var ro=(pk&&mode==="edit")?' readonly class="master-input is-readonly"':' class="master-input"';
+        var inpTyp = typ==="number"?"number":(typ==="email"?"email":"text");
+        var ph = f[5] ? ' placeholder="'+esc(f[5])+'"' : '';
+        return '<div class="master-field"><label>'+label+(req?" *":"")+'</label><input type="'+inpTyp+'" name="'+n+'" id="'+id+'"'+ro+ph+rq+"></div>";
+    }
+    function openForm(mode,pk) {
+        var c=CFG[activeEntityType];
+        var fields = (activeEntityType==="user") ? buildUserFields(c, mode) : c.fields;
+        document.getElementById("masterFormTitle").textContent=(mode==="edit"?"Edit ":mode==="view"?"View ":"Add ")+c.title;
+        document.getElementById("masterFormMode").value=mode==="view"?"edit":mode;
+        document.getElementById("masterFormPk").value=pk||"";
+        document.getElementById("masterFormFields").innerHTML=fields.map(function(f){return fieldHtml(f,mode);}).join("");
+        document.getElementById("masterFormPanel").classList.add("is-open");
+        document.getElementById("masterListPanel").classList.remove("is-open");
+        document.getElementById("masterFormSave").style.display=mode==="view"?"none":"";
+        document.querySelectorAll("#masterEntityForm input, #masterEntityForm select, #masterEntityForm textarea").forEach(function(el){el.disabled=mode==="view";});
+        var loadPk = pk || (c.singleton ? (c.pk || "1") : "");
+        if((mode==="edit"||mode==="view")&&loadPk){
+            fetch("/api/detail/"+activeEntityType+"/"+encodeURIComponent(loadPk)+"/").then(function(r){return r.json();}).then(function(res){
+                Object.entries(res.data||{}).forEach(function(kv){
+                    var el=document.querySelector('#masterEntityForm [name="'+kv[0]+'"]');
+                    if(!el) return;
+                    if(el.type==="checkbox") el.checked = kv[1]===true || kv[1]==="true" || kv[1]===1 || kv[1]==="1";
+                    else el.value=kv[1]!=null?kv[1]:"";
+                });
+            });
+        }
+    }
+    function openSingleton(t) {
+        activeEntityType = t;
+        document.getElementById("setupDropdown").classList.remove("is-open");
+        document.getElementById("masterListPanel").classList.remove("is-open");
+        openForm("edit", CFG[t].pk || "1");
+    }
+    function openAdd(t) { if(t) openList(t); openForm("create",""); }
+    function editRecord(pk) { openForm("edit",pk); }
+    function viewRecord(pk) { openForm("view",pk); }
+    function backToList() { document.getElementById("masterFormPanel").classList.remove("is-open"); document.getElementById("masterListPanel").classList.add("is-open"); document.querySelectorAll("#masterEntityForm input, #masterEntityForm select, #masterEntityForm textarea").forEach(function(el){el.disabled=false;}); refresh(); }
+    function saveForm(e) {
+        e.preventDefault();
+        var c=CFG[activeEntityType], mode=document.getElementById("masterFormMode").value;
+        if (activeEntityType==="organization") {
+            var cn=document.querySelector('#masterEntityForm [name="name"]');
+            var ca=document.querySelector('#masterEntityForm [name="contact_address"]');
+            if (cn && !cn.value.trim()) { toast("Company name is required.","error"); return; }
+            if (ca && !ca.value.trim()) { toast("Contact / office address is required.","error"); return; }
+        }
+        if (activeEntityType==="user") {
+            var pw=document.querySelector('#masterEntityForm [name="password"]');
+            var pwc=document.querySelector('#masterEntityForm [name="password_confirm"]');
+            if (pw) {
+                if (mode==="create" && !pw.value.trim()) { toast("Login password is required.","error"); return; }
+                if (pw.value && pw.value.length < 8) { toast("Password must be at least 8 characters.","error"); return; }
+                if (pw.value !== (pwc ? pwc.value : "")) { toast("Passwords do not match.","error"); return; }
+            }
+        }
+        var fd=new FormData(document.getElementById("masterEntityForm"));
+        fd.append("mode", mode);
+        var pk=document.getElementById("masterFormPk").value;
+        if(pk) fd.append("original_id",pk);
+        fetch(c.url,{method:"POST",body:fd,headers:{"X-CSRFToken":csrf()}}).then(function(r){return r.json();}).then(function(res){
+            if(res.status==="success"){
+                toast(res.message);
+                if(c.singleton) closePanels();
+                else backToList();
+            } else toast(res.message||"Save failed","error");
+        }).catch(function(){toast("Save failed","error");});
+    }
+    function deleteRecord(pk) { if(!confirm("Delete this record permanently?")) return; fetch("/api/delete/"+activeEntityType+"/"+encodeURIComponent(pk)+"/",{method:"DELETE"}).then(function(r){return r.json();}).then(function(res){ if(res.status==="success"){toast(res.message);refresh();}else toast(res.message||"Delete failed","error"); }); }
+    function toggleSetupMenu() { document.getElementById("setupDropdown").classList.toggle("is-open"); }
+    function bindOrgSwitcher() {
+        var sw = document.getElementById("orgSwitcher");
+        if (!sw) return;
+        sw.addEventListener("change", function() {
+            var fd = new FormData();
+            fd.append("org_code", sw.value);
+            fetch("/api/switch-organization/", { method: "POST", body: fd, headers: { "X-CSRFToken": csrf() } })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.status === "success") { toast(res.message); window.location.reload(); }
+                    else toast(res.message || "Switch failed", "error");
+                })
+                .catch(function() { toast("Switch failed", "error"); });
+        });
+    }
+    document.addEventListener("DOMContentLoaded",function(){ loadOpts(); bindOrgSwitcher(); document.getElementById("masterSearch").addEventListener("input",render); document.getElementById("masterEntityForm").addEventListener("submit",saveForm); document.getElementById("masterListAddBtn").addEventListener("click",function(){openAdd(activeEntityType);}); document.addEventListener("click",function(e){ var m=document.getElementById("setupDropdown"), b=document.getElementById("setupMenuBtn"); if(m&&b&&!m.contains(e.target)&&!b.contains(e.target)) m.classList.remove("is-open"); }); document.addEventListener("keydown",function(e){ if(e.key==="Escape") closePanels(); }); });
+    return { openList:openList, openAdd:openAdd, openSingleton:openSingleton, editRecord:editRecord, viewRecord:viewRecord, deleteRecord:deleteRecord, backToList:backToList, closePanels:closePanels, toggleSetupMenu:toggleSetupMenu };
+})();
+function showSection(id) {
+    document.querySelectorAll('.section').forEach(function (s) { s.style.display = 'none'; });
+    document.querySelectorAll('.nav-tabs .tab').forEach(function (t) { t.classList.remove('active'); });
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+    document.querySelectorAll('.nav-tabs .tab').forEach(function (t) {
+        if (t.getAttribute('onclick') && t.getAttribute('onclick').indexOf(id) >= 0) t.classList.add('active');
+    });
+}
+</script>
+
+</body>
+</html>

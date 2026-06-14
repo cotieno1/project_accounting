@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+{% include "includes/lpo_document_styles.html" %}
+
+<div class="lpo-screen-wrap" style="max-width: 920px; margin: 0 auto; padding: 24px 16px 48px; font-family: 'Source Sans 3', 'Segoe UI', sans-serif;">
+
+    <div class="no-print lpo-toolbar">
+        <span class="lpo-toolbar-label">LPO ready for print or PDF archive</span>
+        <div style="display:flex; flex-wrap:wrap; gap:10px;">
+            <button type="button" onclick="window.print()" class="lpo-btn" style="background:#1e3a8a; color:#fff; border:none; padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer;">
+                Print
+            </button>
+            <a href="{% url 'lpo_export_pdf' %}?task_id={{ task.project_id }}&supplier_id={% if supplier_account %}{{ supplier_account.supplier_id }}{% else %}{{ request.GET.supplier_id }}{% endif %}"
+               class="lpo-btn" style="background:#059669; color:#fff; text-decoration:none; padding:10px 18px; border-radius:8px; font-weight:600;">
+                Download PDF
+            </a>
+            <a href="{% url 'lpo_export_pdf' %}?task_id={{ task.project_id }}&supplier_id={% if supplier_account %}{{ supplier_account.supplier_id }}{% else %}{{ request.GET.supplier_id }}{% endif %}&save=1"
+               class="lpo-btn" style="background:#047857; color:#fff; text-decoration:none; padding:10px 18px; border-radius:8px; font-weight:600;">
+                Save PDF to server
+            </a>
+            {% if pdf_saved %}
+            <span style="font-size:12px; color:#047857; align-self:center;">Saved to server</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="lpo-document" style="background:#fff; box-shadow:0 4px 24px rgba(15,23,42,0.12); border-radius:4px; overflow:hidden;">
+        {% include "lpo/document_content.html" %}
+    </div>
+
+    <div class="no-print" style="text-align:center; margin-top:24px;">
+        <a href="/bid-evaluation/?task_id={{ task.project_id }}" style="color:#475569; text-decoration:none; font-size:14px;">← Back to bid evaluation</a>
+    </div>
+</div>
+
+<style>
+    @media print {
+        @page { size: A4; margin: 12mm; }
+        .no-print { display: none !important; }
+        body, main { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+        .lpo-screen-wrap { max-width: none !important; padding: 0 !important; }
+        #lpo-document { box-shadow: none !important; border-radius: 0 !important; }
+        .lpo-paper { box-shadow: none !important; padding: 0 !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+</style>
+{% endblock %}

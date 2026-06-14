@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="no-print d-flex justify-content-between align-items-center alert alert-success shadow-sm mb-4">
+        <span class="fw-bold"><i class="fas fa-lock me-2"></i> Procurement Pipeline Verified: LPO ready for official dispatch.</span>
+        <button onclick="window.print()" class="btn btn-primary d-flex align-items-center gap-2">
+            <i class="fas fa-print"></i> EXECUTE PRINT / EXPORT LPO PDF
+        </button>
+    </div>
+
+    <div class="card shadow-lg border-2 border-dark p-4 bg-white" id="lpo-document">
+        <div class="card-body">
+            
+            <div class="d-flex justify-content-between align-items-start border-bottom border-2 border-dark pb-4 mb-4">
+                <div>
+                    <h2 class="text-primary fw-bold mb-1" style="letter-spacing: 0.5px;">PIONEER INFRASTRUCTURE ECOSYSTEM</h2>
+                    <p class="text-muted mb-0 font-monospace">
+                        Mombasa Road Operations Center<br>
+                        Nairobi, Kenya
+                    </p>
+                </div>
+                <div class="text-end">
+                    <h2 class="text-dark fw-bold mb-0" style="letter-spacing: 1px;">LOCAL PURCHASE ORDER</h2>
+                    <p class="fs-5 text-danger font-monospace mb-1"><strong>NO: {{ lpo_no }}</strong></p>
+                    <p class="text-muted mb-0 small">Date: {{ date }}</p>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <h6 class="text-uppercase text-muted fw-bold border-bottom pb-1 mb-2" style="font-size: 11px;">Issued To (Supplier):</h6>
+                        <h5 class="text-dark fw-bold text-uppercase mb-1">{{ winning_supplier }}</h5>
+                        <p class="text-muted mb-0 small">
+                            Verified Commercial Vendor Profile<br>
+                            Procurement Pipeline Network
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <h6 class="text-uppercase text-muted fw-bold border-bottom pb-1 mb-2" style="font-size: 11px;">Deliver To / Project Site:</h6>
+                        <h5 class="text-dark fw-bold mb-1">TASK ID: {{ task.project_id }}</h5>
+                        <p class="text-muted mb-0 small text-uppercase">
+                            <strong>Scope:</strong> {{ task.description|default:"Infrastructure Execution" }}<br>
+                            Pioneer Infrastructure Logistics Hub
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="text-uppercase fw-bold text-dark mb-3" style="letter-spacing: 0.5px;">I. Itemized Technical BOM Supply Requirements</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-secondary text-uppercase" style="font-size: 11px;">
+                        <tr>
+                            <th style="width: 55%;">Material Line Description</th>
+                            <th style="text-align: right; width: 20%;">Order Quantity</th>
+                            <th style="text-align: right; width: 25%;">Unit of Measure</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in build %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ item.description }}</td>
+                            <td style="text-align: right;" class="fw-bold font-monospace">{{ item.qty }}</td>
+                            <td style="text-align: right;" class="text-uppercase text-muted font-monospace">{{ item.uom|default:"pcs" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">No structural items bound to this procurement framework.</td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <tr class="table-light fw-bold">
+                            <td colspan="1" class="text-end text-uppercase fs-6">Contracted Supply Value Baseline:</td>
+                            <td colspan="2" style="text-align: right;" class="fs-5 text-primary font-monospace border-bottom border-4 border-double border-dark">
+                                US$ {{ materials_total|floatformat:2 }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-3 border rounded bg-light mt-4" style="font-size: 12px; line-height: 1.6;">
+                <strong class="text-dark text-uppercase d-block mb-1"><i class="fas fa-gavel me-1"></i> General Purchase Terms & Conditions:</strong>
+                <ol class="mb-0 ps-3 text-muted">
+                    <li>Please acknowledge receipt of this LPO and confirm immediate mobilization/delivery timelines.</li>
+                    <li>All items delivered must conform strictly to the technical thresholds outlined in the baseline Bill of Materials (BOM).</li>
+                    <li>Invoices must reference LPO Number <strong class="text-dark">{{ lpo_no }}</strong> to facilitate prompt corporate accounting verification and funds settlement.</li>
+                </ol>
+            </div>
+
+            <div class="row style-signatures" style="margin-top: 80px;">
+                <div class="col-6">
+                    <div class="mx-auto text-center border-top border-dark pt-2 w-75 font-monospace" style="font-size: 12px;">
+                        <strong>PREPARED BY (PROCUREMENT)</strong><br>
+                        Pioneer Logistics Hub Terminal
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="mx-auto text-center border-top border-dark pt-2 w-75 font-monospace" style="font-size: 12px;">
+                        <strong>AUTHORIZED SIGNATORY (CEO)</strong><br>
+                        Pioneer Management Board
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card-footer no-print bg-transparent border-0 px-0 mt-3 mb-5">
+        <a href="/rfq-manager/print-memo/{{ task.project_id }}/?winner={{ winning_supplier|urlencode }}&mat={{ materials_total }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Return to Authorization Memo
+        </a>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .no-print, .main-sidebar, .navbar, .app-header, footer { display: none !important; }
+        body, .content-wrapper, .container { padding: 0 !important; margin: 0 !important; background: #fff !important; }
+        .card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+        #lpo-document { border: none !important; padding: 0 !important; }
+        .style-signatures { margin-top: 100px !important; }
+    }
+</style>
+{% endblock %}

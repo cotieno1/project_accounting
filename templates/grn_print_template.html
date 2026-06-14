@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GRN {{ grn.grn_no }}</title>
+{% include "includes/lpo_document_styles.html" %}
+</head>
+<body class="pioneer-doc-print">
+<div class="screen-toolbar no-print">
+<button type="button" onclick="window.print()">Print GRN and Letter</button>
+<a href="{{ lpo_list_url }}">Back to LPO Listing</a>
+<a href="/bid-evaluation/?task_id={{ task.project_id }}" class="toolbar-muted">Bid Evaluation</a>
+</div>
+<div class="lpo-paper lpo-sheet"><div class="doc">
+<div class="brand-bar"></div>
+{% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Delivery Acknowledgement Letter" %}
+<table class="meta-table">
+<tr><th>Document</th><th>GRN / LPO</th><th>Date</th></tr>
+<tr><td>Delivery Acknowledgement</td><td><span class="lpo-no">{{ grn.grn_no }}</span> / {{ lpo.lpo_no }}</td><td>{{ receipt_date_display }}</td></tr>
+</table>
+<table class="parties">
+<tr><th>To — Supplier</th><th>Re — Project</th></tr>
+<tr>
+<td><div class="party-name">{% if supplier %}{{ supplier.description }}{% else %}Supplier{% endif %}</div><div class="muted">Attn: {{ supplier_rep }}</div></td>
+<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description }}</div><div class="muted">Invoice: {{ grn.invoice_ref|default:"—" }}</div></td>
+</tr>
+</table>
+{% if is_full_delivery %}<div class="status-full">Complete / Full Delivery Confirmed</div>
+<div class="terms"><strong>Letter</strong><div class="memo-body"><p>Dear Sir/Madam,</p><p>We formally acknowledge the <strong>complete delivery</strong> against LPO <strong>{{ lpo.lpo_no }}</strong> for task <strong>{{ task.project_id }} — {{ task.description }}</strong>.</p><p>All ordered line items have been received in full. Please retain the attached signed GRN.</p><p>Thank you for your continued partnership.</p></div></div>
+{% else %}<div class="status-partial">Partial Delivery — Balance Outstanding</div>
+<div class="terms"><strong>Letter</strong><div class="memo-body"><p>Dear Sir/Madam,</p><p>We acknowledge a <strong>partial delivery</strong> against LPO <strong>{{ lpo.lpo_no }}</strong> (GRN <strong>{{ grn.grn_no }}</strong>).</p></div></div>
+<table class="lines"><thead><tr><th>RFQ</th><th>Description</th><th>UOM</th><th class="num">Ordered</th><th class="num">Item delivered</th><th class="num">Items outstanding</th></tr></thead>
+<tbody>{% for line in outstanding_lines %}<tr{% if forloop.counter|divisibleby:2 %} class="zebra"{% endif %}><td>{{ line.rfq_no }}</td><td>{{ line.description }}</td><td class="center">{{ line.uom }}</td><td class="num">{{ line.ordered }}</td><td class="num">{{ line.received }}</td><td class="num"><strong>{{ line.outstanding }}</strong></td></tr>{% endfor %}</tbody></table>
+{% endif %}
+<table class="signatures"><tr>
+<td><div class="line">{{ company_rep }}</div><div class="hint">For {{ org_short_name|default:org_name }}</div></td>
+<td style="width:10%"></td>
+<td><div class="line">{{ supplier_rep }}</div><div class="hint">Supplier Representative</div></td>
+</tr></table>
+<p class="footer-note">Letter — {{ grn.grn_no }} — {{ receipt_date_display }}</p>
+</div></div>
+
+<div class="lpo-paper lpo-sheet"><div class="doc">
+<div class="brand-bar"></div>
+{% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Goods Received Note" %}
+<table class="meta-table">
+<tr><th>Document</th><th>GRN Number</th><th>Receipt date</th></tr>
+<tr><td>Goods Received Note</td><td class="lpo-no">{{ grn.grn_no }}</td><td>{{ receipt_date_display }}</td></tr>
+</table>
+<table class="parties">
+<tr><th>Supplier</th><th>Project / LPO</th></tr>
+<tr>
+<td><div class="party-name">{% if supplier %}{{ supplier.description }}{% else %}—{% endif %}</div><div class="muted">ID: {% if supplier %}{{ supplier.supplier_id }}{% else %}—{% endif %}</div><div class="muted">Delivery note: {{ grn.delivery_note_ref|default:"—" }}</div></td>
+<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description }}</div><div class="muted">LPO: {{ lpo.lpo_no }} · Invoice: {{ grn.invoice_ref|default:"—" }}</div><div class="muted">Status: {% if is_full_delivery %}FULL{% else %}PARTIAL{% endif %}</div></td>
+</tr>
+</table>
+<table class="lines">
+<thead><tr><th class="center">#</th><th>RFQ</th><th>Description</th><th class="center">UOM</th><th class="num">LPO Qty</th><th class="num">Item delivered</th><th class="num">Cumulative</th><th class="num">Items outstanding</th><th class="num">Unit cost (US$)</th><th class="num">Total invoiced (US$)</th></tr></thead>
+<tbody>{% for line in receipt_lines %}<tr{% if forloop.counter|divisibleby:2 %} class="zebra"{% endif %}><td class="center">{{ forloop.counter }}</td><td>{{ line.rfq_no }}</td><td>{{ line.description }}</td><td class="center">{{ line.uom }}</td><td class="num">{{ line.ordered }}</td><td class="num"><strong>{{ line.this_receipt }}</strong></td><td class="num">{{ line.cumulative_received }}</td><td class="num">{% if line.outstanding > 0 %}{{ line.outstanding }}{% else %}—{% endif %}</td><td class="num">{{ line.unit_price }}</td><td class="num">{{ line.line_total }}</td></tr>{% endfor %}</tbody>
+<tfoot><tr><td colspan="9" class="grand-label">Total invoiced amount (Gross + Taxes)</td><td class="grand-value">{{ receipt_total }}</td></tr></tfoot>
+</table>
+<table class="signatures"><tr>
+<td><div class="line">{{ company_rep }}</div><div class="hint">Received for {{ org_short_name|default:org_name }}</div></td>
+<td style="width:10%"></td>
+<td><div class="line">{{ supplier_rep }}</div><div class="hint">Delivered for Supplier</div></td>
+</tr></table>
+<p class="footer-note">GRN — {{ grn.grn_no }} — {{ receipt_date_display }}</p>
+</div></div>
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},500)});</script>
+</body></html>

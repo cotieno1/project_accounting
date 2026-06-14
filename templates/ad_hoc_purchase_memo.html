@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ad-Hoc Memo | {{ active_task.project_id }}</title>
+    <style>
+        body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; color: #111; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; font-size: 13px; }
+        .fin { display: flex; justify-content: space-between; margin: 6px 0; font-family: monospace; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    {% include "includes/print_correspondence_header.html" with doc_subtitle="Ad-Hoc Purchase Memorandum" %}
+    <p><strong>Task:</strong> {{ active_task.project_id }} — {{ active_task.description }}</p>
+    <p><strong>Supplier:</strong> {{ batch.supplier|default:"TBD" }}</p>
+    <div class="fin"><span>Misc budget</span><span>US$ {{ misc_budget|floatformat:2 }}</span></div>
+    <div class="fin"><span>Draft total</span><span>US$ {{ actual|floatformat:2 }}</span></div>
+    <div class="fin"><span>Variance</span><span>US$ {{ variance|floatformat:2 }}</span></div>
+    <table>
+        <thead><tr><th>Description</th><th>UOM</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
+        <tbody>
+            {% for item in batch.items %}
+            <tr><td>{{ item.description }}</td><td>{{ item.uom }}</td><td>{{ item.qty }}</td><td>{{ item.unit_price }}</td><td>{{ item.total }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="no-print">
+        <button onclick="window.print()">Print</button>
+        <a href="/misc-purchase/?task_id={{ active_task.project_id }}">Back</a>
+    </p>
+</body>
+</html>

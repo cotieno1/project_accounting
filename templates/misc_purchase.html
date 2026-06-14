@@ -1,0 +1,876 @@
+{% extends "layouts/cockpit.html" %}
+{% load static %}
+{% block title %}Pioneer | Ad-Hoc Requisition Order{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-purchase.css' %}">
+{% endblock %}
+{% block sidebar %}
+<h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
+        <small style="color: var(--muted); display: block; margin: 16px 0;">Somalia Ops Command</small>
+        <select onchange="window.location.href='?task_id=' + this.value;" class="form-input">
+            {% for t in tasks %}
+            <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
+            {% endfor %}
+        </select>
+        
+        <div class="sidebar-block">
+            <button type="button" class="btn-action" id="roListToggle" onclick="toggleRoList()" style="width:100%;background:#1e293b;">
+                📋 RO List{% if adhoc_ro_listing %} ({{ adhoc_ro_listing|length }}){% endif %}
+            </button>
+            <div id="roListPanel" class="ro-list-panel{% if ro_list_open %} is-open{% endif %}">
+                <ul class="ro-list">
+                    {% for ro in adhoc_ro_listing %}
+                    {% if ro.id %}
+                    <li class="ro-list-item {{ ro.status_class }}{% if ro.is_active %} ro-list-active{% endif %}"
+                        onclick="window.location.href='?task_id={{ active_task.project_id }}&mpo_id={{ ro.id }}&ro_list=1'">
+                        <span class="ro-list-ref">{{ ro.ref }}</span>
+                        <div class="ro-list-meta">
+                            <span class="ro-status-badge">{{ ro.status_label }}</span>
+                            <span class="ro-list-amt">{{ currency_symbol }} {{ ro.amount|floatformat:2 }}</span>
+                        </div>
+                        <span class="ro-list-kind">{{ ro.kind }} · {{ ro.date|date:"d M Y" }}</span>
+                    </li>
+                    {% else %}
+                    <li class="ro-list-item {{ ro.status_class }}">
+                        <span class="ro-list-ref">{{ ro.ref }}</span>
+                        <div class="ro-list-meta">
+                            <span class="ro-status-badge">{{ ro.status_label }}</span>
+                            <span class="ro-list-amt">{{ currency_symbol }} {{ ro.amount|floatformat:2 }}</span>
+                        </div>
+                        <span class="ro-list-kind">{{ ro.kind }} · {{ ro.date|date:"d M Y" }}</span>
+                    </li>
+                    {% endif %}
+                    {% empty %}
+                    <li class="ro-list-empty">No ad-hoc ROs for this task yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="sidebar-block budget-status-panel" style="cursor:pointer;" onclick="openBudgetModal()" title="Click for full budget breakdown">
+            <span class="nav-label">2. Budget status</span>
+            <div class="budget-row">
+                <span class="budget-label">Material (RO grand total)</span>
+                <span class="budget-value" id="sidebarMaterialVal">{{ currency_symbol }} {{ material_budget|floatformat:2 }}</span>
+            </div>
+            <div class="budget-row">
+                <span class="budget-label">Actual RO total</span>
+                <span class="budget-value" id="sidebarActualVal" style="color:var(--warning);">{{ currency_symbol }} {{ ro_actual_total|floatformat:2 }}</span>
+            </div>
+            <div class="budget-row budget-variance">
+                <span class="budget-label">Variance (Material − Actual)</span>
+                <span class="budget-value {% if material_variance_over %}budget-value-over{% else %}budget-value-ok{% endif %}" id="sidebarVarianceVal">{{ currency_symbol }} {{ material_variance|floatformat:2 }}</span>
+            </div>
+            {% if adhoc_material_committed and provisional_budget_ref %}
+            <p style="font-size:10px;color:var(--success);margin:8px 0 0;">Task budget confirmed — {{ provisional_budget_ref }}.</p>
+            {% elif has_provisional_budget %}
+            <p style="font-size:10px;color:var(--warning);margin:8px 0 0;">Provisional budget — confirm via Review to create MRO baseline.</p>
+            {% elif not adhoc_material_committed %}
+            <p style="font-size:10px;color:var(--muted);margin:8px 0 0;">Material line tracks the RO grand total until MRO is confirmed.</p>
+            {% endif %}
+        </div>
+
+        <div class="sidebar-block" style="margin-top:20px;padding:12px;background:#0f172a;border:1px solid var(--border);border-radius:8px;font-size:12px;line-height:1.5;color:var(--muted);">
+            <strong style="color:var(--primary);display:block;margin-bottom:6px;">Payment vouchers</strong>
+            {{ pv_gate.message }}
+            {% if pv_gate.can_raise_pv %}
+            <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}&open_adhoc_ro_period=1" class="btn-action btn-success" style="width:100%;margin-top:10px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">GM Disbursement desk →</a>
+            {% endif %}
+        </div>
+
+        <span class="nav-label" style="margin-top: 24px;">Ad-Hoc Requisition Order</span>
+        {% if show_review_budget %}
+        <button type="button" class="btn-action" onclick="openReviewModal()" style="width:100%;margin-top:8px;" title="Lock RO total with line items, then review ad-hoc budget">Review Ad-Hoc Budget</button>
+        {% elif adhoc_material_committed and provisional_budget_ref %}
+        <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.4;">{{ provisional_budget_ref }} confirmed — awaiting CEO approval and fund release for payment vouchers.</p>
+        {% endif %}
+        <button type="button" class="btn-action" onclick="window.location.href='{% url 'misc_budget_actuals' %}?task_id={{ active_task.project_id }}'" style="width:100%;margin-top:10px;background:#047857;">Purchase Audit</button>
+        <div style="margin-top: auto; padding-top: 20px;">
+            <a href="/ops-dashboard/?task_id={{ active_task.project_id }}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Dashboard</a>
+        </div>
+{% endblock %}
+{% block workspace %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'authorize_mpo' %}" id="miscAdhocCommitForm" style="display:none;">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="mpo_id" id="commit_mpo_id" value="{% if viewed_mpo %}{{ viewed_mpo.id }}{% elif draft_mpo %}{{ draft_mpo.id }}{% endif %}">
+            <input type="hidden" name="budget-material_total_cost" id="commit_budget-material_total_cost">
+            <input type="hidden" name="budget-labour_burden" id="commit_budget-labour_burden">
+            <input type="hidden" name="budget-misc_reserve" id="commit_budget-misc_reserve">
+            <input type="hidden" name="budget-total_authorized_budget" id="commit_budget-total_authorized_budget">
+            <input type="hidden" name="RO-total_amount" id="commit_RO-total_amount">
+            <input type="hidden" name="grand_total" id="commit_grand_total">
+        </form>
+
+        <div class="panel task-vendor-panel">
+            <div class="task-vendor-row">
+                <div class="task-vendor-left">
+                    <h1 class="page-title">Ad-Hoc Requisition Order</h1>
+                    <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
+                    {% if ro_reference %}<span style="font-size:12px;color:var(--muted);font-family:monospace;">{{ ro_reference }}</span>{% endif %}
+                </div>
+                <div class="task-vendor-right">
+                    {% if ro_mode == 'empty' and not task_has_baseline %}
+                    <form method="POST" style="margin:0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                        <button type="submit" name="new_ro" class="btn-action btn-success">+ Start MRO</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            <p style="color:var(--muted);margin:10px 0 0;">{{ active_task.description }}</p>
+            {% if ro_reference %}
+            <p style="font-size:12px;color:var(--success);margin-top:8px;">
+                RO Ref: <strong style="font-family:monospace;letter-spacing:0.5px;">{{ ro_reference }}</strong>
+                {% if display_mpo %} · {{ display_mpo.items.count }} line(s) · {{ display_mpo.get_funding_status_display }}{% endif %}
+            </p>
+            {% endif %}
+        </div>
+        
+        <div class="evaluation-grid">
+        <div id="roWorkspace" class="ro-workspace table-pane">
+            <div class="ro-workspace-body">
+                <div id="roAddPanel">
+                    {% if ro_mode == 'detail' or ro_mode == 'locked' %}
+                    <div class="ro-detail-banner">
+                        <span class="ro-detail-ref">{{ provisional_budget_ref|default:ro_reference }}</span>
+                        · {{ display_mpo.get_funding_status_display }}
+                        · {{ currency_symbol }} {{ actual|floatformat:2 }}
+                        {% if budget_formulation_source == 'committed' %}
+                        <span class="ro-detail-meta">MRO baseline locked. Officer payment vouchers are raised at GM Disbursement after CEO approves the budget and releases funds.</span>
+                        {% elif ro_submitted %}
+                        <span class="ro-detail-meta">Submitted — confirm budget via Review to establish the MRO baseline.</span>
+                        {% else %}
+                        <span class="ro-detail-meta">Viewing locked baseline lines for this task.</span>
+                        {% endif %}
+                    </div>
+                    {% elif ro_mode == 'draft' and has_provisional_budget and not baseline_mro_ref %}
+                    <div class="ro-detail-banner" style="background:rgba(245,158,11,0.12);border-color:var(--warning);color:#fcd34d;">
+                        <strong>Provisional budget</strong> — {{ ro_reference|default:"Draft RO" }}. Lock lines and review to confirm the task MRO baseline (one per task).
+                    </div>
+                    {% elif ro_mode == 'empty' %}
+                    <div class="ro-empty-state">
+                        <h4>No ad-hoc MRO on this task</h4>
+                        <p style="font-size:12px;margin:0 0 16px;">One budget and one MRO per task. Start the baseline requisition order to build your provisional budget.</p>
+                        <form method="POST" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                            <button type="submit" name="new_ro" class="btn-action btn-success">+ Start MRO</button>
+                        </form>
+                    </div>
+                    {% endif %}
+
+                    {% if ro_mode != 'empty' %}
+                    <div class="ro-add-header">
+                        <span class="nav-label section-title">RO lines — item · qty · unit price</span>
+                    </div>
+                    {% if ro_locked %}
+                    <div class="ro-locked-banner">
+                        Grand total locked at <strong>{{ currency_symbol }} {{ actual|floatformat:2 }}</strong>.
+                        {% if ro_mode == 'draft' and not ro_submitted %}Submit the RO to move it to RO List.{% endif %}
+        </div>
+                    {% endif %}
+
+                    <form method="POST" id="addItemForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+
+                        <div class="table-scroll">
+                        <table class="ro-lines-table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>UOM</th>
+                                    <th>Qty</th>
+                                    <th>Unit price ({{ currency_symbol }})</th>
+                                    <th>Line total ({{ currency_symbol }})</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="roLinesBody">
+                                {% for item in batch.items %}
+                                <tr class="ro-saved-line" data-line-total="{{ item.total }}">
+                                    <td>{{ item.description }}</td>
+                                    <td>{{ item.uom }}</td>
+                                    <td>{{ item.qty|floatformat:0 }}</td>
+                                    <td>{{ item.unit_price|floatformat:2 }}</td>
+                                    <td class="line-total-cell">{{ item.total|floatformat:2 }}</td>
+                                    <td>
+                                        {% if not ro_locked %}
+                                        <button type="submit" form="deleteItemForm{{ item.id|default:forloop.counter0 }}" name="delete_item" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;">Remove</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            {% if not ro_locked and ro_mode != 'detail' %}
+                            <tfoot>
+                                <tr class="input-row">
+                                    <td><input type="text" name="description" id="input_description" class="form-input" placeholder="Item description" required></td>
+                                    <td><input type="text" name="uom" id="input_uom" class="form-input" value="EA" required></td>
+                                    <td><input type="number" step="1" min="1" name="qty" id="input_qty" class="form-input" placeholder="0" required></td>
+                                    <td><input type="number" step="0.01" min="0" name="unit_price" id="input_unit_price" class="form-input" placeholder="0.00" required></td>
+                                    <td class="line-total-cell"><span id="lineTotalPreview">0.00</span></td>
+                                    <td>
+                                        <button type="submit" name="add_misc_purchase" class="btn-action btn-success btn-compact">Add</button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                            {% endif %}
+                        </table>
+                        </div>
+                        {% if not batch.items and not ro_locked and ro_mode != 'detail' %}
+                        <p style="text-align:center;color:var(--muted);font-size:12px;margin:8px 0 0;">Enter a line in the row above and click Add.</p>
+                        {% endif %}
+                        <div class="ro-grand-total">
+                            {% if ro_locked %}RO grand total (locked) — Material line:{% else %}RO running total — Material line:{% endif %}
+                            <span id="ro_grand_total_display">{{ currency_symbol }} {{ actual|floatformat:2 }}</span>
+                        </div>
+                        <input type="hidden" id="ro_grand_total_val" value="{{ actual }}">
+                        {% if ro_mode == 'draft' and batch.items and not ro_locked %}
+                        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+                            <button type="submit" form="lockRoForm" name="lock_ro_total" class="btn-action" style="background:#047857;">Lock RO total</button>
+                            <span style="font-size:11px;color:var(--muted);align-self:center;">Lock when you have entered your last line item.</span>
+                        </div>
+                        {% elif ro_mode == 'draft' and ro_locked %}
+                        <form method="POST" id="submitRoForm" style="margin-top:14px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                            <button type="submit" name="submit_ro" class="btn-action btn-success">Submit RO</button>
+                            <span style="font-size:11px;color:var(--muted);margin-left:10px;">Moves this RO to RO List only.</span>
+                        </form>
+                        {% endif %}
+                    </form>
+                    <form method="POST" id="lockRoForm" style="display:none;">
+                {% csrf_token %}
+                        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            </form>
+                    {% endif %}
+                    {% for item in batch.items %}
+                    <form method="POST" id="deleteItemForm{{ item.id|default:forloop.counter0 }}" style="display:none;">
+                        {% csrf_token %}
+                        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                        {% if item.id %}<input type="hidden" name="item_id" value="{{ item.id }}">{% else %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">{% endif %}
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="supplierPickerModal" class="supplier-overlay" style="display:none;" role="dialog" aria-hidden="true">
+                <div class="supplier-overlay-backdrop" id="supplierOverlayBackdrop"></div>
+                <div class="supplier-overlay-panel">
+                    <div class="picker-modal-head">
+                        <div>
+                            <h3 id="supplierPickerTitle" style="margin:0;color:var(--primary);font-size:13px;text-transform:uppercase;">Select or add supplier</h3>
+                            <p style="margin:4px 0 0;font-size:11px;color:var(--muted);">Layered on your RO entry — pick vault, register, or ad-hoc, then confirm.</p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="button" class="btn-action btn-compact" onclick="openRegisterModal()">+ Register</button>
+                            {% if batch.supplier %}
+                            <button type="button" class="btn-action btn-secondary btn-compact" onclick="closeSupplierPicker()">Continue adding items</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="selection-workspace">
+                        <div class="vault-pane">
+                            <div style="padding:10px 12px;background:#070b14;border-bottom:1px solid var(--border);">
+                                <span class="nav-label" style="margin:0;">Supplier vault</span>
+                            </div>
+                            <div id="vault-container" tabindex="0">
+                                <table>
+                                    <tbody>
+                                        {% for s in suppliers %}
+                                        <tr class="vault-row{% if batch.supplier_id == s.supplier_id %} selected{% endif %}"
+                                            data-sid="{{ s.supplier_id }}"
+                                            data-name="{{ s.description }}"
+                                            data-phone="{{ s.phone }}"
+                                            data-email="{{ s.email }}"
+                                            data-address="{{ s.contact_address }}"
+                                            onclick="pickSupplierRow(this)">
+                                            <td>
+                                                {{ s.description }}
+                                                {% if batch.supplier_id == s.supplier_id %}<span style="font-size:9px;background:var(--success);color:#fff;padding:2px 6px;border-radius:4px;margin-left:6px;">SELECTED</span>{% endif %}
+                                            </td>
+                                            <td style="text-align:right;color:var(--muted);font-size:11px;">#{{ s.supplier_id }}</td>
+                    </tr>
+                                        {% empty %}
+                                        <tr><td colspan="2" style="text-align:center;color:var(--muted);padding:24px;">No suppliers — use Register.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+                            </div>
+                            {% if suppliers|length > 3 %}
+                            <div class="vault-scroll-hint">Scroll for more ({{ suppliers|length }})</div>
+                            {% endif %}
+                            <form method="POST" id="selectSupplierForm" style="padding:10px;border-top:1px solid var(--border);">
+                                {% csrf_token %}
+                                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                                <input type="hidden" name="supplier_id" id="pick_supplier_id" value="{{ batch.supplier_id }}">
+                                <button type="submit" name="select_supplier" class="btn-action btn-success" style="width:100%;">Confirm vault selection</button>
+                            </form>
+                        </div>
+
+                        <div class="monitor-pane" style="padding:14px;">
+                            <div id="monitor-empty" style="{% if batch.supplier or batch.supplier_id %}display:none{% endif %} text-align:center;color:var(--muted);font-size:12px;">
+                                <p style="margin:0;">Vault pick, register, or ad-hoc below.</p>
+                            </div>
+                            <div id="monitor-content" style="{% if not batch.supplier and not batch.supplier_id %}display:none{% endif %}">
+                                <span class="nav-label" style="color:var(--success);">Preview</span>
+                                <div id="mon-name" style="font-weight:700;font-size:15px;margin:6px 0;">{{ batch.supplier|default:"—" }}</div>
+                                <div id="mon-meta" style="font-size:11px;color:var(--muted);line-height:1.5;">
+                                    {% if batch.supplier_id and not batch.is_ad_hoc %}ID: {{ batch.supplier_id }}<br>{% endif %}
+                                    {% if batch.supplier_phone %}Tel: {{ batch.supplier_phone }}<br>{% endif %}
+                                    {% if batch.supplier_email %}{{ batch.supplier_email }}{% endif %}
+                                </div>
+                            </div>
+                            <div class="adhoc-box">
+                                <span class="nav-label">Ad-hoc vendor</span>
+                                <form method="POST">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                                    <input type="text" name="adhoc_name" id="adhoc_name" class="form-input" placeholder="Supplier name" value="{% if batch.is_ad_hoc %}{{ batch.supplier }}{% endif %}" style="margin-bottom:6px;">
+                                    <div class="grid-2">
+                                        <input type="text" name="adhoc_phone" class="form-input" placeholder="Phone" value="{{ batch.supplier_phone }}">
+                                        <input type="email" name="adhoc_email" class="form-input" placeholder="Email" value="{{ batch.supplier_email }}">
+                                    </div>
+                                    <input type="text" name="adhoc_address" class="form-input" placeholder="Address" value="{{ batch.supplier_address }}" style="margin:6px 0;">
+                                    <button type="submit" name="save_ad_hoc_supplier" class="btn-action btn-secondary" style="width:100%;">Save ad-hoc vendor</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="budget-card">
+            <h3 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 12px; font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--light);">Budget Formulation</h3>
+            {% if formulation_readonly and budget_formulation_source == 'committed' and provisional_budget_ref %}
+            <p style="margin:0 0 14px;padding:10px 12px;border-radius:8px;background:rgba(16,185,129,0.1);border:1px solid var(--success);font-size:12px;color:#6ee7b7;line-height:1.45;">
+                <strong>Task budget confirmed</strong> — {{ provisional_budget_ref }}. One MRO baseline per task; figures below are locked.
+            </p>
+            {% elif budget_formulation_source == 'provisional' and has_provisional_budget %}
+            <p style="margin:0 0 14px;padding:10px 12px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid var(--warning);font-size:12px;color:#fcd34d;line-height:1.45;">
+                <strong>Provisional budget</strong> — from {{ provisional_budget_ref|default:ro_reference }}. Review and commit to confirm the task MRO baseline.
+            </p>
+            {% endif %}
+
+            <label class="nav-label" style="margin-bottom: 5px;">1. Material line (RO items grand total)</label>
+            <div id="material_display" class="total-display">{{ currency_symbol }} {{ formulation_material|floatformat:2 }}</div>
+            <input type="hidden" name="material_total" id="material_val" value="{{ formulation_material }}">
+
+            <label class="nav-label" style="margin-top: 15px; margin-bottom: 8px;">2. Labour Cost Burden</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 0;">
+                <select name="labour_mode" id="labour_mode" onchange="calculateBudget()" style="flex: 1; margin-bottom: 20px;" class="form-input">
+                    <option value="fixed">Manual (Fixed {{ currency_symbol }})</option>
+                    <option value="percent">Percent Allocation (%)</option>
+                </select>
+                <input type="number" step="0.01" id="labour_input" name="labour_input" class="input-price" style="width: 120px; margin-bottom: 20px;" oninput="calculateBudget()" value="{{ seed_labour|floatformat:2 }}">
+            </div>
+
+            <label class="nav-label" style="margin-top: 10px; margin-bottom: 5px;">3. Misc / Logistics Operational Reserve</label>
+            <input type="number" step="0.01" id="misc_input" name="misc_input" class="input-price" style="width: 100%; margin-bottom: 20px;" oninput="calculateBudget()" value="{{ seed_misc|floatformat:2 }}">
+
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 2px dashed var(--border); margin-bottom: 20px;">
+                <span class="nav-label" style="color: var(--muted); margin-bottom: 5px;">Total Expected Fund Disbursement</span>
+                <div id="grand_total_display" class="total-display" style="color: var(--light); font-size: 30px; border-bottom: 3px double var(--success); padding-bottom: 5px;">{{ currency_symbol }} {{ formulation_grand|floatformat:2 }}</div>
+                <input type="hidden" name="grand_total" id="grand_total_val" value="{{ formulation_grand }}">
+            </div>
+
+            <input type="hidden" name="budget-material_total_cost" id="id_budget-material_total_cost">
+            <input type="hidden" name="budget-labour_burden" id="id_budget-labour_burden">
+            <input type="hidden" name="budget-misc_reserve" id="id_budget-misc_reserve">
+            <input type="hidden" name="budget-total_authorized_budget" id="id_budget-total_authorized_budget">
+            <input type="hidden" name="RO-total_amount" id="id_RO-total_amount">
+
+            <div id="reviewFeedbackBanner" class="review-feedback-banner" role="status" aria-live="polite"></div>
+            {% if show_review_budget %}
+            <button type="button" onclick="openReviewModal()" class="btn-action btn-success" title="Lock RO total with line items, then review ad-hoc budget">Review Ad-Hoc Budget</button>
+            {% elif adhoc_material_committed %}
+            <p style="font-size:11px;color:var(--muted);margin:0 0 10px;line-height:1.45;">MRO baseline confirmed — payment vouchers via GM Desk after CEO fund release.</p>
+            {% endif %}
+            <button type="button" onclick="openBudgetModal()" class="btn-action btn-secondary" style="margin-top:10px;background:#334155;">Budget vs Actual</button>
+        </div>
+        </div>
+
+        <div class="panel pv-gate-panel {% if pv_gate.can_raise_pv %}is-ready{% else %}is-blocked{% endif %}">
+            <span class="nav-label" style="margin:0 0 10px;">Officer payment vouchers</span>
+            <p>{{ pv_gate.message }}</p>
+            <ul class="pv-gate-steps">
+                <li class="{% if adhoc_material_committed %}is-done{% else %}is-pending{% endif %}">① MRO baseline confirmed on this page</li>
+                <li class="{% if pv_gate.is_ceo_approved %}is-done{% else %}is-pending{% endif %}">② CEO approves provision budget (AIE)</li>
+                <li class="{% if pv_gate.fund_released %}is-done{% else %}is-pending{% endif %}">③ CEO disburses funds to GM Accounting</li>
+                <li class="{% if pv_gate.can_raise_pv %}is-done{% else %}is-pending{% endif %}">④ GM raises officer payment vouchers at Disbursement desk</li>
+            </ul>
+            {% if pv_gate.can_raise_pv %}
+            <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}&open_adhoc_ro_period=1" class="btn-action btn-success" style="width:100%;margin-top:14px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">Open GM Disbursement desk →</a>
+            {% endif %}
+        </div>
+
+{% endblock %}
+{% block modals %}
+    <div id="reviewModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel" style="width:550px;padding:30px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:15px;margin-bottom:20px;">
+                <h3 style="margin:0;color:var(--primary);letter-spacing:0.5px;font-size:14px;text-transform:uppercase;">Treasury Pre-Authorization Memorandum</h3>
+                <span style="color:var(--muted);font-family:monospace;font-size:12px;background:#070b14;padding:4px 8px;border-radius:4px;">STAGE: REVIEW (v1)</span>
+            </div>
+            <div id="reviewModalFeedback" class="review-feedback-banner is-info" style="display:block;margin-bottom:16px;">Confirm material, labour, and disbursement totals — then commit to lock the ad-hoc budget.</div>
+            <div style="background:#070b14;padding:20px;border-radius:8px;border:1px solid var(--border);margin-bottom:20px;font-family:monospace;font-size:13px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+                    <span style="color:var(--muted);">Task Target ID:</span>
+                    <span style="font-weight:bold;">{{ active_task.project_id }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+                    <span style="color:var(--muted);">RO reference:</span>
+                    <span style="font-weight:bold;font-family:monospace;">{{ ro_reference|default:"Draft" }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+                    <span style="color:var(--muted);">Locked Material Cost (RO):</span>
+                    <span id="modal_mat_cost" style="color:var(--success);font-weight:bold;">{{ currency_symbol }} 0.00</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+                    <span style="color:var(--muted);">Amended Labor Burden:</span>
+                    <span id="modal_labor_cost" style="color:var(--light);">{{ currency_symbol }} 0.00</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+                    <span style="color:var(--muted);">Overhead Reserve:</span>
+                    <span id="modal_misc_cost" style="color:var(--light);">{{ currency_symbol }} 0.00</span>
+                </div>
+                <div style="border-top:1px dashed var(--border);padding-top:15px;display:flex;justify-content:space-between;font-size:16px;">
+                    <span style="color:var(--success);font-weight:bold;">Expected Fund Disbursement:</span>
+                    <span id="modal_disbursement_total" style="color:var(--success);font-weight:bold;">{{ currency_symbol }} 0.00</span>
+                </div>
+            </div>
+            <div style="margin-bottom:25px;">
+                <label class="nav-label" style="margin-bottom:8px;display:block;">Executive Amendment Directive</label>
+                <select id="version_action" class="form-input" style="margin-bottom:0;">
+                    <option value="commit_v1">Approve As-Is (Lock v1 &amp; Commit Ledger)</option>
+                    <option value="amend_v2">Reject &amp; Log Version Amendment (Generate v2 Draft)</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:15px;">
+                <button type="button" onclick="closeReviewModal()" class="btn-action btn-secondary" style="flex:1;">Back</button>
+                <button type="button" id="reviewCommitBtn" onclick="finalizeAndSubmit()" class="btn-action btn-success" style="flex:1;font-size:12px;">Commit Ad-Hoc Budget/RO — Disburse Funds</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="budgetModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel" style="width:560px;">
+            <h3 style="margin:0 0 8px;color:var(--primary);font-size:14px;text-transform:uppercase;">Ad-Hoc Budget vs Actual</h3>
+            <p style="margin:0 0 16px;font-size:12px;color:var(--muted);">Task {{ active_task.project_id }}</p>
+            <div style="background:#070b14;padding:20px;border-radius:8px;border:1px solid var(--border);font-size:13px;">
+                <div class="budget-row" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <span style="color:var(--muted);">Material (budget line)</span>
+                    <span style="font-weight:700;font-family:monospace;">{{ currency_symbol }} {{ material_budget|floatformat:2 }}</span>
+                </div>
+                <div class="budget-row" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <span style="color:var(--muted);">RO draft + locked actual</span>
+                    <span style="font-weight:700;font-family:monospace;color:var(--warning);">{{ currency_symbol }} {{ ro_actual_total|floatformat:2 }}</span>
+                </div>
+                <div class="budget-row" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <span style="color:var(--muted);">Live RO material (this session)</span>
+                    <span id="budgetModalLiveMat" style="font-weight:700;font-family:monospace;color:var(--success);">{{ currency_symbol }} {{ formulation_material|floatformat:2 }}</span>
+                </div>
+                <div class="budget-row" style="display:flex;justify-content:space-between;padding:14px 0 0;font-weight:700;">
+                    <span>Variance (Material − Actual)</span>
+                    <span id="budgetModalVariance" class="{% if material_variance_over %}budget-value-over{% else %}budget-value-ok{% endif %}">{{ currency_symbol }} {{ material_variance|floatformat:2 }}</span>
+                </div>
+                {% if budget_status.has_budget %}
+                <p style="margin:16px 0 0;font-size:11px;color:var(--muted);">Project budget v{{ budget_status.version }} · LPO material {{ currency_symbol }} {{ budget_status.lpo_material }}</p>
+                {% endif %}
+            </div>
+            <button type="button" class="btn-action btn-secondary" style="width:100%;margin-top:16px;" onclick="closeBudgetModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="registerModal" class="cockpit-modal">
+        <div class="cockpit-modal-panel register-modal-panel">
+            <h3 style="color:var(--primary);text-transform:uppercase;">Register supplier</h3>
+            <p class="register-modal-lead">Saves to SupplierAccount and selects for this RO.</p>
+            <form method="POST" id="registerSupplierForm">
+                {% csrf_token %}
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <div class="register-field">
+                    <label class="nav-label">Supplier ID (optional)</label>
+                    <input type="text" name="new_supplier_id" class="form-input" placeholder="Auto if blank">
+                </div>
+                <div class="register-field">
+                    <label class="nav-label">Company name *</label>
+                    <input type="text" name="description" class="form-input" required>
+                </div>
+                <div class="grid-2 register-field">
+                    <div>
+                        <label class="nav-label">Phone *</label>
+                        <input type="text" name="phone" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="nav-label">Email *</label>
+                        <input type="email" name="email" class="form-input" required>
+                    </div>
+                </div>
+                <div class="register-field">
+                    <label class="nav-label">Address *</label>
+                    <input type="text" name="contact_address" class="form-input" required>
+                </div>
+                <div class="register-field">
+                    <label class="nav-label">Bank account #</label>
+                    <input type="text" name="bank_account_number" class="form-input" value="N/A">
+                </div>
+                <div class="register-modal-actions">
+                    <button type="button" class="btn-action btn-secondary" style="flex:1;" onclick="closeRegisterModal()">Cancel</button>
+                    <button type="submit" name="register_supplier" class="btn-action btn-success" style="flex:1;">Save &amp; select</button>
+                </div>
+            </form>
+            <hr>
+            <p class="register-ajax-row">Or register via AJAX:</p>
+            <button type="button" class="btn-action" style="width:100%;" onclick="registerSupplierAjax()">Register (AJAX)</button>
+            <p id="registerAjaxMsg" style="font-size:11px;margin-top:6px;"></p>
+        </div>
+    </div>
+
+{% endblock %}
+{% block extra_js %}
+    <script>
+        const CURRENCY_SYMBOL = "{{ currency_symbol|escapejs }}";
+        const csrfToken = '{{ csrf_token }}';
+        const taskId = '{{ active_task.project_id }}';
+        const roMode = '{{ ro_mode }}';
+        const roLocked = {{ ro_locked|yesno:"true,false" }};
+        const roSubmitted = {{ ro_submitted|yesno:"true,false" }};
+
+        function toggleRoList() {
+            const panel = document.getElementById('roListPanel');
+            if (panel) panel.classList.toggle('is-open');
+        }
+
+        function pickSupplierRow(row) {
+            document.querySelectorAll('.vault-row').forEach(r => r.classList.remove('selected'));
+            row.classList.add('selected');
+            document.getElementById('pick_supplier_id').value = row.dataset.sid;
+            document.getElementById('form_supplier_id').value = row.dataset.sid;
+            document.getElementById('form_supplier_name').value = row.dataset.name;
+            document.getElementById('form_supplier_phone').value = row.dataset.phone || '';
+            document.getElementById('form_supplier_email').value = row.dataset.email || '';
+            document.getElementById('form_supplier_address').value = row.dataset.address || '';
+            document.getElementById('monitor-empty').style.display = 'none';
+            document.getElementById('monitor-content').style.display = 'block';
+            document.getElementById('mon-name').textContent = row.dataset.name;
+            document.getElementById('mon-meta').innerHTML =
+                'ID: ' + row.dataset.sid + '<br>Tel: ' + (row.dataset.phone || '—') + '<br>' + (row.dataset.email || '');
+            updateVendorCornerFromForm();
+        }
+
+        function updateVendorCornerFromForm() {
+            const name = document.getElementById('form_supplier_name')?.value?.trim() || '';
+            const sid = document.getElementById('form_supplier_id')?.value?.trim() || '';
+            const phone = document.getElementById('form_supplier_phone')?.value?.trim() || '—';
+            const email = document.getElementById('form_supplier_email')?.value?.trim() || '—';
+            const address = document.getElementById('form_supplier_address')?.value?.trim() || '—';
+            const hero = document.getElementById('vendorHero');
+            const unset = document.getElementById('vendorUnsetBlock');
+            const nameEl = document.getElementById('summarySupplierName');
+            if (name) {
+                if (hero) hero.style.display = '';
+                if (unset) unset.style.display = 'none';
+                if (nameEl) nameEl.textContent = name;
+                const vcId = document.getElementById('vcId');
+                if (vcId) vcId.textContent = sid || '—';
+                const vcPhone = document.getElementById('vcPhone');
+                if (vcPhone) vcPhone.textContent = phone;
+                const vcEmail = document.getElementById('vcEmail');
+                if (vcEmail) vcEmail.textContent = email;
+                const vcAddress = document.getElementById('vcAddress');
+                if (vcAddress) vcAddress.textContent = address;
+            } else {
+                if (hero) hero.style.display = 'none';
+                if (unset) unset.style.display = '';
+                toggleVendorContact(false);
+            }
+        }
+
+        function toggleVendorContact(forceOpen) {
+            const panel = document.getElementById('vendorContactPanel');
+            const toggle = document.getElementById('vendorNameToggle');
+            if (!panel || !toggle) return;
+            const open = forceOpen === true ? true : forceOpen === false ? false : !panel.classList.contains('is-open');
+            panel.classList.toggle('is-open', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        function openSupplierPicker() {
+            const ws = document.getElementById('roWorkspace');
+            const modal = document.getElementById('supplierPickerModal');
+            modal.classList.add('is-open');
+            ws.classList.add('supplier-open');
+        }
+        function hasSupplierSelected() {
+            return !!(document.getElementById('form_supplier_name') || {}).value?.trim();
+        }
+
+        function closeSupplierPicker() {
+            if (!hasSupplierSelected()) return;
+            const ws = document.getElementById('roWorkspace');
+            const modal = document.getElementById('supplierPickerModal');
+            modal.classList.remove('is-open');
+            ws.classList.remove('supplier-open');
+        }
+
+        function openRegisterModal() {
+            const modal = document.getElementById('supplierPickerModal');
+            if (!modal.classList.contains('is-open')) openSupplierPicker();
+            document.getElementById('registerModal').style.display = 'flex';
+        }
+        function closeRegisterModal() { document.getElementById('registerModal').style.display = 'none'; }
+
+        function num(v) { return parseFloat(v) || 0; }
+
+        const canReviewBudget = {{ can_review_budget|yesno:"true,false" }};
+        const showReviewBudget = {{ show_review_budget|yesno:"true,false" }};
+        const adhocMaterialCommitted = {{ adhoc_material_committed|yesno:"true,false" }};
+        const formulationReadonly = {{ formulation_readonly|yesno:"true,false" }};
+        const budgetFormulationSource = '{{ budget_formulation_source|default:"draft" }}';
+        const seedFormulationMaterial = {{ formulation_material }};
+        const seedFormulationGrand = {{ formulation_grand }};
+
+        function syncSidebarBudgetStatus(materialVal) {
+            const mat = materialVal;
+            const matStr = mat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const matEl = document.getElementById('sidebarMaterialVal');
+            const actEl = document.getElementById('sidebarActualVal');
+            const varEl = document.getElementById('sidebarVarianceVal');
+            if (!adhocMaterialCommitted) {
+                if (matEl) matEl.textContent = CURRENCY_SYMBOL + ' ' + matStr;
+                if (actEl) actEl.textContent = CURRENCY_SYMBOL + ' ' + matStr;
+                if (varEl) {
+                    varEl.textContent = CURRENCY_SYMBOL + ' 0.00';
+                    varEl.classList.remove('budget-value-over');
+                    varEl.classList.add('budget-value-ok');
+                }
+            }
+        }
+
+        function roMaterialTotal() {
+            let sum = 0;
+            document.querySelectorAll('#roLinesBody tr[data-line-total]').forEach(tr => {
+                sum += num(tr.getAttribute('data-line-total'));
+            });
+            const hidden = document.getElementById('ro_grand_total_val');
+            if (sum === 0 && hidden) sum = num(hidden.value);
+            return sum;
+        }
+
+        function calculateBudget() {
+            if (formulationReadonly && budgetFormulationSource === 'committed') {
+                return;
+            }
+            const materialVal = roMaterialTotal();
+            const matStr = materialVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            document.getElementById('material_display').innerText = CURRENCY_SYMBOL + ' ' + matStr;
+            document.getElementById('material_val').value = materialVal.toFixed(2);
+            document.getElementById('ro_grand_total_display').innerText = CURRENCY_SYMBOL + ' ' + matStr;
+            document.getElementById('ro_grand_total_val').value = materialVal.toFixed(2);
+
+            const labour = document.getElementById('labour_mode').value === 'percent'
+                ? materialVal * (num(document.getElementById('labour_input').value) / 100)
+                : num(document.getElementById('labour_input').value);
+            const misc = num(document.getElementById('misc_input').value);
+            const grand = materialVal + labour + misc;
+
+            document.getElementById('grand_total_display').innerText = CURRENCY_SYMBOL + ' ' + grand.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('grand_total_val').value = grand.toFixed(2);
+
+            const liveMat = document.getElementById('budgetModalLiveMat');
+            if (liveMat) liveMat.innerText = CURRENCY_SYMBOL + ' ' + matStr;
+            syncSidebarBudgetStatus(materialVal);
+        }
+
+        function computedLabour() {
+            const materialVal = num(document.getElementById('material_val').value);
+            return document.getElementById('labour_mode').value === 'percent'
+                ? materialVal * (num(document.getElementById('labour_input').value) / 100)
+                : num(document.getElementById('labour_input').value);
+        }
+
+        function showReviewFeedback(msg, type) {
+            const el = document.getElementById('reviewFeedbackBanner');
+            if (!el) return;
+            el.textContent = msg;
+            el.className = 'review-feedback-banner is-' + (type || 'info');
+            el.style.display = 'block';
+        }
+
+        function openReviewModal() {
+            if (!showReviewBudget) {
+                showReviewFeedback('Task MRO baseline is already confirmed — one budget per task.', 'info');
+                return;
+            }
+            calculateBudget();
+            if (roMode === 'empty') {
+                showReviewFeedback('Start a new RO or open one from RO List before reviewing the ad-hoc budget.', 'warn');
+                toggleRoList();
+                return;
+            }
+            if (!canReviewBudget) {
+                if (roMode === 'draft' && !roLocked) {
+                    showReviewFeedback('Add line items and lock the RO grand total before reviewing the ad-hoc budget.', 'warn');
+                } else {
+                    showReviewFeedback('Add at least one line item and lock the RO total before reviewing the budget.', 'warn');
+                }
+                return;
+            }
+            if (roMaterialTotal() <= 0) {
+                showReviewFeedback('Add at least one line item to the RO before review.', 'error');
+                return;
+            }
+            const matText = document.getElementById('material_display').innerText;
+            const labourText = CURRENCY_SYMBOL + ' ' + computedLabour().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const miscText = CURRENCY_SYMBOL + ' ' + num(document.getElementById('misc_input').value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const grandText = document.getElementById('grand_total_display').innerText;
+            document.getElementById('modal_mat_cost').innerText = matText;
+            document.getElementById('modal_labor_cost').innerText = labourText;
+            document.getElementById('modal_misc_cost').innerText = miscText;
+            document.getElementById('modal_disbursement_total').innerText = grandText;
+            const modalFb = document.getElementById('reviewModalFeedback');
+            if (modalFb) {
+                modalFb.className = 'review-feedback-banner is-info';
+                modalFb.style.display = 'block';
+                modalFb.textContent = 'Review opened — confirm material ' + matText + ', labour ' + labourText + ', disbursement ' + grandText + ', then commit.';
+            }
+            showReviewFeedback('Treasury review opened — confirm totals in the modal and commit to lock the ad-hoc budget.', 'info');
+            document.getElementById('reviewModal').style.display = 'flex';
+        }
+
+        function closeReviewModal() { document.getElementById('reviewModal').style.display = 'none'; }
+
+        function openBudgetModal() {
+            calculateBudget();
+            document.getElementById('budgetModal').style.display = 'flex';
+        }
+
+        function closeBudgetModal() { document.getElementById('budgetModal').style.display = 'none'; }
+
+        function finalizeAndSubmit() {
+            if (document.getElementById('version_action').value === 'amend_v2') {
+                showReviewFeedback('Version amendment (v2) is not yet automated — adjust RO lines or budget inputs and re-submit as v1.', 'warn');
+                return;
+            }
+            if (!canReviewBudget) {
+                showReviewFeedback('Lock the RO grand total (with line items) before committing the ad-hoc budget.', 'error');
+                return;
+            }
+            if (roMaterialTotal() <= 0) {
+                showReviewFeedback('Add at least one RO line item before committing.', 'error');
+                return;
+            }
+            calculateBudget();
+
+            const commit = document.getElementById('miscAdhocCommitForm');
+            const mpoField = document.getElementById('commit_mpo_id');
+            if (mpoField && !mpoField.value) {
+                showReviewFeedback('Open the submitted RO from RO List before committing.', 'error');
+                return;
+            }
+            const matVal = document.getElementById('material_val').value;
+            const labourVal = computedLabour().toFixed(2);
+            const miscVal = num(document.getElementById('misc_input').value).toFixed(2);
+            const grandVal = document.getElementById('grand_total_val').value;
+            const confirmMsg =
+                'Commit ad-hoc budget and lock this RO?\n\n' +
+                'Material (RO): ' + CURRENCY_SYMBOL + ' ' + parseFloat(matVal).toFixed(2) + '\n' +
+                'Labour burden: ' + CURRENCY_SYMBOL + ' ' + parseFloat(labourVal).toFixed(2) + '\n' +
+                'Misc reserve: ' + CURRENCY_SYMBOL + ' ' + parseFloat(miscVal).toFixed(2) + '\n' +
+                'Total disbursement: ' + CURRENCY_SYMBOL + ' ' + parseFloat(grandVal).toFixed(2) + '\n\n' +
+                'Partial purchase against lines continues below in RO Listing — not blocked by this step.';
+            if (!window.confirm(confirmMsg)) {
+                showReviewFeedback('Budget commit cancelled — no changes were saved.', 'warn');
+                return;
+            }
+            showReviewFeedback('Committing ad-hoc budget and locking RO…', 'info');
+            const commitBtn = document.getElementById('reviewCommitBtn');
+            if (commitBtn) {
+                commitBtn.disabled = true;
+                commitBtn.textContent = 'Committing…';
+            }
+            commit.querySelector('#commit_budget-material_total_cost').value = matVal;
+            commit.querySelector('#commit_budget-labour_burden').value = labourVal;
+            commit.querySelector('#commit_budget-misc_reserve').value = miscVal;
+            commit.querySelector('#commit_budget-total_authorized_budget').value = grandVal;
+            commit.querySelector('#commit_RO-total_amount').value = matVal;
+            commit.querySelector('#commit_grand_total').value = grandVal;
+            commit.submit();
+        }
+
+        async function registerSupplierAjax() {
+            const form = document.getElementById('registerSupplierForm');
+            const fd = new FormData(form);
+            const msg = document.getElementById('registerAjaxMsg');
+            msg.textContent = 'Saving…';
+            msg.style.color = 'var(--muted)';
+            try {
+                const res = await fetch('{% url "misc_register_supplier" %}', {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-CSRFToken': csrfToken },
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    msg.style.color = 'var(--success)';
+                    msg.textContent = data.message + ' Reloading…';
+                    setTimeout(() => window.location.href = '?task_id=' + taskId, 800);
+                } else {
+                    msg.style.color = 'var(--danger)';
+                    msg.textContent = data.message || 'Registration failed';
+                }
+            } catch (e) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = 'Network error: ' + e;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sel = document.querySelector('.vault-row.selected');
+            if (sel) pickSupplierRow(sel);
+            else updateVendorCornerFromForm();
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('vendorContactPanel');
+                const toggle = document.getElementById('vendorNameToggle');
+                if (!panel?.classList.contains('is-open')) return;
+                if (panel.contains(e.target) || toggle?.contains(e.target)) return;
+                toggleVendorContact(false);
+            });
+            document.getElementById('registerModal').addEventListener('click', (e) => {
+                if (e.target.id === 'registerModal') closeRegisterModal();
+            });
+            document.getElementById('supplierOverlayBackdrop')?.addEventListener('click', closeSupplierPicker);
+            const qtyEl = document.getElementById('input_qty');
+            const priceEl = document.getElementById('input_unit_price');
+            const previewEl = document.getElementById('lineTotalPreview');
+            function updateLineTotalPreview() {
+                const q = Math.round(parseFloat(qtyEl?.value) || 0);
+                const p = parseFloat(priceEl?.value) || 0;
+                if (previewEl) previewEl.textContent = (q * p).toFixed(2);
+            }
+            qtyEl?.addEventListener('input', () => { updateLineTotalPreview(); });
+            priceEl?.addEventListener('input', () => { updateLineTotalPreview(); });
+            updateLineTotalPreview();
+            calculateBudget();
+
+            document.getElementById('reviewModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'reviewModal') closeReviewModal();
+            });
+            document.getElementById('budgetModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'budgetModal') closeBudgetModal();
+            });
+        });
+    </script>
+{% endblock %}

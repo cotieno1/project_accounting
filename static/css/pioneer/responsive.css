@@ -1,0 +1,90 @@
+@media (max-width: 1100px) {
+    .evaluation-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .budget-card {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar-toggle {
+        display: block;
+    }
+
+    .sidebar-backdrop {
+        display: block;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100dvh;
+        transform: translateX(-105%);
+        transition: transform 0.25s ease;
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
+    }
+
+    .cockpit-shell.sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    .cockpit-shell.sidebar-open .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .main-content {
+        width: 100%;
+    }
+
+    .workspace-scroller {
+        padding: 16px;
+        padding-top: 56px;
+        gap: 16px;
+    }
+
+    .panel,
+    .table-pane,
+    .budget-card {
+        padding: 16px;
+    }
+
+    .page-title,
+    .task-id-title {
+        font-size: 17px;
+        white-space: normal;
+    }
+
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .cockpit-modal {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .cockpit-modal-panel {
+        width: 100%;
+        max-height: 100dvh;
+        border-radius: 0;
+        padding: 20px 16px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+}
+
+@media (min-width: 1600px) {
+    .workspace-scroller {
+        padding-left: 40px;
+        padding-right: 40px;
+    }
+}

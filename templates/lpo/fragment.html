@@ -1,0 +1,85 @@
+<div class="doc">
+    <div class="brand-bar"></div>
+    {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Local Purchase Order" %}
+    <table class="meta-table">
+        <tr>
+            <th style="width:34%">Document</th>
+            <th style="width:33%">LPO Number</th>
+            <th style="width:33%">Date of Issue</th>
+        </tr>
+        <tr>
+            <td>Local Purchase Order</td>
+            <td class="lpo-no">{{ lpo_no }}</td>
+            <td>{{ date }}</td>
+        </tr>
+    </table>
+    <table class="parties">
+        <tr>
+            <th style="width:50%">Supplier</th>
+            <th style="width:50%">Delivery / Project</th>
+        </tr>
+        <tr>
+            <td>
+                <div class="party-name">{{ supplier_account.description|default:winning_supplier }}</div>
+                {% if supplier_account %}
+                    {% if supplier_account.contact_address %}<div class="muted">{{ supplier_account.contact_address }}</div>{% endif %}
+                    {% if supplier_account.phone %}<div class="muted">Tel: {{ supplier_account.phone }}</div>{% endif %}
+                    {% if supplier_account.email %}<div class="muted">{{ supplier_account.email }}</div>{% endif %}
+                {% endif %}
+            </td>
+            <td>
+                <div class="party-name">Task {{ task.project_id }}</div>
+                <div class="muted">{{ task.description|default:"Infrastructure execution" }}</div>
+                <div class="muted" style="margin-top:8px;"><strong>Deliver to:</strong> {{ org_short_name|default:org_name }}{% if org_contact_address %} — {{ org_contact_address }}{% endif %}</div>
+            </td>
+        </tr>
+    </table>
+    <table class="lines">
+        <thead>
+            <tr>
+                <th style="width:6%">#</th>
+                <th style="width:40%">Description</th>
+                <th class="num" style="width:12%">Qty</th>
+                <th class="center" style="width:10%">UOM</th>
+                <th class="num" style="width:16%">Unit (US$)</th>
+                <th class="num" style="width:16%">Total (US$)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr{% if forloop.counter|divisibleby:2 %} class="zebra"{% endif %}>
+                <td class="center">{{ forloop.counter }}</td>
+                <td>{{ item.desc }}</td>
+                <td class="num">{{ item.qty }}</td>
+                <td class="center">{{ item.uom|default:"PCS" }}</td>
+                <td class="num">{{ item.price|floatformat:2 }}</td>
+                <td class="num">{{ item.total|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center;color:#64748b;">No line items.</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="grand-label">Grand total (US$)</td>
+                <td class="grand-value">{{ order_total|default:materials_total|floatformat:2 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+    <div class="terms">
+        <strong>Terms and conditions</strong>
+        <ol>
+            <li>Acknowledge this LPO and confirm delivery timelines in writing.</li>
+            <li>Goods must match approved specifications.</li>
+            <li>Invoices must quote LPO <strong>{{ lpo_no }}</strong>.</li>
+        </ol>
+    </div>
+    <table class="signatures">
+        <tr>
+            <td><div class="line">Prepared by — Procurement</div><div class="hint">{{ org_short_name|default:org_name }}</div></td>
+            <td style="width:10%"></td>
+            <td><div class="line">Authorized signatory</div><div class="hint">{{ org_short_name|default:org_name }} Management</div></td>
+        </tr>
+    </table>
+    <p class="footer-note">Computer-generated - {{ lpo_no }} - {{ date }}</p>
+</div>

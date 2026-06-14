@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RO {{ ro.ro_no }}</title>
+{% include "includes/lpo_document_styles.html" %}
+</head>
+<body class="pioneer-doc-print">
+<div class="screen-toolbar no-print">
+<button type="button" onclick="window.print()">Print Requisition Order</button>
+</div>
+<div class="lpo-paper"><div class="doc">
+<div class="brand-bar"></div>
+{% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Requisition Order" %}
+<table class="meta-table">
+<tr><th>Document</th><th>RO Number</th><th>Date</th></tr>
+<tr><td>Requisition Order</td><td class="lpo-no">{{ ro.ro_no }}</td><td>{% now "d M Y" %}</td></tr>
+</table>
+<table class="parties">
+<tr><th>To</th><th>From</th></tr>
+<tr><td><div class="party-name">General Manager</div></td><td><div class="party-name">Senior Site Engineer</div><div class="muted">{{ org_short_name|default:org_name }}</div></td></tr>
+</table>
+<table class="lines">
+<thead><tr><th>Description</th><th class="num">Qty</th><th class="center">Unit</th></tr></thead>
+<tbody>{% for item in ro.items.all %}<tr{% if forloop.counter|divisibleby:2 %} class="zebra"{% endif %}><td>{{ item.tech_spec_summary }}</td><td class="num">{{ item.quantity }}</td><td class="center">{{ item.uom }}</td></tr>{% endfor %}</tbody>
+</table>
+<table class="signatures"><tr>
+<td><div class="line">Senior Site Engineer</div><div class="hint">{{ org_short_name|default:org_name }}</div></td>
+<td style="width:10%"></td>
+<td><div class="line">General Manager</div><div class="hint">Authorization</div></td>
+</tr></table>
+<p class="footer-note">RO — {{ ro.ro_no }} — {% now "Y-m-d" %}</p>
+</div></div>
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},400)});</script>
+</body></html>

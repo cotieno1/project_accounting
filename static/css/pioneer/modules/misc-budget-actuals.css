@@ -1,0 +1,160 @@
+/* Ad-hoc purchase audit — misc budget vs actuals */
+body.misc-audit { --text-muted: var(--muted); }
+
+.misc-audit .sidebar-block:first-of-type {
+    margin-top: 16px;
+    padding-top: 0;
+    border-top: none;
+}
+.misc-audit .budget-status-panel .budget-value--actual { color: var(--warning); }
+.misc-audit .nav-label--spaced { margin-top: 24px; display: block; }
+.misc-audit .btn-action--block {
+    width: 100%;
+    margin-top: 10px;
+    text-decoration: none;
+    text-align: center;
+    display: block;
+    box-sizing: border-box;
+}
+.misc-audit .btn-action--block:first-of-type { margin-top: 8px; }
+.misc-audit .sidebar-back-link {
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: none;
+}
+.misc-audit .sidebar-back-link:hover { color: var(--light); }
+
+.misc-audit .page-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.misc-audit .task-id {
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    display: block;
+}
+.misc-audit .page-header h1 { margin: 0; font-size: 24px; }
+
+.misc-audit .dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 350px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+.misc-audit .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.misc-audit .summary-cell small {
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+.misc-audit .summary-cell .summary-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 18px;
+}
+.misc-audit .summary-cell .summary-value--actual { color: var(--warning); }
+.misc-audit .summary-cell .summary-value--over { color: var(--danger); }
+.misc-audit .summary-cell .summary-value--ok { color: var(--success); }
+
+.misc-audit .panel-dark { background: var(--surface-deep); }
+.misc-audit .panel-title {
+    font-size: 14px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 20px 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+}
+.misc-audit .fin-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    font-size: 15px;
+}
+.misc-audit .fin-label { color: var(--muted); }
+.misc-audit .fin-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 16px;
+}
+.misc-audit .fin-value--success { color: var(--success); }
+.misc-audit .fin-value--warning { color: var(--warning); }
+.misc-audit .fin-value--danger { color: var(--danger); }
+.misc-audit .fin-total-row {
+    border-top: 2px dashed var(--border);
+    margin-top: 10px;
+    padding-top: 20px;
+}
+
+.misc-audit .audit-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.misc-audit .audit-badge--warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+    border: 1px solid var(--warning);
+}
+.misc-audit .audit-badge--success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.misc-audit .officer-intro {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 16px;
+}
+.misc-audit .officer-intro strong { color: var(--success); }
+
+.misc-audit table th.num,
+.misc-audit table td.num {
+    text-align: right;
+    font-family: var(--font-mono);
+}
+.misc-audit table td.num--strong { font-weight: 600; }
+.misc-audit table td.ref-cell { color: var(--primary); }
+.misc-audit table td.empty-row {
+    text-align: center;
+    color: var(--muted);
+}
+
+.misc-audit .back-link {
+    margin-top: 16px;
+    display: inline-block;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 13px;
+}
+.misc-audit .back-link:hover { text-decoration: underline; }
+
+@media (max-width: 1100px) {
+    .misc-audit .dashboard-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+    .misc-audit .summary-strip { grid-template-columns: 1fr; }
+}
+@media print {
+    .cockpit-shell .sidebar, .sidebar-toggle, .sidebar-backdrop { display: none !important; }
+    .misc-audit .page-header button { display: none; }
+}

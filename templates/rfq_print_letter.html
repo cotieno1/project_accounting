@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Pioneer | RFQ Package Dispatch</title>
+    {% include "includes/lpo_document_styles.html" %}
+    <style>
+        .rfq-document-sheet { page-break-after: always; }
+        .rfq-document-sheet:last-of-type { page-break-after: avoid; }
+        .meta { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 10pt; }
+        .content-body { text-align: justify; margin-bottom: 20px; font-size: 9.5pt; color: #475569; }
+    </style>
+</head>
+<body class="pioneer-doc-print">
+
+    <div class="screen-toolbar no-print">
+        <button type="button" onclick="window.print()">Print RFQ dispatch package</button>
+        <a href="{{ return_url }}">Back to RFQ Manager</a>
+    </div>
+
+    {% for packet in supplier_packets %}
+    <div class="lpo-paper rfq-document-sheet"><div class="doc">
+        <div class="brand-bar"></div>
+        {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Official Request for Quotation" %}
+
+        <div class="meta">
+            <div>
+                <strong>TO:</strong><br>
+                {{ packet.supplier.description }}<br>
+                {{ packet.supplier.contact_address|default:"Vendor Registered Address" }}<br>
+                {% if packet.supplier.email %}<strong>Email:</strong> {{ packet.supplier.email }}<br>{% endif %}
+                <strong>Attn:</strong> Sales Manager
+            </div>
+            <div style="text-align: right;">
+                <strong>RFQ REF:</strong> {{ packet.ro_no }}<br>
+                <strong>DATE:</strong> {{ today|date:"d M Y" }}<br>
+                <strong>TASK ID:</strong> {{ task.project_id }}
+            </div>
+        </div>
+
+        <div class="content-body">
+            <p>Dear Sir/Madam,</p>
+            <p>We kindly invite your reputable company to provide a formal quotation for the supply of materials/services as detailed in the table below. This request is part of our project procurement for <strong>Task: {{ task.description }}</strong>.</p>
+            
+            <table class="lines">
+                <thead>
+                    <tr>
+                        <th>Item Description</th>
+                        <th>UOM</th>
+                        <th>Required Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in packet.items %}
+                    <tr>
+                        <td>{{ item.tech_spec_summary }}</td>
+                        <td>{{ item.uom }}</td>
+                        <td style="font-weight: bold;">{{ item.quantity }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="terms">
+            <strong>Submission requirements &amp; terms</strong>
+            <ul style="margin: 10px 0 0 20px;">
+                <li><strong>Deadline:</strong> Your quote must be submitted within <strong>two (2) weeks</strong> of the date of this letter.</li>
+                <li><strong>Financial Breakdown:</strong> Quotes must clearly state the <strong>Net Price, Applicable Taxes (VAT/Levies), and Final Total Cost</strong>.</li>
+                <li><strong>Validity:</strong> All quoted prices must remain valid for a minimum of <strong>one (1) month</strong> from the date of submission.</li>
+            </ul>
+        </div>
+
+        <table class="signatures"><tr>
+            <td><div class="line">General Manager</div><div class="hint">{{ org_short_name|default:org_name }}</div></td>
+            <td style="width:10%"></td>
+            <td><div class="line">Official stamp</div><div class="hint">Procurement dispatch</div></td>
+        </tr></table>
+        <p class="footer-note">RFQ — {{ packet.ro_no }} — {{ task.project_id }}</p>
+    </div></div>
+    {% empty %}
+    <div style="padding: 100px; text-align: center; color: #94a3b8;">
+        <h3>No Supplier Print Context Transmitted</h3>
+        <p>Please select suitable suppliers from the procurement dashboard.</p>
+    </div>
+    {% endfor %}
+
+<script>
+(function () {
+    var returnUrl = "{{ return_url|escapejs }}";
+    var autoPrint = new URLSearchParams(window.location.search).get("print") === "1";
+
+    function returnToApp() {
+        if (window.opener && !window.opener.closed) {
+            try { window.opener.focus(); } catch (e) {}
+            window.close();
+            return;
+        }
+        window.location.href = returnUrl;
+    }
+
+    window.addEventListener("afterprint", returnToApp);
+
+    if (autoPrint) {
+        window.addEventListener("load", function () {
+            setTimeout(function () { window.print(); }, 400);
+        });
+    }
+})();
+</script>
+</body>
+</html>

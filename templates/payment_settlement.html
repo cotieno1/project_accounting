@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pioneer | Settlement & GRN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --dark: #0a0f1d; --card: #1e293b; --border: #334155; --success: #10b981; --warning: #f59e0b; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: white; display: flex; }
+        .sidebar { width: 280px; background: #070b14; border-right: 1px solid var(--border); padding: 30px 20px; }
+        .main-content { flex: 1; padding: 40px; }
+        .panel { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 25px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; color: #94a3b8; padding: 12px; border-bottom: 1px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .status-received { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .status-paid { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="color: var(--primary);">PIONEER</h2>
+    <p style="font-size: 11px; color: #94a3b8;">Logistics & GL Phase</p>
+    <hr style="border:0; border-top: 1px solid var(--border); margin: 20px 0;">
+    <a href="/ops-dashboard/" style="color: white; text-decoration: none; font-size: 13px;">← Return to Dashboard</a>
+</div>
+
+<div class="main-content">
+    <h1>Payment & GRN Settlement</h1>
+
+    <div class="panel">
+        <h3>Deliveries & Invoices: {{ active_task.description }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Supplier</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr>
+                    <td>{{ tx.product.description }}</td>
+                    <td>{{ tx.quantity_required }}</td>
+                    <td>{{ tx.supplier.name }}</td>
+                    <td><span class="badge status-{{ tx.status|lower }}">{{ tx.status }}</span></td>
+                    <td>
+                        <form method="POST" style="display: flex; gap: 5px;">
+                            {% csrf_token %}
+                            {% if tx.status == 'AUTHORIZED' %}
+                                <input type="text" name="grn_ref" placeholder="GRN #" required style="width: 80px; background: #070b14; color:white; border:1px solid var(--border);">
+                                <button type="submit" name="record_grn" class="badge" style="background: var(--warning); border:none; cursor:pointer;">Confirm Receipt</button>
+                            {% elif tx.status == 'RECEIVED' %}
+                                <input type="text" name="pay_ref" placeholder="M-PESA/Bank #" required style="width: 80px; background: #070b14; color:white; border:1px solid var(--border);">
+                                <button type="submit" name="process_payment" class="badge" style="background: var(--success); border:none; cursor:pointer;">Pay Invoice</button>
+                            {% else %}
+                                <button onclick="window.print()" type="button" class="badge" style="background: var(--primary); border:none; cursor:pointer;">Print Receipt</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,218 @@
+{% extends "layouts/cockpit.html" %}
+{% load static %}
+{% block title %}Pioneer | Financial Ops & Supply Chain{% endblock %}
+{% block body_class %}ops-dashboard{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/fin-mgmt-ops-dashboard.css' %}">
+{% endblock %}
+{% block sidebar %}
+    <div class="ops-brand">
+        <h2>PIONEER</h2>
+        <small>Somalia Ops Command</small>
+    </div>
+
+    <div class="nav-section nav-section--adhoc">
+        <span class="nav-label">⚡ AD-HOC PROCUREMENT</span>
+        {% if active_task %}
+        <a href="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}" class="nav-link nav-link--emph">🛒 Direct/AD-HOC Purchase</a>
+        {% else %}
+        <span class="nav-link nav-link--emph" style="opacity:0.5;cursor:not-allowed;">🛒 Direct/AD-HOC Purchase</span>
+        {% endif %}
+        <small class="nav-hint">Expedited purchase for standard items (e.g. Cement) bypassing RFQ/Bids.</small>
+    </div>
+
+    <div class="nav-section">
+        <span class="nav-label">I. FIELD DEFINITION</span>
+        {% if active_task %}
+        <a href="{% url 'bom_builder' %}?task_id={{ active_task.project_id }}" class="nav-link">🏗️ 1.1 Site Eng: Build BOM</a>
+        <a href="{% url 'ro_builder' %}?task_id={{ active_task.project_id }}" class="nav-link">⚖️ 1.2 Snr Eng: Issue Requisition</a>
+        <a href="{% url 'rfq_manager' %}?task_id={{ active_task.project_id }}" class="nav-link">✉️ 1.3 GM: Prepare & Dispatch RFQs (Min 2)</a>
+        {% else %}
+        <span class="nav-link" style="opacity:0.5;">Select a task to open workflow steps</span>
+        {% endif %}
+    </div>
+
+    <div class="nav-section">
+        {% if active_task %}
+        <a href="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}" class="nav-link">📊 2.1 System: Bid Evaluation</a>
+        {% else %}
+        <span class="nav-link" style="opacity:0.5;">📊 2.1 System: Bid Evaluation</span>
+        {% endif %}
+    </div>
+
+    <div class="nav-section">
+        <span class="nav-label">III. EXCO COMMITMENT</span>
+        {% if active_task %}
+        <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id }}" class="nav-link">💰 3.1 CEO: Budget Authorization-Funds Disbursement</a>
+        {% endif %}
+    </div>
+
+    <div class="nav-section">
+        <span class="nav-label">IV. DISBURSEMENT</span>
+        {% if active_task %}
+        <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id }}" class="nav-link">🔒 CEO: Budget Authorization</a>
+        <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}" class="nav-link nav-link--emph">🏦 4.2 GM: AIE Payments (4 Lines)</a>
+        <small class="nav-hint">Goods, maintenance, labour &amp; equipment — Major or Ad-Hoc task.</small>
+        {% endif %}
+    </div>
+
+    <div class="nav-section">
+        <span class="nav-label">V. FULFILLMENT</span>
+        {% if active_task %}
+        <a href="/payment-settlement/?task_id={{ active_task.project_id }}" class="nav-link">🚚 5.1 Log: Record GRN/Receipt</a>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block workspace %}
+    <div class="ops-header">
+        <div>
+            <h1>Ops & Financial Dashboard</h1>
+            <p>Project Director View: Task-Linked Budgeting & Actuals</p>
+        </div>
+        <button type="button" class="btn-action btn-success">Export UN Audit Pack</button>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card stat-card--primary">
+            <small>Total Baselined (BOM)</small>
+            <h2>{{ currency_symbol }} 12,000.00</h2>
+            <span class="trend trend-primary">Target</span>
+        </div>
+        <div class="stat-card stat-card--warning">
+            <small>Committed (LPO)</small>
+            <h2>{{ currency_symbol }} 12,000.00</h2>
+            <span class="trend trend-warning">Orion Ltd</span>
+        </div>
+        <div class="stat-card stat-card--success">
+            <small>Actuals (GRN/Post)</small>
+            <h2 id="actuals-val">{{ currency_symbol }} 0.00</h2>
+            <span class="trend" id="actuals-status">Pending Receipt</span>
+        </div>
+        <div class="stat-card stat-card--danger">
+            <small>Variance</small>
+            <h2>0.00 %</h2>
+            <span class="trend">On Budget</span>
+        </div>
+    </div>
+
+    <div class="task-switcher">
+        <span class="nav-label task-switcher-label">SWITCH ACTIVE TASK</span>
+        <select onchange="window.location.href='?task_id=' + this.value;">
+            {% if not tasks %}
+            <option>No Tasks Found in DB</option>
+            {% endif %}
+            {% for t in tasks %}
+            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
+                {{ t.project_id }}: {{ t.description }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            {% if active_task %}
+            <h3>Project DNA: {{ active_task.description }} (ID: {{ active_task.project_id }})</h3>
+            <span class="panel-meta">BOM: {{ bom_no }}</span>
+            {% else %}
+            <h3>No Active Task Selected</h3>
+            <span class="panel-meta panel-meta--danger">BOM: N/A</span>
+            {% endif %}
+            <span class="badge badge-execution">Active Site</span>
+        </div>
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Ref #</th>
+                    <th>Actor</th>
+                    <th>Action Description</th>
+                    <th>Document DNA</th>
+                    <th>Financial Impact</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>TSK-101</strong></td>
+                    <td>Project Dir.</td>
+                    <td>Task Assigned: House Building</td>
+                    <td>Site: Mogadishu South</td>
+                    <td>-</td>
+                    <td><span class="badge badge-primary">Actioned</span></td>
+                </tr>
+                <tr>
+                    <td><strong>BOM-042</strong></td>
+                    <td>Snr Site Mgr</td>
+                    <td>BOM Submitted: 600 Bags Cement</td>
+                    <td>Code: XX2 / Mazuri</td>
+                    <td>Est. {{ currency_symbol }} 12,000</td>
+                    <td><span class="badge badge-success">Baselined</span></td>
+                </tr>
+                <tr>
+                    <td><strong>LPO-001</strong></td>
+                    <td>GM / Director</td>
+                    <td>LPO Issued to Orion Supplies</td>
+                    <td>RFQ-Som-04 / Quo-98</td>
+                    <td>{{ currency_symbol }} 12,000.00</td>
+                    <td><span class="badge badge-execution">Authorized</span></td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <div class="panel gl-feed-panel">
+        <h4>Automated GL Feed (Invoice A/c)</h4>
+        <p>Real-time Debit/Credit entries linked to Task ID & Building Type</p>
+        <div id="gl-feed">
+            <p>&gt; Awaiting GRN Trigger to update Supplier GL...</p>
+        </div>
+    </div>
+{% endblock %}
+{% block modals %}
+{% if active_task %}
+<div id="bomModal" class="ops-modal">
+    <div class="ops-modal-panel">
+        <h2 class="ops-modal-title">🏗️ Submit BOM for {{ bom_no }}</h2>
+        <p class="ops-modal-intro">
+            <strong>Active Task:</strong> {{ active_task.project_id }} - {{ active_task.description }}
+        </p>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="project_id" value="{{ active_task.project_id }}">
+            <div class="bom-form-grid">
+                <select name="pillar_id" class="form-input">
+                    <option value="1">Pillar 1: Labour</option>
+                    <option value="2">Pillar 2: Material</option>
+                    <option value="5">Pillar 5: Transport</option>
+                </select>
+                <input type="text" name="description" placeholder="Description (e.g. Mazuri Cement)" required class="form-input">
+                <input type="number" name="qty" placeholder="Quantity" required class="form-input" step="1">
+                <input type="text" name="uom" placeholder="UOM (e.g. 50kg Bag)" required class="form-input">
+            </div>
+            <div class="bom-form-actions">
+                <button type="submit" name="add_item" class="btn-action">Stitch to BOM</button>
+                <button type="button" onclick="closeOpsModal()" class="btn-action btn-danger">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script>
+function openOpsModal(type) {
+    if (type === 'bom') {
+        var el = document.getElementById('bomModal');
+        if (el) el.style.display = 'flex';
+    } else {
+        alert('Opening ' + type.toUpperCase() + ' Logic...');
+    }
+}
+function closeOpsModal() {
+    var el = document.getElementById('bomModal');
+    if (el) el.style.display = 'none';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+<div class="requisition-letter" style="padding: 50px; font-family: 'Times New Roman', serif; line-height: 1.6; background: white; color: black;">
+    {% include "includes/print_correspondence_header.html" with doc_subtitle="Internal Memo: Technical Requisition" %}
+
+    <div style="margin-top: 30px;">
+        <table width="100%">
+            <tr>
+                <td><strong>TO:</strong> General Manager</td>
+                <td align="right"><strong>RO NO:</strong> {{ ro.ro_no }}</td>
+            </tr>
+            <tr>
+                <td><strong>FROM:</strong> Senior Site Engineer</td>
+                <td align="right"><strong>DATE:</strong> {% now "d M Y" %}</td>
+            </tr>
+        </table>
+    </div>
+
+    <table border="1" width="100%" cellpadding="8" style="border-collapse: collapse; margin: 20px 0;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Specification</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in ro.items.all %}
+            <tr>
+                <td>{{ item.tech_spec_summary }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.uom }}</td>
+                <td>{{ item.tech_spec_summary }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+        <div style="text-align: center;">
+            <p>__________________________</p>
+            <strong>Senior Site Engineerxx</strong>
+        </div>
+        <div style="text-align: center;">
+            <p>__________________________</p>
+            <strong>General Manager</strong>
+        </div>
+    </div>
+</div>
+<script>window.onload = function() { window.print(); }</script>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Internal Memorandum - Fund Disbursement Request</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; color: #000; background: #fff; padding: 40px; line-height: 1.5; }
+        .memo-header { text-align: center; border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 30px; }
+        .metadata-table { width: 100%; margin-bottom: 30px; border-collapse: collapse; }
+        .metadata-table td { padding: 6px; vertical-align: top; }
+        .metadata-table td.label { font-weight: bold; width: 15%; text-transform: uppercase; }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .data-table th, .data-table td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 13px; }
+        .data-table th { background: #f2f2f2; }
+        .sign-block { margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
+        .signature-line { border-top: 1px solid #000; margin-top: 50px; text-align: center; font-size: 12px; }
+        @media print {
+            .no-print { display: none; }
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print" style="background: #fff3cd; padding: 15px; border: 1px solid #ffeeba; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+    <span><strong>Operational Notice:</strong> Evaluation completed. Ready for physical signature or PDF archive export.</span>
+    <button onclick="window.print()" style="padding: 8px 16px; background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px;">🖨️ EXECUTE PRINT / SAVE PDF</button>
+</div>
+
+<div class="memo-header">
+    <h1 style="margin: 0; font-size: 26px; letter-spacing: 2px;">PIONEER INFRASTRUCTURE ECOSYSTEM</h1>
+    <h3 style="margin: 5px 0 0 0; letter-spacing: 1px;">INTERNAL MEMORANDUM</h3>
+</div>
+
+<table class="metadata-table">
+    <tr>
+        <td class="label">TO:</td>
+        <td>CHIEF EXECUTIVE OFFICER (CEO)</td>
+        <td class="label">DATE:</td>
+        <td>May 14, 2026</td>
+    </tr>
+    <tr>
+        <td class="label">FROM:</td>
+        <td>GENERAL MANAGER (GM)</td>
+        <td class="label">REF ID:</td>
+        <td><strong>MEMO-{{ task.project_id }}</strong></td>
+    </tr>
+    <tr>
+        <td class="label">SUBJECT:</td>
+        <td colspan="3"><strong>FINANCIAL baseline AUTHORIZATION & DISBURSEMENT REQUEST FOR TASK: {{ task.project_id }}</strong></td>
+    </tr>
+</table>
+
+<p>Following a formal commercial evaluation conducted on the task mandate architecture outlined below, competitive quotations were analyzed for compliance and cost optimization. The package totals break down as follows:</p>
+
+<ul>
+    <li>Selected Winning Vendor Package: <strong>{{ task.winning_supplier }}</strong></li>
+    <li>Total Baseline Material Liability: <strong>KES {{ task.estimated_material_cost|floatformat:2 }}</strong></li>
+</ul>
+
+<h3>FINANCIAL DISBURSEMENT BREAKDOWN SUMMARY</h3>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Line Vote Category</th>
+            <th style="text-align: right;">Allocated Value (KES)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>I. Materials Cost Subtotal (Lowest Compliant Bid Portfolio)</td>
+            <td style="text-align: right; font-weight: bold;">{{ task.estimated_material_cost|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>II. Labour & Resource Execution Allocation</td>
+            <td style="text-align: right;">{{ task.labour_allocation|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>III. Contingency / Miscellaneous Operational Reserve</td>
+            <td style="text-align: right;">{{ task.contingency_reserve|floatformat:2 }}</td>
+        </tr>
+        <tr style="background: #f2f2f2; font-weight: bold;">
+            <td>TOTAL FUND DISBURSEMENT REQUESTED</td>
+            <td style="text-align: right; font-size: 16px; border-bottom: 4px double #000;">KES {{ task.total_budget_baseline|floatformat:2 }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<p style="margin-top: 30px;">Pending your confirmation and authorization below, funds will be disbursed immediately to the active project task account, and the system will automatically dispatch the official **Local Purchase Order (LPO)** to <strong>{{ task.winning_supplier }}</strong> to authorize mobilization.</p>
+
+<div class="sign-block">
+    <div>
+        <p>Prepared & Submitted by:</p>
+        <div class="signature-line">
+            GENERAL MANAGER<br>
+            Pioneer Operations Control Terminal
+        </div>
+    </div>
+    <div>
+        <p>Approved & Authorized by:</p>
+        <div class="signature-line">
+            CHIEF EXECUTIVE OFFICER<br>
+            Pioneer Management Board
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pioneer | Evaluation & Budget Formulation Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #2563eb; --primary-hover: #1d4ed8; --dark: #0a0f1d; --card: #1e293b; 
+            --border: #334155; --success: #10b981; --warning: #f59e0b; --text: #f1f5f9;
+            --text-muted: #94a3b8; --accent: #6366f1;
+        }
+        
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Layout Framework */
+        .sidebar { 
+            width: 280px; 
+            background: #070b14; 
+            border-right: 1px solid var(--border); 
+            padding: 30px 20px; 
+            flex-shrink: 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            box-sizing: border-box;
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.6); border-radius: 10px; }
+
+        .nav-label { font-size: 10px; font-weight: 800; color: var(--primary); letter-spacing: 1.5px; margin-bottom: 12px; display: block; text-transform: uppercase; }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .top-bar { height: 70px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 40px; justify-content: space-between; background: rgba(10, 15, 29, 0.8); flex-shrink: 0; }
+        
+        /* Master Split Workspace Layout */
+        .workspace-scroller { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 25px; }
+        .evaluation-grid { display: grid; grid-template-columns: 1fr 380px; gap: 25px; }
+        
+        /* Content Panes */
+        .table-pane { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+        .budget-card { background: #070b14; border: 1px solid var(--border); padding: 25px; border-radius: 12px; display: flex; flex-direction: column; }
+        
+        /* Vault Panel & Interactive Cockpit Sub-components */
+        .selection-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; background: #111827; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 5px; }
+        .vault-pane { background: var(--card); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+        #vault-container { max-height: 250px; overflow-y: auto; outline: none; background: #0f172a; }
+        
+        .vault-row { cursor: pointer; transition: 0.1s ease-in-out; }
+        .vault-row:hover { background: rgba(99, 102, 241, 0.1); }
+        
+        /* State Machine Visualization Styles */
+        .vault-row.highlighted { background: rgba(37, 99, 235, 0.25); border-left: 3px solid var(--primary); }
+        .vault-row.locked { background: rgba(16, 185, 129, 0.2) !important; font-weight: bold; }
+        
+        .monitor-pane { background: #070b14; border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; min-height: 250px; justify-content: center; }
+        
+        /* Interactive Core Controls */
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #111827; color: var(--text-muted); font-size: 11px; text-transform: uppercase; padding: 15px; text-align: left; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+        td { padding: 14px 15px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); font-size: 13px; }
+        
+        .input-price { background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px 12px; width: 110px; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
+        .input-price:focus { border-color: var(--primary); outline: none; }
+        
+        .monitor-pane input[type="number"] { background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; width: 100%; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .monitor-pane input[type="number"]:focus { border-color: var(--success); outline: none; }
+        
+        /* Pricing & Action Typography Buttons */
+        .total-display { font-size: 26px; font-weight: 700; color: var(--success); margin: 8px 0 15px 0; font-family: monospace; }
+        
+        .btn-action { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase; margin-top: 15px; }
+        .btn-success { background: var(--success); color: white; }
+        
+        .btn-demo-print { background: #334155; color: var(--text); border: 1px solid var(--border); padding: 12px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; text-transform: uppercase; transition: 0.2s; letter-spacing: 0.5px; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-demo-print:hover { background: #475569; border-color: var(--text-muted); }
+
+        select, input[type="number"] { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; font-size: 13px; }
+        select:focus { outline: none; border-color: var(--primary); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+		 :root { 
+            --primary: #2563eb; --primary-hover: #1d4ed8; --dark: #0a0f1d; --card: #1e293b; 
+            --border: #334155; --success: #10b981; --warning: #f59e0b; --text: #f1f5f9;
+            --text-muted: #94a3b8; --accent: #6366f1;
+        }
+        
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Layout Framework */
+        .sidebar { 
+            width: 280px; 
+            background: #070b14; 
+            border-right: 1px solid var(--border); 
+            padding: 30px 20px; 
+            flex-shrink: 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            box-sizing: border-box;
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.6); border-radius: 10px; }
+
+        .nav-label { font-size: 10px; font-weight: 800; color: var(--primary); letter-spacing: 1.5px; margin-bottom: 12px; display: block; text-transform: uppercase; }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .top-bar { height: 70px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 40px; justify-content: space-between; background: rgba(10, 15, 29, 0.8); flex-shrink: 0; }
+        
+        /* Master Split Workspace Layout */
+        .workspace-scroller { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 25px; }
+        .evaluation-grid { display: grid; grid-template-columns: 1fr 380px; gap: 25px; }
+        
+        /* Content Panes */
+        .table-pane { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+        .budget-card { background: #070b14; border: 1px solid var(--border); padding: 25px; border-radius: 12px; display: flex; flex-direction: column; }
+        
+        /* Vault Panel & Interactive Cockpit Sub-components */
+        .selection-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; background: #111827; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 5px; }
+        .vault-pane { background: var(--card); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+        #vault-container { max-height: 250px; overflow-y: auto; outline: none; background: #0f172a; }
+        
+        .vault-row { cursor: pointer; transition: 0.1s ease-in-out; }
+        .vault-row:hover { background: rgba(99, 102, 241, 0.1); }
+        
+        /* State Machine Visualization Styles */
+        .vault-row.highlighted { background: rgba(37, 99, 235, 0.25); border-left: 3px solid var(--primary); }
+        .vault-row.locked { background: rgba(16, 185, 129, 0.2) !important; font-weight: bold; }
+        
+        .monitor-pane { background: #070b14; border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; min-height: 250px; justify-content: center; }
+        
+        /* Interactive Core Controls */
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #111827; color: var(--text-muted); font-size: 11px; text-transform: uppercase; padding: 15px; text-align: left; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+        td { padding: 14px 15px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); font-size: 13px; }
+        
+        .input-price { background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px 12px; width: 110px; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
+        .input-price:focus { border-color: var(--primary); outline: none; }
+        
+        .monitor-pane input[type="text"], .monitor-pane input[type="number"] { background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; width: 100%; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .monitor-pane input[type="number"]:focus { border-color: var(--success); outline: none; }
+        
+        /* Pricing & Action Typography Buttons */
+        .total-display { font-size: 26px; font-weight: 700; color: var(--success); margin: 8px 0 15px 0; font-family: monospace; }
+        
+        .btn-action { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase; margin-top: 15px; }
+        .btn-success { background: var(--success); color: white; }
+        
+        .btn-demo-print { background: #334155; color: var(--text); border: 1px solid var(--border); padding: 12px; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; text-transform: uppercase; transition: 0.2s; letter-spacing: 0.5px; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-demo-print:hover { background: #475569; border-color: var(--text-muted); }
+
+        select, input[type="number"] { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; font-size: 13px; }
+        select:focus { outline: none; border-color: var(--primary); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<script>
+    var nativeBOMInventory = [];
+</script>
+
+<div class="sidebar">
+    <h2 style="color: var(--primary); margin:0 0 40px 0; letter-spacing: -1px;">PIONEER EVAL</h2>
+    
+    <span class="nav-label">I. Task Selection Panel</span>
+    <div style="margin-bottom: 25px;">
+        <select onchange="window.location.href='?task_id=' + this.value;" style="width: 100%; margin-bottom: 0;">
+            {% for t in tasks %}
+                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
+                    {{ t.project_id }}
+                </option>
+            {% empty %}
+                <option disabled>No active tasks loaded</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <span class="nav-label">II. Baseline Target</span>
+    <div style="background: #030712; padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+        <small style="color: var(--text-muted); font-size: 9px; display: block; text-transform: uppercase;">Current Actual Cost</small>
+        <span style="color: var(--accent); font-weight: 700; font-size: 15px;">US$ {{ active_task.actual_cost|default:"0.00" }}</span>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <div>
+            <h3 style="margin:0;">Step 1: Budget, Bid Evaluation & Award Cockpit</h3>
+        </div>
+        <select onchange="window.location.href='?task_id=' + this.value;" style="width: 100%;">
+            {% for t in tasks %}
+                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
+                    {{ t.project_id }}
+                </option>
+            {% empty %}
+                No active tasks selected
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="workspace-scroller">
+        
+        <div class="selection-workspace">
+            <div class="vault-pane">
+                <div style="padding: 15px; background: #070b14; border-bottom: 1px solid var(--border);">
+                    <span class="nav-label" style="margin:0;">III. Select Lowest Bidder Targets</span>
+                </div>
+                <div id="vault-container" tabindex="0">
+                    <table>
+                        <tbody>
+                            {% for s in suppliers %}
+                            <tr class="vault-row" 
+                                data-sid="{{ s.supplier_id }}" 
+                                data-name="{{ s.description }}" 
+                                data-phone="{{ s.phone }}"
+                                data-email="{{ s.email }}"
+                                onclick="handleManualSelect(this)">
+                                <td style="padding: 15px; font-size: 13px; font-weight: 500;">{{ s.description }}</td>
+                                <td style="padding: 15px; text-align: right; color: var(--text-muted); font-size: 11px;">#{{ s.supplier_id }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="monitor-pane">
+                <div id="monitor-empty" style="display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.5;">
+                    <div style="font-size: 40px; margin-bottom: 20px;">📡</div>
+                    <p style="margin:0; font-size:13px;">Select or use Arrows + Enter to lock target bidder.</p>
+                </div>
+
+                <div id="monitor-content" style="display: none; flex-direction: column; gap: 10px;">
+                    <div><strong>Selected Pipeline:</strong> <span id="mon-display-name">-</span></div>
+                    <div>
+                        <label class="nav-label">Target Contacts Tracker</label>
+                        <input type="text" id="mon-supplier-contact" readonly style="margin-bottom: 10px; color: var(--accent); font-weight: 600;">
+                    </div>
+                    <div>
+                        <label class="nav-label">Material Valuation Target</label>
+                        <input type="number" id="mon-unit-price" readonly style="margin-bottom: 10px;">
+                    </div>
+                    <div>
+                        <label class="nav-label">Synchronized Reserves Base</label>
+                        <input type="number" id="mon-misc-expenses" readonly style="margin-bottom: 0;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="" id="matrix_evaluation_form" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="supplier_names_csv" id="form-supplier-name">
+            <input type="hidden" name="supplier_ids_csv" id="form-supplier-id">
+            <input type="hidden" name="supplier_contact_csv" id="form-supplier-contact">
+            <input type="hidden" name="items_json_payload" id="items_json_payload">
+            
+            <div class="evaluation-grid">
+                
+                <div class="table-pane">
+                    <table id="evaluation_materials_table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 45%;">Item Description / Technical Specs</th>
+                                <th style="width: 15%;">Req. Qty</th>
+                                <th style="width: 17%; color: var(--success);">
+                                    {{ suppliers.0.description|default:"Supplier 1" }} (US$)
+                                </th>
+                                <th style="width: 18%; color: var(--warning);">
+                                    {{ suppliers.1.description|default:"Supplier 2" }} (US$)
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bom_items %}
+                            <tr>
+                                <td style="font-weight: bold; color: var(--text-muted); text-align: center; width: 40px;">
+                                    {{ forloop.counter }}
+                                </td>
+                                <td style="font-weight: 600;" class="item-description">{{ item.tech_spec_summary }}</td> 
+                                <td style="color: var(--accent); font-weight: bold;" class="item-qty">
+                                    {{ item.quantity }}
+                                    <span style="font-size:11px; font-weight:normal; color:var(--text-muted);" class="item-uom">{{ item.uom|default:"pcs" }}</span>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" id="input_winner_{{ item.id }}" name="winner_{{ item.id }}" class="input-price evaluation-winner-input" oninput="calculateBudget()" placeholder="0.00" required>
+                                    <div style="font-size: 11px; color: var(--success); margin-top: 4px; font-family: monospace;">
+                                        Ext: <span id="s1_line_total_{{ item.id }}">0.00</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" id="input_runner_{{ item.id }}" name="runner_{{ item.id }}" class="input-price evaluation-runner-input" oninput="calculateBudget()" placeholder="0.00">
+                                    <div style="font-size: 11px; color: var(--warning); margin-top: 4px; font-family: monospace;">
+                                        Ext: <span id="s2_line_total_{{ item.id }}">0.00</span>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <script>
+                                nativeBOMInventory.push({
+                                    id: "{{ item.id|escapejs }}",
+                                    desc: "{{ item.tech_spec_summary|escapejs }}",
+                                    qty: parseFloat("{{ item.quantity|escapejs }}") || 0,
+                                    uom: "{{ item.uom|default:'pcs'|escapejs }}"
+                                });
+                            </script>
+
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">No BOM lines registered for evaluation.</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <tr style="background: rgba(99, 102, 241, 0.05); border-top: 2px solid var(--border); font-weight: bold;">
+                                <td style="text-align: center; color: var(--text-muted);">#</td>
+                                <td style="text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; vertical-align: middle;">
+                                    Grand Bid running Totals:
+                                </td>
+                                <td style="color: var(--text-muted); font-size: 11px; vertical-align: middle;">
+                                    {{ bom_items|length }} Lines
+                                </td>
+                                <td style="padding: 12px 15px; color: var(--success); font-size: 14px; font-family: monospace;">
+                                    Total S1:<br>US$ <span id="supplier1_grand_total">0.00</span>
+                                </td>
+                                <td style="padding: 12px 15px; color: var(--warning); font-size: 14px; font-family: monospace;">
+                                    Total S2:<br>US$ <span id="supplier2_grand_total">0.00</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="budget-card">
+                    <h3 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 12px; font-size: 14px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text);">Budget Formulation</h3>
+                    
+                    <label class="nav-label" style="margin-bottom: 5px;">1. Material Sub-Total (Lowest Basis)</label>
+                    <div id="material_display" class="total-display">US$ 0.00</div>
+                    <input type="hidden" name="material_total" id="material_val">
+
+                    <label class="nav-label" style="margin-top: 15px; margin-bottom: 8px;">2. Labour Cost Burden</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 0;">
+                        <select name="labour_mode" id="labour_mode" onchange="calculateBudget()" style="flex: 1; margin-bottom: 20px;">
+                            <option value="fixed">Manual (Fixed US$)</option>
+                            <option value="percent">Percent Allocation (%)</option>
+                        </select>
+                        <input type="number" step="0.01" id="labour_input" name="labour_input" class="input-price" style="width: 120px; margin-bottom: 20px;" oninput="calculateBudget()" value="0.00">
+                    </div>
+
+                    <label class="nav-label" style="margin-top: 10px; margin-bottom: 5px;">3. Misc / Logistics Operational Reserve</label>
+                    <input type="number" step="0.01" id="misc_input" name="misc_input" class="input-price" style="width: 100%; margin-bottom: 20px;" oninput="calculateBudget()" value="0.00">
+
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed var(--border); margin-bottom: 20px;">
+                        <span class="nav-label" style="color: var(--text-muted); margin-bottom: 5px;">Total Expected Fund Disbursement</span>
+                        <div id="grand_total_display" class="total-display" style="color: var(--text); font-size: 30px; border-bottom: 3px double var(--success); padding-bottom: 5px;">US$ 0.00</div>
+                        <input type="hidden" name="grand_total" id="grand_total_val">
+                    </div>
+
+                    <button type="button" onclick="openReviewModal()" class="btn-action btn-success">
+                        🔎 Review Budget Blueprint & Amend
+                    </button>
+
+                    <button type="button" class="btn-demo-print" onclick="printDemoLPO()">
+					 
+                        🖨️ Print Demo LPO
+                    </button>
+                </div>
+                
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="reviewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 11, 20, 0.85); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: #1e293b; width: 550px; border-radius: 12px; border: 1px solid #334155; padding: 30px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #2563eb; letter-spacing: 0.5px; font-size: 14px; text-transform: uppercase;">📋 Treasury Pre-Authorization Memorandum</h3>
+            <span style="color: #94a3b8; font-family: monospace; font-size: 12px; background: #070b14; padding: 4px 8px; border-radius: 4px;">STAGE: REVIEW (v1)</span>
+        </div>
+
+        <div style="background: #070b14; padding: 20px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 20px; font-family: monospace; font-size: 13px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <span style="color: #94a3b8;">Task Target ID:</span>
+                <span style="color: #f1f5f9; font-weight: bold;">{{ active_task.project_id }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <span style="color: #94a3b8;">Locked Material Cost:</span>
+                <span id="modal_mat_cost" style="color: #10b981; font-weight: bold;">US$ 0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <span style="color: #94a3b8;">Amended Labor Burden:</span>
+                <span id="modal_labor_cost" style="color: #f1f5f9;">US$ 0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <span style="color: #94a3b8;">Overhead Reserve:</span>
+                <span id="modal_misc_cost" style="color: #f1f5f9;">US$ 0.00</span>
+            </div>
+            <div style="border-top: 1px dashed #334155; padding-top: 15px; display: flex; justify-content: space-between; font-size: 16px;">
+                <span style="color: #10b981; font-weight: bold;">Expected Fund Disbursement:</span>
+                <span id="modal_disbursement_total" style="color: #10b981; font-weight: bold;">US$ 0.00</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label class="nav-label" style="margin-bottom: 8px; display: block;">Executive Amendment Directive</label>
+            <select id="version_action" style="margin-bottom: 0; width: 100%;">
+                <option value="commit_v1">Approve As-Is (Lock v1 & Commit Ledger)</option>
+                <option value="amend_v2">Reject & Log Version Amendment (Generate v2 Draft)</option>
+            </select>
+        </div>
+		{% if active_task and active_task.id %}
+
+		<form method="POST" action="{% url 'commit_lpo' active_task.id %}">
+			{% csrf_token %}
+
+			<button type="submit" class="btn-submit">
+				🏦 Lock Budget & Issue LPO
+			</button>
+		</form>
+
+		{% else %}
+
+		<div class="alert alert-warning">
+			Select a task to enable procurement actions
+		</div>
+
+		{% endif %}
+			
+	
+				<div style="display: flex; gap: 15px;">
+            <button type="button" onclick="closeReviewModal()" style="flex: 1; background: #334155; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; cursor: pointer; text-transform: uppercase; font-size: 12px;">
+                ❌ Return to Cockpit
+            </button>
+            <button type="button" onclick="executeLedgerCommit()" style="flex: 1; background: #10b981; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px;">
+                ⚡ Finalize Phase
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
+let cursor = -1;
+
+let selectedSupplierIds = [];
+let selectedSupplierNames = [];
+
+const rows = document.querySelectorAll('.vault-row');
+const vault = document.getElementById('vault-container');
+
+const monEmpty = document.getElementById('monitor-empty');
+const monContent = document.getElementById('monitor-content');
+
+const monDisplayName = document.getElementById('mon-display-name');
+const monUnitPrice = document.getElementById('mon-unit-price');
+const monMiscExpenses = document.getElementById('mon-misc-expenses');
+
+const formSupplierInput = document.getElementById('form-supplier-name');
+const formSupplierIdInput = document.getElementById('form-supplier-id');
+
+
+/* =========================================================3.0 works perfectly
+   new
+========================================================= */
+
+document
+.getElementById('treasury_commit_btn')
+.addEventListener('click', function(e) {
+
+    const directive =
+        document.getElementById('version_action').value;
+
+    document.getElementById('commit_action').value =
+        directive;
+
+});
+
+/* ========================================================= */
+
+const treasuryBtn =
+    document.getElementById('treasury_commit_btn');
+
+if (treasuryBtn) {
+
+    treasuryBtn.addEventListener('click', function () {
+
+        const directive =
+            document.getElementById('version_action').value;
+
+        document.getElementById('commit_action').value =
+            directive;
+    });
+
+}
+
+/* =========================================================
+   end
+========================================================= */
+
+
+/* =========================================================
+   SAFE PARSER
+========================================================= */
+function num(v) {
+    const n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+}
+
+/* =========================================================
+   CORE BUDGET ENGINE (SINGLE SOURCE OF TRUTH)
+========================================================= */
+function calculateBudget() {
+
+    let s1 = 0;
+    let s2 = 0;
+
+    /* ---------------- Supplier 1 ---------------- */
+    document.querySelectorAll('.evaluation-winner-input')
+        .forEach(input => {
+
+            const id = input.id.split('_').pop();
+
+            const qty = num(
+                input.closest('tr')
+                    .querySelector('.item-qty')
+                    .childNodes[0].nodeValue
+            );
+
+            const price = num(input.value);
+
+            const line = qty * price;
+            s1 += line;
+
+            const el = document.getElementById(`s1_line_total_${id}`);
+            if (el) el.innerText = line.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        });
+
+    /* ---------------- Supplier 2 ---------------- */
+    document.querySelectorAll('.evaluation-runner-input')
+        .forEach(input => {
+
+            const id = input.id.split('_').pop();
+
+            const qty = num(
+                input.closest('tr')
+                    .querySelector('.item-qty')
+                    .childNodes[0].nodeValue
+            );
+
+            const price = num(input.value);
+
+            const line = qty * price;
+            s2 += line;
+
+            const el = document.getElementById(`s2_line_total_${id}`);
+            if (el) el.innerText = line.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        });
+
+    /* ---------------- Supplier totals ---------------- */
+    document.getElementById('supplier1_grand_total').innerText =
+        s1.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    document.getElementById('supplier2_grand_total').innerText =
+        s2.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    /* ---------------- Material baseline ---------------- */
+    const lowestMaterial =
+        (s1 && s2) ? Math.min(s1, s2) : (s1 || s2 || 0);
+
+    document.getElementById('material_display').innerText =
+        'US$ ' + lowestMaterial.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    document.getElementById('material_val').value = lowestMaterial.toFixed(2);
+
+    /* ---------------- Labour ---------------- */
+    const labourMode = document.getElementById('labour_mode').value;
+    const labourInput = num(document.getElementById('labour_input').value);
+
+    const labour = labourMode === 'percent'
+        ? lowestMaterial * (labourInput / 100)
+        : labourInput;
+
+    /* ---------------- Misc ---------------- */
+    const misc = num(document.getElementById('misc_input').value);
+
+    /* ---------------- Grand total ---------------- */
+    const grand = lowestMaterial + labour + misc;
+
+    document.getElementById('grand_total_display').innerText =
+        'US$ ' + grand.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    document.getElementById('grand_total_val').value = grand.toFixed(2);
+
+    syncMonitorValuesWithMultiSelection();
+
+    return {
+        supplier1: s1,
+        supplier2: s2,
+        material: lowestMaterial,
+        labour: labour,
+        misc: misc,
+        total: grand
+    };
+}
+
+/* =========================================================
+   MODAL SYSTEM (FIXED GLOBAL SCOPE)
+========================================================= */
+function openReviewModal() {
+
+    const b = calculateBudget();
+
+    document.getElementById('modal_mat_cost').innerText =
+        'US$ ' + b.material.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    document.getElementById('modal_labor_cost').innerText =
+        'US$ ' + b.labour.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    document.getElementById('modal_misc_cost').innerText =
+        'US$ ' + b.misc.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    document.getElementById('modal_disbursement_total').innerText =
+        'US$ ' + b.total.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    document.getElementById('reviewModal').style.display = 'flex';
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').style.display = 'none';
+}
+
+/* =========================================================
+   KEYBOARD NAV
+========================================================= */
+if (vault) {
+    setTimeout(() => vault.focus(), 100);
+
+    vault.addEventListener('click', () => vault.focus());
+
+    vault.addEventListener('keydown', (e) => {
+
+        if (!rows.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            cursor = (cursor + 1) % rows.length;
+            syncCursorHighlight();
+        }
+
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            cursor = (cursor - 1 + rows.length) % rows.length;
+            syncCursorHighlight();
+        }
+
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleSelectionAtIndex(cursor);
+        }
+    });
+}
+
+/* =========================================================
+   SELECTION
+========================================================= */
+function handleManualSelect(el) {
+    cursor = Array.from(rows).indexOf(el);
+    syncCursorHighlight();
+    toggleSelectionAtIndex(cursor);
+}
+
+function toggleSelectionAtIndex(index) {
+
+    if (index < 0 || index >= rows.length) return;
+
+    const row = rows[index];
+
+    const sid = row.dataset.sid;
+    const name = row.dataset.name;
+
+    const exists = selectedSupplierIds.indexOf(sid);
+
+    if (exists > -1) {
+        selectedSupplierIds.splice(exists, 1);
+        selectedSupplierNames.splice(exists, 1);
+        row.classList.remove('locked');
+    } else {
+        selectedSupplierIds.push(sid);
+        selectedSupplierNames.push(name);
+        row.classList.add('locked');
+    }
+
+    if (selectedSupplierIds.length) {
+        monEmpty.style.display = 'none';
+        monContent.style.display = 'flex';
+
+        monDisplayName.innerText = selectedSupplierNames.join(' + ');
+        formSupplierInput.value = selectedSupplierNames.join(',');
+        formSupplierIdInput.value = selectedSupplierIds.join(',');
+    } else {
+        monEmpty.style.display = 'flex';
+        monContent.style.display = 'none';
+        monDisplayName.innerText = '-';
+    }
+
+    syncMonitorValuesWithMultiSelection();
+}
+
+/* =========================================================
+   MONITOR SYNC
+========================================================= */
+function syncMonitorValuesWithMultiSelection() {
+
+    if (!selectedSupplierIds.length) {
+        monUnitPrice.value = '';
+        monMiscExpenses.value = '';
+        return;
+    }
+
+    let total = 0;
+
+    if (selectedSupplierIds.length > 0) {
+        total += num(document.getElementById('supplier1_grand_total').innerText);
+    }
+
+    if (selectedSupplierIds.length > 1) {
+        total += num(document.getElementById('supplier2_grand_total').innerText);
+    }
+
+    monUnitPrice.value = total.toFixed(2);
+    monMiscExpenses.value = num(document.getElementById('misc_input').value);
+}
+
+/* =========================================================
+   CURSOR UI
+========================================================= */
+function syncCursorHighlight() {
+    if (cursor < 0) return;
+
+    rows.forEach((r, i) =>
+        r.classList.toggle('highlighted', i === cursor)
+    );
+
+    rows[cursor].scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+    });
+}
+
+/* =========================================================
+   INIT
+========================================================= */
+document.addEventListener('DOMContentLoaded', calculateBudget);
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pioneer | Budget vs Actuals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --dark: #0a0f1d; --card: #1e293b; --border: #334155; --success: #10b981; --danger: #ef4444; --text: #f1f5f9; --muted: #94a3b8; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); padding: 32px; }
+        h1 { margin: 0 0 8px; font-size: 22px; }
+        .lead { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat { background: #070b14; border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+        .stat small { color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+        .stat h2 { margin: 8px 0 0; font-family: monospace; font-size: 22px; }
+        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }
+        td { padding: 10px 12px; border-bottom: 1px solid rgba(51,65,85,0.4); font-family: ui-monospace, monospace; }
+        .over { color: var(--danger); font-weight: 700; }
+        .ok { color: var(--success); font-weight: 700; }
+        .back { color: var(--muted); font-size: 12px; text-decoration: none; display: inline-block; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <a href="/ops-dashboard/" class="back">← Ops Dashboard</a>
+    <h1>Pioneer — Global Budget vs Actual</h1>
+    <p class="lead">CEO AIE authorized budgets compared to LPO payments, ad-hoc locks, and GM disbursements.</p>
+
+    <div class="stats">
+        <div class="stat"><small>Total budget</small><h2 style="color:var(--success);">US$ {{ grand_budget|floatformat:2 }}</h2></div>
+        <div class="stat"><small>Total actual</small><h2 style="color:#f59e0b;">US$ {{ grand_actual|floatformat:2 }}</h2></div>
+        <div class="stat"><small>Total variance</small><h2 class="{% if grand_variance < 0 %}over{% else %}ok{% endif %}">US$ {{ grand_variance|floatformat:2 }}</h2></div>
+    </div>
+
+    <div class="panel">
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Budget label</th>
+                    <th>Channel</th>
+                    <th>Budget (AIE)</th>
+                    <th>Actual</th>
+                    <th>Variance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td style="font-family:inherit;font-weight:600;">{{ row.task_id }}</td>
+                    <td style="font-family:inherit;">{{ row.budget_label }}</td>
+                    <td style="font-family:inherit;font-size:11px;color:var(--muted);">{{ row.budget_type }}</td>
+                    <td>US$ {{ row.budget|floatformat:2 }}</td>
+                    <td style="color:#f59e0b;">US$ {{ row.actual|floatformat:2 }}</td>
+                    <td class="{% if row.over %}over{% else %}ok{% endif %}">US$ {{ row.variance|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;color:var(--muted);font-family:inherit;">No project budgets committed yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

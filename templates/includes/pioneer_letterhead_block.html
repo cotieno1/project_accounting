@@ -1,0 +1,6 @@
+<div class="header" style="text-align:center;border-bottom:3px double #1e3a8a;padding-bottom:14px;margin-bottom:18px;">
+    <h1 style="margin:0;font-size:22px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#1e3a8a;">{{ org_name|default:"Client Organization" }}</h1>
+    {% if org_contact_address %}<p class="sub" style="margin:6px 0 0;font-size:12px;color:#475569;">{{ org_contact_address|linebreaksbr }}</p>{% endif %}
+    {% if org_phone or org_email %}<p style="margin:4px 0 0;font-size:11px;color:#64748b;">{% if org_phone %}Tel: {{ org_phone }}{% endif %}{% if org_phone and org_email %} &bull; {% endif %}{% if org_email %}{{ org_email }}{% endif %}</p>{% endif %}
+    {% if doc_subtitle %}<p class="sub" style="margin:8px 0 0;font-size:12px;font-weight:bold;color:#334155;text-transform:uppercase;">{{ doc_subtitle }}</p>{% endif %}
+</div>

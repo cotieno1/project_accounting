@@ -1,0 +1,875 @@
+{% extends "layouts/cockpit.html" %}
+{% load static %}
+{% block title %}Pioneer | GM AIE Disbursement{% endblock %}
+{% block body_class %}gm-desk{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}">
+{% endblock %}
+{% block sidebar %}
+{% if not no_tasks %}
+<h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
+        <small style="color: var(--muted); display: block; margin: 16px 0;">GM Accounting Officer - Operations and Maintenance</small>
+        <select onchange="window.location.href='?task_id=' + this.value;" class="form-input">
+            {% for t in tasks %}
+            <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
+            {% endfor %}
+        </select>
+
+        <div class="sidebar-block">
+            <button type="button" class="btn-action" onclick="togglePayList()" style="width:100%;background:#1e293b;">
+                💳 Payment List{% if payment_listing %} ({{ payment_listing|length }}){% endif %}
+            </button>
+            <div id="payListPanel" class="pay-list-panel{% if pay_list_open %} is-open{% endif %}">
+                <ul class="pay-list">
+                    {% for p in payment_listing %}
+                    <li class="pay-list-item{% if p.is_active %} pay-list-active{% endif %}"
+                        onclick="window.location.href='?task_id={{ active_task.project_id }}&payment_id={{ p.id }}&pay_list=1'">
+                        <span class="pay-list-ref">{{ p.ref }}</span>
+                        <div style="display:flex;justify-content:space-between;gap:6px;">
+                            <span style="color:var(--muted);font-size:13px;">{{ p.line }}</span>
+                            <span style="font-weight:700;font-size:14px;">{{ currency_symbol }} {{ p.amount|floatformat:2 }}</span>
+                        </div>
+                        <span style="color:var(--muted);font-size:12px;">{{ p.date|date:"d M Y H:i" }}</span>
+                    </li>
+                    {% empty %}
+                    <li style="color:var(--muted);font-size:12px;padding:8px 0;">No payments posted yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="sidebar-block budget-status-panel" onclick="openBudgetModal()" style="cursor:pointer;" title="Full budget breakdown">
+            <span class="nav-label">Budget lines (summary)</span>
+            {% for line in budget_summary.lines %}
+            <div class="budget-row">
+                <span class="budget-label">{{ line.label|truncatechars:22 }}</span>
+                <span class="budget-value {% if line.over %}budget-value-over{% else %}budget-value-ok{% endif %}">{{ currency_symbol }} {{ line.variance|floatformat:0 }}</span>
+            </div>
+            {% endfor %}
+            <div class="budget-row" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-weight:700;">
+                <span class="budget-label">Total variance</span>
+                <span class="budget-value {% if budget_summary.total_variance < 0 %}budget-value-over{% else %}budget-value-ok{% endif %}">{{ currency_symbol }} {{ budget_summary.total_variance|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <span class="nav-label" style="margin-top: 24px;">GM Actions</span>
+        <button type="button" class="btn-action" onclick="openBudgetModal()" style="width:100%;margin-top:8px;">Budget vs Actual</button>
+        <button type="button" class="btn-action btn-secondary" onclick="window.location.href='{% url 'budget_overview' %}'" style="width:100%;margin-top:10px;">Pioneer Global View</button>
+
+        <p class="sidebar-lane-label {% if task_caps.enable_grn %}lane-on{% endif %}">Major — LPO · GRN · Supplier PV</p>
+        <button type="button" class="btn-action{% if not task_caps.enable_grn %} sidebar-off{% endif %}" style="width:100%;margin-top:0;background:var(--accent);"
+            {% if task_caps.enable_grn %}onclick="openGrnPeriodModal()"{% else %}disabled title="{{ task_caps.grn_hint }}"{% endif %}>
+            GRN Register{% if task_caps.enable_grn and grn_period_listing %} ({{ grn_period_listing|length }}){% endif %}
+        </button>
+        <button type="button" class="btn-action btn-secondary{% if not task_caps.enable_goods_status %} sidebar-off{% endif %}" style="width:100%;margin-top:10px;"
+            {% if task_caps.enable_goods_status %}onclick="openGoodsStatusModal()"{% else %}disabled title="{{ task_caps.grn_hint }}"{% endif %}>
+            Goods Status — Delivery / Outstanding
+        </button>
+        {% if not task_caps.enable_grn %}<p class="sidebar-hint">{{ task_caps.grn_hint }}</p>{% endif %}
+        <button type="button" class="btn-action btn-secondary{% if not task_caps.enable_supplier_pv %} sidebar-off{% endif %}" style="width:100%;margin-top:10px;"
+            {% if task_caps.enable_supplier_pv %}onclick="openVoucherPeriodModal()"{% else %}disabled title="{{ task_caps.supplier_pv_hint }}"{% endif %}>
+            Supplier PVs (GRN){% if task_caps.enable_supplier_pv and voucher_period_listing %} ({{ voucher_period_listing|length }}){% endif %}
+        </button>
+
+        <p class="sidebar-lane-label {% if task_caps.enable_adhoc_ro %}lane-adhoc-on{% endif %}">Ad-Hoc — RO · Officer PV</p>
+        <button type="button" class="btn-action{% if not task_caps.enable_adhoc_ro %} sidebar-off{% endif %}" style="width:100%;margin-top:0;background:var(--warning);color:#111;"
+            {% if task_caps.enable_adhoc_ro %}onclick="openAdhocRoModal()"{% else %}disabled title="{{ task_caps.adhoc_ro_hint }}"{% endif %}>
+            Ad-Hoc Payment (RO){% if task_caps.enable_adhoc_ro and adhoc_ros_data %} ({{ adhoc_ros_data|length }}){% endif %}
+        </button>
+        {% if not task_caps.enable_adhoc_ro %}<p class="sidebar-hint">{{ task_caps.adhoc_ro_hint }}</p>{% endif %}
+        <button type="button" class="btn-action btn-secondary{% if not task_caps.enable_officer_pv %} sidebar-off{% endif %}" style="width:100%;margin-top:10px;"
+            {% if task_caps.enable_officer_pv %}onclick="openOfficerPvPeriodModal()"{% else %}disabled title="{{ task_caps.officer_pv_hint }}"{% endif %}>
+            Officer PVs (RO){% if task_caps.enable_officer_pv and officer_voucher_period_listing %} ({{ officer_voucher_period_listing|length }}){% endif %}
+        </button>
+        {% if task_caps.budget_hint %}<p class="sidebar-hint" style="margin-top:12px;">{{ task_caps.budget_hint }}</p>{% endif %}
+        <div class="sidebar-footer">
+            <a href="/ops-dashboard/?task_id={{ active_task.project_id }}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Ops Dashboard</a>
+        </div>
+{% else %}
+<h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
+<p style="color: var(--muted); font-size: 14px;">No project tasks in the system.</p>
+{% endif %}
+{% endblock %}
+{% block workspace %}
+{% if no_tasks %}
+<div class="panel" style="color:var(--muted);">No project tasks in the system.</div>
+{% else %}
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="panel">
+            <div class="header-row">
+                <div class="header-left">
+                    <h1 class="page-title">GM AIE Disbursement</h1>
+                    <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
+                    <span class="task-badge {{ project_class.css }}">{{ project_class.label }}</span>
+                </div>
+            </div>
+            <p style="color:var(--muted);margin:8px 0 0;">{{ active_task.description }}</p>
+            <p class="aie-flow">
+                <strong>CEO AIE</strong> → Authority to Incur Expenditure →
+                <strong>GM Accounting</strong> pays under this task budget.
+            </p>
+            {% if task_caps.is_major or task_caps.is_adhoc %}
+            <p style="font-size:12px;color:{% if task_caps.is_major %}#93c5fd{% else %}var(--warning){% endif %};margin-top:8px;">
+                <strong>Procurement lane:</strong> {{ task_caps.workflow_label }}
+            </p>
+            {% endif %}
+            {% if budget_summary.has_budget %}
+            <p style="font-size:12px;color:var(--success);margin-top:6px;">
+                Authorized budget: <strong>{{ budget_summary.budget_label }}</strong> · v{{ budget_summary.budget_version }}
+                {% if budget_summary.is_ceo_approved %} · CEO approved{% endif %}
+                {% if budget_summary.fund_released %} · Funds released{% endif %}
+            </p>
+            {% else %}
+            <p style="font-size:12px;color:var(--warning);margin-top:6px;">No CEO-authorized budget committed for this task yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="evaluation-grid">
+            <div class="table-pane">
+                {% if pay_mode == 'detail' and viewed_payment %}
+                <div class="pay-detail-banner">
+                    Viewing payment <strong>{{ viewed_payment.payment_number }}</strong>
+                    · {{ viewed_payment.get_budget_line_display }}
+                    · {{ currency_symbol }} {{ viewed_payment.amount|floatformat:2 }}
+                    <a href="?task_id={{ active_task.project_id }}&pay_list=1" style="color:#93c5fd;margin-left:8px;">← New payment</a>
+                </div>
+                <table>
+                    <tbody>
+                        <tr><td style="color:var(--muted);width:140px;">Payment ID</td><td style="font-family:monospace;font-weight:700;">{{ viewed_payment.payment_number }}</td></tr>
+                        <tr><td style="color:var(--muted);">Budget line</td><td>{{ viewed_payment.get_budget_line_display }}</td></tr>
+                        <tr><td style="color:var(--muted);">Description</td><td>{{ viewed_payment.description }}</td></tr>
+                        <tr><td style="color:var(--muted);">Payee</td><td>{{ viewed_payment.payee|default:"—" }}</td></tr>
+                        <tr><td style="color:var(--muted);">Amount</td><td style="color:var(--success);font-weight:700;font-family:monospace;">{{ currency_symbol }} {{ viewed_payment.amount|floatformat:2 }}</td></tr>
+                        <tr><td style="color:var(--muted);">Method</td><td>{{ viewed_payment.get_payment_method_display }}</td></tr>
+                        <tr><td style="color:var(--muted);">CEO AIE ref</td><td>{{ viewed_payment.aie_reference|default:"—" }}</td></tr>
+                        <tr><td style="color:var(--muted);">Posted by</td><td>{{ viewed_payment.posted_by.get_username|default:"—" }}</td></tr>
+                        <tr><td style="color:var(--muted);">Date</td><td>{{ viewed_payment.created_at|date:"d M Y H:i" }}</td></tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <span class="nav-label">Post payment — Accounting · Ops · Maintenance</span>
+                <form method="POST" id="paymentForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                    <div class="field-block">
+                        <label class="nav-label">Budget line category</label>
+                        <select name="budget_line" id="budget_line" class="form-input" required onchange="updateLinePreview()">
+                            <option value="">— Select budget line —</option>
+                            {% for key, field, label in budget_lines %}
+                            <option value="{{ key }}" data-label="{{ label }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="linePreview" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:8px;background:#0f172a;border:1px solid var(--border);font-size:12px;">
+                        <span style="color:var(--muted);">Line budget:</span> <strong id="prevBudget">{{ currency_symbol }} 0.00</strong>
+                        <span style="color:var(--muted);margin-left:12px;">Actual (bfwd):</span> <strong id="prevActual" style="color:var(--warning);">{{ currency_symbol }} 0.00</strong>
+                        <span style="color:var(--muted);margin-left:12px;">Variance:</span> <strong id="prevVariance">{{ currency_symbol }} 0.00</strong>
+                    </div>
+                    <div class="field-block">
+                        <label class="nav-label">Description</label>
+                        <input type="text" name="description" class="form-input" placeholder="e.g. Cement delivery — site batch 3" required maxlength="255">
+                    </div>
+                    <div class="grid-2">
+                        <div class="field-block">
+                            <label class="nav-label">Payee / Supplier</label>
+                            <input type="text" name="payee" class="form-input" placeholder="Vendor or recipient">
+                        </div>
+                        <div class="field-block">
+                            <label class="nav-label">Amount ({{ currency_symbol }})</label>
+                            <input type="number" step="0.01" min="0.01" name="amount" id="payAmount" class="form-input" placeholder="0.00" required oninput="updateLinePreview()">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field-block">
+                            <label class="nav-label">Payment method</label>
+                            <select name="payment_method" class="form-input">
+                                {% for val, lbl in pay_methods %}
+                                <option value="{{ val }}">{{ lbl }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-block">
+                            <label class="nav-label">CEO AIE reference</label>
+                            <input type="text" name="aie_reference" class="form-input" placeholder="AIE memo / auth no.">
+                        </div>
+                    </div>
+                    <button type="submit" name="post_payment" class="btn-action btn-success" style="margin-top:8px;"
+                        {% if not budget_summary.has_budget or not budget_summary.is_ceo_approved or not budget_summary.fund_released %}disabled
+                        title="Requires CEO-approved budget and fund release from Budget Authorization"{% endif %}>Post payment</button>
+                    {% if not budget_summary.is_ceo_approved %}
+                    <p style="font-size:11px;color:var(--muted);margin-top:8px;">CEO must approve budget at <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id }}" style="color:#93c5fd;">Budget Authorization</a>.</p>
+                    {% elif not budget_summary.fund_released %}
+                    <p style="font-size:11px;color:var(--muted);margin-top:8px;">CEO must release funds to GM before payments can be posted.</p>
+                    {% endif %}
+                </form>
+                {% endif %}
+            </div>
+
+            <div class="budget-card">
+                <h3 style="margin:0 0 12px;border-bottom:1px solid var(--border);padding-bottom:12px;font-size:14px;text-transform:uppercase;">Four budget lines</h3>
+                <table class="line-budget-table">
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Budget</th>
+                            <th>Actual</th>
+                            <th>Var</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in budget_summary.lines %}
+                        <tr class="{% if line.over %}line-over{% endif %}">
+                            <td style="font-family:inherit;font-size:11px;">{{ line.label|truncatechars:18 }}</td>
+                            <td>{{ line.budget|floatformat:0 }}</td>
+                            <td style="color:var(--warning);">{{ line.actual|floatformat:0 }}</td>
+                            <td class="{% if line.over %}budget-value-over{% else %}budget-value-ok{% endif %}">{{ line.variance|floatformat:0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="font-weight:700;border-top:2px solid var(--border);">
+                            <td>Total</td>
+                            <td>{{ budget_summary.total_budget|floatformat:2 }}</td>
+                            <td style="color:var(--warning);">{{ budget_summary.total_actual|floatformat:2 }}</td>
+                            <td class="{% if budget_summary.total_variance < 0 %}budget-value-over{% else %}budget-value-ok{% endif %}">{{ budget_summary.total_variance|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div style="margin-top:20px;padding-top:16px;border-top:2px dashed var(--border);">
+                    <span class="nav-label" style="color:var(--muted);">Total authorized (CEO AIE ceiling)</span>
+                    <div class="total-display">{{ currency_symbol }} {{ budget_summary.total_budget|floatformat:2 }}</div>
+                    <span class="nav-label" style="color:var(--muted);margin-top:8px;">Total Amount Paid (GM Actual)</span>
+                    <div class="total-display" style="color:var(--warning);">{{ currency_symbol }} {{ budget_summary.total_actual|floatformat:2 }}</div>
+                </div>
+                <button type="button" onclick="openBudgetModal()" class="btn-action btn-secondary" style="margin-top:16px;">Full breakdown</button>
+            </div>
+        </div>
+{% endif %}
+{% endblock %}
+{% block modals %}
+{% if not no_tasks %}
+    <div id="grnPeriodModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel registry-modal-panel">
+            <h3 style="margin:0 0 4px;color:var(--accent);font-size:15px;">GRN Register — Task {{ active_task.project_id }}</h3>
+            <p class="registry-summary">Goods received notes for the selected period. Raise supplier payment vouchers here (GM desk only). Unit costs and totals should tally with the supplier invoice (gross plus taxes).</p>
+            <form method="get" class="registry-filter">
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <input type="hidden" name="open_grn_period" value="1">
+                <div>
+                    <label for="grn_period_from">From month</label>
+                    <input type="month" id="grn_period_from" name="period_from" value="{{ period_from }}" class="form-input" style="width:auto;min-width:150px;">
+                </div>
+                <div>
+                    <label for="grn_period_to">To month</label>
+                    <input type="month" id="grn_period_to" name="period_to" value="{{ period_to }}" class="form-input" style="width:auto;min-width:150px;">
+                </div>
+                <button type="submit" class="btn-action" style="margin-bottom:0;">Apply period</button>
+            </form>
+            <div class="registry-scroll">
+                {% if grn_period_listing %}
+                <table class="registry-table" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>GRN / LPO</th>
+                            <th>Item description</th>
+                            <th class="num">Item delivered</th>
+                            <th>UOM</th>
+                            <th class="num">Unit cost ({{ currency_symbol }})</th>
+                            <th class="num">Total invoiced ({{ currency_symbol }})</th>
+                            <th>Invoice</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grn in grn_period_listing %}
+                        <tr class="grn-group-header">
+                            <td colspan="8">
+                                <span style="color:var(--accent);">{{ grn.grn_no }}</span>
+                                · LPO {{ grn.lpo_no }}
+                                · {{ grn.supplier|truncatechars:32 }}
+                                · {{ grn.receipt_date }}
+                                {% if grn.has_voucher %}· PV <a href="{{ grn.voucher_view_url }}" class="registry-link" target="_blank">{{ grn.voucher_no }}</a>{% elif grn.can_raise_voucher %}· <span style="color:var(--warning);">Awaiting payment voucher</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% for line in grn.lines %}
+                        <tr class="grn-line-row">
+                            <td>{% if forloop.first %}{{ grn.grn_no }}{% endif %}</td>
+                            <td>{{ line.desc }}</td>
+                            <td class="num">{{ line.qty }}</td>
+                            <td>{{ line.uom }}</td>
+                            <td class="num">{{ line.unit_price }}</td>
+                            <td class="num">{{ line.line_total }}</td>
+                            <td>{% if forloop.first %}{{ grn.invoice_ref|default:"—" }}{% endif %}</td>
+                            <td style="text-align:right;">{% if forloop.first %}<a href="{{ grn.print_url }}" class="registry-link" target="_blank">View GRN →</a>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr class="grn-line-row">
+                            <td>{{ grn.grn_no }}</td>
+                            <td colspan="6" style="color:var(--muted);">No line items recorded.</td>
+                            <td style="text-align:right;"><a href="{{ grn.print_url }}" class="registry-link" target="_blank">View GRN →</a></td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="grn-total-row">
+                            <td colspan="5" style="text-align:right;font-weight:700;text-transform:uppercase;">Total invoiced amount (Gross + Taxes)</td>
+                            <td class="num" style="color:var(--success);">{{ grn.amount }}</td>
+                            <td>{{ grn.invoice_ref|default:"—" }}</td>
+                            <td style="text-align:right;white-space:nowrap;">
+                                {% if grn.can_raise_voucher %}
+                                <button type="button" class="registry-link" style="background:none;border:none;cursor:pointer;padding:0;" onclick="openGmPaymentVoucherModal({{ grn.id }})">Raise payment voucher</button>
+                                {% elif grn.has_voucher %}
+                                <a href="{{ grn.voucher_view_url }}" class="registry-link" target="_blank">View PV</a>
+                                · <a href="{{ grn.voucher_print_url }}" class="registry-link" target="_blank">Print memo &amp; voucher</a>
+                                {% else %}<span style="color:var(--muted);font-size:11px;">—</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="registry-empty">No GRNs in {{ period_from }} to {{ period_to }} for this task.</p>
+                {% endif %}
+            </div>
+            <button type="button" class="btn-action btn-secondary" style="width:100%;margin-top:16px;" onclick="closeGrnPeriodModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="goodsStatusModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel registry-modal-panel">
+            <h3 style="margin:0 0 4px;color:var(--accent);font-size:15px;">LPO / GRN Goods Status — Task {{ active_task.project_id }}</h3>
+            <p class="registry-summary">Item # indexes each LPO line (1, 2, 3 …) for 1-to-1 reconciliation: map partial GRN deliveries to what is still outstanding. Delivery log shows when and how many were received per GRN.</p>
+            <div class="registry-filter">
+                <div style="flex:1;min-width:220px;">
+                    <label for="goodsStatusLpoFilter">LPO</label>
+                    <select id="goodsStatusLpoFilter" class="form-input" onchange="renderGoodsStatusTable()">
+                        <option value="">All LPOs</option>
+                    </select>
+                </div>
+                <div style="font-size:12px;color:var(--muted);padding-bottom:2px;">
+                    <span id="goodsStatusSummary">—</span>
+                </div>
+            </div>
+            <div class="registry-scroll" id="goodsStatusScroll">
+                <p class="registry-empty" id="goodsStatusEmpty">No LPOs on this task.</p>
+                <table class="registry-table" id="goodsStatusTable" style="width:100%;border-collapse:collapse;display:none;">
+                    <thead>
+                        <tr>
+                            <th style="width:36px;text-align:center;">#</th>
+                            <th>Description</th>
+                            <th>UOM</th>
+                            <th class="num">LPO qty</th>
+                            <th class="num">Delivered</th>
+                            <th class="num">Outstanding</th>
+                            <th>Status</th>
+                            <th>Delivery log (date · GRN · qty)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="goodsStatusTbody"></tbody>
+                </table>
+            </div>
+            <button type="button" class="btn-action btn-secondary" style="width:100%;margin-top:16px;" onclick="closeGoodsStatusModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="voucherPeriodModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel registry-modal-panel">
+            <h3 style="margin:0 0 4px;color:var(--primary);font-size:15px;">Payment Vouchers — Task {{ active_task.project_id }}</h3>
+            <p class="registry-summary">Invoice-backed payment vouchers raised against GRNs. Open the HTML bundle (GM memo + payment voucher) or print both pages — same layout as CEO fund disbursement.</p>
+            <form method="get" class="registry-filter">
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <input type="hidden" name="open_voucher_period" value="1">
+                <div>
+                    <label for="pv_period_from">From month</label>
+                    <input type="month" id="pv_period_from" name="period_from" value="{{ period_from }}" class="form-input" style="width:auto;min-width:150px;">
+                </div>
+                <div>
+                    <label for="pv_period_to">To month</label>
+                    <input type="month" id="pv_period_to" name="period_to" value="{{ period_to }}" class="form-input" style="width:auto;min-width:150px;">
+                </div>
+                <button type="submit" class="btn-action" style="margin-bottom:0;">Apply period</button>
+            </form>
+            <div class="registry-scroll">
+                {% if voucher_period_listing %}
+                <table class="registry-table" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>Voucher No</th>
+                            <th>GRN</th>
+                            <th>LPO</th>
+                            <th>Supplier</th>
+                            <th>Method</th>
+                            <th>Date</th>
+                            <th style="text-align:right;">Amount ({{ currency_symbol }})</th>
+                            <th style="text-align:right;">Detail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pv in voucher_period_listing %}
+                        <tr>
+                            <td style="font-weight:700;color:var(--primary);">{{ pv.pay_order_no }}</td>
+                            <td><a href="{{ pv.grn_print_url }}" class="registry-link" target="_blank">{{ pv.grn_no }}</a></td>
+                            <td>{{ pv.lpo_no }}</td>
+                            <td>{{ pv.supplier|truncatechars:24 }}</td>
+                            <td>{{ pv.method }}</td>
+                            <td>{{ pv.date }}</td>
+                            <td style="text-align:right;font-family:monospace;">{{ pv.amount }}</td>
+                            <td style="text-align:right;white-space:nowrap;">
+                                <a href="{{ pv.print_url }}" class="registry-link" target="_blank">View</a>
+                                · <a href="{{ pv.print_bundle_url }}" class="registry-link" target="_blank">Print memo &amp; voucher</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="registry-empty">No payment vouchers in {{ period_from }} to {{ period_to }} for this task.</p>
+                {% endif %}
+            </div>
+            <button type="button" class="btn-action btn-secondary" style="width:100%;margin-top:16px;" onclick="closeVoucherPeriodModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="paymentVoucherModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel pv-form-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="margin:0;color:var(--success);font-size:16px;">Payment Input Voucher</h3>
+                <span style="font-size:12px;color:var(--muted);font-family:monospace;" id="pv-modal-grn-tag">GRN</span>
+            </div>
+            <form id="paymentVoucherForm" method="POST" action="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_payment_voucher">
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <input type="hidden" name="grn_id" id="pv-grn-id">
+                <input type="hidden" name="period_from" id="pv-period-from" value="{{ period_from }}">
+                <input type="hidden" name="period_to" id="pv-period-to" value="{{ period_to }}">
+                <div class="pv-form-scroll">
+                    <div class="pv-summary-box">
+                        <div><strong id="pv-grn-no"></strong> · LPO <span id="pv-lpo-no"></span></div>
+                        <div style="color:var(--muted);margin-top:6px;">Invoice: <strong id="pv-invoice" style="color:var(--light);"></strong></div>
+                        <div style="color:var(--muted);margin-top:4px;">Supplier: <span id="pv-supplier"></span></div>
+                        <div style="margin-top:10px;font-size:15px;font-weight:700;color:var(--success);">Total invoiced (Gross + Taxes): {{ currency_symbol }} <span id="pv-amount-display"></span></div>
+                        <input type="hidden" name="voucher_amount" id="pv-amount-input">
+                    </div>
+                    <div class="field-block">
+                        <label class="pv-field-label" for="pv-payment-method">Payment method</label>
+                        <select name="payment_method" id="pv-payment-method" class="form-input" onchange="toggleGmPvMethodFields()" required>
+                            <option value="BANK">Bank Transfer</option>
+                            <option value="CHQ">Cheque</option>
+                        </select>
+                    </div>
+                    <div class="field-block">
+                        <label class="pv-field-label" for="pv-source-bank">Pioneer source bank</label>
+                        <select name="source_bank_id" id="pv-source-bank" class="form-input" required>
+                            <option value="">— Select bank account —</option>
+                            {% for bank in banks_data %}
+                            <option value="{{ bank.id }}">{{ bank.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field-block" id="pv-bank-fields">
+                        <label class="pv-field-label" for="pv-transfer-ref">Bank transfer reference</label>
+                        <input type="text" name="transfer_reference" id="pv-transfer-ref" class="form-input" placeholder="EFT / RTGS / SWIFT reference">
+                    </div>
+                    <div class="field-block" id="pv-cheque-fields" style="display:none;">
+                        <label class="pv-field-label" for="pv-cheque-no">Cheque number</label>
+                        <input type="text" name="cheque_number" id="pv-cheque-no" class="form-input" placeholder="Cheque no.">
+                    </div>
+                    <div class="field-block">
+                        <label class="pv-field-label" for="pv-prepared-by">Prepared by</label>
+                        <input type="text" name="prepared_by_name" id="pv-prepared-by" class="form-input" placeholder="Accounts officer name">
+                    </div>
+                    <div class="field-block">
+                        <label class="pv-field-label" for="pv-notes">Notes (optional)</label>
+                        <input type="text" name="payment_notes" id="pv-notes" class="form-input" placeholder="Payment instructions or remarks">
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:16px;">
+                    <button type="button" onclick="closeGmPaymentVoucherModal()" class="btn-action btn-secondary" style="flex:1;margin-top:0;">Cancel</button>
+                    <button type="submit" class="btn-action btn-success" style="flex:1;margin-top:0;font-weight:700;">Issue payment voucher</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{ grns_data|json_script:"gm-grns-data" }}
+    {{ lpo_goods_status_data|json_script:"gm-goods-status-data" }}
+    {{ adhoc_ros_data|json_script:"gm-adhoc-ros-data" }}
+    {{ officer_voucher_period_listing|json_script:"gm-officer-pvs-data" }}
+    {{ task_caps|json_script:"gm-task-caps" }}
+
+    <div id="adhocRoModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel registry-modal-panel">
+            <h3 style="margin:0 0 4px;color:var(--warning);">Ad-Hoc Payment — RO · Payment Voucher</h3>
+            <p class="registry-summary">GM pays an officer (not a supplier) via payment voucher against RO lines — partial or full per item. Item # maps paid amounts to what is still outstanding on the initial RO.</p>
+            <div id="adhoc-ro-list-pane">
+                <table class="registry-table"><thead><tr><th>RO</th><th>RO status</th><th>Paid status</th><th>Date</th><th class="num">RO total</th><th>PVs</th><th></th></tr></thead><tbody id="adhoc-ro-list-tbody"></tbody></table>
+                <p id="adhoc-ro-list-empty" class="registry-empty" style="display:none;">No ad-hoc ROs on this task.</p>
+            </div>
+            <div id="adhoc-ro-detail-pane" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><h4 id="adhoc-ro-detail-title" style="margin:0;color:var(--warning);"></h4><button type="button" class="btn-action btn-secondary" style="margin:0;padding:4px 10px;font-size:11px;" onclick="hideAdhocRoDetail()">Back</button></div>
+                <p id="adhoc-ro-detail-meta" class="registry-summary"></p>
+                <p id="adhoc-ro-detail-summary" class="registry-summary" style="margin-top:0;"></p>
+                <table class="registry-table"><thead><tr><th style="width:32px;text-align:center;">#</th><th style="width:28px;">✓</th><th>Item</th><th>UOM</th><th class="num">RO qty</th><th class="num">Paid</th><th class="num">Outstanding</th><th class="num">Unit price</th><th class="num">PV qty</th><th>Payment log (date · PV · officer · qty)</th></tr></thead><tbody id="adhoc-ro-detail-items"></tbody></table>
+                <div id="adhoc-ro-selection-bar" style="display:none;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:12px;padding:12px;background:#070b14;border-radius:8px;">
+                    <div style="flex:1;min-width:180px;"><label class="pv-field-label">Officer (payee) *</label><input type="text" id="adhoc-ro-officer-name" class="form-input" placeholder="e.g. James"></div>
+                    <div style="font-size:12px;color:var(--muted);">Lines: <strong id="adhoc-ro-selected-count" style="color:var(--success);">0</strong> · <strong id="adhoc-ro-selected-total" style="color:var(--success);">{{ currency_symbol }} 0.00</strong></div>
+                    <button type="button" id="adhoc-ro-voucher-btn" class="btn-action btn-success" style="margin:0;">Raise payment voucher</button>
+                </div>
+                <p id="adhoc-ro-blocked-hint" style="display:none;margin-top:10px;font-size:12px;color:var(--warning);"></p>
+            </div>
+            <button type="button" class="btn-action btn-secondary" style="width:100%;margin-top:16px;" onclick="closeAdhocRoModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="officerPvPeriodModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel registry-modal-panel">
+            <h3 style="margin:0 0 4px;color:var(--warning);">Officer PVs — PV No. &amp; Officer</h3>
+            <p class="registry-summary">Account for purchase: actual spent + pocket change returned = advance.</p>
+            <form method="get" class="registry-filter">
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}"><input type="hidden" name="open_officer_pv_period" value="1">
+                <div><label>From</label><input type="month" name="period_from" value="{{ period_from }}" class="form-input"></div>
+                <div><label>To</label><input type="month" name="period_to" value="{{ period_to }}" class="form-input"></div>
+                <button type="submit" class="btn-action" style="margin:0;">Apply</button>
+            </form>
+            <div class="registry-scroll">
+                {% if officer_voucher_period_listing %}
+                <table class="registry-table"><thead><tr><th>PV No.</th><th>Officer</th><th>RO</th><th>Item @ price</th><th>Method</th><th class="num">Advance</th><th>Status</th><th></th></tr></thead>
+                <tbody>{% for opv in officer_voucher_period_listing %}<tr>
+                    <td style="font-family:monospace;font-weight:700;color:var(--warning);">{{ opv.voucher_no }}</td>
+                    <td><strong>{{ opv.officer_name }}</strong></td><td>{{ opv.ro_ref }}</td>
+                    <td style="font-size:11px;">{% for ln in opv.lines %}{{ ln.desc }} @ {{ ln.unit_price }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+                    <td>{{ opv.method }}</td><td class="num">{{ opv.amount }}</td>
+                    <td>{% if opv.is_settled %}<span style="color:var(--success);font-size:11px;">Accounted</span>{% else %}<span style="color:var(--warning);font-size:11px;">Open</span>{% endif %}</td>
+                    <td style="white-space:nowrap;text-align:right;"><a href="{{ opv.print_url }}" class="registry-link" target="_blank">View</a> · <a href="{{ opv.print_bundle_url }}" class="registry-link" target="_blank">Print</a>{% if not opv.is_settled %} · <button type="button" class="registry-link" style="background:none;border:none;cursor:pointer;padding:0;" onclick="openOfficerPvSettleModal({{ opv.id }})">Account</button>{% endif %}</td>
+                </tr>{% endfor %}</tbody></table>
+                {% else %}<p class="registry-empty">No officer PVs in period.</p>{% endif %}
+            </div>
+            <button type="button" class="btn-action btn-secondary" style="width:100%;margin-top:16px;" onclick="closeOfficerPvPeriodModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="officerPaymentVoucherModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel pv-form-panel">
+            <h3 style="margin:0 0 12px;color:var(--warning);">Issue Payment Voucher — <span id="opv-modal-ro-tag" style="font-family:monospace;"></span></h3>
+            <form method="POST" action="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}">
+                {% csrf_token %}<input type="hidden" name="action" value="create_officer_payment_voucher"><input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <input type="hidden" name="mpo_id" id="opv-mpo-id"><input type="hidden" name="purchase_lines_json" id="opv-lines-json">
+                <input type="hidden" name="period_from" value="{{ period_from }}"><input type="hidden" name="period_to" value="{{ period_to }}">
+                <div class="pv-form-scroll">
+                    <div class="pv-summary-box"><div id="opv-lines-summary" style="font-size:12px;"></div><div style="margin-top:8px;font-weight:700;color:var(--success);">Advance: {{ currency_symbol }} <span id="opv-amount-display">0.00</span></div></div>
+                    <div class="field-block"><label class="pv-field-label">Officer name *</label><input type="text" name="officer_name" id="opv-officer-name" class="form-input" required placeholder="John"></div>
+                    <div class="field-block"><label class="pv-field-label">Method</label><select name="payment_method" id="opv-payment-method" class="form-input" onchange="toggleOpvMethodFields()" required><option value="CASH">Cash</option><option value="MPESA">M-Pesa</option></select></div>
+                    <div class="field-block" id="opv-mpesa-fields" style="display:none;"><label class="pv-field-label">M-Pesa ref</label><input type="text" name="mpesa_reference" id="opv-mpesa-ref" class="form-input"></div>
+                    <div class="field-block"><label class="pv-field-label">GM authority *</label><input type="text" name="gm_authority_name" id="opv-gm-name" class="form-input" required></div>
+                    <div class="field-block"><label class="pv-field-label">Prepared by</label><input type="text" name="prepared_by_name" id="opv-prepared-by" class="form-input"></div>
+                    <div class="field-block"><label class="pv-field-label">Notes</label><input type="text" name="payment_notes" id="opv-notes" class="form-input"></div>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:16px;"><button type="button" onclick="closeOfficerPaymentVoucherModal()" class="btn-action btn-secondary" style="flex:1;margin:0;">Cancel</button><button type="submit" class="btn-action" style="flex:1;margin:0;background:var(--warning);color:#111;font-weight:700;">Issue payment voucher</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="officerPvSettleModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel pv-form-panel">
+            <h3 style="margin:0 0 12px;color:var(--success);">Account officer purchase</h3>
+            <p class="registry-summary" id="opv-settle-intro"></p>
+            <form method="POST" action="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}">
+                {% csrf_token %}<input type="hidden" name="action" value="settle_officer_payment_voucher"><input type="hidden" name="voucher_id" id="opv-settle-id">
+                <input type="hidden" name="period_from" value="{{ period_from }}"><input type="hidden" name="period_to" value="{{ period_to }}">
+                <div class="field-block"><label class="pv-field-label">Actual spent ({{ currency_symbol }}) *</label><input type="number" step="0.01" min="0" name="actual_spent" id="opv-settle-spent" class="form-input" required oninput="updateOpvSettleChange()"></div>
+                <div class="field-block"><label class="pv-field-label">Pocket change returned</label><input type="number" step="0.01" min="0" name="change_returned" id="opv-settle-change" class="form-input" value="0"></div>
+                <div class="field-block"><label class="pv-field-label">Purchase receipt ref *</label><input type="text" name="purchase_receipt_ref" id="opv-settle-receipt" class="form-input" required></div>
+                <div class="field-block"><label class="pv-field-label">Received by *</label><input type="text" name="settled_by_name" id="opv-settle-by" class="form-input" required></div>
+                <div style="display:flex;gap:10px;margin-top:16px;"><button type="button" onclick="closeOfficerPvSettleModal()" class="btn-action btn-secondary" style="flex:1;margin:0;">Cancel</button><button type="submit" class="btn-action btn-success" style="flex:1;margin:0;">Confirm</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="budgetModal" class="cockpit-modal" style="display:none;">
+        <div class="cockpit-modal-panel">
+            <h3 style="margin:0 0 8px;color:var(--primary);font-size:14px;text-transform:uppercase;">Budget vs Actual — Task {{ active_task.project_id }}</h3>
+            <p style="margin:0 0 8px;font-size:12px;color:var(--muted);">{{ project_class.label }} · Standard four-line reporting</p>
+            <table class="line-budget-table" style="margin-top:16px;">
+                <thead>
+                    <tr>
+                        <th>Budget line</th>
+                        <th>Budget (AIE)</th>
+                        <th>Actual (bfwd)</th>
+                        <th>Variance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in budget_summary.lines %}
+                    <tr>
+                        <td style="font-family:inherit;">{{ line.label }}</td>
+                        <td>{{ currency_symbol }} {{ line.budget|floatformat:2 }}</td>
+                        <td style="color:var(--warning);">{{ currency_symbol }} {{ line.actual|floatformat:2 }}</td>
+                        <td class="{% if line.over %}budget-value-over{% else %}budget-value-ok{% endif %}">{{ currency_symbol }} {{ line.variance|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight:700;">
+                        <td>Task total</td>
+                        <td>{{ currency_symbol }} {{ budget_summary.total_budget|floatformat:2 }}</td>
+                        <td style="color:var(--warning);">{{ currency_symbol }} {{ budget_summary.total_actual|floatformat:2 }}</td>
+                        <td class="{% if budget_summary.total_variance < 0 %}budget-value-over{% else %}budget-value-ok{% endif %}">{{ currency_symbol }} {{ budget_summary.total_variance|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <p style="font-size:11px;color:var(--muted);margin-top:16px;">Global Pioneer rollup will aggregate these four lines across all tasks (future).</p>
+            <button type="button" class="btn-action btn-secondary" style="width:100%;margin-top:16px;" onclick="closeBudgetModal()">Close</button>
+        </div>
+    </div>
+
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+{% if not no_tasks %}
+    <script>
+        const lineData = {
+            {% for line in budget_summary.lines %}
+            "{{ line.key }}": { budget: {{ line.budget }}, actual: {{ line.actual }}, variance: {{ line.variance }} },
+            {% endfor %}
+        };
+
+        function togglePayList() {
+            const panel = document.getElementById('payListPanel');
+            if (panel) panel.classList.toggle('is-open');
+        }
+
+        function num(v) { return parseFloat(v) || 0; }
+
+        function fmt(n) {
+            return '{{ currency_symbol }} ' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function updateLinePreview() {
+            const sel = document.getElementById('budget_line');
+            const preview = document.getElementById('linePreview');
+            if (!sel || !preview) return;
+            const key = sel.value;
+            if (!key || !lineData[key]) {
+                preview.style.display = 'none';
+                return;
+            }
+            preview.style.display = 'block';
+            const d = lineData[key];
+            const pending = num(document.getElementById('payAmount')?.value);
+            document.getElementById('prevBudget').textContent = fmt(d.budget);
+            document.getElementById('prevActual').textContent = fmt(d.actual);
+            const afterVar = d.budget - d.actual - pending;
+            const el = document.getElementById('prevVariance');
+            el.textContent = fmt(afterVar);
+            el.style.color = afterVar < 0 ? 'var(--danger)' : 'var(--success)';
+        }
+
+        function openBudgetModal() {
+            document.getElementById('budgetModal').style.display = 'flex';
+        }
+        function closeBudgetModal() {
+            document.getElementById('budgetModal').style.display = 'none';
+        }
+
+        const gmGrnsData = JSON.parse(document.getElementById('gm-grns-data')?.textContent || '[]');
+        const gmTaskCaps = JSON.parse(document.getElementById('gm-task-caps')?.textContent || '{}');
+
+        function openGrnPeriodModal() {
+            if (gmTaskCaps.enable_grn === false) return;
+            document.getElementById('grnPeriodModal').style.display = 'flex';
+        }
+        function closeGrnPeriodModal() {
+            document.getElementById('grnPeriodModal').style.display = 'none';
+        }
+
+        function openVoucherPeriodModal() {
+            if (gmTaskCaps.enable_supplier_pv === false) return;
+            document.getElementById('voucherPeriodModal').style.display = 'flex';
+        }
+        function closeVoucherPeriodModal() {
+            document.getElementById('voucherPeriodModal').style.display = 'none';
+        }
+
+        const gmGoodsStatusData = JSON.parse(document.getElementById('gm-goods-status-data')?.textContent || '[]');
+
+        function goodsStatusBadge(status) {
+            const labels = { FULL: 'Full', PARTIAL: 'Partial', NONE: 'Not delivered' };
+            const cls = status === 'FULL' ? 'goods-status-full' : (status === 'PARTIAL' ? 'goods-status-partial' : 'goods-status-none');
+            return `<span class="goods-status-badge ${cls}">${labels[status] || status}</span>`;
+        }
+
+        function fmtQty(n) {
+            const v = parseFloat(n);
+            if (Number.isNaN(v)) return '0';
+            return v % 1 === 0 ? String(v) : v.toFixed(2);
+        }
+
+        function populateGoodsStatusLpoFilter() {
+            const sel = document.getElementById('goodsStatusLpoFilter');
+            if (!sel) return;
+            const current = sel.value;
+            sel.innerHTML = '<option value="">All LPOs</option>';
+            gmGoodsStatusData.forEach(lpo => {
+                const opt = document.createElement('option');
+                opt.value = String(lpo.lpo_id);
+                opt.textContent = `${lpo.lpo_no} · ${lpo.receipt_status} · ${lpo.supplier}`;
+                sel.appendChild(opt);
+            });
+            if (current && [...sel.options].some(o => o.value === current)) {
+                sel.value = current;
+            }
+        }
+
+        function renderGoodsStatusTable() {
+            const tbody = document.getElementById('goodsStatusTbody');
+            const table = document.getElementById('goodsStatusTable');
+            const empty = document.getElementById('goodsStatusEmpty');
+            const summary = document.getElementById('goodsStatusSummary');
+            const filterId = document.getElementById('goodsStatusLpoFilter')?.value || '';
+            if (!tbody || !table || !empty) return;
+
+            const lpos = filterId
+                ? gmGoodsStatusData.filter(l => String(l.lpo_id) === filterId)
+                : gmGoodsStatusData;
+
+            tbody.innerHTML = '';
+            if (!lpos.length) {
+                table.style.display = 'none';
+                empty.style.display = 'block';
+                empty.textContent = 'No LPOs on this task.';
+                if (summary) summary.textContent = '—';
+                return;
+            }
+
+            empty.style.display = 'none';
+            table.style.display = 'table';
+
+            let lineCount = 0;
+            let outstandingLines = 0;
+
+            lpos.forEach(lpo => {
+                const header = document.createElement('tr');
+                header.className = 'grn-group-header';
+                header.innerHTML = `<td colspan="8">
+                    <span style="color:var(--accent);">${lpo.lpo_no}</span>
+                    · ${lpo.supplier}
+                    · Issued ${lpo.date_issued}
+                    · LPO status: <span class="goods-status-badge ${lpo.receipt_status === 'FULL' ? 'goods-status-full' : (lpo.receipt_status === 'PARTIAL' ? 'goods-status-partial' : 'goods-status-none')}">${lpo.receipt_status}</span>
+                </td>`;
+                tbody.appendChild(header);
+
+                lpo.items.forEach(item => {
+                    lineCount += 1;
+                    if (item.qty_outstanding > 0) outstandingLines += 1;
+
+                    const deliveryHtml = item.deliveries.length
+                        ? item.deliveries.map(d =>
+                            `<div class="goods-delivery-log">${d.date} · <a href="${d.print_url}" class="registry-link" target="_blank">${d.grn_no}</a> · <strong>${fmtQty(d.qty)}</strong> ${item.uom}</div>`
+                          ).join('')
+                        : '<span style="color:var(--muted);font-size:11px;">—</span>';
+
+                    const outCls = item.qty_outstanding > 0 ? 'goods-outstanding' : 'goods-outstanding-zero';
+                    const tr = document.createElement('tr');
+                    tr.className = 'grn-line-row';
+                    tr.innerHTML = `
+                        <td style="text-align:center;font-weight:700;color:var(--primary);">${item.index}</td>
+                        <td>${item.rfq_no ? `<span style="color:var(--muted);font-size:10px;">${item.rfq_no}</span><br>` : ''}${item.description}</td>
+                        <td>${item.uom}</td>
+                        <td class="num">${fmtQty(item.qty_ordered)}</td>
+                        <td class="num">${fmtQty(item.qty_delivered)}</td>
+                        <td class="num ${outCls}">${fmtQty(item.qty_outstanding)}</td>
+                        <td>${goodsStatusBadge(item.line_status)}</td>
+                        <td>${deliveryHtml}</td>`;
+                    tbody.appendChild(tr);
+                });
+            });
+
+            if (summary) {
+                summary.textContent = `${lpos.length} LPO(s) · ${lineCount} line item(s) · ${outstandingLines} with outstanding balance`;
+            }
+        }
+
+        function openGoodsStatusModal() {
+            if (gmTaskCaps.enable_goods_status === false) return;
+            populateGoodsStatusLpoFilter();
+            renderGoodsStatusTable();
+            document.getElementById('goodsStatusModal').style.display = 'flex';
+        }
+
+        function closeGoodsStatusModal() {
+            document.getElementById('goodsStatusModal').style.display = 'none';
+        }
+
+        function openGmPaymentVoucherModal(grnId) {
+            if (gmTaskCaps.enable_supplier_pv === false) return;
+            const grn = gmGrnsData.find(x => x.id === parseInt(grnId, 10));
+            if (!grn || !grn.can_raise_voucher) return;
+            document.getElementById('pv-grn-id').value = grn.id;
+            document.getElementById('pv-modal-grn-tag').textContent = grn.grn_no;
+            document.getElementById('pv-grn-no').textContent = grn.grn_no;
+            document.getElementById('pv-lpo-no').textContent = grn.lpo_no;
+            document.getElementById('pv-invoice').textContent = grn.invoice_ref;
+            document.getElementById('pv-supplier').textContent = grn.supplier;
+            document.getElementById('pv-amount-display').textContent = grn.amount;
+            document.getElementById('pv-amount-input').value = grn.amount;
+            document.getElementById('pv-period-from').value = document.getElementById('grn_period_from')?.value || '{{ period_from }}';
+            document.getElementById('pv-period-to').value = document.getElementById('grn_period_to')?.value || '{{ period_to }}';
+            document.getElementById('pv-transfer-ref').value = '';
+            document.getElementById('pv-cheque-no').value = '';
+            document.getElementById('pv-prepared-by').value = '';
+            document.getElementById('pv-notes').value = '';
+            document.getElementById('pv-payment-method').value = 'BANK';
+            toggleGmPvMethodFields();
+            document.getElementById('paymentVoucherModal').style.display = 'flex';
+        }
+
+        function closeGmPaymentVoucherModal() {
+            document.getElementById('paymentVoucherModal').style.display = 'none';
+        }
+
+        function toggleGmPvMethodFields() {
+            const method = document.getElementById('pv-payment-method').value;
+            document.getElementById('pv-bank-fields').style.display = method === 'BANK' ? 'block' : 'none';
+            document.getElementById('pv-cheque-fields').style.display = method === 'CHQ' ? 'block' : 'none';
+            document.getElementById('pv-transfer-ref').required = method === 'BANK';
+            document.getElementById('pv-cheque-no').required = method === 'CHQ';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('budgetModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'budgetModal') closeBudgetModal();
+            });
+            document.getElementById('grnPeriodModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'grnPeriodModal') closeGrnPeriodModal();
+            });
+            document.getElementById('voucherPeriodModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'voucherPeriodModal') closeVoucherPeriodModal();
+            });
+            document.getElementById('paymentVoucherModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'paymentVoucherModal') closeGmPaymentVoucherModal();
+            });
+            document.getElementById('goodsStatusModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'goodsStatusModal') closeGoodsStatusModal();
+            });
+            {% if grn_period_open %}openGrnPeriodModal();{% endif %}
+            {% if goods_status_open %}openGoodsStatusModal();{% endif %}
+            {% if voucher_period_open %}openVoucherPeriodModal();{% endif %}
+            {% if adhoc_ro_period_open %}openAdhocRoModal();{% endif %}
+            {% if officer_pv_period_open %}openOfficerPvPeriodModal();{% endif %}
+        });
+    </script>
+    <script>
+    window.APP_CURRENCY = {
+        code: "{{ currency_code|escapejs }}",
+        symbol: "{{ currency_symbol|escapejs }}"
+    };
+    </script>
+    <script src="{% static 'js/currency.js' %}"></script>
+    <script src="{% static 'js/gm-adhoc-officer.js' %}"></script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,82 @@
+{% comment %}Pioneer correspondence palette (LPO dispatch){% endcomment %}
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+    @page { size: A4; margin: 12mm; }
+    body.correspondence-doc, body.lpo-pdf-body {
+        margin: 0; padding: 0; background: #fff;
+        font-family: "Source Sans 3", "Segoe UI", Calibri, Arial, sans-serif;
+        font-size: 10pt; color: #1a1a2e; line-height: 1.45;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .brand-bar { height: 6px; background: #1e3a8a; margin-bottom: 18px; }
+    .org-letterhead, .pioneer-letterhead, .letterhead {
+        text-align: center; border-bottom: 3px double #1e3a8a;
+        padding-bottom: 14px; margin-bottom: 22px;
+    }
+    .org-letterhead .brand, .letterhead h1 {
+        color: #1e3a8a; font-weight: bold; text-transform: uppercase;
+    }
+    .print-doc-subtitle {
+        font-size: 8.5pt; color: #475569; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .correspondence-sheet { padding: 32px 40px; background: #fff; box-sizing: border-box; }
+    .memo-block {
+        display: grid; grid-template-columns: 150px 1fr; gap: 4px 0;
+        margin-bottom: 22px; font-size: 10pt;
+    }
+    .memo-block strong { text-transform: uppercase; color: #475569; font-size: 8.5pt; }
+    table { width: 100%; border-collapse: collapse; margin: 18px 0 24px; font-size: 9.5pt; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; vertical-align: top; }
+    th {
+        background: #f1f5f9; color: #475569; font-weight: bold;
+        text-transform: uppercase; font-size: 8pt;
+    }
+    .parties th, .section-head th { background: #1e3a8a; color: #fff; }
+    tbody tr.zebra { background: #f8fafc; }
+    tfoot td { font-weight: bold; background: #f1f5f9; }
+    .num { text-align: right; }
+    .center { text-align: center; }
+    .doc-ref, .lpo-no, .ref-highlight { color: #b91c1c; font-weight: bold; }
+    .terms-box, .compliance-note {
+        border: 1px solid #cbd5e1; background: #f8fafc;
+        padding: 12px 14px; margin-bottom: 24px; font-size: 8.5pt; color: #475569;
+    }
+    .status-banner {
+        border: 2px solid #1e3a8a; padding: 12px 16px; margin: 18px 0;
+        font-weight: bold; text-transform: uppercase; text-align: center;
+    }
+    .status-full { background: #ecfdf5; border-color: #059669; color: #065f46; }
+    .status-partial { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
+    .signatures {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+        margin-top: 42px; page-break-inside: avoid;
+    }
+    .sign-line {
+        border-top: 1px solid #1e3a8a; margin-top: 48px; padding-top: 8px;
+        font-weight: bold; text-transform: uppercase; font-size: 8.5pt;
+    }
+    .sign-role { font-size: 8pt; color: #64748b; margin-top: 4px; }
+    .screen-toolbar {
+        padding: 16px 20px; background: #ecfdf5; border-bottom: 1px solid #a7f3d0;
+        display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-end; align-items: center;
+    }
+    .screen-toolbar button, .screen-toolbar a {
+        padding: 10px 18px; font-size: 13px; border-radius: 8px;
+        font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; border: none;
+    }
+    .screen-toolbar button { background: #1e3a8a; color: #fff; }
+    .screen-toolbar a { background: #059669; color: #fff; }
+    .screen-toolbar a.toolbar-muted { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .lpo-toolbar {
+        display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+        justify-content: space-between; margin-bottom: 20px; padding: 16px 20px;
+        background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px;
+    }
+    .lpo-toolbar-label { font-weight: 600; color: #065f46; }
+    @media print {
+        .no-print, .screen-toolbar, .lpo-toolbar { display: none !important; }
+        body { margin: 0 !important; background: #fff !important; }
+        .correspondence-sheet { padding: 0; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+</style>

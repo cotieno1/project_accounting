@@ -1,0 +1,132 @@
+﻿from pathlib import Path
+Path("templates/ceo_fund_release_voucher_print.html").write_text("""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ pv_no }} — Task {{ task.project_id }}</title>
+{% include "includes/lpo_document_styles.html" %}
+<style>
+    @page { size: A4 portrait; margin: 7mm; }
+    .ceo-sheet {
+        page-break-after: always;
+        page-break-inside: avoid;
+        break-inside: avoid;
+        height: 281mm;
+        max-height: 281mm;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+    .ceo-sheet:last-of-type { page-break-after: avoid; }
+    .ceo-sheet .lpo-paper { padding: 4mm 6mm; margin: 0; max-width: none; }
+    .ceo-sheet .doc { font-size: 8.5pt; line-height: 1.32; }
+    .ceo-sheet .brand-bar { height: 3px; margin-bottom: 6px; }
+    .ceo-sheet .header { margin-bottom: 8px !important; padding-bottom: 6px !important; }
+    .ceo-sheet .header h1 { font-size: 14px !important; letter-spacing: 1px !important; }
+    .ceo-sheet .header .sub { font-size: 9px !important; margin-top: 4px !important; }
+    .ceo-sheet table { margin-bottom: 7px !important; }
+    .ceo-sheet th, .ceo-sheet td { padding: 4px 6px !important; font-size: 7.5pt !important; }
+    .ceo-sheet .party-name { font-size: 8.5pt !important; margin-bottom: 2px !important; }
+    .ceo-sheet .muted { font-size: 7.5pt !important; margin: 1px 0 !important; }
+    .ceo-sheet .terms { padding: 6px 8px; margin-bottom: 6px; font-size: 7.5pt; }
+    .ceo-sheet .terms strong { font-size: 7pt; margin-bottom: 3px; }
+    .ceo-sheet .memo-body p { margin: 0 0 5px; font-size: 7.5pt; line-height: 1.35; }
+    .ceo-sheet .signatures { margin-top: 4px !important; margin-bottom: 0 !important; }
+    .ceo-sheet .signatures td { padding-top: 10px !important; }
+    .ceo-sheet .signatures .line { padding-top: 4px; font-size: 7.5pt; }
+    .ceo-sheet .signatures .hint { font-size: 7pt; margin-top: 2px; }
+    .ceo-sheet .footer-note { margin-top: 5px; font-size: 6.5pt; }
+    .ceo-sheet .lines tfoot .grand-value { font-size: 9pt; }
+    .pv-series-note { font-size: 6.5pt; color: #64748b; text-align: center; margin: 0 0 4px; }
+    @media print {
+        .ceo-sheet { height: 281mm; overflow: hidden; }
+        .no-print { display: none !important; }
+    }
+</style>
+</head>
+<body class="pioneer-doc-print">
+<div class="screen-toolbar no-print">
+<button type="button" onclick="window.print()">Print memo &amp; voucher (2 pages)</button>
+<a href="{{ back_url }}" class="toolbar-muted">Back to Budget Authorization</a>
+</div>
+
+<div class="ceo-sheet">
+<div class="lpo-paper"><div class="doc">
+<p class="pv-series-note">Disbursement PV (PV-DSB) — fund release only; not a procurement supplier voucher</p>
+<div class="brand-bar"></div>
+{% include "includes/pioneer_letterhead_block.html" with doc_subtitle="CEO Memo — Fund Disbursement to GM" %}
+<table class="meta-table">
+<tr><th>Document</th><th>Disbursement PV No.</th><th>Date</th></tr>
+<tr><td>CEO Fund Disbursement Memo</td><td class="lpo-no">{{ pv_no }}</td><td>{{ release.released_at|date:"d M Y" }}</td></tr>
+</table>
+<table class="parties">
+<tr><th>To</th><th>From / Project</th></tr>
+<tr>
+<td><div class="party-name">{{ release.to_officer }}</div></td>
+<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|truncatechars:80 }}</div></td>
+</tr>
+</table>
+<table class="meta-table">
+<tr><th>Transfer (US$)</th><th>Bank reference</th><th>AIE ref</th></tr>
+<tr><td class="lpo-no" style="font-family:monospace;">{{ release.amount|floatformat:2 }}</td><td>{{ release.bank_reference }}</td><td>{{ ceo_aie_reference|default:"—" }}</td></tr>
+</table>
+<div class="terms">
+<strong>Memorandum</strong>
+<div class="memo-body">
+<p>Dear General Manager,</p>
+<p>The CEO (AIE) authorizes transfer of <strong>US$ {{ release.amount|floatformat:2 }}</strong> to your office for Task <strong>{{ task.project_id }}</strong> — {{ task.description|truncatechars:100 }}. Disburse only against the attached CEO-approved budget (voucher <strong>{{ pv_no }}</strong>). Bank ref: <strong>{{ release.bank_reference }}</strong>.</p>
+<p>Respectfully,</p>
+</div>
+</div>
+<table class="signatures"><tr>
+<td><div class="line">{{ ceo_name|default:"Chief Executive Officer" }}</div><div class="hint">CEO — AIE Holder</div></td>
+<td style="width:8%"></td>
+<td><div class="line">{{ release.released_at|date:"d M Y" }}</div><div class="hint">Date</div></td>
+</tr></table>
+<p class="footer-note">Memo {{ pv_no }} · Task {{ task.project_id }}</p>
+</div></div>
+</div>
+
+<div class="ceo-sheet">
+<div class="lpo-paper"><div class="doc">
+<p class="pv-series-note">PV-DSB series — unique per fund release across all major &amp; ad-hoc projects</p>
+<div class="brand-bar"></div>
+{% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Disbursement Payment Voucher — Fund Transfer" %}
+<table class="meta-table">
+<tr><th>Document</th><th>Disbursement PV No.</th><th>Date</th></tr>
+<tr><td>Fund Transfer Voucher</td><td class="lpo-no">{{ pv_no }}</td><td>{{ release.released_at|date:"d M Y" }}</td></tr>
+</table>
+<table class="parties">
+<tr><th>Payee</th><th>Project</th></tr>
+<tr>
+<td><div class="party-name">{{ release.to_officer }}</div><div class="muted">{{ release.from_office }}</div><div class="muted">Bank: {{ release.bank_reference }}</div></td>
+<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|truncatechars:90 }}</div><div class="muted">{{ budget_label }} v{{ budget_version }}</div></td>
+</tr>
+</table>
+<table class="lines">
+<thead><tr><th>Budget line (provision only)</th><th class="num">US$</th></tr></thead>
+<tbody>
+{% for line in provision_lines %}
+<tr{% if forloop.counter|divisibleby:2 %} class="zebra"{% endif %}><td>{{ line.label }}</td><td class="num">{{ line.budget|floatformat:2 }}</td></tr>
+{% endfor %}
+</tbody>
+<tfoot>
+<tr><td class="grand-label">Total authorized</td><td class="grand-value">{{ total_budget|floatformat:2 }}</td></tr>
+<tr><td class="grand-label">This transfer</td><td class="grand-value">{{ release.amount|floatformat:2 }}</td></tr>
+</tfoot>
+</table>
+<div class="terms"><strong>Note</strong>Record transfer of US$ {{ release.amount|floatformat:2 }} for Task {{ task.project_id }}. AIE: {{ ceo_aie_reference|default:"—" }}.</div>
+<table class="signatures"><tr>
+<td><div class="line">{{ ceo_name|default:"Chief Executive Officer" }}</div><div class="hint">CEO — Prepared</div></td>
+<td style="width:8%"></td>
+<td><div class="line">________________________</div><div class="hint">GM Accounting — Received</div></td>
+</tr></table>
+<p class="footer-note">{{ pv_no }} · Task {{ task.project_id }} · {{ release.released_at|date:"Y-m-d" }}</p>
+</div></div>
+</div>
+{% if auto_print %}
+<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},500)});</script>
+{% endif %}
+</body>
+</html>
+""", encoding="utf-8")
+print("template ok")
