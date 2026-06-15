@@ -67,38 +67,46 @@ def dashboard(request):
         user_account = user.useraccount
         role = user_account.access_level.description
         modules = user_account.access_level.modules.all()
-    except:
+    except Exception:
         role = "Project Director"
         modules = []
 
-    active_org = get_active_organization(request)
-    context = {
-        'username': user.username,
-        'role': role,
-        'modules': modules,
-        'categories': UserCategory.objects.all(),
-        'analysis_categories': GLAnalysisCategory.objects.all(),
-        'role_options': [
-            {"id": c.id, "description": c.description}
-            for c in UserCategory.objects.all()
-        ],
-        'analysis_options': [
-            {"category_id": c.category_id, "description": c.description}
-            for c in GLAnalysisCategory.objects.all()
-        ],
-        'recon_progress': 84,
-        'organization_options': [
-            {
-                "org_code": o.org_code,
-                "name": o.name,
-                "short_name": o.short_name,
-            }
-            for o in Organization.objects.all().order_by("org_code")
-        ],
-        'can_switch_organization': request.user.is_superuser,
-        'active_org_code': active_org.org_code if active_org else "",
-    }
-    return render(request, 'dashboard.html', context)
+    try:
+        active_org = get_active_organization(request)
+        context = {
+            'username': user.username,
+            'role': role,
+            'modules': modules,
+            'categories': UserCategory.objects.all(),
+            'analysis_categories': GLAnalysisCategory.objects.all(),
+            'role_options': [
+                {"id": c.id, "description": c.description}
+                for c in UserCategory.objects.all()
+            ],
+            'analysis_options': [
+                {"category_id": c.category_id, "description": c.description}
+                for c in GLAnalysisCategory.objects.all()
+            ],
+            'recon_progress': 84,
+            'organization_options': [
+                {
+                    "org_code": o.org_code,
+                    "name": o.name,
+                    "short_name": o.short_name,
+                }
+                for o in Organization.objects.all().order_by("org_code")
+            ],
+            'can_switch_organization': request.user.is_superuser,
+            'active_org_code': active_org.org_code if active_org else "",
+        }
+        return render(request, 'dashboard.html', context)
+    except Exception:
+        return render(
+            request,
+            'dashboard_unavailable.html',
+            {'username': user.username},
+            status=503,
+        )
 
 
 @login_required
