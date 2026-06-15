@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-echo "=== Railway startup ==="
-echo "DATABASE_URL set: $([ -n "${DATABASE_URL:-}" ] && echo yes || echo no)"
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 if [ -n "${DJANGO_SUPERUSER_PASSWORD:-${django_superuser_password:-}}" ]; then
@@ -28,5 +26,4 @@ if password:
         print(f"Created superuser: {username}")
 PY
 fi
-echo "=== Starting gunicorn ==="
 exec gunicorn UN_accounting_system.wsgi:application --bind "0.0.0.0:${PORT:-8000}"
