@@ -3,19 +3,21 @@ import os
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
+DEFAULT_USERNAME = "temp_admin"
+DEFAULT_EMAIL = "otieno.charles@gmail.com"
+
 
 class Command(BaseCommand):
     help = "Create or update the Django superuser from environment variables."
 
     def handle(self, *args, **options):
-        username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "").strip()
         password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "").strip()
-        email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "").strip()
+        username = os.environ.get("DJANGO_SUPERUSER_USERNAME", DEFAULT_USERNAME).strip()
+        email = os.environ.get("DJANGO_SUPERUSER_EMAIL", DEFAULT_EMAIL).strip()
 
-        if not username or not password:
+        if not password:
             self.stdout.write(
-                "Skipping ensure_superuser (set DJANGO_SUPERUSER_USERNAME and "
-                "DJANGO_SUPERUSER_PASSWORD in Railway variables)."
+                "Skipping ensure_superuser (set DJANGO_SUPERUSER_PASSWORD in Railway)."
             )
             return
 
