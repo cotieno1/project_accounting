@@ -1,18 +1,9 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
 log() {
   echo "=== $* ==="
 }
-
-on_error() {
-  local code=$?
-  echo "=== DEPLOY FAILED (exit ${code}) at line ${1} ===" >&2
-  echo "=== Last step did not finish. Search logs above for the traceback. ===" >&2
-  exit "${code}"
-}
-
-trap 'on_error ${LINENO}' ERR
 
 log "railway_start.sh begin"
 log "Python: $(python --version 2>&1)"
@@ -28,16 +19,22 @@ if [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
 fi
 
 log "STEP 1/3: migrate"
-python manage.py migrate --noinput --verbosity 2
-log "STEP 1/3: migrate OK"
+if python manage.py migrate --noinput --verbosity 2; then
+  log "STEP 1/3: migrate OK"
+else
+  log "STEP 1/3: migrate FAILED — starting web server anyway (home/login may work)"
+fi
 
 log "STEP 2/3: collectstatic"
-python manage.py collectstatic --noinput
-log "STEP 2/3: collectstatic OK"
+if python manage.py collectstatic --noinput; then
+  log "STEP 2/3: collectstatic OK"
+else
+  log "STEP 2/3: collectstatic FAILED — continuing"
+fi
 
 log "STEP 3/3: ensure superuser (optional)"
 if [ -n "${DJANGO_SUPERUSER_PASSWORD:-${django_superuser_password:-}}" ]; then
-  python - <<'PY'
+  if python - <<'PY'
 import os
 import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "UN_accounting_system.settings")
@@ -59,7 +56,11 @@ if password:
         User.objects.create_superuser(username, email, password)
         print(f"Created superuser: {username}")
 PY
-  log "STEP 3/3: superuser OK"
+  then
+    log "STEP 3/3: superuser OK"
+  else
+    log "STEP 3/3: superuser FAILED — continuing"
+  fi
 else
   log "STEP 3/3: superuser skipped (DJANGO_SUPERUSER_PASSWORD not set)"
 fi
@@ -69,4 +70,5 @@ exec gunicorn UN_accounting_system.wsgi:application \
   --bind "0.0.0.0:${PORT:-8000}" \
   --access-logfile - \
   --error-logfile - \
-  --log-level info
+  --log-level info \
+  --timeout 120

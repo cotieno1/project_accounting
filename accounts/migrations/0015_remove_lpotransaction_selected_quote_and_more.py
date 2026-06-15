@@ -42,6 +42,23 @@ def _column_udt_name(cursor, table, column):
   return row[0] if row else None
 
 
+def _table_exists(cursor, table):
+  cursor.execute(
+    """
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = %s
+    """,
+    [table],
+  )
+  return cursor.fetchone() is not None
+
+
+def _column_exists(cursor, table, column):
+  return _column_udt_name(cursor, table, column) is not None
+
+
 def forwards_pk_changes(apps, schema_editor):
   """PostgreSQL-safe PK migration; drops dependent FKs before PK changes."""
   if schema_editor.connection.vendor != "postgresql":
@@ -83,6 +100,8 @@ def forwards_pk_changes(apps, schema_editor):
     )
 
     for table in ("accounts_bomtransaction", "accounts_lpotransaction"):
+      if not _table_exists(cursor, table):
+        continue
       if _column_udt_name(cursor, table, "build_category_id") != "int4":
         cursor.execute(
           f"ALTER TABLE {table} ALTER COLUMN build_category_id DROP NOT NULL"
@@ -93,7 +112,7 @@ def forwards_pk_changes(apps, schema_editor):
           ALTER COLUMN build_category_id TYPE integer
           USING (
             (SELECT c.id FROM accounts_projectbuildcategory c
-             WHERE c.build_cat_id = {table}.build_category_id)
+             WHERE c.build_cat_id = build_category_id)
           )
           """
         )
@@ -135,11 +154,12 @@ def forwards_pk_changes(apps, schema_editor):
       END $$
       """
     )
-    cursor.execute(
-      "UPDATE accounts_projectbuilding "
-      "SET building_code = building_id "
-      "WHERE building_code IS NULL AND building_id IS NOT NULL"
-    )
+    if _column_exists(cursor, "accounts_projectbuilding", "building_id"):
+      cursor.execute(
+        "UPDATE accounts_projectbuilding "
+        "SET building_code = building_id "
+        "WHERE building_code IS NULL AND building_id IS NOT NULL"
+      )
     cursor.execute(
       "UPDATE accounts_projectbuilding "
       "SET building_code = 'UNKNOWN' "
@@ -162,18 +182,28 @@ def forwards_pk_changes(apps, schema_editor):
       "UNIQUE (building_code)",
     )
 
-    if _column_udt_name(cursor, "accounts_lpotransaction", "building_id") != "int4":
+    if (
+      _table_exists(cursor, "accounts_lpotransaction")
+      and _column_udt_name(cursor, "accounts_lpotransaction", "building_id") != "int4"
+    ):
       cursor.execute(
         "ALTER TABLE accounts_lpotransaction ALTER COLUMN building_id DROP NOT NULL"
       )
+      if _column_exists(cursor, "accounts_projectbuilding", "building_id"):
+        building_lookup = (
+          "(SELECT b.id FROM accounts_projectbuilding b "
+          "WHERE b.building_id = building_id)"
+        )
+      else:
+        building_lookup = (
+          "(SELECT b.id FROM accounts_projectbuilding b "
+          "WHERE b.building_code = building_id)"
+        )
       cursor.execute(
-        """
+        f"""
         ALTER TABLE accounts_lpotransaction
         ALTER COLUMN building_id TYPE integer
-        USING (
-          (SELECT b.id FROM accounts_projectbuilding b
-           WHERE b.building_id = accounts_lpotransaction.building_id)
-        )
+        USING ({building_lookup})
         """
       )
 
@@ -182,30 +212,32 @@ def forwards_pk_changes(apps, schema_editor):
       "DROP COLUMN IF EXISTS building_id"
     )
 
-    _add_constraint_if_missing(
-      cursor,
-      "accounts_bomtransaction_build_category_id_fkey",
-      "ALTER TABLE accounts_bomtransaction "
-      "ADD CONSTRAINT accounts_bomtransaction_build_category_id_fkey "
-      "FOREIGN KEY (build_category_id) REFERENCES accounts_projectbuildcategory (id) "
-      "DEFERRABLE INITIALLY DEFERRED",
-    )
-    _add_constraint_if_missing(
-      cursor,
-      "accounts_lpotransaction_build_category_id_fkey",
-      "ALTER TABLE accounts_lpotransaction "
-      "ADD CONSTRAINT accounts_lpotransaction_build_category_id_fkey "
-      "FOREIGN KEY (build_category_id) REFERENCES accounts_projectbuildcategory (id) "
-      "DEFERRABLE INITIALLY DEFERRED",
-    )
-    _add_constraint_if_missing(
-      cursor,
-      "accounts_lpotransaction_building_id_fkey",
-      "ALTER TABLE accounts_lpotransaction "
-      "ADD CONSTRAINT accounts_lpotransaction_building_id_fkey "
-      "FOREIGN KEY (building_id) REFERENCES accounts_projectbuilding (id) "
-      "DEFERRABLE INITIALLY DEFERRED",
-    )
+    if _table_exists(cursor, "accounts_bomtransaction"):
+      _add_constraint_if_missing(
+        cursor,
+        "accounts_bomtransaction_build_category_id_fkey",
+        "ALTER TABLE accounts_bomtransaction "
+        "ADD CONSTRAINT accounts_bomtransaction_build_category_id_fkey "
+        "FOREIGN KEY (build_category_id) REFERENCES accounts_projectbuildcategory (id) "
+        "DEFERRABLE INITIALLY DEFERRED",
+      )
+    if _table_exists(cursor, "accounts_lpotransaction"):
+      _add_constraint_if_missing(
+        cursor,
+        "accounts_lpotransaction_build_category_id_fkey",
+        "ALTER TABLE accounts_lpotransaction "
+        "ADD CONSTRAINT accounts_lpotransaction_build_category_id_fkey "
+        "FOREIGN KEY (build_category_id) REFERENCES accounts_projectbuildcategory (id) "
+        "DEFERRABLE INITIALLY DEFERRED",
+      )
+      _add_constraint_if_missing(
+        cursor,
+        "accounts_lpotransaction_building_id_fkey",
+        "ALTER TABLE accounts_lpotransaction "
+        "ADD CONSTRAINT accounts_lpotransaction_building_id_fkey "
+        "FOREIGN KEY (building_id) REFERENCES accounts_projectbuilding (id) "
+        "DEFERRABLE INITIALLY DEFERRED",
+      )
 
 
 def backwards_pk_changes(apps, schema_editor):
