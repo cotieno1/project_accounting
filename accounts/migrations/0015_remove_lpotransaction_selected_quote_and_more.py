@@ -4,65 +4,207 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def _drop_fks_to(cursor, table):
+  cursor.execute(
+    """
+    SELECT conrelid::regclass::text, conname
+    FROM pg_constraint
+    WHERE contype = 'f'
+      AND confrelid = %s::regclass
+    """,
+    [table],
+  )
+  for rel_table, conname in cursor.fetchall():
+    cursor.execute(f'ALTER TABLE {rel_table} DROP CONSTRAINT IF EXISTS "{conname}"')
+
+
+def _add_constraint_if_missing(cursor, conname, sql):
+  cursor.execute(
+    "SELECT 1 FROM pg_constraint WHERE conname = %s",
+    [conname],
+  )
+  if not cursor.fetchone():
+    cursor.execute(sql)
+
+
+def _column_udt_name(cursor, table, column):
+  cursor.execute(
+    """
+    SELECT udt_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = %s
+      AND column_name = %s
+    """,
+    [table, column],
+  )
+  row = cursor.fetchone()
+  return row[0] if row else None
+
+
 def forwards_pk_changes(apps, schema_editor):
-  """PostgreSQL-safe PK migration for empty or existing tables."""
+  """PostgreSQL-safe PK migration; drops dependent FKs before PK changes."""
   if schema_editor.connection.vendor != "postgresql":
     return
 
   with schema_editor.connection.cursor() as cursor:
+    _drop_fks_to(cursor, "accounts_projectbuildcategory")
+
     cursor.execute(
       "ALTER TABLE accounts_projectbuildcategory "
       "DROP CONSTRAINT IF EXISTS accounts_projectbuildcategory_pkey"
     )
     cursor.execute(
-      "ALTER TABLE accounts_projectbuildcategory "
-      "ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY"
+      """
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'accounts_projectbuildcategory'
+            AND column_name = 'id'
+        ) THEN
+          ALTER TABLE accounts_projectbuildcategory ADD COLUMN id SERIAL;
+        END IF;
+      END $$
+      """
     )
-    cursor.execute(
+    _add_constraint_if_missing(
+      cursor,
+      "accounts_projectbuildcategory_pkey",
+      "ALTER TABLE accounts_projectbuildcategory ADD PRIMARY KEY (id)",
+    )
+    _add_constraint_if_missing(
+      cursor,
+      "accounts_projectbuildcategory_build_cat_id_key",
       "ALTER TABLE accounts_projectbuildcategory "
       "ADD CONSTRAINT accounts_projectbuildcategory_build_cat_id_key "
-      "UNIQUE (build_cat_id)"
+      "UNIQUE (build_cat_id)",
     )
 
-    cursor.execute(
-      "ALTER TABLE accounts_lpotransaction "
-      "DROP CONSTRAINT IF EXISTS accounts_lpotransaction_building_id_fkey"
-    )
+    for table in ("accounts_bomtransaction", "accounts_lpotransaction"):
+      if _column_udt_name(cursor, table, "build_category_id") != "int4":
+        cursor.execute(
+          f"ALTER TABLE {table} ALTER COLUMN build_category_id DROP NOT NULL"
+        )
+        cursor.execute(
+          f"""
+          ALTER TABLE {table}
+          ALTER COLUMN build_category_id TYPE integer
+          USING (
+            (SELECT c.id FROM accounts_projectbuildcategory c
+             WHERE c.build_cat_id = {table}.build_category_id)
+          )
+          """
+        )
+
+    _drop_fks_to(cursor, "accounts_projectbuilding")
+
     cursor.execute(
       "ALTER TABLE accounts_projectbuilding "
       "DROP CONSTRAINT IF EXISTS accounts_projectbuilding_pkey"
     )
     cursor.execute(
-      "ALTER TABLE accounts_projectbuilding "
-      "ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY"
+      """
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'accounts_projectbuilding'
+            AND column_name = 'id'
+        ) THEN
+          ALTER TABLE accounts_projectbuilding ADD COLUMN id SERIAL;
+        END IF;
+      END $$
+      """
     )
     cursor.execute(
-      "ALTER TABLE accounts_projectbuilding "
-      "ADD COLUMN IF NOT EXISTS building_code varchar(50)"
+      """
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'accounts_projectbuilding'
+            AND column_name = 'building_code'
+        ) THEN
+          ALTER TABLE accounts_projectbuilding
+          ADD COLUMN building_code varchar(50);
+        END IF;
+      END $$
+      """
     )
     cursor.execute(
       "UPDATE accounts_projectbuilding "
       "SET building_code = building_id "
+      "WHERE building_code IS NULL AND building_id IS NOT NULL"
+    )
+    cursor.execute(
+      "UPDATE accounts_projectbuilding "
+      "SET building_code = 'UNKNOWN' "
       "WHERE building_code IS NULL"
     )
     cursor.execute(
       "ALTER TABLE accounts_projectbuilding "
       "ALTER COLUMN building_code SET NOT NULL"
     )
-    cursor.execute(
+    _add_constraint_if_missing(
+      cursor,
+      "accounts_projectbuilding_pkey",
+      "ALTER TABLE accounts_projectbuilding ADD PRIMARY KEY (id)",
+    )
+    _add_constraint_if_missing(
+      cursor,
+      "accounts_projectbuilding_building_code_key",
       "ALTER TABLE accounts_projectbuilding "
       "ADD CONSTRAINT accounts_projectbuilding_building_code_key "
-      "UNIQUE (building_code)"
+      "UNIQUE (building_code)",
     )
+
+    if _column_udt_name(cursor, "accounts_lpotransaction", "building_id") != "int4":
+      cursor.execute(
+        "ALTER TABLE accounts_lpotransaction ALTER COLUMN building_id DROP NOT NULL"
+      )
+      cursor.execute(
+        """
+        ALTER TABLE accounts_lpotransaction
+        ALTER COLUMN building_id TYPE integer
+        USING (
+          (SELECT b.id FROM accounts_projectbuilding b
+           WHERE b.building_id = accounts_lpotransaction.building_id)
+        )
+        """
+      )
+
     cursor.execute(
       "ALTER TABLE accounts_projectbuilding "
       "DROP COLUMN IF EXISTS building_id"
     )
-    cursor.execute(
+
+    _add_constraint_if_missing(
+      cursor,
+      "accounts_bomtransaction_build_category_id_fkey",
+      "ALTER TABLE accounts_bomtransaction "
+      "ADD CONSTRAINT accounts_bomtransaction_build_category_id_fkey "
+      "FOREIGN KEY (build_category_id) REFERENCES accounts_projectbuildcategory (id) "
+      "DEFERRABLE INITIALLY DEFERRED",
+    )
+    _add_constraint_if_missing(
+      cursor,
+      "accounts_lpotransaction_build_category_id_fkey",
+      "ALTER TABLE accounts_lpotransaction "
+      "ADD CONSTRAINT accounts_lpotransaction_build_category_id_fkey "
+      "FOREIGN KEY (build_category_id) REFERENCES accounts_projectbuildcategory (id) "
+      "DEFERRABLE INITIALLY DEFERRED",
+    )
+    _add_constraint_if_missing(
+      cursor,
+      "accounts_lpotransaction_building_id_fkey",
       "ALTER TABLE accounts_lpotransaction "
       "ADD CONSTRAINT accounts_lpotransaction_building_id_fkey "
       "FOREIGN KEY (building_id) REFERENCES accounts_projectbuilding (id) "
-      "DEFERRABLE INITIALLY DEFERRED"
+      "DEFERRABLE INITIALLY DEFERRED",
     )
 
 
