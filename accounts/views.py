@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.models import User
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.forms.models import model_to_dict
 from django.db.models import Sum, F, Count
@@ -49,6 +49,12 @@ def has_module_access(user, module_code):
 # =======================================================================
 def home(request):
     return render(request, 'home.html')
+
+
+def health(request):
+    """Lightweight health check for Railway (no database)."""
+    return HttpResponse('ok', content_type='text/plain')
+
 
 def android_rollout_plan_doc(request):
     """Simple download page for the Android rollout plan PDF."""
