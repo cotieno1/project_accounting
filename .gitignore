@@ -9,7 +9,7 @@ dist/
 build/
 
 # Virtual environment
-/env/
+env/
 venv/
 .venv/
 
@@ -17,7 +17,7 @@ venv/
 db.sqlite3
 db.sqlite3-journal
 staticfiles/
-/media/
+media/
 
 # Secrets
 .env
@@ -30,6 +30,6 @@ staticfiles/
 Thumbs.db
 Desktop.ini
 
-# Local scratch / debug scripts (not part of the app)
-_*.py
-_*.txt
+# Local scratch / debug scripts (project root only)
+/_*.py
+/_*.txt
