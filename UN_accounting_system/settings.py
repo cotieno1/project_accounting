@@ -114,7 +114,15 @@ WSGI_APPLICATION = 'UN_accounting_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-if os.environ.get('DATABASE_URL'):
+_database_url = os.environ.get('DATABASE_URL', '').strip()
+
+if _on_railway and not _database_url:
+    raise RuntimeError(
+        'DATABASE_URL is not set. On Railway: open your app service → Variables → '
+        'Add Reference → PostgreSQL → DATABASE_URL, then redeploy.'
+    )
+
+if _database_url:
     DATABASES = {
         'default': dj_database_url.config(
             conn_max_age=600,
