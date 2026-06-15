@@ -4,55 +4,144 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def forwards_pk_changes(apps, schema_editor):
+  """PostgreSQL-safe PK migration for empty or existing tables."""
+  if schema_editor.connection.vendor != "postgresql":
+    return
+
+  with schema_editor.connection.cursor() as cursor:
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuildcategory "
+      "DROP CONSTRAINT IF EXISTS accounts_projectbuildcategory_pkey"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuildcategory "
+      "ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuildcategory "
+      "ADD CONSTRAINT accounts_projectbuildcategory_build_cat_id_key "
+      "UNIQUE (build_cat_id)"
+    )
+
+    cursor.execute(
+      "ALTER TABLE accounts_lpotransaction "
+      "DROP CONSTRAINT IF EXISTS accounts_lpotransaction_building_id_fkey"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuilding "
+      "DROP CONSTRAINT IF EXISTS accounts_projectbuilding_pkey"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuilding "
+      "ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuilding "
+      "ADD COLUMN IF NOT EXISTS building_code varchar(50)"
+    )
+    cursor.execute(
+      "UPDATE accounts_projectbuilding "
+      "SET building_code = building_id "
+      "WHERE building_code IS NULL"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuilding "
+      "ALTER COLUMN building_code SET NOT NULL"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuilding "
+      "ADD CONSTRAINT accounts_projectbuilding_building_code_key "
+      "UNIQUE (building_code)"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_projectbuilding "
+      "DROP COLUMN IF EXISTS building_id"
+    )
+    cursor.execute(
+      "ALTER TABLE accounts_lpotransaction "
+      "ADD CONSTRAINT accounts_lpotransaction_building_id_fkey "
+      "FOREIGN KEY (building_id) REFERENCES accounts_projectbuilding (id) "
+      "DEFERRABLE INITIALLY DEFERRED"
+    )
+
+
+def backwards_pk_changes(apps, schema_editor):
+  if schema_editor.connection.vendor != "postgresql":
+    return
+  # Fresh Railway deploys do not need a reverse path.
+
+
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('accounts', '0014_lpoitem'),
-    ]
+  dependencies = [
+    ("accounts", "0014_lpoitem"),
+  ]
 
-    operations = [
+  operations = [
+    migrations.RemoveField(
+      model_name="lpotransaction",
+      name="selected_quote",
+    ),
+    migrations.AddField(
+      model_name="lpotransaction",
+      name="supplier",
+      field=models.ForeignKey(
+        blank=True,
+        null=True,
+        on_delete=django.db.models.deletion.PROTECT,
+        to="accounts.supplieraccount",
+      ),
+    ),
+    migrations.SeparateDatabaseAndState(
+      database_operations=[
+        migrations.RunPython(forwards_pk_changes, backwards_pk_changes),
+      ],
+      state_operations=[
+        migrations.AlterField(
+          model_name="projectbuildcategory",
+          name="build_cat_id",
+          field=models.CharField(max_length=50, unique=True),
+        ),
+        migrations.AddField(
+          model_name="projectbuildcategory",
+          name="id",
+          field=models.AutoField(primary_key=True, serialize=False),
+        ),
         migrations.RemoveField(
-            model_name='lpotransaction',
-            name='selected_quote',
-        ),
-        migrations.RemoveField(
-            model_name='projectbuilding',
-            name='building_id',
+          model_name="projectbuilding",
+          name="building_id",
         ),
         migrations.AddField(
-            model_name='lpotransaction',
-            name='supplier',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='accounts.supplieraccount'),
+          model_name="projectbuilding",
+          name="building_code",
+          field=models.CharField(max_length=50, unique=True),
         ),
         migrations.AddField(
-            model_name='projectbuildcategory',
-            name='id',
-            field=models.AutoField(primary_key=True, serialize=False),
-        ),
-        migrations.AddField(
-            model_name='projectbuilding',
-            name='building_code',
-            field=models.CharField(default='UNKNOWN', max_length=50, unique=True),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='projectbuilding',
-            name='id',
-            field=models.AutoField(primary_key=True, serialize=False),
+          model_name="projectbuilding",
+          name="id",
+          field=models.AutoField(primary_key=True, serialize=False),
         ),
         migrations.AlterField(
-            model_name='lpotransaction',
-            name='build_category',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='accounts.projectbuildcategory'),
+          model_name="lpotransaction",
+          name="build_category",
+          field=models.ForeignKey(
+            blank=True,
+            null=True,
+            on_delete=django.db.models.deletion.PROTECT,
+            to="accounts.projectbuildcategory",
+          ),
         ),
         migrations.AlterField(
-            model_name='lpotransaction',
-            name='building',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='accounts.projectbuilding'),
+          model_name="lpotransaction",
+          name="building",
+          field=models.ForeignKey(
+            blank=True,
+            null=True,
+            on_delete=django.db.models.deletion.PROTECT,
+            to="accounts.projectbuilding",
+          ),
         ),
-        migrations.AlterField(
-            model_name='projectbuildcategory',
-            name='build_cat_id',
-            field=models.CharField(max_length=50, unique=True),
-        ),
-    ]
+      ],
+    ),
+  ]
