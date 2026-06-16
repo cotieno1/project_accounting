@@ -7,10 +7,11 @@
 {% endblock %}
 {% block sidebar %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
-<small style="color: var(--muted); display: block; margin: 16px 0;">Purchase Audit · {{ active_task.project_id }}</small>
-<select onchange="window.location.href='?task_id=' + this.value;" class="form-input">
+<small style="color: var(--muted); display: block; margin: 16px 0;">{% if active_task %}Purchase Audit · {{ active_task.project_id }}{% else %}Select a project task{% endif %}</small>
+<select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
+    <option value="">-- Select project task --</option>
     {% for t in tasks %}
-    <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|truncatechars:28 }}</option>
+    <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|truncatechars:28 }}</option>
     {% endfor %}
 </select>
 

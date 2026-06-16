@@ -33,13 +33,26 @@ from .models import (
 )
 #=========================================================================
 
-def _task_from_request(request, tasks_qs=None):
-    """Return a project task only when the user picked task_id in the URL."""
+def _task_id_from_request(request, *, include_post=False, include_session=True):
+    """Resolve task_id from URL, form POST, then last user choice in session."""
     task_id = (request.GET.get("task_id") or "").strip()
-    if not task_id:
-        return None
+    if not task_id and include_post:
+        task_id = (request.POST.get("task_id") or "").strip()
+    if not task_id and include_session:
+        task_id = (request.session.get("active_task_id") or "").strip()
+    return task_id
+
+
+def _task_from_request(request, tasks_qs=None, *, include_post=False, persist_session=True):
+    """Resolve task from URL, form, session, then first task (demo default). Updates session."""
+    task_id = _task_id_from_request(request, include_post=include_post)
     qs = tasks_qs if tasks_qs is not None else ProjectTask.objects.all()
-    return qs.filter(project_id=task_id).first()
+    task = qs.filter(project_id=task_id).first() if task_id else None
+    if not task:
+        task = qs.order_by("project_id").first()
+    if task and persist_session:
+        request.session["active_task_id"] = task.project_id
+    return task
 
 
 # =======================================================================
@@ -866,51 +879,34 @@ def rfq_manager(request):
     Refactored RFQ Dashboard Terminal.
     Coordinates active task prescriptions with tail-end Vault selections.
     """
-    # 1. Pull core database sets safely using verified model fields
     tasks = ProjectTask.objects.all()
-    
-    # FIX HERE: Pull all suppliers since 'status' is not an available field
-    suppliers = SupplierAccount.objects.all() 
-    
-    # System Metric Requirement
+    suppliers = SupplierAccount.objects.all()
     total_qualified_suppliers = suppliers.count()
-    
-    # 2. Extract operational parameters
-    task_id = request.GET.get('task_id')
-    active_task = None
-    build_items = []
-    stats = {'sent_count': 0, 'waiting_count': 0}
-    # ==========================================================================
-    
-    if task_id:
-        active_task = ProjectTask.objects.filter(project_id=task_id).first()
-        
-        if active_task:
-            # 1. Access the operational Requisition Order document
-            ro = RequisitionOrder.objects.filter(task=active_task).first()
-            
-            if ro:
-                # 2. Extract the line items created by the Site Manager's BOM sync script
-                build_items = ro.items.all().order_by('id')  # Accesses RequisitionOrderItem rows
-                
-                # 3. Pull primary keys directly to ensure a clean transaction lookup
-                item_ids = build_items.values_list('id', flat=True)
-                
-                # 4. Target the transactions tied directly to these operational line items
-                sent_transactions = RFQTransaction.objects.filter(bom_item_id__in=item_ids)
-                
-                # 5. Populate dashboard summary statistics metrics
-                stats['sent_count'] = sent_transactions.values('supplier_id').distinct().count()
-                stats['waiting_count'] = sent_transactions.filter(is_selected=False).values('supplier_id').distinct().count()
-            
-    #==========================================================================================
+    active_task = _task_from_request(request, tasks)
 
-    return render(request, 'rfq_manager.html', {
-        'tasks': tasks,
-        'active_task': active_task,
-        'build': build_items,
-        'suppliers': suppliers,
-        'total_qualified_suppliers': total_qualified_suppliers,
+    build_items = []
+    stats = {"sent_count": 0, "waiting_count": 0}
+
+    if active_task:
+        ro = RequisitionOrder.objects.filter(task=active_task).first()
+        if ro:
+            build_items = ro.items.all().order_by("id")
+            item_ids = build_items.values_list("id", flat=True)
+            sent_transactions = RFQTransaction.objects.filter(bom_item_id__in=item_ids)
+            stats["sent_count"] = sent_transactions.values("supplier_id").distinct().count()
+            stats["waiting_count"] = (
+                sent_transactions.filter(is_selected=False)
+                .values("supplier_id")
+                .distinct()
+                .count()
+            )
+
+    return render(request, "rfq_manager.html", {
+        "tasks": tasks,
+        "active_task": active_task,
+        "build": build_items,
+        "suppliers": suppliers,
+        "total_qualified_suppliers": total_qualified_suppliers,
         'stats': stats
     })
 # ======================================================================================================================
@@ -2380,10 +2376,34 @@ def print_payment_voucher_view(request, voucher_id):
 
 @login_required
 def bid_evaluation_terminal_view(request):
-    task_id = request.POST.get("task_id") or request.GET.get("task_id")
-    active_task = ProjectTask.objects.filter(project_id=task_id).first() or ProjectTask.objects.first()
+    tasks = ProjectTask.objects.all()
+    active_task = _task_from_request(
+        request, tasks, include_post=(request.method == "POST")
+    )
 
-    suppliers = SupplierAccount.objects.all()
+    if not active_task:
+        if request.method == "POST":
+            messages.error(request, "Select a project task before saving bid evaluation.")
+            return redirect(reverse("bid_evaluation_terminal"))
+        suppliers = SupplierAccount.objects.all().order_by("description")
+        budget_status = _build_task_budget_status(None)
+        return render(request, "bid_evaluation.html", {
+            "active_task": None,
+            "tasks": tasks,
+            "bom_items": [],
+            "source_type": "BOM",
+            "suppliers": suppliers,
+            "budget": None,
+            "budget_channel": {"budget": None, "channel": None, "label": ""},
+            "lpos": [],
+            "budget_status": budget_status,
+            "lpos_data": [],
+            "grns_data": [],
+            "grn_count": 0,
+            "task_actual_cost": "0.00",
+        })
+
+    suppliers = SupplierAccount.objects.all().order_by("description")
     bom_header = BOMHeader.objects.filter(task=active_task).first()
     bom_items = BOMItem.objects.filter(header=bom_header) if bom_header else BOMItem.objects.none()
     ro_items = RequisitionOrderItem.objects.filter(ro__task=active_task)
@@ -3708,24 +3728,27 @@ def misc_register_supplier_ajax(request):
 @login_required
 def misc_purchase_builder(request):
     tasks = ProjectTask.objects.all()
-    target_task_id = (request.GET.get("task_id") or "").strip()
-    if not target_task_id:
+    active_task = _task_from_request(
+        request, tasks, include_post=(request.method == "POST")
+    )
+    if not active_task:
+        if request.method == "POST":
+            messages.error(request, "Select a project task before saving.")
+            return redirect(reverse("misc_purchase_builder"))
         if not tasks.exists():
             messages.info(
                 request,
                 "Add a project task from Dashboard setup before using Misc Purchase.",
             )
             return redirect("dashboard")
-        return render(request, "select_project_task.html", {
+        suppliers = SupplierAccount.objects.all().order_by("description")
+        return render(request, "misc_purchase.html", {
             "tasks": tasks,
-            "title": "Ad-Hoc Purchase",
-            "continue_path": reverse("misc_purchase_builder"),
+            "active_task": None,
+            "suppliers": suppliers,
+            "no_task_selected": True,
         })
-    active_task = tasks.filter(project_id=target_task_id).first()
-    if not active_task:
-        messages.error(request, f"Project task '{target_task_id}' was not found.")
-        return redirect("ops_dashboard")
-    request.session["active_task_id"] = active_task.project_id
+
     suppliers = SupplierAccount.objects.all().order_by("description")
 
     default_gl = _misc_default_gl()
@@ -4250,21 +4273,23 @@ def budget_overview(request):
 def misc_budget_actuals_view(request):
     """Ad-hoc purchase audit: Misc budget vs locked actuals and variance."""
     tasks = ProjectTask.objects.all().order_by("project_id")
-    target_task_id = (request.GET.get("task_id") or "").strip()
-    if not target_task_id:
+    active_task = _task_from_request(request, tasks)
+    if not active_task:
         if not tasks.exists():
             messages.error(request, "No project task found.")
             return redirect("dashboard")
-        return render(request, "select_project_task.html", {
+        return render(request, "misc_budget_actuals.html", {
             "tasks": tasks,
-            "title": "Misc Budget vs Actuals",
-            "continue_path": reverse("misc_budget_actuals"),
+            "active_task": None,
+            "no_task_selected": True,
+            "locked_audit_trail": [],
+            "locked_mpos": [],
+            "officer_vouchers": [],
+            "misc_budget": Decimal("0.00"),
+            "misc_actuals": Decimal("0.00"),
+            "variance": Decimal("0.00"),
+            "variance_over": False,
         })
-    active_task = tasks.filter(project_id=target_task_id).first()
-    if not active_task:
-        messages.error(request, f"Project task '{target_task_id}' was not found.")
-        return redirect("ops_dashboard")
-    request.session["active_task_id"] = active_task.project_id
 
     locked_mros = MiscRequisitionOrder.objects.filter(
         task=active_task,
@@ -4647,11 +4672,8 @@ def _disbursement_payment_listing(task, active_payment=None):
     return rows
 
 
-def _gm_resolve_active_task(tasks, target_task_id=None):
-    """Return task only when explicitly selected via task_id."""
-    if not target_task_id:
-        return None
-    return tasks.filter(project_id=target_task_id).first()
+def _gm_resolve_active_task(request, tasks):
+    return _task_from_request(request, tasks)
 
 
 def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
@@ -4708,17 +4730,15 @@ def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
 def gm_aie_disbursement_view(request):
     """GM Accounting office — AIE disbursement against four budget lines per task."""
     tasks = ProjectTask.objects.all().order_by("project_id")
-    target_task_id = (request.GET.get("task_id") or "").strip()
-    active_task = _gm_resolve_active_task(tasks, target_task_id)
+    active_task = _gm_resolve_active_task(request, tasks)
     if not active_task:
         return render(request, "gm_aie_disbursement.html", {
             "tasks": tasks,
             "no_tasks": not tasks.exists(),
-            "no_task_selected": tasks.exists() and not target_task_id,
+            "no_task_selected": tasks.exists(),
             "active_task": None,
         })
 
-    request.session["active_task_id"] = active_task.project_id
     project_class = _task_project_class(active_task)
     budget_summary = _task_disbursement_budget_summary(active_task)
     task_caps = _gm_task_sidebar_capabilities(active_task, project_class, budget_summary)
@@ -4925,19 +4945,10 @@ def print_ceo_fund_release_voucher_view(request, release_id):
 def budget_approval_view(request):
     """CEO AIE: approve provision budget (lock lines) then release funds to GM Accounting."""
     tasks = ProjectTask.objects.all().order_by("project_id")
-    target_task_id = (request.GET.get("task_id") or "").strip()
     if not tasks.exists():
         return render(request, "budget_approval.html", {"tasks": [], "no_tasks": True})
-    if not target_task_id:
-        return render(request, "budget_approval.html", {
-            "tasks": tasks,
-            "no_tasks": False,
-            "no_task_selected": True,
-            "active_task": None,
-        })
-    active_task = tasks.filter(project_id=target_task_id).first()
+    active_task = _task_from_request(request, tasks, include_post=(request.method == "POST"))
     if not active_task:
-        messages.error(request, f"Project task '{target_task_id}' was not found.")
         return render(request, "budget_approval.html", {
             "tasks": tasks,
             "no_tasks": False,
@@ -4945,7 +4956,6 @@ def budget_approval_view(request):
             "active_task": None,
         })
 
-    request.session["active_task_id"] = active_task.project_id
     budget = _task_budget_record(active_task)
     project_class = _task_project_class(active_task)
     budget_summary = _task_disbursement_budget_summary(active_task)

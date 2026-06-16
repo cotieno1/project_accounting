@@ -10,13 +10,14 @@
     
     <span class="nav-label">I. Task Selection Panel</span>
     <div class="task-select-wrap">
-        <select onchange="window.location.href='?task_id=' + this.value;">
+        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};">
+            <option value="">-- Select project task --</option>
             {% for t in tasks %}
-                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
-                    {{ t.project_id }}
+                <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
+                    {{ t.project_id }}{% if t.description %}: {{ t.description|truncatechars:40 }}{% endif %}
                 </option>
             {% empty %}
-                <option disabled>No active tasks loaded</option>
+                <option disabled>No project tasks — add one in Dashboard setup</option>
             {% endfor %}
         </select>
     </div>
@@ -68,10 +69,18 @@
         <div>
             <h3 style="margin:0;">Step 1: Budget, Bid Evaluation & Award Cockpit</h3>
             {% if active_task %}
-            <small style="color: var(--text-muted); font-size: 12px;">Task: {{ active_task.project_id }}</small>
+            <small style="color: var(--text-muted); font-size: 12px;">Task: {{ active_task.project_id }} — {{ active_task.description }}</small>
+            {% else %}
+            <small style="color: var(--warning); font-size: 12px;">Select a project task in the sidebar to load suppliers and the evaluation matrix.</small>
             {% endif %}
         </div>
     </div>
+    {% if not active_task %}
+    <div class="panel" style="padding:24px;color:var(--text-muted);">
+        No task is active. Use <strong>I. Task Selection Panel</strong> on the left, or
+        <a href="{% url 'ops_dashboard' %}" style="color:#93c5fd;">Ops Dashboard</a>, to choose a task.
+    </div>
+    {% else %}
     <div class="bid-workspace-inner">
         <div class="selection-workspace">
             <div class="vault-pane">
@@ -259,6 +268,7 @@
             </div>
         </form>
     </div>
+    {% endif %}
 {% endblock %}
 {% block modals %}
 <div id="reviewModal">
