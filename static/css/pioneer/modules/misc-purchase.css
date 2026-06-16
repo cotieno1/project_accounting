@@ -152,5 +152,23 @@
         .ro-status-reconciled .ro-status-badge { background: rgba(167,139,250,0.2); color: #c4b5fd; }
         .ro-list-amt { font-weight: 700; color: var(--muted); font-size: 11px; }
         .ro-list-kind { font-size: 9px; color: var(--muted); margin-top: 2px; }
+        .ro-list-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .ro-list-btn {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #93c5fd;
+            border: 1px solid #334155;
+            background: #0b1220;
+        }
+        .ro-list-btn--print { color: #6ee7b7; border-color: #065f46; }
+        .ro-list-btn:hover { background: rgba(37, 99, 235, 0.15); }
         .ro-list-empty { color: var(--muted); font-size: 12px; padding: 8px 0; }
         .budget-value-ok { color: var(--success); }

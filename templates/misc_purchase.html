@@ -30,6 +30,10 @@
                             <span class="ro-list-amt">{{ currency_symbol }} {{ ro.amount|floatformat:2 }}</span>
                         </div>
                         <span class="ro-list-kind">{{ ro.kind }} · {{ ro.date|date:"d M Y" }}</span>
+                        <div class="ro-list-actions" onclick="event.stopPropagation();">
+                            <a href="{{ ro.screen_url }}" class="ro-list-btn" target="_blank" rel="noopener">Screen</a>
+                            <a href="{{ ro.print_url }}" class="ro-list-btn ro-list-btn--print" target="_blank" rel="noopener">PDF / Print</a>
+                        </div>
                     </li>
                     {% else %}
                     <li class="ro-list-item {{ ro.status_class }}">
