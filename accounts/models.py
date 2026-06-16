@@ -27,13 +27,12 @@ def generate_pioneer_bom_id():
     from django.apps import apps
 
     BOMHeader = apps.get_model("accounts", "BOMHeader")
-    last_bom = BOMHeader.objects.order_by("id").last()
-    if not last_bom or not (last_bom.bom_id or "").strip():
-        return "BOM-100"
-    match = re.search(r"(\d+)", last_bom.bom_id)
-    if match:
-        return f"BOM-{int(match.group(1)) + 1}"
-    return "BOM-100"
+    max_num = 99
+    for bom_id in BOMHeader.objects.values_list("bom_id", flat=True):
+        match = re.search(r"(\d+)", bom_id or "")
+        if match:
+            max_num = max(max_num, int(match.group(1)))
+    return f"BOM-{max_num + 1}"
 # ============================================================
 
 class BOMHeader(models.Model):

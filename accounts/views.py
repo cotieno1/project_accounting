@@ -827,75 +827,90 @@ def fetch_bom_to_ro(request, ro_id):
             )
     return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
 
-BOM_STATUS_LABELS = {
-    "DRAFT": "Draft",
-    "SENT_TO_GM": "Sent to GM",
-    "AWARDED": "Awarded",
-    "GENERATED": "Generated from RO",
-}
+    return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
 
 
-def _bom_status_label(status):
-    return BOM_STATUS_LABELS.get(status, (status or "Draft").replace("_", " ").title())
+def _bom_builder_resolve_task(request, tasks_qs):
+    """Use explicit ?task_id= from URL/form only — no demo fallback to first task."""
+    task_id = (
+        (request.GET.get("task_id") or request.POST.get("task_id") or "").strip()
+    )
+    if task_id:
+        task = tasks_qs.filter(project_id=task_id).first()
+        if task:
+            request.session["active_task_id"] = task.project_id
+        return task, task_id, task is None
+    session_id = (request.session.get("active_task_id") or "").strip()
+    if session_id:
+        task = tasks_qs.filter(project_id=session_id).first()
+        if task:
+            return task, session_id, False
+    return None, "", False
 
 
-def _bom_status_css(status):
-    return {
-        "DRAFT": "bom-status-draft",
-        "SENT_TO_GM": "bom-status-sent",
-        "AWARDED": "bom-status-awarded",
-        "GENERATED": "bom-status-generated",
-    }.get(status, "bom-status-draft")
-
-
-def _ensure_task_bom(task):
-    """One BOM per task — get existing or create on first stitch/start."""
-    bom = BOMHeader.objects.filter(task=task).first()
-    if bom:
-        if not (bom.bom_id or "").strip():
-            bom.save()
-        return bom, False
-    bom = BOMHeader.objects.create(task=task, status=BOMHeader.STATUS_DRAFT)
-    return bom, True
-
-
-def _bom_registry(active_task=None):
-    rows = []
-    for bom in (
-        BOMHeader.objects.select_related("task")
+def _get_task_bom(task):
+    """
+    Return the one canonical BOM for a task.
+    Removes legacy duplicate headers (keeps the row with the most items).
+    """
+    if not task:
+        return None
+    rows = list(
+        BOMHeader.objects.filter(task=task)
         .annotate(item_count=Count("items"))
-        .order_by("-created_at")
-    ):
-        has_number = bool((bom.bom_id or "").strip())
-        can_print = has_number and bom.item_count > 0
-        rows.append(
-            {
-                "bom_id": bom.bom_id if has_number else "—",
-                "task_id": bom.task.project_id,
-                "task_desc": bom.task.description,
-                "status": bom.status,
-                "status_label": _bom_status_label(bom.status),
-                "status_class": _bom_status_css(bom.status),
-                "item_count": bom.item_count,
-                "can_print": can_print,
-                "pdf_url": reverse("print_bom_pdf")
-                + f"?task_id={bom.task.project_id}",
-                "workspace_url": reverse("bom_builder")
-                + f"?task_id={bom.task.project_id}",
-                "is_active": bool(
-                    active_task and bom.task_id == active_task.project_id
-                ),
-                "date": bom.created_at,
-            }
-        )
-    return rows
+        .order_by("-item_count", "-created_at", "-id")
+    )
+    if not rows:
+        return None
+    bom = rows[0]
+    if not (bom.bom_id or "").strip():
+        bom.save()
+    for dup in rows[1:]:
+        if dup.items.exists():
+            dup.items.update(header=bom)
+        dup.delete()
+    return bom
+
+
+def _create_task_bom(task):
+    """Create the single BOM for a task (first stitch only)."""
+    from django.db import IntegrityError, transaction
+
+    existing = _get_task_bom(task)
+    if existing:
+        return existing
+    with transaction.atomic():
+        existing = _get_task_bom(task)
+        if existing:
+            return existing
+        try:
+            return BOMHeader.objects.create(
+                task=task, status=BOMHeader.STATUS_DRAFT
+            )
+        except IntegrityError:
+            return _get_task_bom(task)
 
 
 @login_required
 def bom_builder(request):
-    """Site engineering BOM — one BOM per task, auto-open on task select."""
+    """Site engineering BOM — load existing BOM; create only when stitching first item."""
     tasks = ProjectTask.objects.all()
-    active_task = _task_from_request(request, tasks)
+    active_task, requested_id, task_missing = _bom_builder_resolve_task(
+        request, tasks
+    )
+
+    if task_missing:
+        return render(
+            request,
+            "bom_builder.html",
+            {
+                "tasks": tasks,
+                "active_task": None,
+                "bom_items": [],
+                "bom_no": "",
+                "setup_message": f'No task found for ID "{requested_id}".',
+            },
+        )
 
     if not active_task:
         return render(
@@ -914,14 +929,11 @@ def bom_builder(request):
             },
         )
 
-    bom_header, _created = BOMHeader.objects.get_or_create(
-        task=active_task,
-        defaults={"status": BOMHeader.STATUS_DRAFT},
-    )
-    if not (bom_header.bom_id or "").strip():
-        bom_header.save()
+    bom_header = _get_task_bom(active_task)
 
     if request.method == "POST" and "add_item" in request.POST:
+        if not bom_header:
+            bom_header = _create_task_bom(active_task)
         BOMItem.objects.create(
             header=bom_header,
             pillar_id=2,
@@ -937,8 +949,8 @@ def bom_builder(request):
         {
             "tasks": tasks,
             "active_task": active_task,
-            "bom_items": bom_header.items.all().order_by("id"),
-            "bom_no": bom_header.bom_id,
+            "bom_items": bom_header.items.all().order_by("id") if bom_header else [],
+            "bom_no": bom_header.bom_id if bom_header else "",
         },
     )
 
@@ -951,7 +963,7 @@ def _bom_print_context(request, *, task=None, bom=None, ro=None):
         task_id = request.GET.get("task_id")
         task = get_object_or_404(ProjectTask, project_id=task_id)
     if not bom:
-        bom = BOMHeader.objects.filter(task=task).first()
+        bom = _get_task_bom(task)
         if not bom and ro:
             bom = BOMHeader.objects.filter(ro=ro).first()
     if not bom:
@@ -1659,12 +1671,13 @@ def print_bom_from_ro(request, ro_id):
     ro = get_object_or_404(RequisitionOrder, id=ro_id)
     bom = BOMHeader.objects.filter(ro=ro).first()
     if not bom:
-        bom = BOMHeader.objects.filter(task=ro.task).first()
+        bom = _get_task_bom(ro.task)
 
     if not bom:
-        bom = BOMHeader.objects.create(
-            task=ro.task, ro=ro, status=BOMHeader.STATUS_GENERATED
-        )
+        bom = _create_task_bom(ro.task)
+        bom.ro = ro
+        bom.status = BOMHeader.STATUS_GENERATED
+        bom.save(update_fields=["ro", "status"])
         for item in ro.items.all():
             BOMItem.objects.create(
                 header=bom,
