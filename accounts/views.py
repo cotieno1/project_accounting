@@ -827,7 +827,10 @@ def fetch_bom_to_ro(request, ro_id):
             )
     return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
 
-    return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
+
+def _bom_status_label(status):
+    labels = dict(BOMHeader.STATUS_CHOICES)
+    return labels.get(status, (status or "Draft").replace("_", " ").title())
 
 
 def _bom_builder_resolve_task(request, tasks_qs):
@@ -873,7 +876,7 @@ def _get_task_bom(task):
 
 
 def _create_task_bom(task):
-    """Create the single BOM for a task (first stitch only)."""
+    """Create the single BOM for a task — only when user confirms."""
     from django.db import IntegrityError, transaction
 
     existing = _get_task_bom(task)
@@ -893,7 +896,7 @@ def _create_task_bom(task):
 
 @login_required
 def bom_builder(request):
-    """Site engineering BOM — load existing BOM; create only when stitching first item."""
+    """Site engineering BOM — show existing BOM; create only when user confirms."""
     tasks = ProjectTask.objects.all()
     active_task, requested_id, task_missing = _bom_builder_resolve_task(
         request, tasks
@@ -906,8 +909,10 @@ def bom_builder(request):
             {
                 "tasks": tasks,
                 "active_task": None,
+                "bom_header": None,
                 "bom_items": [],
                 "bom_no": "",
+                "has_bom": False,
                 "setup_message": f'No task found for ID "{requested_id}".',
             },
         )
@@ -919,8 +924,10 @@ def bom_builder(request):
             {
                 "tasks": tasks,
                 "active_task": None,
+                "bom_header": None,
                 "bom_items": [],
                 "bom_no": "",
+                "has_bom": False,
                 "setup_message": (
                     "Select a project task above to open its BOM."
                     if tasks.exists()
@@ -931,9 +938,27 @@ def bom_builder(request):
 
     bom_header = _get_task_bom(active_task)
 
+    if request.method == "POST" and "create_bom" in request.POST:
+        if bom_header:
+            messages.info(
+                request,
+                f"This task already has BOM {bom_header.bom_id}.",
+            )
+        else:
+            bom_header = _create_task_bom(active_task)
+            messages.success(
+                request,
+                f"Created {bom_header.bom_id} for task {active_task.project_id}.",
+            )
+        return redirect(f"/bom-builder/?task_id={active_task.project_id}")
+
     if request.method == "POST" and "add_item" in request.POST:
         if not bom_header:
-            bom_header = _create_task_bom(active_task)
+            messages.error(
+                request,
+                "Create a BOM for this task before adding line items.",
+            )
+            return redirect(f"/bom-builder/?task_id={active_task.project_id}")
         BOMItem.objects.create(
             header=bom_header,
             pillar_id=2,
@@ -943,14 +968,23 @@ def bom_builder(request):
         )
         return redirect(f"/bom-builder/?task_id={active_task.project_id}")
 
+    has_bom = bom_header is not None
     return render(
         request,
         "bom_builder.html",
         {
             "tasks": tasks,
             "active_task": active_task,
+            "bom_header": bom_header,
             "bom_items": bom_header.items.all().order_by("id") if bom_header else [],
             "bom_no": bom_header.bom_id if bom_header else "",
+            "bom_status_label": _bom_status_label(
+                bom_header.status if bom_header else ""
+            ),
+            "has_bom": has_bom,
+            "can_print_bom": bool(
+                bom_header and bom_header.items.exists()
+            ),
         },
     )
 
