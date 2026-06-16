@@ -828,34 +828,8 @@ def fetch_bom_to_ro(request, ro_id):
     return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
 
 
-def _bom_status_label(status):
-    labels = dict(BOMHeader.STATUS_CHOICES)
-    return labels.get(status, (status or "Draft").replace("_", " ").title())
-
-
-def _bom_builder_resolve_task(request, tasks_qs):
-    """Use explicit ?task_id= from URL/form only — no demo fallback to first task."""
-    task_id = (
-        (request.GET.get("task_id") or request.POST.get("task_id") or "").strip()
-    )
-    if task_id:
-        task = tasks_qs.filter(project_id=task_id).first()
-        if task:
-            request.session["active_task_id"] = task.project_id
-        return task, task_id, task is None
-    session_id = (request.session.get("active_task_id") or "").strip()
-    if session_id:
-        task = tasks_qs.filter(project_id=session_id).first()
-        if task:
-            return task, session_id, False
-    return None, "", False
-
-
 def _get_task_bom(task):
-    """
-    Return the one canonical BOM for a task.
-    Removes legacy duplicate headers (keeps the row with the most items).
-    """
+    """One BOM row per task (dedupe legacy duplicates)."""
     if not task:
         return None
     rows = list(
@@ -875,47 +849,11 @@ def _get_task_bom(task):
     return bom
 
 
-def _create_task_bom(task):
-    """Create the single BOM for a task — only when user confirms."""
-    from django.db import IntegrityError, transaction
-
-    existing = _get_task_bom(task)
-    if existing:
-        return existing
-    with transaction.atomic():
-        existing = _get_task_bom(task)
-        if existing:
-            return existing
-        try:
-            return BOMHeader.objects.create(
-                task=task, status=BOMHeader.STATUS_DRAFT
-            )
-        except IntegrityError:
-            return _get_task_bom(task)
-
-
 @login_required
 def bom_builder(request):
-    """Site engineering BOM — show existing BOM; create only when user confirms."""
+    """BOM for procuring — one header per task, same as laptop workflow."""
     tasks = ProjectTask.objects.all()
-    active_task, requested_id, task_missing = _bom_builder_resolve_task(
-        request, tasks
-    )
-
-    if task_missing:
-        return render(
-            request,
-            "bom_builder.html",
-            {
-                "tasks": tasks,
-                "active_task": None,
-                "bom_header": None,
-                "bom_items": [],
-                "bom_no": "",
-                "has_bom": False,
-                "setup_message": f'No task found for ID "{requested_id}".',
-            },
-        )
+    active_task = _task_from_request(request, tasks)
 
     if not active_task:
         return render(
@@ -924,10 +862,8 @@ def bom_builder(request):
             {
                 "tasks": tasks,
                 "active_task": None,
-                "bom_header": None,
                 "bom_items": [],
                 "bom_no": "",
-                "has_bom": False,
                 "setup_message": (
                     "Select a project task above to open its BOM."
                     if tasks.exists()
@@ -937,28 +873,15 @@ def bom_builder(request):
         )
 
     bom_header = _get_task_bom(active_task)
-
-    if request.method == "POST" and "create_bom" in request.POST:
-        if bom_header:
-            messages.info(
-                request,
-                f"This task already has BOM {bom_header.bom_id}.",
-            )
-        else:
-            bom_header = _create_task_bom(active_task)
-            messages.success(
-                request,
-                f"Created {bom_header.bom_id} for task {active_task.project_id}.",
-            )
-        return redirect(f"/bom-builder/?task_id={active_task.project_id}")
+    if not bom_header:
+        bom_header, _created = BOMHeader.objects.get_or_create(
+            task=active_task,
+            defaults={"status": BOMHeader.STATUS_DRAFT},
+        )
+    if not (bom_header.bom_id or "").strip():
+        bom_header.save()
 
     if request.method == "POST" and "add_item" in request.POST:
-        if not bom_header:
-            messages.error(
-                request,
-                "Create a BOM for this task before adding line items.",
-            )
-            return redirect(f"/bom-builder/?task_id={active_task.project_id}")
         BOMItem.objects.create(
             header=bom_header,
             pillar_id=2,
@@ -968,23 +891,14 @@ def bom_builder(request):
         )
         return redirect(f"/bom-builder/?task_id={active_task.project_id}")
 
-    has_bom = bom_header is not None
     return render(
         request,
         "bom_builder.html",
         {
             "tasks": tasks,
             "active_task": active_task,
-            "bom_header": bom_header,
-            "bom_items": bom_header.items.all().order_by("id") if bom_header else [],
-            "bom_no": bom_header.bom_id if bom_header else "",
-            "bom_status_label": _bom_status_label(
-                bom_header.status if bom_header else ""
-            ),
-            "has_bom": has_bom,
-            "can_print_bom": bool(
-                bom_header and bom_header.items.exists()
-            ),
+            "bom_items": bom_header.items.all().order_by("id"),
+            "bom_no": bom_header.bom_id,
         },
     )
 
@@ -1708,10 +1622,14 @@ def print_bom_from_ro(request, ro_id):
         bom = _get_task_bom(ro.task)
 
     if not bom:
-        bom = _create_task_bom(ro.task)
-        bom.ro = ro
-        bom.status = BOMHeader.STATUS_GENERATED
-        bom.save(update_fields=["ro", "status"])
+        bom, _ = BOMHeader.objects.get_or_create(
+            task=ro.task,
+            defaults={"ro": ro, "status": BOMHeader.STATUS_GENERATED},
+        )
+        if bom.ro_id != ro.id:
+            bom.ro = ro
+            bom.status = BOMHeader.STATUS_GENERATED
+            bom.save(update_fields=["ro", "status"])
         for item in ro.items.all():
             BOMItem.objects.create(
                 header=bom,
