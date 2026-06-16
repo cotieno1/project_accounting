@@ -893,20 +893,9 @@ def _bom_registry(active_task=None):
 
 @login_required
 def bom_builder(request):
-    """Site engineering BOM workspace — one BOM per task."""
+    """Site engineering BOM — one BOM per task, auto-open on task select."""
     tasks = ProjectTask.objects.all()
-    task_id = _task_id_from_request(request, include_post=True)
-    active_task = None
-    task_not_found = False
-
-    if task_id:
-        active_task = tasks.filter(project_id=task_id).first()
-        if not active_task:
-            task_not_found = True
-    elif request.session.get("active_task_id"):
-        active_task = tasks.filter(
-            project_id=request.session["active_task_id"]
-        ).first()
+    active_task = _task_from_request(request, tasks)
 
     if not active_task:
         return render(
@@ -915,37 +904,24 @@ def bom_builder(request):
             {
                 "tasks": tasks,
                 "active_task": None,
-                "bom_header": None,
                 "bom_items": [],
                 "bom_no": "",
-                "bom_registry": _bom_registry(),
-                "can_print_bom": False,
-                "task_not_found": task_not_found,
-                "unknown_task_id": task_id if task_not_found else "",
                 "setup_message": (
-                    f"No task found for ID “{task_id}”. Select a valid task."
-                    if task_not_found
-                    else (
-                        "Select a project task above to open its BOM."
-                        if tasks.exists()
-                        else "Add a project task from Dashboard setup, then return here."
-                    )
+                    "Select a project task above to open its BOM."
+                    if tasks.exists()
+                    else "Add a project task from Dashboard setup, then return here."
                 ),
             },
         )
 
-    request.session["active_task_id"] = active_task.project_id
-    bom_header = BOMHeader.objects.filter(task=active_task).first()
-
-    if request.method == "POST" and "start_bom" in request.POST:
-        if not bom_header:
-            bom_header, _ = _ensure_task_bom(active_task)
-            messages.success(request, f"BOM {bom_header.bom_id} created for this task.")
-        return redirect(f"/bom-builder/?task_id={active_task.project_id}")
+    bom_header, _created = BOMHeader.objects.get_or_create(
+        task=active_task,
+        defaults={"status": BOMHeader.STATUS_DRAFT},
+    )
+    if not (bom_header.bom_id or "").strip():
+        bom_header.save()
 
     if request.method == "POST" and "add_item" in request.POST:
-        if not bom_header:
-            bom_header, _ = _ensure_task_bom(active_task)
         BOMItem.objects.create(
             header=bom_header,
             pillar_id=2,
@@ -955,31 +931,14 @@ def bom_builder(request):
         )
         return redirect(f"/bom-builder/?task_id={active_task.project_id}")
 
-    bom_items = bom_header.items.all().order_by("id") if bom_header else []
-    item_count = bom_items.count() if bom_header else 0
-    has_number = bool(bom_header and (bom_header.bom_id or "").strip())
-    can_print_bom = bool(bom_header and has_number and item_count > 0)
-
     return render(
         request,
         "bom_builder.html",
         {
             "tasks": tasks,
             "active_task": active_task,
-            "bom_header": bom_header,
-            "bom_items": bom_items,
-            "bom_no": bom_header.bom_id if has_number else "",
-            "bom_status": bom_header.status if bom_header else "",
-            "bom_status_label": _bom_status_label(
-                bom_header.status if bom_header else ""
-            ),
-            "bom_status_class": _bom_status_css(
-                bom_header.status if bom_header else ""
-            ),
-            "bom_item_count": item_count,
-            "bom_registry": _bom_registry(active_task),
-            "can_print_bom": can_print_bom,
-            "task_not_found": False,
+            "bom_items": bom_header.items.all().order_by("id"),
+            "bom_no": bom_header.bom_id,
         },
     )
 

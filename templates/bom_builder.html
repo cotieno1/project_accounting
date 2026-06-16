@@ -1,175 +1,191 @@
-{% extends "layouts/cockpit.html" %}
-{% load static %}
-{% block title %}Pioneer | BOM Builder{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}">
-{% endblock %}
-{% block sidebar %}
-<h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
-<small style="color: var(--muted); display: block; margin: 16px 0;">Somalia Ops Command</small>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pioneer | BOM Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb; --dark: #0a0f1d; --card: #1e293b; --light: #f1f5f9;
+            --border: #334155; --success: #10b981; --danger: #ef4444; --text-muted: #94a3b8;
+        }
 
-<div class="sidebar-block">
-    <span class="nav-label">Switch active task</span>
-    <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
-        <option value="">-- Select project task --</option>
-        {% for t in tasks %}
-        <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-            {{ t.project_id }}: {{ t.description }}
-        </option>
-        {% endfor %}
-    </select>
-    {% if setup_message %}
-    <p class="bom-sidebar-note">{{ setup_message }}</p>
-    {% endif %}
-</div>
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--light); display: flex; height: 100vh; }
+        .sidebar { width: 280px; background: #070b14; border-right: 1px solid var(--border); padding: 30px 20px; flex-shrink: 0; }
+        .main-content { flex: 1; overflow-y: auto; padding: 40px; background: var(--dark); }
+        
+        .nav-label { font-size: 10px; font-weight: 800; color: var(--primary); letter-spacing: 1.5px; margin-bottom: 12px; display: block; }
+        .btn-action { background: var(--primary); color: white; padding: 10px 20px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-action:hover { opacity: 0.9; }
 
-<div class="sidebar-block">
-    <button type="button" class="btn-action" id="bomListToggle" onclick="toggleBomList()" style="width:100%;background:#1e293b;">
-        BOM registry{% if bom_registry %} ({{ bom_registry|length }}){% endif %}
-    </button>
-    <div id="bomListPanel" class="bom-list-panel is-open">
-        <ul class="bom-list">
-            {% for row in bom_registry %}
-            <li class="bom-list-item {{ row.status_class }}{% if row.is_active %} bom-list-active{% endif %}"
-                onclick="window.location.href='{{ row.workspace_url }}'">
-                <span class="bom-list-ref">{{ row.bom_id }}</span>
-                <div class="bom-list-meta">
-                    <span class="bom-list-status">{{ row.status_label }}</span>
-                    <span class="bom-list-count">{{ row.item_count }} item{{ row.item_count|pluralize }}</span>
-                </div>
-                <span class="bom-list-task">{{ row.task_id }}</span>
-                <div class="bom-list-actions" onclick="event.stopPropagation();">
-                    {% if row.can_print %}
-                    <a href="{{ row.pdf_url }}" class="bom-list-btn bom-list-btn--print" target="_blank" rel="noopener">PDF</a>
-                    {% else %}
-                    <span class="bom-list-btn bom-list-btn--disabled" title="Add line items before printing">PDF</span>
-                    {% endif %}
-                </div>
-            </li>
-            {% empty %}
-            <li class="bom-list-empty">No BOMs created yet.</li>
+        .panel { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 25px; margin-bottom: 30px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; color: var(--text-muted); padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        td { padding: 12px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); font-size: 13px; }
+
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
+        .modal-content { background: var(--card); margin: 10% auto; padding: 40px; width: 600px; border-radius: 12px; border: 1px solid var(--border); }
+
+        @media print {
+            .sidebar, .btn-action, .modal, .nav-label, select, .return-link { display: none !important; }
+            body, .main-content { background: white !important; color: black !important; display: block; }
+            .panel { border: none !important; background: white !important; }
+            .panel-header h2 { font-size: 24px; text-align: center; border-bottom: 2px solid black; padding-bottom: 10px; }
+            table { color: black !important; width: 100%; }
+            th { color: black !important; border-bottom: 2px solid black !important; }
+            td { border-bottom: 1px solid #eee !important; color: black !important; }
+            .print-header { display: block !important; margin-bottom: 30px; }
+            .print-footer { display: flex !important; justify-content: space-between; margin-top: 100px; }
+        }
+        .print-header, .print-footer { display: none; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: auto; min-height: 100dvh; }
+            .sidebar { width: 100%; box-sizing: border-box; border-right: none; border-bottom: 1px solid var(--border); padding: 20px 16px; }
+            .main-content { padding: 16px; width: 100%; box-sizing: border-box; }
+            .panel { padding: 18px; }
+            .panel-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .panel-header h2 { font-size: 1.15rem; line-height: 1.35; word-break: break-word; }
+            table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            th, td { font-size: 15px; padding: 14px 10px; }
+            .modal-content { width: calc(100% - 32px); margin: 10% auto; padding: 24px 20px; box-sizing: border-box; }
+            .btn-action { font-size: 15px; padding: 14px 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div style="margin-bottom: 40px;">
+        <h2 style="color: var(--primary); margin:0;">PIONEER</h2>
+        <small style="color: var(--text-muted);">Somalia Ops Command</small>
+    </div>
+
+    <div class="nav-section">
+        <span class="nav-label">SWITCH ACTIVE TASK</span>
+        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'}">
+            <option value="">-- Select project task --</option>
+            {% for t in tasks %}
+                <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
+                    {{ t.project_id }}: {{ t.description }}
+                </option>
             {% endfor %}
-        </ul>
+        </select>
+        {% if not active_task and tasks %}
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message|default:"Select a task to open its BOM." }}</p>
+        {% elif setup_message %}
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message }}</p>
+        {% endif %}
+    </div>
+
+    <div class="nav-section" style="margin-top: 30px;">
+        <span class="nav-label">BOM ACTIONS</span>
+        <button class="btn-action" onclick="openModal()" style="width: 100%; margin-bottom: 10px;" {% if not active_task %}disabled{% endif %}>🏗️ Stitch New Item</button>
+        {% if active_task and bom_items %}
+        <a href="{% url 'print_bom_pdf' %}?task_id={{ active_task.project_id }}" class="btn-action" style="width: 100%; margin-bottom: 10px; background: var(--success); display: block; text-align: center; text-decoration: none; box-sizing: border-box;" target="_blank" rel="noopener">📄 PDF for GM</a>
+        {% endif %}
+        <button onclick="window.print()" class="btn-action" style="width: 100%; background: #1e293b;" {% if not active_task %}disabled{% endif %}>🖨️ Print for GM</button>
+    </div>
+    
+    <div style="margin-top: auto; padding-top: 20px;">
+        <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id }}{% else %}/dashboard/{% endif %}" style="color: var(--text-muted); text-decoration: none; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+            ← Back to Dashboard
+        </a>
     </div>
 </div>
 
-<div class="sidebar-block bom-sidebar-actions">
-    <span class="nav-label">BOM actions</span>
-    {% if active_task and not bom_header %}
-    <form method="POST" style="margin:0 0 10px;">
-        {% csrf_token %}
-        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
-        <button type="submit" name="start_bom" class="btn-action" style="width:100%;">Start BOM for task</button>
-    </form>
-    {% endif %}
-    <button type="button" class="btn-action" onclick="openModal()" {% if not active_task or not bom_header %}disabled{% endif %}>Stitch new item</button>
-    {% if active_task and can_print_bom %}
-    <a href="{% url 'print_bom_pdf' %}?task_id={{ active_task.project_id }}" class="btn-action btn-action--print" target="_blank" rel="noopener">PDF for GM</a>
-    {% elif active_task and bom_header %}
-    <span class="btn-action btn-action--print is-disabled" title="Add at least one line item to print">PDF for GM</span>
-    {% else %}
-    <span class="btn-action btn-action--print is-disabled">PDF for GM</span>
-    {% endif %}
-</div>
+<div class="main-content">
+    <div class="print-header" style="color: black;">
+        <p><strong>To: Tom Kelly</strong><br>General Manager, Pioneer<br>PO Box 10, Nairobi, Kenya</p>
+        <hr>
+    </div>
 
-<div style="margin-top: auto; padding-top: 20px;">
-    <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id }}{% else %}/dashboard/{% endif %}" class="sidebar-back-link">← Back to Dashboard</a>
-</div>
-{% endblock %}
-{% block workspace %}
-<div class="panel">
-    {% if not active_task %}
-    <div class="bom-empty-workspace">
-        <h2>Select a task</h2>
-        <p>Choose a project task from the sidebar, or pick a BOM from the registry to open it.</p>
-    </div>
-    {% elif not bom_header %}
-    <div class="bom-empty-workspace">
-        <h2>No BOM for {{ active_task.project_id }}</h2>
-        <p>This task does not have a Bill of Materials yet. One BOM per task — click <strong>Start BOM for task</strong> in the sidebar, then stitch line items.</p>
-        <form method="POST" style="margin-top:16px;">
-            {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
-            <button type="submit" name="start_bom" class="btn-action">Start BOM for task</button>
-        </form>
-    </div>
-    {% else %}
-    <div class="bom-page-header">
-        <div class="bom-page-header-text">
-            <h2>Bill of Materials: {{ bom_no }}</h2>
-            <p class="bom-task-desc"><strong>Task:</strong> {{ active_task.project_id }} — {{ active_task.description }}</p>
-            <p class="bom-meta-line">{{ bom_item_count }} line item{{ bom_item_count|pluralize }} · Created {{ bom_header.created_at|date:"d M Y" }}</p>
+    <div class="panel" id="bom-panel">
+        <div class="panel-header">
+            <div>
+                <h2 style="margin:0;">Bill of Materials: {{ bom_no|default:"—" }}</h2>
+                {% if active_task %}
+                <p style="margin: 5px 0; color: var(--text-muted);"><strong>Task:</strong> {{ active_task.description }}</p>
+                {% elif setup_message %}
+                <p style="margin: 5px 0; color: var(--text-muted);">{{ setup_message }}</p>
+                {% endif %}
+            </div>
+            <span style="font-weight: 700; color: var(--primary);">STATUS: DRAFT</span>
         </div>
-        <span class="bom-status-badge {{ bom_status_class }}">{{ bom_status_label }}</span>
-    </div>
 
-    <div class="bom-table-wrap">
-        <table class="bom-table">
+        <table>
             <thead>
                 <tr>
-                    <th>Item no</th>
+                    <th>Item No</th>
                     <th>Name</th>
-                    <th>Unit</th>
+                    <th>Unit-Measure</th>
                     <th>Qty</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in bom_items %}
                 <tr>
-                    <td data-label="Item">{{ forloop.counter }}</td>
-                    <td data-label="Name">{{ item.description }}</td>
-                    <td data-label="Unit">{{ item.uom }}</td>
-                    <td data-label="Qty">{{ item.qty }}</td>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.uom }}</td>
+                    <td>{{ item.qty }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="bom-empty">No items yet — use <strong>Stitch new item</strong> to add lines before printing.</td>
+                    <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">No items added to this BOM yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    {% endif %}
+
+    <div class="print-footer" style="color: black;">
+        <div style="border-top: 1px solid black; width: 250px; text-align: center; padding-top: 10px;">
+            <strong>Tom Ruku</strong><br>Senior Site Engineer
+        </div>
+        <div>
+            Date: {% now "jS F Y" %}
+        </div>
+    </div>
 </div>
-{% endblock %}
-{% block modals %}
-<div id="stitchModal" class="cockpit-modal" style="display:none;">
-    <div class="cockpit-modal-panel">
-        <h3 style="color: var(--primary); margin-top: 0;">{% if active_task %}Stitch item to {{ active_task.project_id }}{% else %}Add a project task first{% endif %}</h3>
+
+<div id="stitchModal" class="modal">
+    <div class="modal-content">
+        <h2 style="color: var(--primary); margin-top: 0;">{% if active_task %}Stitch Item to {{ active_task.project_id }}{% else %}Add a project task first{% endif %}</h2>
         <form method="POST">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
-            <input type="hidden" name="pillar_id" value="2">
+            <input type="hidden" name="pillar_id" value="2"> 
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; font-size: 12px; margin-bottom: 5px;">Item Name</label>
+                <input type="text" name="description" placeholder="e.g. Nails" required style="width: 100%; box-sizing: border-box; padding: 10px; background: var(--dark); border: 1px solid var(--border); color: white; border-radius: 6px;">
+            </div>
 
-            <label class="nav-label" for="bomItemDesc">Item name</label>
-            <input type="text" id="bomItemDesc" name="description" class="form-input" placeholder="e.g. Nails" required style="margin-bottom: 15px;">
-
-            <div class="bom-stitch-grid">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                 <div>
-                    <label class="nav-label" for="bomItemUom">UOM</label>
-                    <input type="text" id="bomItemUom" name="uom" class="form-input" placeholder="e.g. kg" required>
+                    <label style="display:block; font-size: 12px; margin-bottom: 5px;">UOM</label>
+                    <input type="text" name="uom" placeholder="e.g. kg" required style="width: 100%; box-sizing: border-box; padding: 10px; background: var(--dark); border: 1px solid var(--border); color: white; border-radius: 6px;">
                 </div>
                 <div>
-                    <label class="nav-label" for="bomItemQty">Quantity</label>
-                    <input type="number" step="0.01" id="bomItemQty" name="qty" class="form-input" placeholder="0" required>
+                    <label style="display:block; font-size: 12px; margin-bottom: 5px;">Quantity</label>
+                    <input type="number" step="0.01" name="qty" placeholder="0" required style="width: 100%; box-sizing: border-box; padding: 10px; background: var(--dark); border: 1px solid var(--border); color: white; border-radius: 6px;">
                 </div>
             </div>
 
-            <div class="modal-actions">
-                <button type="submit" name="add_item" class="btn-action">Add to sequence</button>
-                <button type="button" class="btn-action" style="background:#334155;" onclick="closeModal()">Cancel</button>
-            </div>
+            <button type="submit" name="add_item" class="btn-action" style="width: 100%;">Add to Sequence</button>
+            <button type="button" onclick="closeModal()" style="width: 100%; margin-top: 10px; background: none; border: none; color: var(--text-muted); cursor: pointer;">Cancel</button>
         </form>
     </div>
 </div>
+
 <script>
-    function openModal() { document.getElementById('stitchModal').style.display = 'flex'; }
+    function openModal() { document.getElementById('stitchModal').style.display = 'block'; }
     function closeModal() { document.getElementById('stitchModal').style.display = 'none'; }
-    function toggleBomList() {
-        document.getElementById('bomListPanel').classList.toggle('is-open');
-    }
-    window.addEventListener('click', function (e) {
-        if (e.target === document.getElementById('stitchModal')) closeModal();
-    });
+    window.onclick = function(e) { if (e.target == document.getElementById('stitchModal')) closeModal(); }
 </script>
-{% endblock %}
+
+</body>
+</html>
