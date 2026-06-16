@@ -59,6 +59,30 @@ def _column_exists(cursor, table, column):
   return _column_udt_name(cursor, table, column) is not None
 
 
+def _convert_varchar_fk_to_int(cursor, table, column, ref_table, ref_match_column):
+  """Replace a varchar FK with integer id via temp column (no USING subquery)."""
+  if not _table_exists(cursor, table):
+    return
+  if _column_udt_name(cursor, table, column) == "int4":
+    return
+
+  temp_col = f"{column}_new_int"
+  cursor.execute(f"ALTER TABLE {table} ALTER COLUMN {column} DROP NOT NULL")
+  cursor.execute(
+    f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {temp_col} integer"
+  )
+  cursor.execute(
+    f"""
+    UPDATE {table} AS t
+    SET {temp_col} = r.id
+    FROM {ref_table} AS r
+    WHERE r.{ref_match_column} = t.{column}
+    """
+  )
+  cursor.execute(f"ALTER TABLE {table} DROP COLUMN {column}")
+  cursor.execute(f"ALTER TABLE {table} RENAME COLUMN {temp_col} TO {column}")
+
+
 def forwards_pk_changes(apps, schema_editor):
   """PostgreSQL-safe PK migration; drops dependent FKs before PK changes."""
   if schema_editor.connection.vendor != "postgresql":
@@ -100,22 +124,13 @@ def forwards_pk_changes(apps, schema_editor):
     )
 
     for table in ("accounts_bomtransaction", "accounts_lpotransaction"):
-      if not _table_exists(cursor, table):
-        continue
-      if _column_udt_name(cursor, table, "build_category_id") != "int4":
-        cursor.execute(
-          f"ALTER TABLE {table} ALTER COLUMN build_category_id DROP NOT NULL"
-        )
-        cursor.execute(
-          f"""
-          ALTER TABLE {table}
-          ALTER COLUMN build_category_id TYPE integer
-          USING (
-            (SELECT c.id FROM accounts_projectbuildcategory c
-             WHERE c.build_cat_id = build_category_id)
-          )
-          """
-        )
+      _convert_varchar_fk_to_int(
+        cursor,
+        table,
+        "build_category_id",
+        "accounts_projectbuildcategory",
+        "build_cat_id",
+      )
 
     _drop_fks_to(cursor, "accounts_projectbuilding")
 
@@ -182,29 +197,18 @@ def forwards_pk_changes(apps, schema_editor):
       "UNIQUE (building_code)",
     )
 
-    if (
-      _table_exists(cursor, "accounts_lpotransaction")
-      and _column_udt_name(cursor, "accounts_lpotransaction", "building_id") != "int4"
-    ):
-      cursor.execute(
-        "ALTER TABLE accounts_lpotransaction ALTER COLUMN building_id DROP NOT NULL"
+    if _table_exists(cursor, "accounts_lpotransaction"):
+      match_col = (
+        "building_id"
+        if _column_exists(cursor, "accounts_projectbuilding", "building_id")
+        else "building_code"
       )
-      if _column_exists(cursor, "accounts_projectbuilding", "building_id"):
-        building_lookup = (
-          "(SELECT b.id FROM accounts_projectbuilding b "
-          "WHERE b.building_id = building_id)"
-        )
-      else:
-        building_lookup = (
-          "(SELECT b.id FROM accounts_projectbuilding b "
-          "WHERE b.building_code = building_id)"
-        )
-      cursor.execute(
-        f"""
-        ALTER TABLE accounts_lpotransaction
-        ALTER COLUMN building_id TYPE integer
-        USING ({building_lookup})
-        """
+      _convert_varchar_fk_to_int(
+        cursor,
+        "accounts_lpotransaction",
+        "building_id",
+        "accounts_projectbuilding",
+        match_col,
       )
 
     cursor.execute(
