@@ -1,0 +1,168 @@
+/* BOM builder — cockpit mobile standard (matches misc-purchase / RO workflow) */
+body.bom-builder .bom-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+body.bom-builder .bom-page-header-text {
+    min-width: 0;
+    flex: 1 1 220px;
+    max-width: 100%;
+}
+
+body.bom-builder .bom-page-header-text .page-title {
+    margin: 0;
+    font-size: clamp(1.05rem, 4.2vw, 22px);
+    line-height: 1.35;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+}
+
+body.bom-builder .bom-task-desc {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.45;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+body.bom-builder .bom-status-badge {
+    flex: 0 0 auto;
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(37, 99, 235, 0.35);
+    background: rgba(37, 99, 235, 0.1);
+}
+
+body.bom-builder .bom-lines-table th {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+body.bom-builder .bom-lines-table td {
+    font-size: 14px;
+    vertical-align: top;
+}
+
+body.bom-builder .bom-lines-table td.bom-empty {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+body.bom-builder .sidebar-back-link {
+    color: var(--muted);
+    font-size: 13px;
+    text-decoration: none;
+}
+
+body.bom-builder .sidebar-back-link:hover {
+    color: var(--light);
+}
+
+body.bom-builder .sidebar-setup-hint {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+body.bom-builder .bom-print-header,
+body.bom-builder .bom-print-footer {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    body.bom-builder .bom-panel-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    body.bom-builder .bom-status-badge {
+        align-self: flex-start;
+    }
+
+    body.bom-builder .bom-lines-table th,
+    body.bom-builder .bom-lines-table td {
+        font-size: 15px;
+        padding: 14px 10px;
+    }
+
+    body.bom-builder .table-scroll {
+        margin: 0 -4px;
+    }
+}
+
+@media print {
+    body.bom-builder .cockpit-shell .sidebar,
+    body.bom-builder .sidebar-toggle,
+    body.bom-builder .sidebar-backdrop,
+    body.bom-builder .btn-action,
+    body.bom-builder .nav-label,
+    body.bom-builder select,
+    body.bom-builder .sidebar-back-link {
+        display: none !important;
+    }
+
+    body.bom-builder,
+    body.bom-builder .main-content,
+    body.bom-builder .workspace-scroller {
+        background: #fff !important;
+        color: #000 !important;
+        display: block !important;
+        padding: 0 !important;
+        min-height: auto !important;
+    }
+
+    body.bom-builder .panel {
+        border: none !important;
+        background: #fff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    body.bom-builder .bom-print-header,
+    body.bom-builder .bom-print-footer {
+        display: block !important;
+        color: #000 !important;
+    }
+
+    body.bom-builder .bom-print-footer {
+        display: flex !important;
+        justify-content: space-between;
+        margin-top: 80px;
+    }
+
+    body.bom-builder .bom-lines-table {
+        color: #000 !important;
+    }
+
+    body.bom-builder .bom-lines-table th {
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+    }
+
+    body.bom-builder .bom-lines-table td {
+        color: #000 !important;
+        border-bottom: 1px solid #eee !important;
+    }
+
+    body.bom-builder .bom-status-badge {
+        display: none !important;
+    }
+}
