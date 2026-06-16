@@ -54,6 +54,7 @@
 
     <div class="nav-section">
         <span class="nav-label">Active Project Task</span>
+        {% if active_task %}
         <select onchange="window.location.href='?task_id=' + this.value;">
             {% for t in tasks %}
                 <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
@@ -61,8 +62,12 @@
                 </option>
             {% endfor %}
         </select>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">{{ setup_message }}</p>
+        {% endif %}
     </div>
 
+    {% if ro %}
     <div class="nav-section">
         <span class="nav-label">Workflow Actions</span>
         
@@ -83,9 +88,10 @@
             </button>
         </a>
     </div>
+    {% endif %}
     
     <div style="margin-top: auto;">
-        <a href="/ops-dashboard/?task_id={{ active_task.project_id }}" style="color: var(--text-muted); text-decoration: none; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+        <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id }}{% else %}/dashboard/{% endif %}" style="color: var(--text-muted); text-decoration: none; font-size: 12px; display: flex; align-items: center; gap: 8px;">
             ← Return to Dashboard
         </a>
     </div>
@@ -95,16 +101,22 @@
     <div class="panel">
         <div class="panel-header">
             <div>
-                <h2 style="margin:0; font-size: 24px;">Requisition Order #{{ ro.ro_no }}</h2>
+                <h2 style="margin:0; font-size: 24px;">{% if ro %}Requisition Order #{{ ro.ro_no }}{% else %}Requisition Order{% endif %}</h2>
                 <p style="margin: 8px 0 0 0; color: var(--text-muted); font-size: 14px;">
+                    {% if active_task %}
                     Linked Task: <span style="color: var(--light);">{{ active_task.description }}</span>
+                    {% elif setup_message %}
+                    {{ setup_message }}
+                    {% endif %}
                 </p>
             </div>
+            {% if ro %}
             <div style="text-align: right;">
                 <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid var(--success);">
                     {{ ro.status }}
                 </span>
             </div>
+            {% endif %}
         </div>
 
         <table>

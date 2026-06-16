@@ -749,6 +749,19 @@ def ro_builder(request):
     task_id = request.GET.get("task_id")
     active_task = ProjectTask.objects.filter(project_id=task_id).first() or tasks.first()
 
+    if not active_task:
+        return render(request, "RO_builder.html", {
+            "tasks": tasks,
+            "active_task": None,
+            "ro": None,
+            "ro_no": "",
+            "ro_items": [],
+            "setup_message": (
+                "No project tasks yet. Open Dashboard → System & Accounts Setup → "
+                "Project Tasks → Add, then return here."
+            ),
+        })
+
     ro = RequisitionOrder.objects.filter(task=active_task, status="DRAFT").first()
     if not ro:
         ro = RequisitionOrder.objects.create(
@@ -797,6 +810,18 @@ def bom_builder(request):
     tasks = ProjectTask.objects.all()
     selected_id = request.GET.get('task_id')
     active_task = ProjectTask.objects.filter(project_id=selected_id).first() or tasks.first()
+
+    if not active_task:
+        return render(request, 'bom_builder.html', {
+            'tasks': tasks,
+            'active_task': None,
+            'bom_items': [],
+            'bom_no': '',
+            'setup_message': (
+                "No project tasks yet. Open Dashboard → System & Accounts Setup → "
+                "Project Tasks → Add, then return here."
+            ),
+        })
 
     bom_header, created = BOMHeader.objects.get_or_create(
         task=active_task,
@@ -1235,6 +1260,7 @@ def lpo_export_pdf(request):
 from django.shortcuts import render
 from .models import LPOTransaction
 
+@login_required
 def lpo_list_view(request):
     lpos = LPOTransaction.objects.select_related(
         "project_task",
@@ -3676,6 +3702,12 @@ def misc_purchase_builder(request):
     tasks = ProjectTask.objects.all()
     target_task_id = request.GET.get("task_id")
     active_task = tasks.filter(project_id=target_task_id).first() or tasks.first()
+    if not active_task:
+        messages.info(
+            request,
+            "Add a project task from Dashboard setup before using Misc Purchase.",
+        )
+        return redirect("dashboard")
     request.session["active_task_id"] = active_task.project_id
     suppliers = SupplierAccount.objects.all().order_by("description")
 
