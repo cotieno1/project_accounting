@@ -90,11 +90,14 @@ urlpatterns = [
     
     # 4. The Print Audit Trail
     path('print-mpo/<uuid:mpo_id>/', views.print_mpo_view, name='print_mpo'),
+    path('print-mpo/<uuid:mpo_id>/pdf/', views.print_mpo_pdf_view, name='print_mpo_pdf'),
     path('print-mro/<uuid:mro_id>/', views.print_mro_view, name='print_mro'),
+    path('print-mro/<uuid:mro_id>/pdf/', views.print_mro_pdf_view, name='print_mro_pdf'),
     
     # 5. The Financial Dashboard
     path('misc-budget-actuals/', views.misc_budget_actuals_view, name='misc_budget_actuals'),
     path('print-fluid-ro/', views.print_fluid_ro_view, name='print_fluid_ro'),
+    path('print-fluid-ro/pdf/', views.print_fluid_ro_pdf_view, name='print_fluid_ro_pdf'),
     
     # 6. LPO History Browser (Current + Previous LPOs)
     path('lpos/', views.lpo_list_view, name='lpo_list_view'),

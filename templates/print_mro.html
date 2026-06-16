@@ -6,11 +6,15 @@
     <title>MRO {{ mro.mro_number }} | {{ active_task.project_id }}</title>
     {% include "includes/lpo_document_styles.html" %}
 </head>
-<body class="pioneer-doc-print">
+<body class="{% if for_pdf %}lpo-pdf-body{% else %}pioneer-doc-print{% endif %}">
+{% if not for_pdf %}
 <div class="screen-toolbar no-print">
     <a href="{{ back_url }}">← Back to MRO List</a>
-    <button type="button" onclick="window.print()">Print / Save PDF</button>
+    <a href="{% url 'print_mro_pdf' mro_id=mro.id %}{% if request.GET.return %}?return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>
+    <button type="button" onclick="window.print()">Print</button>
 </div>
+<p class="mobile-doc-hint no-print" aria-hidden="true">For pinch-zoom on mobile, tap <strong>Open PDF</strong> · otherwise swipe sideways</p>
+{% endif %}
 <div class="lpo-paper"><div class="doc">
     <div class="brand-bar"></div>
     {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Miscellaneous Requisition Order (MRO) — Ad-Hoc Budget Baseline" %}
@@ -86,7 +90,7 @@
     </tr></table>
     <p class="footer-note">MRO {{ mro.mro_number|default:"" }} · Task {{ active_task.project_id }}{% if mpo and mpo.mpo_number %} · RO {{ mpo.mpo_number }}{% endif %}</p>
 </div></div>
-{% if auto_print %}
+{% if not for_pdf and auto_print %}
 <script>window.addEventListener('load',function(){setTimeout(function(){window.print()},500)});</script>
 {% endif %}
 </body>

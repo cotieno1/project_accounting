@@ -3346,10 +3346,12 @@ def _misc_mro_document_urls(mro, task, *, audit=False):
 
     ret = quote(_misc_doc_return_url(task, audit=audit), safe="")
     base = reverse("print_mro", kwargs={"mro_id": mro.id})
+    pdf_base = reverse("print_mro_pdf", kwargs={"mro_id": mro.id})
     return {
         "mro_id": str(mro.id),
         "screen_url": f"{base}?return={ret}",
-        "print_url": f"{base}?print=1&return={ret}",
+        "print_url": f"{pdf_base}?return={ret}",
+        "pdf_url": f"{pdf_base}?return={ret}",
     }
 
 
@@ -3361,10 +3363,12 @@ def _misc_mpo_ro_document_urls(mpo, task, *, audit=False):
         reverse("print_fluid_ro")
         + f"?task_id={task.project_id}&mpo_id={mpo.id}&return={ret}"
     )
+    pdf_base = reverse("print_mpo_pdf", kwargs={"mpo_id": mpo.id})
     return {
         "mro_id": "",
         "screen_url": base,
-        "print_url": base + "&print=1",
+        "print_url": f"{pdf_base}?return={ret}",
+        "pdf_url": f"{pdf_base}?return={ret}",
     }
 
 
@@ -4246,6 +4250,21 @@ def print_fluid_ro_view(request):
     """
     Screen or print preview for a draft/submitted ad-hoc RO (before MRO commit).
     """
+    context = _fluid_ro_print_context(request)
+    if request.GET.get("print") == "1":
+        from django.shortcuts import redirect
+        from urllib.parse import urlencode
+
+        q = request.GET.copy()
+        q.pop("print", None)
+        url = reverse("print_fluid_ro_pdf")
+        if q:
+            url += "?" + urlencode(q, doseq=True)
+        return redirect(url)
+    return render(request, "print_mpo.html", context)
+
+
+def _fluid_ro_print_context(request):
     task_id = request.GET.get("task_id")
     active_task = get_object_or_404(ProjectTask, project_id=task_id)
 
@@ -4281,6 +4300,7 @@ def print_fluid_ro_view(request):
         + f"?task_id={active_task.project_id}&ro_list=1"
     )
     context = {
+        "mpo": draft_mpo,
         "batch": batch,
         "temp_ro_id": ro_reference or request.session.get("temp_ro_id", ""),
         "ro_reference": ro_reference,
@@ -4292,12 +4312,52 @@ def print_fluid_ro_view(request):
         "back_url": back_url,
     }
     context.update(branding_template_context(request))
-    return render(request, "print_mpo.html", context)
+    return context
+
+
+@login_required
+def print_fluid_ro_pdf_view(request):
+    """Native PDF for draft/submitted ad-hoc RO (mobile pinch-zoom, page thumbnails)."""
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
+
+    context = _fluid_ro_print_context(request)
+    mpo = context.get("mpo")
+    label = context.get("ro_reference") or "Ad-Hoc-RO"
+    try:
+        pdf_bytes = build_pdf_bytes("print_mpo.html", context)
+    except ImportError:
+        messages.error(request, "PDF support is not installed on the server.")
+        return redirect(
+            reverse("print_fluid_ro") + "?" + request.META.get("QUERY_STRING", "")
+        )
+    except Exception as exc:
+        messages.error(request, f"PDF generation failed: {exc}")
+        return redirect(
+            reverse("print_fluid_ro") + "?" + request.META.get("QUERY_STRING", "")
+        )
+    if mpo and mpo.mpo_number:
+        label = mpo.mpo_number
+    return pdf_inline_response(pdf_bytes, label)
 
 
 @login_required
 def print_mpo_view(request, mpo_id):
     """Printable ad-hoc RO from a persisted MPO record."""
+    context = _mpo_print_context(request, mpo_id)
+    if request.GET.get("print") == "1":
+        from django.shortcuts import redirect
+        from urllib.parse import urlencode
+
+        q = request.GET.copy()
+        q.pop("print", None)
+        url = reverse("print_mpo_pdf", kwargs={"mpo_id": mpo_id})
+        if q:
+            url += "?" + urlencode(q, doseq=True)
+        return redirect(url)
+    return render(request, "print_mpo.html", context)
+
+
+def _mpo_print_context(request, mpo_id):
     mpo = get_object_or_404(MiscPurchaseOrder, id=mpo_id)
     batch = _mpo_to_batch(mpo)
     back_url = request.GET.get("return") or (
@@ -4316,12 +4376,45 @@ def print_mpo_view(request, mpo_id):
         "back_url": back_url,
     }
     context.update(branding_template_context(request))
-    return render(request, "print_mpo.html", context)
+    return context
+
+
+@login_required
+def print_mpo_pdf_view(request, mpo_id):
+    """Native PDF for persisted ad-hoc RO / MPO."""
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
+
+    context = _mpo_print_context(request, mpo_id)
+    mpo = context["mpo"]
+    try:
+        pdf_bytes = build_pdf_bytes("print_mpo.html", context)
+    except ImportError:
+        messages.error(request, "PDF support is not installed on the server.")
+        return redirect(reverse("print_mpo", kwargs={"mpo_id": mpo_id}))
+    except Exception as exc:
+        messages.error(request, f"PDF generation failed: {exc}")
+        return redirect(reverse("print_mpo", kwargs={"mpo_id": mpo_id}))
+    return pdf_inline_response(pdf_bytes, mpo.mpo_number or f"RO-{mpo.id}")
 
 
 @login_required
 def print_mro_view(request, mro_id):
-    """Screen view and PDF/print for a committed Misc Requisition Order (MRO)."""
+    """Screen HTML preview for a committed Misc Requisition Order (MRO)."""
+    context = _mro_print_context(request, mro_id)
+    if request.GET.get("print") == "1":
+        from django.shortcuts import redirect
+        from urllib.parse import urlencode
+
+        q = request.GET.copy()
+        q.pop("print", None)
+        url = reverse("print_mro_pdf", kwargs={"mro_id": mro_id})
+        if q:
+            url += "?" + urlencode(q, doseq=True)
+        return redirect(url)
+    return render(request, "print_mro.html", context)
+
+
+def _mro_print_context(request, mro_id):
     mro = get_object_or_404(
         MiscRequisitionOrder.objects.select_related(
             "task", "source_mpo", "authorized_by"
@@ -4345,7 +4438,25 @@ def print_mro_view(request, mro_id):
         "back_url": back_url,
     }
     context.update(branding_template_context(request))
-    return render(request, "print_mro.html", context)
+    return context
+
+
+@login_required
+def print_mro_pdf_view(request, mro_id):
+    """Native PDF for committed MRO (mobile pinch-zoom, page thumbnails)."""
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
+
+    context = _mro_print_context(request, mro_id)
+    mro = context["mro"]
+    try:
+        pdf_bytes = build_pdf_bytes("print_mro.html", context)
+    except ImportError:
+        messages.error(request, "PDF support is not installed on the server.")
+        return redirect(reverse("print_mro", kwargs={"mro_id": mro_id}))
+    except Exception as exc:
+        messages.error(request, f"PDF generation failed: {exc}")
+        return redirect(reverse("print_mro", kwargs={"mro_id": mro_id}))
+    return pdf_inline_response(pdf_bytes, mro.mro_number or f"MRO-{mro.id}")
 # ========================================================================== Budget
 from django.shortcuts import render
 from django.db.models import Sum

@@ -32,7 +32,7 @@
                         <span class="ro-list-kind">{{ ro.kind }} · {{ ro.date|date:"d M Y" }}</span>
                         <div class="ro-list-actions" onclick="event.stopPropagation();">
                             <a href="{{ ro.screen_url }}" class="ro-list-btn" target="_blank" rel="noopener">Screen</a>
-                            <a href="{{ ro.print_url }}" class="ro-list-btn ro-list-btn--print" target="_blank" rel="noopener">PDF / Print</a>
+                            <a href="{{ ro.pdf_url|default:ro.print_url }}" class="ro-list-btn ro-list-btn--print" target="_blank" rel="noopener">PDF</a>
                         </div>
                     </li>
                     {% else %}

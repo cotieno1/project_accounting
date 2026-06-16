@@ -48,4 +48,40 @@
 
     @media print { .no-print, .screen-toolbar { display: none !important; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
 
+    /* Mobile screen view: keep A4-style layout; pan sideways for wide tables (not a PDF embed). */
+    @media screen and (max-width: 768px) {
+        body.pioneer-doc-print { overflow-x: hidden; }
+        .screen-toolbar {
+            position: sticky; top: 0; z-index: 20;
+            justify-content: stretch;
+        }
+        .screen-toolbar button, .screen-toolbar a { flex: 1; text-align: center; }
+        .lpo-paper {
+            max-width: none; margin: 0; padding: 0;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+        }
+        .doc {
+            min-width: 680px;
+            max-width: none;
+            margin: 0;
+            padding: 16px 20px 32px;
+            box-sizing: border-box;
+        }
+        .mobile-doc-hint {
+            display: block;
+            margin: 0;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #065f46;
+            background: #ecfdf5;
+            border-bottom: 1px solid #a7f3d0;
+            text-align: center;
+        }
+    }
+    .mobile-doc-hint { display: none; }
+
 </style>

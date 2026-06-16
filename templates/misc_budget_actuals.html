@@ -81,7 +81,7 @@
                     <td class="mro-action-cell">
                         <a href="{{ row.view_url }}" class="mro-view-link">Workspace</a>
                         <a href="{{ row.screen_url }}" class="mro-view-link" target="_blank" rel="noopener">Screen</a>
-                        <a href="{{ row.print_url }}" class="mro-view-link mro-view-link--print" target="_blank" rel="noopener">PDF / Print</a>
+                        <a href="{{ row.pdf_url|default:row.print_url }}" class="mro-view-link mro-view-link--print" target="_blank" rel="noopener">PDF</a>
                     </td>
                 </tr>
                 {% empty %}
