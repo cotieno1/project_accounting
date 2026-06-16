@@ -2690,12 +2690,16 @@ def _save_task_budget(task, budget_type, material, labour, misc, total, label=No
 
 
 def _misc_planned_budget(task):
-    """Misc / logistics reserve from committed ad-hoc project budget."""
+    """Misc / ad-hoc authorized budget for audit and variance."""
     if not task:
         return Decimal("0.00")
     budget = _task_budget_record(task)
     if budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
-        return budget.misc_reserve or Decimal("0.00")
+        if budget.total_authorized_budget and budget.total_authorized_budget > 0:
+            return budget.total_authorized_budget
+        material = budget.material_total_cost or Decimal("0.00")
+        misc = budget.misc_reserve or Decimal("0.00")
+        return material + misc if (material + misc) > 0 else Decimal("0.00")
     if budget and budget.budget_type == ProjectBudget.BUDGET_RFQ_LPO:
         return budget.misc_reserve or Decimal("0.00")
     return Decimal("120000.00")
@@ -3355,6 +3359,62 @@ def _misc_adhoc_ro_listing(task, active_mpo=None):
         "is_active": active_id == str(baseline.id),
         "status_class": _misc_ro_status_css(baseline.funding_status),
     })
+    return rows
+
+
+def _misc_task_mro_registry(task):
+    """All ad-hoc MRO/MPO records for audit listing and deep links."""
+    rows = []
+    if not task:
+        return rows
+    mpos = {
+        str(m.id): m
+        for m in MiscPurchaseOrder.objects.filter(task=task).order_by("-created_at")
+    }
+    mros = list(
+        MiscRequisitionOrder.objects.filter(task=task)
+        .select_related("source_mpo")
+        .order_by("-updated_at")
+    )
+    seen_mpo = set()
+    for mro in mros:
+        mpo = mro.source_mpo if mro.source_mpo_id else None
+        if mpo:
+            seen_mpo.add(str(mpo.id))
+        rows.append({
+            "kind": "MRO",
+            "ref": mro.mro_number or "PENDING",
+            "mpo_ref": mpo.mpo_number if mpo else "",
+            "status": mro.funding_status,
+            "status_label": mro.get_funding_status_display(),
+            "amount": mro.total_amount,
+            "date": mro.updated_at,
+            "mpo_id": str(mpo.id) if mpo else "",
+            "view_url": (
+                reverse("misc_purchase_builder")
+                + f"?task_id={task.project_id}&mpo_id={mpo.id}"
+                if mpo
+                else reverse("misc_purchase_builder") + f"?task_id={task.project_id}"
+            ),
+            "status_class": _misc_ro_status_css(mro.funding_status),
+        })
+    for mpo_id, mpo in mpos.items():
+        if mpo_id in seen_mpo:
+            continue
+        rows.append({
+            "kind": "RO",
+            "ref": mpo.mpo_number or f"MPO-{mpo_id[:8].upper()}",
+            "mpo_ref": mpo.mpo_number or "",
+            "status": mpo.funding_status,
+            "status_label": mpo.get_funding_status_display(),
+            "amount": mpo.total_amount,
+            "date": mpo.created_at,
+            "mpo_id": mpo_id,
+            "view_url": reverse("misc_purchase_builder")
+            + f"?task_id={task.project_id}&mpo_id={mpo_id}",
+            "status_class": _misc_ro_status_css(mpo.funding_status),
+        })
+    rows.sort(key=lambda r: r["date"], reverse=True)
     return rows
 
 
@@ -4314,6 +4374,9 @@ def misc_budget_actuals_view(request):
     misc_budget = _misc_planned_budget(active_task)
     misc_actuals = _misc_locked_total(active_task)
     variance = misc_budget - misc_actuals
+    task_has_baseline = _task_has_adhoc_baseline(active_task)
+    baseline_mro = _get_task_baseline_mro(active_task)
+    mro_registry = _misc_task_mro_registry(active_task)
 
     return render(
         request,
@@ -4329,6 +4392,10 @@ def misc_budget_actuals_view(request):
             "misc_actuals": misc_actuals,
             "variance": variance,
             "variance_over": variance < 0,
+            "task_has_baseline": task_has_baseline,
+            "baseline_mro": baseline_mro,
+            "baseline_mro_ref": baseline_mro.mro_number if baseline_mro else "",
+            "mro_registry": mro_registry,
         },
     )
 

@@ -158,13 +158,19 @@
                     </div>
                     {% elif ro_mode == 'empty' %}
                     <div class="ro-empty-state">
-                        <h4>No ad-hoc MRO on this task</h4>
+                        <h4>{% if task_has_baseline %}Ad-hoc MRO baseline exists{% else %}No ad-hoc MRO on this task{% endif %}</h4>
+                        {% if task_has_baseline %}
+                        <p style="font-size:12px;margin:0 0 16px;">One budget and one MRO per task. This task already has a confirmed baseline{% if baseline_mro_ref %} ({{ baseline_mro_ref }}){% endif %}.</p>
+                        <button type="button" class="btn-action btn-success" disabled style="opacity:0.45;cursor:not-allowed;">+ Start MRO</button>
+                        <a href="{% url 'misc_budget_actuals' %}?task_id={{ active_task.project_id }}" class="btn-action" style="display:inline-block;margin-left:10px;text-decoration:none;">View MRO registry →</a>
+                        {% else %}
                         <p style="font-size:12px;margin:0 0 16px;">One budget and one MRO per task. Start the baseline requisition order to build your provisional budget.</p>
                         <form method="POST" style="margin:0;">
                             {% csrf_token %}
                             <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                             <button type="submit" name="new_ro" class="btn-action btn-success">+ Start MRO</button>
                         </form>
+                        {% endif %}
                     </div>
                     {% endif %}
 

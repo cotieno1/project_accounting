@@ -15,6 +15,7 @@
     {% endfor %}
 </select>
 
+{% if active_task %}
 <div class="sidebar-block budget-status-panel">
     <span class="nav-label">Budget snapshot</span>
     <div class="budget-row">
@@ -37,15 +38,56 @@
 <div class="sidebar-footer">
     <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="sidebar-back-link">← Dashboard</a>
 </div>
+{% endif %}
 {% endblock %}
 {% block workspace %}
+    {% if not active_task %}
+    <div class="panel" style="padding:24px;color:var(--muted);">Select a project task in the sidebar to load purchase audit data.</div>
+    {% else %}
     <div class="page-header">
-        <div>
+        <div class="page-header-text">
             <span class="task-id">TASK REF: {{ active_task.project_id }}</span>
-            <h1>{{ active_task.description }}</h1>
+            <h1 title="{{ active_task.description }}">{{ active_task.description }}</h1>
         </div>
-        <button type="button" class="btn-action" onclick="window.print()">🖨️ Print Report</button>
+        <button type="button" class="btn-action page-header-action" onclick="window.print()">🖨️ Print Report</button>
     </div>
+
+    {% if task_has_baseline %}
+    <div class="panel mro-registry-panel">
+        <div class="mro-registry-head">
+            <h2 class="panel-title" style="margin:0;border:0;padding:0;">Ad-Hoc MRO / RO Registry</h2>
+            <p class="mro-registry-note">Budget confirmed for this task — additional MRO baselines are locked. Open an existing record below.</p>
+        </div>
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Ref #</th>
+                    <th>Linked RO</th>
+                    <th>Status</th>
+                    <th class="num">Amount</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in mro_registry %}
+                <tr>
+                    <td>{{ row.kind }}</td>
+                    <td class="ref-cell">{{ row.ref }}</td>
+                    <td>{{ row.mpo_ref|default:"—" }}</td>
+                    <td><span class="audit-badge audit-badge--warning">{{ row.status_label }}</span></td>
+                    <td class="num num--strong">{{ row.amount|floatformat:2 }}</td>
+                    <td><a href="{{ row.view_url }}" class="mro-view-link">View</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty-row">No MRO records found for this task.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="panel summary-strip">
         <div class="summary-cell">
@@ -169,4 +211,5 @@
         </div>
         <a href="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}" class="back-link">← Back to Ad-Hoc Requisition Order</a>
     </div>
+    {% endif %}
 {% endblock %}
