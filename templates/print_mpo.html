@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ doc_title|default:"Ad-Hoc RO" }} | {{ active_task.project_id }}</title>
+    <title>{{ ro_reference|default:doc_title|default:"Ad-Hoc RO" }} · {{ active_task.project_id }}</title>
     {% include "includes/lpo_document_styles.html" %}
 </head>
 <body class="{% if for_pdf %}lpo-pdf-body{% else %}pioneer-doc-print{% endif %}">
