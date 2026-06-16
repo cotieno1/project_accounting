@@ -89,7 +89,8 @@ urlpatterns = [
     path('authorize-mpo/', views.authorize_mpo_action, name='authorize_mpo'),
     
     # 4. The Print Audit Trail
-    path('print-mpo/<int:mpo_id>/', views.print_mpo_view, name='print_mpo'),
+    path('print-mpo/<uuid:mpo_id>/', views.print_mpo_view, name='print_mpo'),
+    path('print-mro/<uuid:mro_id>/', views.print_mro_view, name='print_mro'),
     
     # 5. The Financial Dashboard
     path('misc-budget-actuals/', views.misc_budget_actuals_view, name='misc_budget_actuals'),

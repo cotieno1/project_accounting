@@ -3335,6 +3335,39 @@ def print_adhoc_officer_voucher_view(request, voucher_id):
     return render(request, "adhoc_officer_voucher_print.html", context)
 
 
+def _misc_doc_return_url(task, *, audit=False):
+    if audit:
+        return reverse("misc_budget_actuals") + f"?task_id={task.project_id}"
+    return reverse("misc_purchase_builder") + f"?task_id={task.project_id}&ro_list=1"
+
+
+def _misc_mro_document_urls(mro, task, *, audit=False):
+    from urllib.parse import quote
+
+    ret = quote(_misc_doc_return_url(task, audit=audit), safe="")
+    base = reverse("print_mro", kwargs={"mro_id": mro.id})
+    return {
+        "mro_id": str(mro.id),
+        "screen_url": f"{base}?return={ret}",
+        "print_url": f"{base}?print=1&return={ret}",
+    }
+
+
+def _misc_mpo_ro_document_urls(mpo, task, *, audit=False):
+    from urllib.parse import quote
+
+    ret = quote(_misc_doc_return_url(task, audit=audit), safe="")
+    base = (
+        reverse("print_fluid_ro")
+        + f"?task_id={task.project_id}&mpo_id={mpo.id}&return={ret}"
+    )
+    return {
+        "mro_id": "",
+        "screen_url": base,
+        "print_url": base + "&print=1",
+    }
+
+
 def _misc_adhoc_ro_listing(task, active_mpo=None):
     """One sidebar row — the task's single ad-hoc RO/MRO baseline."""
     rows = []
@@ -3346,7 +3379,7 @@ def _misc_adhoc_ro_listing(task, active_mpo=None):
     ref = baseline.mpo_number or f"MPO-{str(baseline.id)[:8].upper()}"
     if committed and committed.mro_number:
         ref = f"{ref} / {committed.mro_number}"
-    rows.append({
+    row = {
         "id": str(baseline.id),
         "ref": ref,
         "status": baseline.funding_status,
@@ -3355,10 +3388,15 @@ def _misc_adhoc_ro_listing(task, active_mpo=None):
         else baseline.funding_status,
         "amount": baseline.total_amount,
         "date": baseline.created_at,
-        "kind": "RO",
+        "kind": "MRO" if committed else "RO",
         "is_active": active_id == str(baseline.id),
         "status_class": _misc_ro_status_css(baseline.funding_status),
-    })
+    }
+    if committed:
+        row.update(_misc_mro_document_urls(committed, task))
+    else:
+        row.update(_misc_mpo_ro_document_urls(baseline, task))
+    rows.append(row)
     return rows
 
 
@@ -3381,7 +3419,7 @@ def _misc_task_mro_registry(task):
         mpo = mro.source_mpo if mro.source_mpo_id else None
         if mpo:
             seen_mpo.add(str(mpo.id))
-        rows.append({
+        row = {
             "kind": "MRO",
             "ref": mro.mro_number or "PENDING",
             "mpo_ref": mpo.mpo_number if mpo else "",
@@ -3397,11 +3435,13 @@ def _misc_task_mro_registry(task):
                 else reverse("misc_purchase_builder") + f"?task_id={task.project_id}"
             ),
             "status_class": _misc_ro_status_css(mro.funding_status),
-        })
+        }
+        row.update(_misc_mro_document_urls(mro, task, audit=True))
+        rows.append(row)
     for mpo_id, mpo in mpos.items():
         if mpo_id in seen_mpo:
             continue
-        rows.append({
+        row = {
             "kind": "RO",
             "ref": mpo.mpo_number or f"MPO-{mpo_id[:8].upper()}",
             "mpo_ref": mpo.mpo_number or "",
@@ -3413,7 +3453,9 @@ def _misc_task_mro_registry(task):
             "view_url": reverse("misc_purchase_builder")
             + f"?task_id={task.project_id}&mpo_id={mpo_id}",
             "status_class": _misc_ro_status_css(mpo.funding_status),
-        })
+        }
+        row.update(_misc_mpo_ro_document_urls(mpo, task, audit=True))
+        rows.append(row)
     rows.sort(key=lambda r: r["date"], reverse=True)
     return rows
 
@@ -4202,12 +4244,11 @@ from .models import ProjectTask
 @login_required
 def print_fluid_ro_view(request):
     """
-    The Plumbing: Connects session data to the printable scouting document.
+    Screen or print preview for a draft/submitted ad-hoc RO (before MRO commit).
     """
-    # 1. Get the Task (ensuring we are scoped to the right project)
-    task_id = request.GET.get('task_id')
+    task_id = request.GET.get("task_id")
     active_task = get_object_or_404(ProjectTask, project_id=task_id)
-    
+
     mpo_id = request.GET.get("mpo_id")
     if mpo_id:
         draft_mpo = MiscPurchaseOrder.objects.filter(
@@ -4225,33 +4266,86 @@ def print_fluid_ro_view(request):
     batch = _mpo_to_batch(draft_mpo) if draft_mpo else request.session.get(
         "batch_data", {"items": [], "supplier": ""}
     )
-    actual = sum(float(i["total"]) for i in batch.get("items", []))
-    
+    actual = (
+        draft_mpo.total_amount
+        if draft_mpo and draft_mpo.total_amount
+        else sum(Decimal(str(i.get("total", 0))) for i in batch.get("items", []))
+    )
+
     ro_reference = ""
     if draft_mpo:
         ro_reference = _ensure_mpo_reference(draft_mpo)
 
-    return render(request, 'print_mpo.html', {
-        'batch': batch,
-        'temp_ro_id': ro_reference or request.session.get('temp_ro_id', ''),
-        'ro_reference': ro_reference,
-        'actual': actual,
-        'active_task': active_task,
-    })
+    back_url = request.GET.get("return") or (
+        reverse("misc_purchase_builder")
+        + f"?task_id={active_task.project_id}&ro_list=1"
+    )
+    context = {
+        "batch": batch,
+        "temp_ro_id": ro_reference or request.session.get("temp_ro_id", ""),
+        "ro_reference": ro_reference,
+        "actual": actual,
+        "active_task": active_task,
+        "doc_title": ro_reference or "Ad-Hoc Requisition Order",
+        "doc_status": draft_mpo.get_funding_status_display() if draft_mpo else "Draft",
+        "auto_print": request.GET.get("print") == "1",
+        "back_url": back_url,
+    }
+    context.update(branding_template_context(request))
+    return render(request, "print_mpo.html", context)
+
 
 @login_required
 def print_mpo_view(request, mpo_id):
-    """
-    Renders the black-and-white, ink-friendly requisition letter.
-    """
+    """Printable ad-hoc RO from a persisted MPO record."""
     mpo = get_object_or_404(MiscPurchaseOrder, id=mpo_id)
-    
-    return render(request, 'print_mpo.html', {
-        'mpo': mpo,
-        'active_task': mpo.task,
-        'items': mpo.items.all(),
-        'actual': mpo.total_amount,
-    })
+    batch = _mpo_to_batch(mpo)
+    back_url = request.GET.get("return") or (
+        reverse("misc_purchase_builder")
+        + f"?task_id={mpo.task.project_id}&ro_list=1"
+    )
+    context = {
+        "mpo": mpo,
+        "batch": batch,
+        "active_task": mpo.task,
+        "actual": mpo.total_amount,
+        "ro_reference": mpo.mpo_number or "",
+        "doc_title": mpo.mpo_number or "Ad-Hoc Requisition Order",
+        "doc_status": mpo.get_funding_status_display(),
+        "auto_print": request.GET.get("print") == "1",
+        "back_url": back_url,
+    }
+    context.update(branding_template_context(request))
+    return render(request, "print_mpo.html", context)
+
+
+@login_required
+def print_mro_view(request, mro_id):
+    """Screen view and PDF/print for a committed Misc Requisition Order (MRO)."""
+    mro = get_object_or_404(
+        MiscRequisitionOrder.objects.select_related(
+            "task", "source_mpo", "authorized_by"
+        ),
+        pk=mro_id,
+    )
+    mpo = mro.source_mpo
+    items = list(mpo.items.all().order_by("id")) if mpo else []
+    budget = _task_budget_record(mro.task)
+    back_url = request.GET.get("return") or (
+        reverse("misc_purchase_builder")
+        + f"?task_id={mro.task.project_id}&ro_list=1"
+    )
+    context = {
+        "mro": mro,
+        "mpo": mpo,
+        "active_task": mro.task,
+        "items": items,
+        "budget": budget,
+        "auto_print": request.GET.get("print") == "1",
+        "back_url": back_url,
+    }
+    context.update(branding_template_context(request))
+    return render(request, "print_mro.html", context)
 # ========================================================================== Budget
 from django.shortcuts import render
 from django.db.models import Sum

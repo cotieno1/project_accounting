@@ -76,6 +76,12 @@ body.misc-audit { --text-muted: var(--muted); }
     font-weight: 600;
 }
 .misc-audit .mro-view-link:hover { text-decoration: underline; }
+.misc-audit .mro-view-link--print { color: #6ee7b7; }
+.misc-audit .mro-action-cell {
+    white-space: nowrap;
+    font-size: 12px;
+}
+.misc-audit .mro-action-cell .mro-view-link { margin-right: 10px; }
 
 .misc-audit .dashboard-grid {
     display: grid;

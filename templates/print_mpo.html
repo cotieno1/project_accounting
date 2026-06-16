@@ -2,63 +2,73 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Authority to Incur Expense - {{ active_task.project_id }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ doc_title|default:"Ad-Hoc RO" }} | {{ active_task.project_id }}</title>
     {% include "includes/lpo_document_styles.html" %}
 </head>
-<body class="pioneer-doc-print" onload="window.print()">
+<body class="pioneer-doc-print">
+<div class="screen-toolbar no-print">
+    <a href="{{ back_url|default:'/' }}">← Back to MRO List</a>
+    <button type="button" onclick="window.print()">Print / Save PDF</button>
+</div>
 <div class="lpo-paper"><div class="doc">
     <div class="brand-bar"></div>
-    {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Authority to Incur Expense / Misc Purchase Order" %}
+    {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Authority to Incur Expense / Ad-Hoc Requisition Order" %}
     <table class="meta-table">
-        <tr><th>Date</th><th>Task ID</th><th>Status</th></tr>
-        <tr><td>{% now "F j, Y" %}</td><td>{{ active_task.project_id }}</td><td>Pending authorization</td></tr>
+        <tr><th>RO Ref</th><th>Task ID</th><th>Date</th><th>Status</th></tr>
+        <tr>
+            <td class="lpo-no">{{ ro_reference|default:doc_title|default:"DRAFT" }}</td>
+            <td>{{ active_task.project_id }}</td>
+            <td>{% now "F j, Y" %}</td>
+            <td>{{ doc_status|default:"Draft" }}</td>
+        </tr>
     </table>
     <table class="parties">
         <tr><th>To</th><th>From</th></tr>
-        <tr><td><div class="party-name">General Manager</div></td><td><div class="party-name">Mr. Omambo</div><div class="muted">Logistics / Operations</div></td></tr>
+        <tr><td><div class="party-name">General Manager</div></td><td><div class="party-name">{{ batch.supplier|default:"Mr. Omambo" }}</div><div class="muted">Logistics / Operations</div></td></tr>
     </table>
     <div class="terms"><strong>Request</strong>Please authorize disbursement of cash for the following ad-hoc operational requirements. Receipts will be provided upon purchase. Project: {{ active_task.description }}.</div>
     <table class="lines">
         <thead>
             <tr>
-                <th>No.</th>
+                <th class="center">#</th>
                 <th>Description</th>
-                <th>UOM</th>
-                <th>Qty</th>
-                <th>Est. Unit Price</th>
-                <th>Total (US$)</th>
+                <th class="center">UOM</th>
+                <th class="num">Qty</th>
+                <th class="num">Est. unit</th>
+                <th class="num">Total</th>
             </tr>
         </thead>
         <tbody>
             {% for item in batch.items %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
+            <tr{% if forloop.counter|divisibleby:2 %} class="zebra"{% endif %}>
+                <td class="center">{{ forloop.counter }}</td>
                 <td>{{ item.description }}</td>
-                <td>{{ item.uom }}</td>
-                <td>{{ item.qty }}</td>
-                <td>{{ item.unit_price }}</td>
-                <td>{{ item.total }}</td>
+                <td class="center">{{ item.uom }}</td>
+                <td class="num">{{ item.qty }}</td>
+                <td class="num">{{ item.unit_price }}</td>
+                <td class="num">{{ item.total }}</td>
             </tr>
             {% empty %}
-            <tr>
-                <td colspan="6" style="text-align: center;">No items added to this draft.</td>
-            </tr>
+            <tr><td colspan="6" style="text-align:center;">No items added to this draft.</td></tr>
             {% endfor %}
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="5" class="grand-label">Requested disbursement total (US$)</td>
+                <td colspan="5" class="grand-label">Requested disbursement total ({{ currency_symbol }})</td>
                 <td class="grand-value">{{ actual|floatformat:2 }}</td>
             </tr>
         </tfoot>
     </table>
-
     <table class="signatures"><tr>
-        <td><div class="line">Mr. Omambo (Messenger)</div><div class="hint">Requested &amp; acknowledged</div></td>
+        <td><div class="line">{{ batch.supplier|default:"Mr. Omambo" }}</div><div class="hint">Requested &amp; acknowledged</div></td>
         <td style="width:10%"></td>
         <td><div class="line">General Manager</div><div class="hint">Authorized — budget lock</div></td>
     </tr></table>
-    <p class="footer-note">MPO — Task {{ active_task.project_id }}</p>
+    <p class="footer-note">RO {{ ro_reference|default:temp_ro_id }} — Task {{ active_task.project_id }}</p>
 </div></div>
+{% if auto_print %}
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},500)});</script>
+{% endif %}
 </body>
 </html>
