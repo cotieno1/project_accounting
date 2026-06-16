@@ -32,6 +32,24 @@ def _env_list(name, default=None):
     return items if items else (default or [])
 
 
+def _is_placeholder_host(value):
+    """Ignore example values from .env.example that break production CSRF."""
+    lowered = value.lower()
+    return 'your-app.up.railway.app' in lowered or lowered.startswith('example.')
+
+
+def _csrf_origins_for_hosts(hosts):
+    origins = []
+    for host in hosts:
+        if not host or _is_placeholder_host(host):
+            continue
+        if host.startswith('.'):
+            origins.append(f'https://*{host}')
+        else:
+            origins.append(f'https://{host}')
+    return origins
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -45,7 +63,9 @@ SECRET_KEY = os.environ.get(
 _on_railway = bool(os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_PUBLIC_DOMAIN'))
 DEBUG = _env_bool('DEBUG', default=not _on_railway)
 
-ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS')
+ALLOWED_HOSTS = [
+    h for h in _env_list('ALLOWED_HOSTS') if not _is_placeholder_host(h)
+]
 _railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '').strip()
 if _railway_domain and _railway_domain not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_railway_domain)
@@ -54,11 +74,20 @@ if _on_railway and '.railway.app' not in ALLOWED_HOSTS:
 if not ALLOWED_HOSTS and not DEBUG:
     ALLOWED_HOSTS = ['.railway.app']
 
-CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+CSRF_TRUSTED_ORIGINS = [
+    o for o in _env_list('CSRF_TRUSTED_ORIGINS') if not _is_placeholder_host(o)
+]
 if _railway_domain:
     _railway_origin = f'https://{_railway_domain}'
     if _railway_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(_railway_origin)
+if _on_railway:
+    for origin in _csrf_origins_for_hosts(['.railway.app']):
+        if origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(origin)
+for origin in _csrf_origins_for_hosts(ALLOWED_HOSTS):
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
 
 
 # Application definition
@@ -203,3 +232,5 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
