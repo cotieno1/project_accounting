@@ -24,44 +24,65 @@ from django.db import models
 
 # --- MOVE THIS TO THE TOP ---
 def generate_pioneer_bom_id():
-    # We must reference BOMHeader inside the function 
-    # to avoid circular imports during startup
-    from .models import BOMHeader 
-    last_bom = BOMHeader.objects.all().order_by('id').last()
-    if not last_bom:
-        return 'BOM-100'
-    last_id_str = last_bom.bom_id
-    match = re.search(r'(\d+)', last_id_str)
+    from django.apps import apps
+
+    BOMHeader = apps.get_model("accounts", "BOMHeader")
+    last_bom = BOMHeader.objects.order_by("id").last()
+    if not last_bom or not (last_bom.bom_id or "").strip():
+        return "BOM-100"
+    match = re.search(r"(\d+)", last_bom.bom_id)
     if match:
-        next_id = int(match.group(1)) + 1
-        return f'BOM-{next_id}'
-    return 'BOM-100'
+        return f"BOM-{int(match.group(1)) + 1}"
+    return "BOM-100"
 # ============================================================
 
 class BOMHeader(models.Model):
-    bom_id = models.CharField(
-        max_length=20, 
-        unique=True, 
-        default=generate_pioneer_bom_id, 
-        editable=False
-    )
-    # This field is required to resolve your FieldError in the view
-    task = models.ForeignKey('ProjectTask', on_delete=models.CASCADE)
-    
-    # Optional link to RO
-    ro = models.OneToOneField(
-        'RequisitionOrder', 
-        on_delete=models.CASCADE, 
-        related_name='bom', 
-        null=True, 
-        blank=True
-    )
+    STATUS_DRAFT = "DRAFT"
+    STATUS_SENT_TO_GM = "SENT_TO_GM"
+    STATUS_AWARDED = "AWARDED"
+    STATUS_GENERATED = "GENERATED"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft"),
+        (STATUS_SENT_TO_GM, "Sent to GM"),
+        (STATUS_AWARDED, "Awarded"),
+        (STATUS_GENERATED, "Generated from RO"),
+    ]
 
-    status = models.CharField(max_length=20, default='DRAFT')
+    bom_id = models.CharField(
+        max_length=20,
+        unique=True,
+        default=generate_pioneer_bom_id,
+        editable=False,
+    )
+    task = models.ForeignKey(
+        "ProjectTask",
+        on_delete=models.CASCADE,
+        related_name="bom_headers",
+    )
+    ro = models.OneToOneField(
+        "RequisitionOrder",
+        on_delete=models.CASCADE,
+        related_name="bom",
+        null=True,
+        blank=True,
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["task"], name="unique_bom_per_task"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not (self.bom_id or "").strip():
+            self.bom_id = generate_pioneer_bom_id()
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return self.bom_id
+        return self.bom_id or f"BOM-{self.pk}"
 
 # ==============================================================
 

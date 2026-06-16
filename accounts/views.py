@@ -827,46 +827,161 @@ def fetch_bom_to_ro(request, ro_id):
             )
     return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
 
+BOM_STATUS_LABELS = {
+    "DRAFT": "Draft",
+    "SENT_TO_GM": "Sent to GM",
+    "AWARDED": "Awarded",
+    "GENERATED": "Generated from RO",
+}
+
+
+def _bom_status_label(status):
+    return BOM_STATUS_LABELS.get(status, (status or "Draft").replace("_", " ").title())
+
+
+def _bom_status_css(status):
+    return {
+        "DRAFT": "bom-status-draft",
+        "SENT_TO_GM": "bom-status-sent",
+        "AWARDED": "bom-status-awarded",
+        "GENERATED": "bom-status-generated",
+    }.get(status, "bom-status-draft")
+
+
+def _ensure_task_bom(task):
+    """One BOM per task — get existing or create on first stitch/start."""
+    bom = BOMHeader.objects.filter(task=task).first()
+    if bom:
+        if not (bom.bom_id or "").strip():
+            bom.save()
+        return bom, False
+    bom = BOMHeader.objects.create(task=task, status=BOMHeader.STATUS_DRAFT)
+    return bom, True
+
+
+def _bom_registry(active_task=None):
+    rows = []
+    for bom in (
+        BOMHeader.objects.select_related("task")
+        .annotate(item_count=Count("items"))
+        .order_by("-created_at")
+    ):
+        has_number = bool((bom.bom_id or "").strip())
+        can_print = has_number and bom.item_count > 0
+        rows.append(
+            {
+                "bom_id": bom.bom_id if has_number else "—",
+                "task_id": bom.task.project_id,
+                "task_desc": bom.task.description,
+                "status": bom.status,
+                "status_label": _bom_status_label(bom.status),
+                "status_class": _bom_status_css(bom.status),
+                "item_count": bom.item_count,
+                "can_print": can_print,
+                "pdf_url": reverse("print_bom_pdf")
+                + f"?task_id={bom.task.project_id}",
+                "workspace_url": reverse("bom_builder")
+                + f"?task_id={bom.task.project_id}",
+                "is_active": bool(
+                    active_task and bom.task_id == active_task.project_id
+                ),
+                "date": bom.created_at,
+            }
+        )
+    return rows
+
+
 @login_required
 def bom_builder(request):
-    """Unified single logic block called cleanly from urls.py line 41."""
+    """Site engineering BOM workspace — one BOM per task."""
     tasks = ProjectTask.objects.all()
-    active_task = _task_from_request(request, tasks)
+    task_id = _task_id_from_request(request, include_post=True)
+    active_task = None
+    task_not_found = False
+
+    if task_id:
+        active_task = tasks.filter(project_id=task_id).first()
+        if not active_task:
+            task_not_found = True
+    elif request.session.get("active_task_id"):
+        active_task = tasks.filter(
+            project_id=request.session["active_task_id"]
+        ).first()
 
     if not active_task:
-        return render(request, 'bom_builder.html', {
-            'tasks': tasks,
-            'active_task': None,
-            'bom_items': [],
-            'bom_no': '',
-            'setup_message': (
-                "Select a project task above to open or create its BOM."
-                if tasks.exists()
-                else "Add a project task from Dashboard setup, then return here."
-            ),
-        })
+        return render(
+            request,
+            "bom_builder.html",
+            {
+                "tasks": tasks,
+                "active_task": None,
+                "bom_header": None,
+                "bom_items": [],
+                "bom_no": "",
+                "bom_registry": _bom_registry(),
+                "can_print_bom": False,
+                "task_not_found": task_not_found,
+                "unknown_task_id": task_id if task_not_found else "",
+                "setup_message": (
+                    f"No task found for ID “{task_id}”. Select a valid task."
+                    if task_not_found
+                    else (
+                        "Select a project task above to open its BOM."
+                        if tasks.exists()
+                        else "Add a project task from Dashboard setup, then return here."
+                    )
+                ),
+            },
+        )
 
-    bom_header, created = BOMHeader.objects.get_or_create(
-        task=active_task,
-        defaults={'status': 'DRAFT'}
-    )
+    request.session["active_task_id"] = active_task.project_id
+    bom_header = BOMHeader.objects.filter(task=active_task).first()
+
+    if request.method == "POST" and "start_bom" in request.POST:
+        if not bom_header:
+            bom_header, _ = _ensure_task_bom(active_task)
+            messages.success(request, f"BOM {bom_header.bom_id} created for this task.")
+        return redirect(f"/bom-builder/?task_id={active_task.project_id}")
 
     if request.method == "POST" and "add_item" in request.POST:
+        if not bom_header:
+            bom_header, _ = _ensure_task_bom(active_task)
         BOMItem.objects.create(
             header=bom_header,
-            pillar_id=2, 
-            description=request.POST.get('description'),
-            qty=request.POST.get('qty', 0),
-            uom=request.POST.get('uom', 'Pcs')
+            pillar_id=2,
+            description=request.POST.get("description"),
+            qty=request.POST.get("qty", 0),
+            uom=request.POST.get("uom", "Pcs"),
         )
-        return redirect(f'/bom-builder/?task_id={active_task.project_id}')
+        return redirect(f"/bom-builder/?task_id={active_task.project_id}")
 
-    return render(request, 'bom_builder.html', {
-        'tasks': tasks,
-        'active_task': active_task,
-        'bom_items': bom_header.items.all().order_by('id'),
-        'bom_no': bom_header.bom_id,
-    })
+    bom_items = bom_header.items.all().order_by("id") if bom_header else []
+    item_count = bom_items.count() if bom_header else 0
+    has_number = bool(bom_header and (bom_header.bom_id or "").strip())
+    can_print_bom = bool(bom_header and has_number and item_count > 0)
+
+    return render(
+        request,
+        "bom_builder.html",
+        {
+            "tasks": tasks,
+            "active_task": active_task,
+            "bom_header": bom_header,
+            "bom_items": bom_items,
+            "bom_no": bom_header.bom_id if has_number else "",
+            "bom_status": bom_header.status if bom_header else "",
+            "bom_status_label": _bom_status_label(
+                bom_header.status if bom_header else ""
+            ),
+            "bom_status_class": _bom_status_css(
+                bom_header.status if bom_header else ""
+            ),
+            "bom_item_count": item_count,
+            "bom_registry": _bom_registry(active_task),
+            "can_print_bom": can_print_bom,
+            "task_not_found": False,
+        },
+    )
 
 
 def _bom_print_context(request, *, task=None, bom=None, ro=None):
@@ -881,6 +996,10 @@ def _bom_print_context(request, *, task=None, bom=None, ro=None):
         if not bom and ro:
             bom = BOMHeader.objects.filter(ro=ro).first()
     if not bom:
+        return None
+    if not (bom.bom_id or "").strip():
+        return None
+    if not bom.items.exists():
         return None
     back_url = request.GET.get("return") or (
         reverse("bom_builder") + f"?task_id={task.project_id}"
@@ -903,7 +1022,10 @@ def print_bom_view(request):
     """Letterhead BOM print from BOM Builder (screen + browser print / PDF)."""
     context = _bom_print_context(request)
     if not context:
-        messages.error(request, "No BOM found for this task.")
+        messages.error(
+            request,
+            "Cannot print: this task has no BOM with line items yet.",
+        )
         task_id = request.GET.get("task_id", "")
         return redirect(reverse("bom_builder") + (f"?task_id={task_id}" if task_id else ""))
     return render(request, "bom_report_print.html", context)
@@ -916,7 +1038,10 @@ def print_bom_pdf_view(request):
 
     context = _bom_print_context(request)
     if not context:
-        messages.error(request, "No BOM found for this task.")
+        messages.error(
+            request,
+            "Cannot print: this task has no BOM with line items yet.",
+        )
         task_id = request.GET.get("task_id", "")
         return redirect(reverse("bom_builder") + (f"?task_id={task_id}" if task_id else ""))
     try:
@@ -1574,17 +1699,35 @@ def print_rfq_letter(request):
 def print_bom_from_ro(request, ro_id):
     ro = get_object_or_404(RequisitionOrder, id=ro_id)
     bom = BOMHeader.objects.filter(ro=ro).first()
+    if not bom:
+        bom = BOMHeader.objects.filter(task=ro.task).first()
 
     if not bom:
-        bom = BOMHeader.objects.create(task=ro.task, ro=ro, status='GENERATED')
+        bom = BOMHeader.objects.create(
+            task=ro.task, ro=ro, status=BOMHeader.STATUS_GENERATED
+        )
         for item in ro.items.all():
             BOMItem.objects.create(
                 header=bom,
                 pillar_id=2,
-                description=item.product.description if item.product else item.tech_spec_summary,
+                description=item.product.description
+                if item.product
+                else item.tech_spec_summary,
                 qty=item.quantity,
                 uom=item.uom,
-                unit_price=0
+                unit_price=0,
+            )
+    elif not bom.items.exists():
+        for item in ro.items.all():
+            BOMItem.objects.create(
+                header=bom,
+                pillar_id=2,
+                description=item.product.description
+                if item.product
+                else item.tech_spec_summary,
+                qty=item.quantity,
+                uom=item.uom,
+                unit_price=0,
             )
 
     context = _bom_print_context(request, task=ro.task, bom=bom, ro=ro)
