@@ -48,6 +48,8 @@ def _task_from_request(request, tasks_qs=None, *, include_post=False, persist_se
     task_id = _task_id_from_request(request, include_post=include_post)
     qs = tasks_qs if tasks_qs is not None else ProjectTask.objects.all()
     task = qs.filter(project_id=task_id).first() if task_id else None
+    if task_id and not task:
+        request.session.pop("active_task_id", None)
     if not task:
         task = qs.order_by("project_id").first()
     if task and persist_session:

@@ -1,0 +1,203 @@
+[
+{
+  "model": "accounts.organization",
+  "pk": "PIONEER",
+  "fields": {
+    "name": "Pioneer Contactors Co Ltd",
+    "short_name": "Pioneer",
+    "registered_address": "",
+    "contact_address": "TCC Building, 6th floor, Taleex Junction, Mogadishu",
+    "phone": "",
+    "email": "",
+    "tax_pin": "",
+    "document_tagline": "Operations Command",
+    "is_default": true
+  }
+},
+{
+  "model": "accounts.projecttask",
+  "pk": "1",
+  "fields": {
+    "description": "Building House"
+  }
+},
+{
+  "model": "accounts.projecttask",
+  "pk": "TOMOG-PIONEER-HWF-00026",
+  "fields": {
+    "description": " MHQ BLOCK M PROTECTION SOLID WALL"
+  }
+},
+{
+  "model": "accounts.projecttask",
+  "pk": "TOMOG-Pioneer-HWF-0029",
+  "fields": {
+    "description": " PHASE 7B FRESH-KO ANTI CLIMB MESH"
+  }
+},
+{
+  "model": "accounts.projecttask",
+  "pk": "TOMOG-Pioneer-HWF-3330030",
+  "fields": {
+    "description": "Construction of 250mm Thick solid block wall -side protection for  6 module prefab -(SOM-Z- 03710 )Ungu Camp"
+  }
+},
+{
+  "model": "accounts.supplieraccount",
+  "pk": "1",
+  "fields": {
+    "bank_account_number": "1000",
+    "description": "Piga Hardware Supplier",
+    "contact_address": "Piga House, Baricho Road, Industrial Area\r\nNairobi, Kenya",
+    "phone": "073000000",
+    "email": "kamau.kimani@piga.com"
+  }
+},
+{
+  "model": "accounts.supplieraccount",
+  "pk": "2",
+  "fields": {
+    "bank_account_number": "100089",
+    "description": "Habenga  Hardware Supplier",
+    "contact_address": "Akiba plaza, Bunyala Road, Industrial area\r\n1000-00100, Nairobi, Kena",
+    "phone": "073000000",
+    "email": "Kahaniri.John@habenga.com"
+  }
+},
+{
+  "model": "accounts.supplieraccount",
+  "pk": "SUP-2605110644",
+  "fields": {
+    "bank_account_number": "PENDING",
+    "description": "mmmm",
+    "contact_address": "",
+    "phone": "",
+    "email": "procurement@pioneer.com"
+  }
+},
+{
+  "model": "accounts.supplieraccount",
+  "pk": "SUP-2605110647",
+  "fields": {
+    "bank_account_number": "PENDING",
+    "description": "me",
+    "contact_address": "",
+    "phone": "",
+    "email": "procurement@pioneer.com"
+  }
+},
+{
+  "model": "accounts.supplieraccount",
+  "pk": "SUP-2605110654",
+  "fields": {
+    "bank_account_number": "PENDING",
+    "description": "test",
+    "contact_address": "",
+    "phone": "",
+    "email": "procurement@pioneer.com"
+  }
+},
+{
+  "model": "accounts.supplieraccount",
+  "pk": "SUP-2605110658",
+  "fields": {
+    "bank_account_number": "PENDING",
+    "description": "ba",
+    "contact_address": "",
+    "phone": "",
+    "email": "procurement@pioneer.com"
+  }
+},
+{
+  "model": "accounts.bankaccount",
+  "pk": "003",
+  "fields": {
+    "account_number": "Pioneer Engineer",
+    "description": "NCBA",
+    "contact_address": "NCBA House, Ragati Road\r\nNairobi, Kenya",
+    "phone": "071767637101",
+    "email": "info@ncbaxx.com"
+  }
+},
+{
+  "model": "accounts.bankaccount",
+  "pk": "02",
+  "fields": {
+    "account_number": "8000097",
+    "description": "Barclays Bank",
+    "contact_address": "Box 3455 ,  Kimathi street , Nairobi, Kenua",
+    "phone": "1774061",
+    "email": "info@barclays.com"
+  }
+},
+{
+  "model": "accounts.glaccount",
+  "pk": "10",
+  "fields": {
+    "debit_credit": "DR",
+    "description": "Fixed Asset",
+    "analysis_category": null,
+    "currency": "Ksh",
+    "amount": "0.00"
+  }
+},
+{
+  "model": "accounts.glaccount",
+  "pk": "15",
+  "fields": {
+    "debit_credit": "DR",
+    "description": "Roofing material",
+    "analysis_category": null,
+    "currency": "Ksh",
+    "amount": "0.00"
+  }
+},
+{
+  "model": "accounts.glanalysiscategory",
+  "pk": "01",
+  "fields": {
+    "description": "Building"
+  }
+},
+{
+  "model": "accounts.glanalysiscategory",
+  "pk": "02",
+  "fields": {
+    "description": "Stock"
+  }
+},
+{
+  "model": "accounts.product",
+  "pk": "10",
+  "fields": {
+    "description": "Metal doors",
+    "unit_of_measure": "1",
+    "stock_quantity": 0
+  }
+},
+{
+  "model": "accounts.product",
+  "pk": "2",
+  "fields": {
+    "description": "7 inch Nails",
+    "unit_of_measure": "KG",
+    "stock_quantity": 5
+  }
+},
+{
+  "model": "accounts.projectbuildcategory",
+  "pk": 1,
+  "fields": {
+    "build_cat_id": "1",
+    "description": "Wooden House"
+  }
+},
+{
+  "model": "accounts.projectbuildcategory",
+  "pk": 2,
+  "fields": {
+    "build_cat_id": "2",
+    "description": "Hard Wall"
+  }
+}
+]
