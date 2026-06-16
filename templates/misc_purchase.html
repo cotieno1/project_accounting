@@ -7,9 +7,10 @@
 {% block sidebar %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
         <small style="color: var(--muted); display: block; margin: 16px 0;">Somalia Ops Command</small>
-        <select onchange="window.location.href='?task_id=' + this.value;" class="form-input">
+        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
+            <option value="">-- Select project task --</option>
             {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
+            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
             {% endfor %}
         </select>
         
@@ -123,8 +124,8 @@
                         <button type="submit" name="new_ro" class="btn-action btn-success">+ Start MRO</button>
                     </form>
                     {% endif %}
-                </div>
-            </div>
+        </div>
+    </div>
             <p style="color:var(--muted);margin:10px 0 0;">{{ active_task.description }}</p>
             {% if ro_reference %}
             <p style="font-size:12px;color:var(--success);margin-top:8px;">

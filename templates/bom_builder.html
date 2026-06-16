@@ -52,16 +52,18 @@
 
     <div class="nav-section">
         <span class="nav-label">SWITCH ACTIVE TASK</span>
-        {% if active_task %}
-        <select onchange="window.location.href='?task_id=' + this.value;" style="width: 100%; background: var(--dark); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 6px;">
+        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'}">
+            <option value="">-- Select project task --</option>
             {% for t in tasks %}
-                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
+                <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
                     {{ t.project_id }}: {{ t.description }}
                 </option>
             {% endfor %}
         </select>
-        {% else %}
-        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">{{ setup_message }}</p>
+        {% if not active_task and tasks %}
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message|default:"Select a task to open its BOM." }}</p>
+        {% elif setup_message %}
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message }}</p>
         {% endif %}
     </div>
 

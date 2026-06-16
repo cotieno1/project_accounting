@@ -74,14 +74,20 @@
 <body>
 {% if no_tasks %}
 <div style="padding:40px;color:var(--muted);">No project tasks in the system.</div>
+{% elif no_task_selected %}
+<div style="padding:40px;color:var(--muted);max-width:560px;">
+    <p>Select a project task from the sidebar to review CEO budget authorization.</p>
+    <p><a href="{% url 'ops_dashboard' %}" style="color:#93c5fd;">Go to Ops Dashboard</a> to pick a task.</p>
+</div>
 {% else %}
     <div class="sidebar">
         <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
         <small style="color: var(--muted); display: block; margin: 16px 0;">CEO · AIE Budget Authorization</small>
         <label class="nav-label">Select task</label>
-        <select onchange="window.location.href='?task_id=' + this.value;" class="form-input">
+        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
+            <option value="">-- Select project task --</option>
             {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|truncatechars:28 }}</option>
+            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|truncatechars:28 }}</option>
             {% endfor %}
         </select>
 

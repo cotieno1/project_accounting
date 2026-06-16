@@ -97,9 +97,10 @@
 
     <div class="task-switcher">
         <span class="nav-label task-switcher-label">SWITCH ACTIVE TASK</span>
-        <select onchange="window.location.href='?task_id=' + this.value;">
+        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='{% url 'ops_dashboard' %}'}">
+            <option value="">-- Select project task --</option>
             {% if not tasks %}
-            <option>No Tasks Found in DB</option>
+            <option disabled>No tasks in database</option>
             {% endif %}
             {% for t in tasks %}
             <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>

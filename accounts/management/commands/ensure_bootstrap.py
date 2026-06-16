@@ -11,7 +11,7 @@ class Command(BaseCommand):
             return
 
         try:
-            from accounts.models import AppSettings, Organization, ProjectTask
+            from accounts.models import AppSettings, Organization
         except Exception as exc:
             self.stdout.write(self.style.WARNING(f"Models unavailable: {exc}"))
             return
@@ -45,16 +45,3 @@ class Command(BaseCommand):
         except Exception as exc:
             self.stdout.write(self.style.ERROR(f"Organization bootstrap failed: {exc}"))
             self.stdout.write("Run: python manage.py migrate --noinput")
-            return
-
-        try:
-            if not ProjectTask.objects.exists():
-                ProjectTask.objects.create(
-                    project_id="TASK-001",
-                    description="Main construction project",
-                )
-                self.stdout.write(self.style.SUCCESS("Created default project task TASK-001."))
-            else:
-                self.stdout.write("Project tasks OK.")
-        except Exception as exc:
-            self.stdout.write(self.style.ERROR(f"Project task bootstrap failed: {exc}"))

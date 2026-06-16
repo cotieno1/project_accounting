@@ -33,6 +33,15 @@ from .models import (
 )
 #=========================================================================
 
+def _task_from_request(request, tasks_qs=None):
+    """Return a project task only when the user picked task_id in the URL."""
+    task_id = (request.GET.get("task_id") or "").strip()
+    if not task_id:
+        return None
+    qs = tasks_qs if tasks_qs is not None else ProjectTask.objects.all()
+    return qs.filter(project_id=task_id).first()
+
+
 # =======================================================================
 # 🔐 AUTH & ACCESS CONTROLLERS
 # =======================================================================
@@ -143,8 +152,7 @@ def switch_active_organization(request):
 @login_required
 def fin_mgmt_ops_view(request):
     tasks = ProjectTask.objects.all()
-    task_id = request.GET.get("task_id")
-    active_task = ProjectTask.objects.filter(project_id=task_id).first() or tasks.first()
+    active_task = _task_from_request(request, tasks)
 
     bom_no = "N/A"
     if active_task:
@@ -746,8 +754,7 @@ def generate_ro_no():
 def ro_builder(request):
     """Unified single logic block called securely from urls.py line 44."""
     tasks = ProjectTask.objects.all()
-    task_id = request.GET.get("task_id")
-    active_task = ProjectTask.objects.filter(project_id=task_id).first() or tasks.first()
+    active_task = _task_from_request(request, tasks)
 
     if not active_task:
         return render(request, "RO_builder.html", {
@@ -757,8 +764,9 @@ def ro_builder(request):
             "ro_no": "",
             "ro_items": [],
             "setup_message": (
-                "No project tasks yet. Open Dashboard → System & Accounts Setup → "
-                "Project Tasks → Add, then return here."
+                "Select a project task above to open or create its requisition order."
+                if tasks.exists()
+                else "Add a project task from Dashboard setup, then return here."
             ),
         })
 
@@ -808,8 +816,7 @@ def fetch_bom_to_ro(request, ro_id):
 def bom_builder(request):
     """Unified single logic block called cleanly from urls.py line 41."""
     tasks = ProjectTask.objects.all()
-    selected_id = request.GET.get('task_id')
-    active_task = ProjectTask.objects.filter(project_id=selected_id).first() or tasks.first()
+    active_task = _task_from_request(request, tasks)
 
     if not active_task:
         return render(request, 'bom_builder.html', {
@@ -818,8 +825,9 @@ def bom_builder(request):
             'bom_items': [],
             'bom_no': '',
             'setup_message': (
-                "No project tasks yet. Open Dashboard → System & Accounts Setup → "
-                "Project Tasks → Add, then return here."
+                "Select a project task above to open or create its BOM."
+                if tasks.exists()
+                else "Add a project task from Dashboard setup, then return here."
             ),
         })
 
@@ -3700,14 +3708,23 @@ def misc_register_supplier_ajax(request):
 @login_required
 def misc_purchase_builder(request):
     tasks = ProjectTask.objects.all()
-    target_task_id = request.GET.get("task_id")
-    active_task = tasks.filter(project_id=target_task_id).first() or tasks.first()
+    target_task_id = (request.GET.get("task_id") or "").strip()
+    if not target_task_id:
+        if not tasks.exists():
+            messages.info(
+                request,
+                "Add a project task from Dashboard setup before using Misc Purchase.",
+            )
+            return redirect("dashboard")
+        return render(request, "select_project_task.html", {
+            "tasks": tasks,
+            "title": "Ad-Hoc Purchase",
+            "continue_path": reverse("misc_purchase_builder"),
+        })
+    active_task = tasks.filter(project_id=target_task_id).first()
     if not active_task:
-        messages.info(
-            request,
-            "Add a project task from Dashboard setup before using Misc Purchase.",
-        )
-        return redirect("dashboard")
+        messages.error(request, f"Project task '{target_task_id}' was not found.")
+        return redirect("ops_dashboard")
     request.session["active_task_id"] = active_task.project_id
     suppliers = SupplierAccount.objects.all().order_by("description")
 
@@ -4233,11 +4250,20 @@ def budget_overview(request):
 def misc_budget_actuals_view(request):
     """Ad-hoc purchase audit: Misc budget vs locked actuals and variance."""
     tasks = ProjectTask.objects.all().order_by("project_id")
-    target_task_id = request.GET.get("task_id") or request.session.get("active_task_id")
-    active_task = tasks.filter(project_id=target_task_id).first() or tasks.first()
+    target_task_id = (request.GET.get("task_id") or "").strip()
+    if not target_task_id:
+        if not tasks.exists():
+            messages.error(request, "No project task found.")
+            return redirect("dashboard")
+        return render(request, "select_project_task.html", {
+            "tasks": tasks,
+            "title": "Misc Budget vs Actuals",
+            "continue_path": reverse("misc_budget_actuals"),
+        })
+    active_task = tasks.filter(project_id=target_task_id).first()
     if not active_task:
-        messages.error(request, "No project task found.")
-        return redirect("dashboard")
+        messages.error(request, f"Project task '{target_task_id}' was not found.")
+        return redirect("ops_dashboard")
     request.session["active_task_id"] = active_task.project_id
 
     locked_mros = MiscRequisitionOrder.objects.filter(
@@ -4622,15 +4648,10 @@ def _disbursement_payment_listing(task, active_payment=None):
 
 
 def _gm_resolve_active_task(tasks, target_task_id=None):
-    """Default GM desk to Task 1 (Major) when no task is selected."""
-    if target_task_id:
-        match = tasks.filter(project_id=target_task_id).first()
-        if match:
-            return match
-    match = tasks.filter(project_id="1").first()
-    if match:
-        return match
-    return tasks.first()
+    """Return task only when explicitly selected via task_id."""
+    if not target_task_id:
+        return None
+    return tasks.filter(project_id=target_task_id).first()
 
 
 def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
@@ -4687,10 +4708,15 @@ def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
 def gm_aie_disbursement_view(request):
     """GM Accounting office — AIE disbursement against four budget lines per task."""
     tasks = ProjectTask.objects.all().order_by("project_id")
-    target_task_id = request.GET.get("task_id") or request.session.get("active_task_id")
+    target_task_id = (request.GET.get("task_id") or "").strip()
     active_task = _gm_resolve_active_task(tasks, target_task_id)
     if not active_task:
-        return render(request, "gm_aie_disbursement.html", {"tasks": [], "no_tasks": True})
+        return render(request, "gm_aie_disbursement.html", {
+            "tasks": tasks,
+            "no_tasks": not tasks.exists(),
+            "no_task_selected": tasks.exists() and not target_task_id,
+            "active_task": None,
+        })
 
     request.session["active_task_id"] = active_task.project_id
     project_class = _task_project_class(active_task)
@@ -4899,10 +4925,25 @@ def print_ceo_fund_release_voucher_view(request, release_id):
 def budget_approval_view(request):
     """CEO AIE: approve provision budget (lock lines) then release funds to GM Accounting."""
     tasks = ProjectTask.objects.all().order_by("project_id")
-    target_task_id = request.GET.get("task_id") or request.session.get("active_task_id")
-    active_task = tasks.filter(project_id=target_task_id).first() or tasks.first()
-    if not active_task:
+    target_task_id = (request.GET.get("task_id") or "").strip()
+    if not tasks.exists():
         return render(request, "budget_approval.html", {"tasks": [], "no_tasks": True})
+    if not target_task_id:
+        return render(request, "budget_approval.html", {
+            "tasks": tasks,
+            "no_tasks": False,
+            "no_task_selected": True,
+            "active_task": None,
+        })
+    active_task = tasks.filter(project_id=target_task_id).first()
+    if not active_task:
+        messages.error(request, f"Project task '{target_task_id}' was not found.")
+        return render(request, "budget_approval.html", {
+            "tasks": tasks,
+            "no_tasks": False,
+            "no_task_selected": True,
+            "active_task": None,
+        })
 
     request.session["active_task_id"] = active_task.project_id
     budget = _task_budget_record(active_task)

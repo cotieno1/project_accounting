@@ -54,16 +54,16 @@
 
     <div class="nav-section">
         <span class="nav-label">Active Project Task</span>
-        {% if active_task %}
-        <select onchange="window.location.href='?task_id=' + this.value;">
+        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'}">
+            <option value="">-- Select project task --</option>
             {% for t in tasks %}
-                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
+                <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
                     {{ t.project_id }}: {{ t.description }}
                 </option>
             {% endfor %}
         </select>
-        {% else %}
-        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">{{ setup_message }}</p>
+        {% if not active_task %}
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message }}</p>
         {% endif %}
     </div>
 
