@@ -2,28 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BOM {{ bom_no }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ bom_no }} · {{ active_task.project_id }}</title>
     {% include "includes/lpo_document_styles.html" %}
 </head>
-<body class="pioneer-doc-print">
+<body class="{% if for_pdf %}lpo-pdf-body{% else %}pioneer-doc-print{% endif %}">
+{% if not for_pdf %}
 <div class="screen-toolbar no-print">
-    <button type="button" onclick="window.print()">Print BOM</button>
+    <a href="{{ back_url|default:'/' }}">← Back to BOM Builder</a>
+    <a href="{% url 'print_bom_pdf' %}?task_id={{ active_task.project_id }}{% if request.GET.return %}&amp;return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>
+    <button type="button" onclick="window.print()">Print</button>
 </div>
+<p class="mobile-doc-hint no-print" aria-hidden="true">For pinch-zoom on mobile, use your browser PDF viewer after printing to PDF</p>
+{% endif %}
 <div id="printableBOM" class="lpo-paper"><div class="doc">
     <div class="brand-bar"></div>
     {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Bill of Materials" %}
 
-    <div class="memo-block" style="grid-template-columns:120px 1fr;">
-        <strong>To:</strong>
-        <div>General Manager<br><strong>{{ org_name }}</strong><br>
-        {% if org_contact_address %}{{ org_contact_address|linebreaksbr }}{% elif org_registered_address %}{{ org_registered_address|linebreaksbr }}{% endif %}
-        {% if org_phone %}<br>Tel: {{ org_phone }}{% endif %}</div>
-    </div>
-
     <table class="meta-table">
-        <tr><th>BOM reference</th><th>Task</th></tr>
-        <tr><td class="lpo-no">{{ bom_no }}</td><td>{{ active_task.description }}</td></tr>
+        <tr><th>BOM ref</th><th>Task ID</th><th>Date</th><th>Status</th></tr>
+        <tr>
+            <td class="lpo-no">{{ bom_no }}</td>
+            <td>{{ active_task.project_id }}</td>
+            <td>{% if bom_date %}{{ bom_date|date:"F j, Y" }}{% else %}{% now "F j, Y" %}{% endif %}</td>
+            <td>{{ bom_status|default:"Draft" }}</td>
+        </tr>
+        <tr><th colspan="4">Project description</th></tr>
+        <tr><td colspan="4">{{ active_task.description }}</td></tr>
     </table>
+
+    <table class="parties">
+        <tr><th>To</th><th>From</th></tr>
+        <tr>
+            <td>
+                <div class="party-name">General Manager</div>
+                <div class="muted">{{ org_name|default:"Client Organization" }}</div>
+            </td>
+            <td>
+                <div class="party-name">Senior Site Engineer</div>
+                <div class="muted">Site Engineering — {{ active_task.project_id }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="terms"><strong>Subject</strong>This Bill of Materials lists engineering quantities for task <strong>{{ active_task.project_id }}</strong> prior to requisition and procurement.</div>
 
     <table class="lines">
         <thead>
@@ -40,19 +62,23 @@
                 <td class="center">{{ forloop.counter }}</td>
                 <td>{{ item.description }}</td>
                 <td class="center">{{ item.uom }}</td>
-                <td class="num">{{ item.quantity }}</td>
+                <td class="num">{{ item.qty }}</td>
             </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;">No line items on this BOM.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 
     <table class="signatures"><tr>
-        <td><div class="line">Prepared by</div><div class="hint">Site Engineering</div></td>
+        <td><div class="line">Senior Site Engineer</div><div class="hint">Prepared &amp; submitted</div></td>
         <td style="width:10%"></td>
-        <td><div class="line">Approved by</div><div class="hint">General Manager</div></td>
+        <td><div class="line">General Manager</div><div class="hint">Reviewed &amp; approved</div></td>
     </tr></table>
-    <p class="footer-note">BOM — {{ bom_no }}</p>
+    <p class="footer-note">BOM {{ bom_no }} · Task {{ active_task.project_id }}</p>
 </div></div>
-<script>window.addEventListener('load', function() { setTimeout(function() { window.print(); }, 400); });</script>
+{% if not for_pdf and auto_print %}
+<script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 500); });</script>
+{% endif %}
 </body>
 </html>

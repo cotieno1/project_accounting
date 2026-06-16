@@ -1,81 +1,76 @@
 {% extends "layouts/cockpit.html" %}
 {% load static %}
 {% block title %}Pioneer | BOM Builder{% endblock %}
-{% block body_class %}bom-builder{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}">
 {% endblock %}
-
 {% block sidebar %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
 <small style="color: var(--muted); display: block; margin: 16px 0;">Somalia Ops Command</small>
 
 <div class="sidebar-block">
     <span class="nav-label">Switch active task</span>
-    <select class="form-input" onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};">
+    <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
         <option value="">-- Select project task --</option>
         {% for t in tasks %}
         <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-            {{ t.project_id }}
+            {{ t.project_id }}: {{ t.description }}
         </option>
         {% endfor %}
     </select>
     {% if not active_task and tasks %}
-    <p class="sidebar-setup-hint">{{ setup_message|default:"Select a task to open its BOM." }}</p>
+    <p style="color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message|default:"Select a task to open its BOM." }}</p>
     {% elif setup_message %}
-    <p class="sidebar-setup-hint">{{ setup_message }}</p>
+    <p style="color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message }}</p>
     {% endif %}
 </div>
 
-<div class="sidebar-block">
+<div class="sidebar-block bom-sidebar-actions">
     <span class="nav-label">BOM actions</span>
-    <button type="button" class="btn-action btn-block" onclick="openStitchModal()" {% if not active_task %}disabled{% endif %}>Stitch new item</button>
-    <button type="button" class="btn-action btn-success btn-block" onclick="window.print()" {% if not active_task %}disabled{% endif %}>Print for GM</button>
+    <button type="button" class="btn-action" onclick="openModal()" {% if not active_task %}disabled{% endif %}>Stitch new item</button>
+    {% if active_task %}
+    <a href="{% url 'print_bom_pdf' %}?task_id={{ active_task.project_id }}" class="btn-action btn-action--print" target="_blank" rel="noopener">PDF for GM</a>
+    <a href="{% url 'print_bom' %}?task_id={{ active_task.project_id }}&amp;print=1" class="btn-action" style="background:#1e293b;" target="_blank" rel="noopener">Print for GM</a>
+    {% else %}
+    <span class="btn-action btn-action--print is-disabled">Print for GM</span>
+    {% endif %}
 </div>
 
-<div class="sidebar-footer">
+<div style="margin-top: auto; padding-top: 20px;">
     <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id }}{% else %}/dashboard/{% endif %}" class="sidebar-back-link">← Back to Dashboard</a>
 </div>
 {% endblock %}
-
 {% block workspace %}
-<div class="bom-print-header">
-    <p><strong>To: Tom Kelly</strong><br>General Manager, Pioneer<br>PO Box 10, Nairobi, Kenya</p>
-    <hr>
-</div>
-
-<div class="panel bom-panel">
-    <div class="bom-panel-header">
+<div class="panel">
+    <div class="bom-page-header">
         <div class="bom-page-header-text">
-            <h1 class="page-title">Bill of Materials: {{ bom_no|default:"—" }}</h1>
+            <h2>Bill of Materials: {{ bom_no|default:"—" }}</h2>
             {% if active_task %}
             <p class="bom-task-desc"><strong>Task:</strong> {{ active_task.project_id }} — {{ active_task.description }}</p>
             {% elif setup_message %}
             <p class="bom-task-desc">{{ setup_message }}</p>
             {% endif %}
         </div>
-        {% if active_task %}
         <span class="bom-status-badge">Status: Draft</span>
-        {% endif %}
     </div>
 
-    <div class="table-scroll">
-        <table class="bom-lines-table">
+    <div class="bom-table-wrap">
+        <table class="bom-table">
             <thead>
                 <tr>
-                    <th style="width: 4.5rem;">Item</th>
+                    <th>Item no</th>
                     <th>Name</th>
-                    <th style="width: 6rem;">UOM</th>
-                    <th style="width: 5.5rem;">Qty</th>
+                    <th>Unit</th>
+                    <th>Qty</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in bom_items %}
                 <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ item.description }}</td>
-                    <td>{{ item.uom }}</td>
-                    <td>{{ item.qty }}</td>
+                    <td data-label="Item">{{ forloop.counter }}</td>
+                    <td data-label="Name">{{ item.description }}</td>
+                    <td data-label="Unit">{{ item.uom }}</td>
+                    <td data-label="Qty">{{ item.qty }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -86,58 +81,41 @@
         </table>
     </div>
 </div>
-
-<div class="bom-print-footer">
-    <div style="border-top: 1px solid #000; width: 250px; text-align: center; padding-top: 10px;">
-        <strong>Tom Ruku</strong><br>Senior Site Engineer
-    </div>
-    <div>Date: {% now "jS F Y" %}</div>
-</div>
 {% endblock %}
-
 {% block modals %}
-<div id="stitchModal" class="cockpit-modal" style="display: none;">
+<div id="stitchModal" class="cockpit-modal" style="display:none;">
     <div class="cockpit-modal-panel">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
-            <h3 style="margin: 0; color: var(--primary);">
-                {% if active_task %}Stitch item to {{ active_task.project_id }}{% else %}Add a project task first{% endif %}
-            </h3>
-            <button type="button" onclick="closeStitchModal()" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 22px; line-height: 1;" aria-label="Close">&times;</button>
-        </div>
+        <h3 style="color: var(--primary); margin-top: 0;">{% if active_task %}Stitch item to {{ active_task.project_id }}{% else %}Add a project task first{% endif %}</h3>
         <form method="POST">
             {% csrf_token %}
             <input type="hidden" name="pillar_id" value="2">
-            <div style="margin-bottom: 16px;">
-                <label class="nav-label" style="margin-bottom: 8px;">Item name</label>
-                <input type="text" name="description" class="form-input" placeholder="e.g. Nails" required>
-            </div>
-            <div class="grid-2" style="margin-bottom: 20px;">
+
+            <label class="nav-label" for="bomItemDesc">Item name</label>
+            <input type="text" id="bomItemDesc" name="description" class="form-input" placeholder="e.g. Nails" required style="margin-bottom: 15px;">
+
+            <div class="bom-stitch-grid">
                 <div>
-                    <label class="nav-label" style="margin-bottom: 8px;">UOM</label>
-                    <input type="text" name="uom" class="form-input" placeholder="e.g. kg" required>
+                    <label class="nav-label" for="bomItemUom">UOM</label>
+                    <input type="text" id="bomItemUom" name="uom" class="form-input" placeholder="e.g. kg" required>
                 </div>
                 <div>
-                    <label class="nav-label" style="margin-bottom: 8px;">Quantity</label>
-                    <input type="number" step="0.01" name="qty" class="form-input" placeholder="0" required>
+                    <label class="nav-label" for="bomItemQty">Quantity</label>
+                    <input type="number" step="0.01" id="bomItemQty" name="qty" class="form-input" placeholder="0" required>
                 </div>
             </div>
-            <button type="submit" name="add_item" class="btn-action btn-block">Add to sequence</button>
-            <button type="button" onclick="closeStitchModal()" class="btn-action btn-secondary btn-block" style="margin-top: 10px;">Cancel</button>
+
+            <div class="modal-actions">
+                <button type="submit" name="add_item" class="btn-action">Add to sequence</button>
+                <button type="button" class="btn-action" style="background:#334155;" onclick="closeModal()">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
 <script>
-    function openStitchModal() {
-        document.getElementById('stitchModal').style.display = 'flex';
-    }
-    function closeStitchModal() {
-        document.getElementById('stitchModal').style.display = 'none';
-    }
-    document.getElementById('stitchModal').addEventListener('click', function (e) {
-        if (e.target === this) closeStitchModal();
+    function openModal() { document.getElementById('stitchModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('stitchModal').style.display = 'none'; }
+    window.addEventListener('click', function (e) {
+        if (e.target === document.getElementById('stitchModal')) closeModal();
     });
 </script>
 {% endblock %}

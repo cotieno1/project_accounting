@@ -43,6 +43,8 @@ urlpatterns = [
     # --- PIONEER WORKFLOW ---
     # 1. The Senior Site Manager View (YOUR WORKING BOM)
     path('bom-builder/', views.bom_builder, name='bom_builder'),
+    path('print-bom/', views.print_bom_view, name='print_bom'),
+    path('print-bom/pdf/', views.print_bom_pdf_view, name='print_bom_pdf'),
 
     # 2. Requisition Order (THE NEW BRIDGE)
     path('ro-builder/', views.ro_builder, name='ro_builder'),

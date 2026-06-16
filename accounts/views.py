@@ -868,6 +868,67 @@ def bom_builder(request):
         'bom_no': bom_header.bom_id,
     })
 
+
+def _bom_print_context(request, *, task=None, bom=None, ro=None):
+    """Shared context for BOM print / PDF views."""
+    if ro and not task:
+        task = ro.task
+    if not task:
+        task_id = request.GET.get("task_id")
+        task = get_object_or_404(ProjectTask, project_id=task_id)
+    if not bom:
+        bom = BOMHeader.objects.filter(task=task).first()
+        if not bom and ro:
+            bom = BOMHeader.objects.filter(ro=ro).first()
+    if not bom:
+        return None
+    back_url = request.GET.get("return") or (
+        reverse("bom_builder") + f"?task_id={task.project_id}"
+    )
+    context = {
+        "bom_no": bom.bom_id,
+        "bom_items": bom.items.all().order_by("id"),
+        "active_task": task,
+        "bom_status": bom.status,
+        "bom_date": bom.created_at,
+        "auto_print": request.GET.get("print") == "1",
+        "back_url": back_url,
+    }
+    context.update(branding_template_context(request))
+    return context
+
+
+@login_required
+def print_bom_view(request):
+    """Letterhead BOM print from BOM Builder (screen + browser print / PDF)."""
+    context = _bom_print_context(request)
+    if not context:
+        messages.error(request, "No BOM found for this task.")
+        task_id = request.GET.get("task_id", "")
+        return redirect(reverse("bom_builder") + (f"?task_id={task_id}" if task_id else ""))
+    return render(request, "bom_report_print.html", context)
+
+
+@login_required
+def print_bom_pdf_view(request):
+    """Native inline PDF for BOM (mobile pinch-zoom)."""
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
+
+    context = _bom_print_context(request)
+    if not context:
+        messages.error(request, "No BOM found for this task.")
+        task_id = request.GET.get("task_id", "")
+        return redirect(reverse("bom_builder") + (f"?task_id={task_id}" if task_id else ""))
+    try:
+        pdf_bytes = build_pdf_bytes("bom_report_print.html", context)
+    except ImportError:
+        messages.error(request, "PDF support is not installed on the server.")
+        return redirect(reverse("print_bom") + "?" + request.META.get("QUERY_STRING", ""))
+    except Exception as exc:
+        messages.error(request, f"PDF generation failed: {exc}")
+        return redirect(reverse("print_bom") + "?" + request.META.get("QUERY_STRING", ""))
+    return pdf_inline_response(pdf_bytes, context["bom_no"])
+
 # =======================================================================
 # ⚖️ THE ULTIMATE SINGLE UNIFIED RFQ & TENDER MONITOR ENGINE
 # =======================================================================
@@ -1526,11 +1587,11 @@ def print_bom_from_ro(request, ro_id):
                 unit_price=0
             )
 
-    return render(request, "bom_report_print.html", {
-        "bom_no": bom.bom_id,
-        "bom_items": bom.items.all(),
-        "active_task": ro.task
-    })
+    context = _bom_print_context(request, task=ro.task, bom=bom, ro=ro)
+    if not context:
+        messages.error(request, "Could not build BOM print context.")
+        return redirect("bom_builder")
+    return render(request, "bom_report_print.html", context)
     
 # ==========================================================
 from django.db import transaction
