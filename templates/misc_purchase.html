@@ -13,7 +13,6 @@
             <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
             {% endfor %}
         </select>
-        <p style="font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.45;">New tasks only — no BOM, MPO, MRO, RFQ, LPO, or CEO-approved budget.</p>
         
         <div class="sidebar-block">
             <button type="button" class="btn-action" id="roListToggle" onclick="toggleRoList()" style="width:100%;background:#1e293b;">
@@ -219,7 +218,7 @@
                         </div>
                         <p class="mro-stage-b-hint"><kbd>Esc</kbd> returns to the main menu · Budget figures stay at zero until you add Misc RO lines</p>
                     </div>
-                    {% elif ro_mode == 'empty' and task_has_baseline %}
+                    {% elif ro_mode == 'empty' %}
                     <div class="ro-empty-state mro-stage-b-panel" id="mroStageBPanel" tabindex="0">
                         <h4>Ad-hoc MRO baseline exists</h4>
                         <p class="mro-stage-b-lead">One <strong>Misc RO</strong> and one <strong>MRO</strong> baseline per task. This task already has a confirmed baseline{% if baseline_mro_ref %} (MRO {{ baseline_mro_ref }}){% endif %}.</p>
