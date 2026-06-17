@@ -68,6 +68,10 @@ class BOMHeader(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT
     )
+    items_locked = models.BooleanField(
+        default=False,
+        help_text="Line items frozen after Snr Site Engineer locks the BOM list.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
