@@ -95,7 +95,7 @@
         </div>
         {% endif %}
 
-        <span class="nav-label" style="margin-top: 24px;">Misc RO — Ad-Hoc (no RFQ / LPO)</span>
+        <span class="nav-label" style="margin-top: 24px;">Ad-Hoc MRO</span>
         {% if show_review_budget %}
         <button type="button" class="btn-action" onclick="openReviewModal()" style="width:100%;margin-top:8px;" title="Lock Misc RO total with line items, then review ad-hoc budget">Review Ad-Hoc Budget</button>
         {% elif adhoc_material_committed and provisional_budget_ref %}
@@ -108,8 +108,9 @@
 {% endblock %}
 {% block workspace %}
         {% if no_task_selected %}
-        <div class="panel" style="padding:28px;text-align:center;">
-            <p style="margin:0;color:var(--muted);font-size:14px;">Select an ad-hoc (Misc RO / MPO) task from the sidebar dropdown.</p>
+        <div class="panel mro-stage-b-panel" style="text-align:center;">
+            <p style="margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.55;">Select an <strong>MRO</strong> task from the dropdown, or return to the main menu.</p>
+            <a href="{% url 'ops_dashboard' %}" class="btn-action btn-secondary">← Main menu (Esc)</a>
         </div>
         {% else %}
         {% if messages %}
@@ -133,8 +134,7 @@
         <div class="panel task-vendor-panel">
             <div class="task-vendor-row">
                 <div class="task-vendor-left misc-page-header-text">
-                    <h1 class="page-title">Misc Requisition Order (Misc RO)</h1>
-                    <p class="misc-ro-lane-note">Misc RO / MPO lane — ad-hoc officer buys. <strong>Not</strong> RFQ → LPO procurement (use BOM builder for that).</p>
+                    <h1 class="page-title">Ad-Hoc Requisition Order (Misc RO)</h1>
                     <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
                     {% if ro_number or mro_number %}
                     <div class="doc-ref-row" style="display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:6px;font-size:12px;">
@@ -188,30 +188,16 @@
                         <strong>Provisional budget</strong> — Misc RO {{ ro_number|default:"Draft" }}. Lock lines and review to confirm the MRO baseline (issues MRO Number; one per task).
                     </div>
                     {% elif officer_journey_visible and active_task %}
-                    <div class="ro-empty-state mro-stage-b-panel" id="mroStageBPanel" tabindex="0" data-lane="stage-b-onboarding-only">
-                        <span class="mro-stage-badge">Stage B — Ad-hoc / MRO path</span>
+                    <div class="ro-empty-state mro-stage-b-panel" id="mroStageBPanel" tabindex="0">
+                        <span class="mro-stage-badge">Stage B — MRO path</span>
                         {% if ro_mode == 'draft' %}
                         <h4>Misc RO started — add your lines below</h4>
                         <p class="mro-stage-b-lead">Your <strong>Misc RO</strong> is open. List each item and cost in the table below, then lock and submit when done.</p>
                         {% else %}
                         <h4>Start your Misc Purchase here</h4>
-                        <p class="mro-stage-b-lead">You can start your <strong>Misc RO</strong> here by pressing the green button below — list each item you require and its cost.</p>
+                        <p class="mro-stage-b-lead">Press the green button below to start your <strong>Misc RO</strong> — list each item you require and its cost.</p>
                         {% endif %}
-                        <p class="mro-stage-b-lead mro-stage-b-notice"><strong>Please note:</strong> this is a <strong>Misc RO / MPO</strong> lane (ad-hoc officer purchase). It is <em>not</em> the major procurement route — <strong>no RFQ, no LPO</strong> on this screen.</p>
-                        <div class="mro-lane-fork" role="group" aria-label="Purchase route comparison">
-                            <div class="mro-lane-card is-here">
-                                <span class="mro-lane-tag is-here">You are here</span>
-                                <h5>Misc RO (MPO) — Stage B</h5>
-                                <p>Officer lists items + cost → Misc RO → MRO → CEO budget → Misc Payment Voucher. <strong>Direct ad-hoc path.</strong></p>
-                            </div>
-                            <div class="mro-lane-card is-other">
-                                <span class="mro-lane-tag">Different route</span>
-                                <h5>Major procurement — RFQ → LPO</h5>
-                                <p>BOM builder, supplier quotes, bid evaluation, LPO, GRN. <strong>Not this screen.</strong></p>
-                                <a href="{% url 'bom_builder' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary btn-compact">Open BOM / RFQ → LPO lane →</a>
-                            </div>
-                        </div>
-                        <p class="mro-stage-b-lead">One <strong>Misc RO Number</strong> (MPO requisition lines) and one <strong>MRO Number</strong> (locked baseline) per task.</p>
+                        <p class="mro-stage-b-lead">One <strong>Misc RO Number</strong> (requisition lines) and one <strong>MRO Number</strong> (locked baseline) per task.</p>
                         <ol class="mro-stage-b-journey">
                             <li class="{% if ro_mode == 'draft' %}is-done{% else %}is-current{% endif %}"><strong>Start Misc Purchase (Misc RO)</strong> — add line items and unit costs.</li>
                             <li class="{% if ro_mode == 'draft' %}is-current{% endif %}"><strong>Save / done</strong> — lock the Misc RO total and submit when your list is complete. Your officer task on this screen is finished at that point.</li>
@@ -228,9 +214,9 @@
                                 <button type="submit" name="new_ro" class="btn-action btn-success">Start Misc Purchase (Misc RO)</button>
                             </form>
                             {% endif %}
-                            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary" id="mroStageBBack">← Back to main sidebar (Esc)</a>
+                            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary" id="mroStageBBack">← Back to main menu (Esc)</a>
                         </div>
-                        <p class="mro-stage-b-hint"><kbd>Esc</kbd> returns to Ops Dashboard · Budget figures stay at zero until you add Misc RO lines</p>
+                        <p class="mro-stage-b-hint"><kbd>Esc</kbd> returns to the main menu · Budget figures stay at zero until you add Misc RO lines</p>
                     </div>
                     {% elif ro_mode == 'empty' %}
                     <div class="ro-empty-state mro-stage-b-panel" id="mroStageBPanel" tabindex="0">
@@ -239,7 +225,7 @@
                         <div class="mro-stage-b-actions">
                             <button type="button" class="btn-action btn-success" disabled style="opacity:0.45;cursor:not-allowed;">Start Misc Purchase (Misc RO)</button>
                             <a href="{% url 'misc_budget_actuals' %}?task_id={{ active_task.project_id }}" class="btn-action">View MRO registry →</a>
-                            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Back to sidebar (Esc)</a>
+                            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Back to main menu (Esc)</a>
                         </div>
                     </div>
                     {% endif %}
@@ -487,7 +473,7 @@
         {% if mro_workspace_empty %}
         <div class="panel mro-stage-b-followon">
             <span class="nav-label" style="margin:0 0 10px;">After you submit the Misc RO</span>
-            <p style="margin:0;font-size:13px;color:var(--muted);line-height:1.55;">Print the <strong>Misc Requisition Order</strong> from the Misc RO List, then check this page for CEO approval. When funds are released, partial line purchases and <strong>Misc Payment Vouchers</strong> are handled at the GM Disbursement desk. No RFQ or LPO on this lane.</p>
+            <p style="margin:0;font-size:13px;color:var(--muted);line-height:1.55;">Print the <strong>Misc Requisition Order</strong> from the Misc RO List, then check this page for CEO approval. When funds are released, partial line purchases and <strong>Misc Payment Vouchers</strong> are handled at the GM Disbursement desk.</p>
         </div>
         {% else %}
         <div class="panel pv-gate-panel {% if pv_gate.can_raise_pv %}is-ready{% else %}is-blocked{% endif %}">
@@ -971,14 +957,14 @@
                 if (e.target.id === 'budgetModal') closeBudgetModal();
             });
 
-            const stageBBack = '{% url "ops_dashboard" %}?task_id={{ active_task.project_id|default:"" }}';
-            const mroWorkspaceEmpty = {{ officer_journey_visible|default:mro_workspace_empty|yesno:"true,false" }};
+            const mainMenuUrl = '{% url "ops_dashboard" %}{% if active_task %}?task_id={{ active_task.project_id }}{% endif %}';
+            const escToMainMenu = {{ officer_journey_visible|default:mro_workspace_empty|yesno:"true,false" }} || {{ no_task_selected|default:False|yesno:"true,false" }};
             document.addEventListener('keydown', (e) => {
                 if (e.key !== 'Escape') return;
                 const openModal = document.querySelector('.cockpit-modal[style*="flex"], .supplier-overlay.is-open');
                 if (openModal) return;
-                if (mroWorkspaceEmpty && stageBBack) {
-                    window.location.href = stageBBack;
+                if (escToMainMenu) {
+                    window.location.href = mainMenuUrl;
                 }
             });
             document.getElementById('mroStageBPanel')?.focus();

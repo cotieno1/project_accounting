@@ -135,21 +135,7 @@
         .ro-locked-banner { margin: 12px 0 0; padding: 10px 14px; border-radius: 8px; background: rgba(16,185,129,0.12); border: 1px solid var(--success); font-size: 12px; color: #6ee7b7; }
         .ro-empty-state { text-align: center; padding: 40px 24px; color: var(--muted); }
         .ro-empty-state h4 { margin: 0 0 8px; color: var(--light); font-size: 15px; }
-        .misc-ro-lane-note { margin: 4px 0 0; font-size: 11px; color: var(--warning); line-height: 1.45; max-width: 42rem; }
-        .mro-stage-b-notice { padding: 10px 12px; border-radius: 8px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.35); }
-        .mro-stage-b-notice strong { color: #fcd34d; }
-        .mro-lane-fork { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 12px; }
-        @media (max-width: 720px) { .mro-lane-fork { grid-template-columns: 1fr; } }
-        .mro-lane-card { padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: #070b14; }
-        .mro-lane-card.is-here { border-color: var(--success); background: rgba(16, 185, 129, 0.08); }
-        .mro-lane-card.is-other { border-color: #334155; }
-        .mro-lane-card h5 { margin: 0 0 8px; font-size: 13px; color: var(--light); }
-        .mro-lane-card p { margin: 0; font-size: 11px; line-height: 1.5; color: var(--muted); }
-        .mro-lane-card .btn-compact { margin-top: 10px; font-size: 11px; padding: 8px 12px; }
-        .mro-lane-tag { display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px; }
-        .mro-lane-tag.is-here { background: rgba(16,185,129,0.2); color: #6ee7b7; }
-        .mro-lane-tag:not(.is-here) { background: rgba(51,65,85,0.6); color: #94a3b8; }
-        .mro-stage-b-panel { text-align: left; max-width: 720px; margin: 0 auto; padding: 32px 28px; background: #0f172a; border: 1px solid var(--border); border-radius: 12px; }
+        .mro-stage-b-panel { text-align: left; max-width: 640px; margin: 0 auto; padding: 32px 28px; background: #0f172a; border: 1px solid var(--border); border-radius: 12px; }
         .mro-stage-badge { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); background: rgba(37,99,235,0.15); padding: 4px 10px; border-radius: 4px; margin-bottom: 12px; }
         .mro-stage-b-lead { font-size: 13px; line-height: 1.55; margin: 0 0 12px; color: var(--muted); }
         .mro-stage-b-journey { margin: 16px 0 0; padding: 0 0 0 20px; font-size: 12px; line-height: 1.55; color: var(--muted); }

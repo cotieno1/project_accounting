@@ -2786,8 +2786,8 @@ def _resolve_misc_purchase_task(request, *, include_post=False):
             if ProjectTask.objects.filter(project_id=requested).exists():
                 messages.error(
                     request,
-                    "That task is on the BOM / major procurement path. "
-                    "Choose an ad-hoc (MRO) task from the list.",
+                    "That task is not on the MRO path. "
+                    "Choose an MRO task from the list, or return to the main menu.",
                 )
             return tasks, None
         request.session["active_task_id"] = task.project_id
@@ -3911,12 +3911,10 @@ def _misc_stage_b_onboarding_visible(
     task_has_baseline,
 ):
     """
-    Stage B onboarding panel only (e.g. HWF-0029 empty ad-hoc).
+    Stage B MRO onboarding only (e.g. HWF-0029 empty ad-hoc).
 
-    Lane isolation — do not show this UI when:
-      - Lane A: major BOM / RFQ / LPO procurement (_misc_channel_allowed is False)
-      - Lane B working: ad-hoc baseline or committed MRO already exists on the task
-      - Officer has moved past empty draft (lines added or RO locked)
+    Hidden when the task already has MRO baseline work or the officer has
+    added Misc RO lines — do not overlay this on a working MRO screen.
     """
     if not task or not _misc_channel_allowed(task)[0]:
         return False
@@ -4135,19 +4133,14 @@ def misc_purchase_builder(request):
         if requested:
             blocked_task = ProjectTask.objects.filter(project_id=requested).first()
             if blocked_task:
-                if _task_on_major_bom_lane(blocked_task):
+                allowed, reason = _misc_channel_allowed(blocked_task)
+                if _task_on_major_bom_lane(blocked_task) or not allowed:
                     messages.error(
                         request,
-                        "That task is on Lane A (BOM → RFQ → LPO). "
-                        "Use the BOM builder — not Misc RO / MPO.",
+                        reason
+                        or "This task is not on the MRO path. Press Esc or return to the main menu.",
                     )
-                    return redirect(
-                        reverse("bom_builder")
-                        + f"?task_id={blocked_task.project_id}"
-                    )
-                allowed, reason = _misc_channel_allowed(blocked_task)
-                if not allowed:
-                    messages.error(request, reason)
+                    return redirect(reverse("ops_dashboard"))
         if request.method == "POST":
             messages.error(request, "Select a project task before saving.")
             return redirect(reverse("misc_purchase_builder"))
@@ -4159,6 +4152,10 @@ def misc_purchase_builder(request):
             return redirect("dashboard")
         first_adhoc = tasks.order_by("project_id").first()
         if requested and first_adhoc:
+            messages.info(
+                request,
+                "Choose an MRO task from the list, or press Esc to return to the main menu.",
+            )
             return redirect(
                 reverse("misc_purchase_builder")
                 + f"?task_id={first_adhoc.project_id}"
