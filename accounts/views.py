@@ -828,6 +828,57 @@ def fetch_bom_to_ro(request, ro_id):
     return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
 
 
+def _mpo_has_ro_number(mpo):
+    """RO number is meaningful once lines exist or the RO total is locked/submitted."""
+    if not mpo:
+        return False
+    return (
+        mpo.items.exists()
+        or not mpo.is_sourcing
+        or mpo.funding_status in ("SUBMITTED", "LOCKED", "DISBURSED")
+    )
+
+
+def _misc_display_mro_number(mro):
+    """MRO number only after budget baseline is committed (locked MRO)."""
+    if not mro or not (mro.mro_number or "").strip():
+        return ""
+    if mro.funding_status in ("LOCKED", "DISBURSED", "RECONCILED"):
+        return mro.mro_number
+    return ""
+
+
+def _misc_display_ro_number(mpo):
+    if not _mpo_has_ro_number(mpo):
+        return ""
+    return _ensure_mpo_reference(mpo)
+
+
+def _misc_stage_b_onboarding_visible(
+    task,
+    *,
+    ro_mode,
+    batch_item_count,
+    ro_locked,
+    task_has_baseline,
+):
+    """
+    Stage B MRO onboarding only (e.g. HWF-0029 empty ad-hoc).
+
+    Hidden when the task already has MRO baseline work or the officer has
+    added Misc RO lines — do not overlay this on a working MRO screen.
+    """
+    if not task or not _misc_channel_allowed(task)[0]:
+        return False
+    if task_has_baseline:
+        return False
+    if ro_mode == "empty":
+        return True
+    if ro_mode == "draft" and batch_item_count == 0 and not ro_locked:
+        return True
+    return False
+
+
 def _misc_purchase_tasks():
     """Tasks eligible for ad-hoc MRO â€” excludes major/BOM-lane tasks."""
     ids = [
