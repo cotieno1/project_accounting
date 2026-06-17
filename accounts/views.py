@@ -3902,6 +3902,33 @@ def _task_has_adhoc_baseline(task):
     return False
 
 
+def _misc_stage_b_onboarding_visible(
+    task,
+    *,
+    ro_mode,
+    batch_item_count,
+    ro_locked,
+    task_has_baseline,
+):
+    """
+    Stage B onboarding panel only (e.g. HWF-0029 empty ad-hoc).
+
+    Lane isolation — do not show this UI when:
+      - Lane A: major BOM / RFQ / LPO procurement (_misc_channel_allowed is False)
+      - Lane B working: ad-hoc baseline or committed MRO already exists on the task
+      - Officer has moved past empty draft (lines added or RO locked)
+    """
+    if not task or not _misc_channel_allowed(task)[0]:
+        return False
+    if task_has_baseline:
+        return False
+    if ro_mode == "empty":
+        return True
+    if ro_mode == "draft" and batch_item_count == 0 and not ro_locked:
+        return True
+    return False
+
+
 def _misc_default_gl():
     return GLAccount.objects.first()
 
@@ -4102,6 +4129,25 @@ def misc_purchase_builder(request):
         request, include_post=(request.method == "POST")
     )
     if not active_task:
+        requested = _task_id_from_request(
+            request, include_post=(request.method == "POST")
+        )
+        if requested:
+            blocked_task = ProjectTask.objects.filter(project_id=requested).first()
+            if blocked_task:
+                if _task_on_major_bom_lane(blocked_task):
+                    messages.error(
+                        request,
+                        "That task is on Lane A (BOM → RFQ → LPO). "
+                        "Use the BOM builder — not Misc RO / MPO.",
+                    )
+                    return redirect(
+                        reverse("bom_builder")
+                        + f"?task_id={blocked_task.project_id}"
+                    )
+                allowed, reason = _misc_channel_allowed(blocked_task)
+                if not allowed:
+                    messages.error(request, reason)
         if request.method == "POST":
             messages.error(request, "Select a project task before saving.")
             return redirect(reverse("misc_purchase_builder"))
@@ -4111,12 +4157,18 @@ def misc_purchase_builder(request):
                 "Add a project task from Dashboard setup before using Misc Purchase.",
             )
             return redirect("dashboard")
+        first_adhoc = tasks.order_by("project_id").first()
+        if requested and first_adhoc:
+            return redirect(
+                reverse("misc_purchase_builder")
+                + f"?task_id={first_adhoc.project_id}"
+            )
         suppliers = SupplierAccount.objects.all().order_by("description")
         return render(request, "misc_purchase.html", {
             "tasks": tasks,
             "active_task": None,
-            "mro_workspace_empty": True,
-            "officer_journey_visible": True,
+            "mro_workspace_empty": False,
+            "officer_journey_visible": False,
             "suppliers": suppliers,
             "no_task_selected": True,
         })
@@ -4420,16 +4472,12 @@ def misc_purchase_builder(request):
         if display_mpo
         else len(batch.get("items") or [])
     )
-    officer_journey_visible = (
-        not task_has_baseline
-        and (
-            ro_mode == "empty"
-            or (
-                ro_mode == "draft"
-                and batch_item_count == 0
-                and not ro_locked
-            )
-        )
+    officer_journey_visible = _misc_stage_b_onboarding_visible(
+        active_task,
+        ro_mode=ro_mode,
+        batch_item_count=batch_item_count,
+        ro_locked=ro_locked,
+        task_has_baseline=task_has_baseline,
     )
     mro_workspace_empty = officer_journey_visible
 

@@ -107,6 +107,11 @@
         </div>
 {% endblock %}
 {% block workspace %}
+        {% if no_task_selected %}
+        <div class="panel" style="padding:28px;text-align:center;">
+            <p style="margin:0;color:var(--muted);font-size:14px;">Select an ad-hoc (Misc RO / MPO) task from the sidebar dropdown.</p>
+        </div>
+        {% else %}
         {% if messages %}
         {% for message in messages %}
         <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
@@ -182,8 +187,8 @@
                     <div class="ro-detail-banner" style="background:rgba(245,158,11,0.12);border-color:var(--warning);color:#fcd34d;">
                         <strong>Provisional budget</strong> — Misc RO {{ ro_number|default:"Draft" }}. Lock lines and review to confirm the MRO baseline (issues MRO Number; one per task).
                     </div>
-                    {% elif officer_journey_visible|default:mro_workspace_empty %}
-                    <div class="ro-empty-state mro-stage-b-panel" id="mroStageBPanel" tabindex="0">
+                    {% elif officer_journey_visible and active_task %}
+                    <div class="ro-empty-state mro-stage-b-panel" id="mroStageBPanel" tabindex="0" data-lane="stage-b-onboarding-only">
                         <span class="mro-stage-badge">Stage B — Ad-hoc / MRO path</span>
                         {% if ro_mode == 'draft' %}
                         <h4>Misc RO started — add your lines below</h4>
@@ -498,6 +503,8 @@
             <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}&open_adhoc_ro_period=1" class="btn-action btn-success" style="width:100%;margin-top:14px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">Open GM Disbursement desk →</a>
             {% endif %}
         </div>
+        {% endif %}
+
         {% endif %}
 
 {% endblock %}
