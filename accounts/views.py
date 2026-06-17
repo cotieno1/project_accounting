@@ -879,6 +879,37 @@ def _misc_stage_b_onboarding_visible(
     return False
 
 
+def _prune_empty_numbered_draft_mpos(task):
+    """Remove blank RO rows that were numbered before any lines were added."""
+    if not task:
+        return
+    MiscPurchaseOrder.objects.filter(
+        task=task,
+        funding_status="PENDING",
+        is_sourcing=True,
+    ).annotate(item_count=Count("items")).filter(
+        item_count=0,
+    ).exclude(mpo_number__isnull=True).exclude(mpo_number="").delete()
+
+
+def _require_draft_mpo(task, supplier_name=""):
+    """Open PENDING MPO for this task — must already exist (via + Start RO)."""
+    allowed, reason = _misc_channel_allowed(task)
+    if not allowed:
+        raise ValueError(reason)
+
+    mpo = _get_active_draft_mpo(task)
+    if not mpo:
+        raise ValueError(
+            "No open requisition on this task. Click + Start RO before adding lines or suppliers."
+        )
+    _ensure_mpo_reference(mpo)
+    if supplier_name:
+        mpo.messenger_name = supplier_name[:100]
+        mpo.save(update_fields=["messenger_name"])
+    return mpo
+
+
 def _misc_purchase_tasks():
     """Tasks eligible for ad-hoc MRO â€” excludes major/BOM-lane tasks."""
     ids = [
@@ -958,6 +989,8 @@ def _get_task_bom(task):
 @login_required
 def bom_builder(request):
     """BOM for procuring — one header per task, same as laptop workflow."""
+    from django.db import IntegrityError, transaction
+
     tasks = ProjectTask.objects.all()
     active_task = _task_from_request(request, tasks)
 
@@ -978,33 +1011,39 @@ def bom_builder(request):
             },
         )
 
+    with transaction.atomic():
+        bom_header = _get_task_bom(active_task)
+        if not bom_header:
+            try:
+                bom_header = BOMHeader.objects.create(
+                    task=active_task,
+                    status=BOMHeader.STATUS_DRAFT,
+                )
+            except IntegrityError:
+                bom_header = _get_task_bom(active_task)
+        bom_header = _get_task_bom(active_task) or bom_header
+        if bom_header and not (bom_header.bom_id or "").strip():
+            bom_header.save()
+
+        if request.method == "POST" and "add_item" in request.POST and bom_header:
+            BOMItem.objects.create(
+                header=bom_header,
+                pillar_id=2,
+                description=request.POST.get("description"),
+                qty=request.POST.get("qty", 0),
+                uom=request.POST.get("uom", "Pcs"),
+            )
+            return redirect(f"/bom-builder/?task_id={active_task.project_id}")
+
     bom_header = _get_task_bom(active_task)
-    if not bom_header:
-        bom_header, _created = BOMHeader.objects.get_or_create(
-            task=active_task,
-            defaults={"status": BOMHeader.STATUS_DRAFT},
-        )
-    if not (bom_header.bom_id or "").strip():
-        bom_header.save()
-
-    if request.method == "POST" and "add_item" in request.POST:
-        BOMItem.objects.create(
-            header=bom_header,
-            pillar_id=2,
-            description=request.POST.get("description"),
-            qty=request.POST.get("qty", 0),
-            uom=request.POST.get("uom", "Pcs"),
-        )
-        return redirect(f"/bom-builder/?task_id={active_task.project_id}")
-
     return render(
         request,
         "bom_builder.html",
         {
             "tasks": tasks,
             "active_task": active_task,
-            "bom_items": bom_header.items.all().order_by("id"),
-            "bom_no": bom_header.bom_id,
+            "bom_items": bom_header.items.all().order_by("id") if bom_header else [],
+            "bom_no": bom_header.bom_id if bom_header else "",
         },
     )
 
