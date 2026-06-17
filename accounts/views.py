@@ -169,9 +169,14 @@ def fin_mgmt_ops_view(request):
     tasks = ProjectTask.objects.all()
     active_task = _task_from_request(request, tasks)
 
-    bom_no = "N/A"
+    bom_no = "—"
     if active_task:
-        bom_header = BOMHeader.objects.filter(task=active_task).first()
+        bom_header = (
+            BOMHeader.objects.filter(task=active_task)
+            .annotate(item_count=Count("items"))
+            .filter(item_count__gt=0)
+            .first()
+        )
         if bom_header and bom_header.bom_id:
             bom_no = bom_header.bom_id
 
@@ -840,13 +845,27 @@ def _get_task_bom(task):
     if not rows:
         return None
     bom = rows[0]
-    if not (bom.bom_id or "").strip():
+    if not bom.items.exists() and bom.status == BOMHeader.STATUS_DRAFT:
+        for dup in rows[1:]:
+            dup.delete()
+        bom.delete()
+        return None
+    if not (bom.bom_id or "").strip() and bom.items.exists():
         bom.save()
     for dup in rows[1:]:
         if dup.items.exists():
             dup.items.update(header=bom)
         dup.delete()
     return bom
+
+
+def _bom_display_number(bom):
+    """BOM number only after at least one stitched line item."""
+    if not bom or not bom.items.exists():
+        return ""
+    if not (bom.bom_id or "").strip():
+        bom.save()
+    return bom.bom_id or ""
 
 
 @login_required
@@ -873,15 +892,13 @@ def bom_builder(request):
         )
 
     bom_header = _get_task_bom(active_task)
-    if not bom_header:
-        bom_header, _created = BOMHeader.objects.get_or_create(
-            task=active_task,
-            defaults={"status": BOMHeader.STATUS_DRAFT},
-        )
-    if not (bom_header.bom_id or "").strip():
-        bom_header.save()
 
     if request.method == "POST" and "add_item" in request.POST:
+        if not bom_header:
+            bom_header = BOMHeader.objects.create(
+                task=active_task,
+                status=BOMHeader.STATUS_DRAFT,
+            )
         BOMItem.objects.create(
             header=bom_header,
             pillar_id=2,
@@ -889,16 +906,20 @@ def bom_builder(request):
             qty=request.POST.get("qty", 0),
             uom=request.POST.get("uom", "Pcs"),
         )
+        if not (bom_header.bom_id or "").strip():
+            bom_header.save()
         return redirect(f"/bom-builder/?task_id={active_task.project_id}")
 
+    bom_items = bom_header.items.all().order_by("id") if bom_header else BOMItem.objects.none()
     return render(
         request,
         "bom_builder.html",
         {
             "tasks": tasks,
             "active_task": active_task,
-            "bom_items": bom_header.items.all().order_by("id"),
-            "bom_no": bom_header.bom_id,
+            "bom_items": bom_items,
+            "bom_no": _bom_display_number(bom_header),
+            "bom_started": bool(bom_header and bom_items.exists()),
         },
     )
 
@@ -2724,6 +2745,59 @@ def _task_budget_record(task):
     return ProjectBudget.objects.filter(task=task).first()
 
 
+def _task_on_major_bom_lane(task):
+    """True when BOM (Y) lane is active — hide from ad-hoc MRO unless real MRO work exists."""
+    if not task:
+        return False
+    if not BOMItem.objects.filter(header__task=task).exists():
+        return False
+    budget = _task_budget_record(task)
+    if budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
+        return False
+    if MiscRequisitionOrder.objects.filter(task=task).exists():
+        return False
+    if MiscPurchaseItem.objects.filter(task=task).exists():
+        return False
+    if MiscPurchaseOrder.objects.filter(
+        task=task,
+        funding_status__in=["SUBMITTED", "LOCKED", "DISBURSED"],
+    ).exists():
+        return False
+    return True
+
+
+def _misc_purchase_tasks():
+    """Tasks eligible for ad-hoc MRO — excludes major/BOM-lane tasks."""
+    ids = [
+        t.pk
+        for t in ProjectTask.objects.order_by("project_id")
+        if _misc_channel_allowed(t)[0]
+    ]
+    return ProjectTask.objects.filter(pk__in=ids).order_by("project_id")
+
+
+def _resolve_misc_purchase_task(request, *, include_post=False):
+    """Resolve active task for misc/MRO pages within the ad-hoc task list only."""
+    tasks = _misc_purchase_tasks()
+    requested = _task_id_from_request(request, include_post=include_post)
+    if requested:
+        task = tasks.filter(project_id=requested).first()
+        if not task:
+            if ProjectTask.objects.filter(project_id=requested).exists():
+                messages.error(
+                    request,
+                    "That task is on the BOM / major procurement path. "
+                    "Choose an ad-hoc (MRO) task from the list.",
+                )
+            return tasks, None
+        request.session["active_task_id"] = task.project_id
+        return tasks, task
+    task = tasks.order_by("project_id").first()
+    if task:
+        request.session["active_task_id"] = task.project_id
+    return tasks, task
+
+
 def _misc_channel_allowed(task):
     """Ad-hoc misc flow only when task is not on RFQ/LPO budget channel."""
     budget = _task_budget_record(task)
@@ -2736,6 +2810,11 @@ def _misc_channel_allowed(task):
         return False, (
             "This task already has project procurement (LPO) records. "
             "Ad-hoc purchase is not available on this task."
+        )
+    if _task_on_major_bom_lane(task):
+        return False, (
+            "This task has an active Bill of Materials on the major procurement path. "
+            "Use BOM → RFQ → Bid Evaluation — not ad-hoc purchase."
         )
     return True, ""
 
@@ -2830,7 +2909,7 @@ def _misc_planned_budget(task):
         return material + misc if (material + misc) > 0 else Decimal("0.00")
     if budget and budget.budget_type == ProjectBudget.BUDGET_RFQ_LPO:
         return budget.misc_reserve or Decimal("0.00")
-    return Decimal("120000.00")
+    return Decimal("0.00")
 
 
 def _misc_locked_total(task):
@@ -3500,20 +3579,71 @@ def _misc_mpo_ro_document_urls(mpo, task, *, audit=False):
     }
 
 
+def _misc_ro_number(mpo):
+    if not mpo:
+        return ""
+    return mpo.mpo_number or f"MPO-{str(mpo.id)[:8].upper()}"
+
+
+def _mpo_has_ro_number(mpo):
+    """RO number is meaningful once lines exist or the RO total is locked/submitted."""
+    if not mpo:
+        return False
+    return (
+        mpo.items.exists()
+        or not mpo.is_sourcing
+        or mpo.funding_status in ("SUBMITTED", "LOCKED", "DISBURSED")
+    )
+
+
+def _misc_display_ro_number(mpo):
+    if not _mpo_has_ro_number(mpo):
+        return ""
+    return _ensure_mpo_reference(mpo)
+
+
+def _misc_display_mro_number(mro):
+    """MRO number only after budget baseline is committed (locked MRO)."""
+    if not mro or not (mro.mro_number or "").strip():
+        return ""
+    if mro.funding_status in ("LOCKED", "DISBURSED", "RECONCILED"):
+        return mro.mro_number
+    return ""
+
+
+def _prune_empty_numbered_draft_mpos(task):
+    """Remove blank RO rows that were numbered before any lines were added."""
+    if not task:
+        return
+    MiscPurchaseOrder.objects.filter(
+        task=task,
+        funding_status="PENDING",
+        is_sourcing=True,
+    ).annotate(item_count=Count("items")).filter(
+        item_count=0,
+    ).exclude(mpo_number__isnull=True).exclude(mpo_number="").delete()
+
+
 def _misc_adhoc_ro_listing(task, active_mpo=None):
     """One sidebar row — the task's single ad-hoc RO/MRO baseline."""
     rows = []
     baseline = _get_task_baseline_mpo(task)
-    if not baseline:
-        return rows
+    if not baseline or not _mpo_has_ro_number(baseline):
+        committed = _get_task_baseline_mro(task)
+        if committed and _misc_display_mro_number(committed):
+            baseline = committed.source_mpo if committed.source_mpo_id else None
+        if not baseline or not _mpo_has_ro_number(baseline):
+            return rows
     active_id = str(active_mpo.id) if active_mpo else None
     committed = getattr(baseline, "committed_mro", None)
-    ref = baseline.mpo_number or f"MPO-{str(baseline.id)[:8].upper()}"
-    if committed and committed.mro_number:
-        ref = f"{ref} / {committed.mro_number}"
+    ro_number = _misc_display_ro_number(baseline) or _misc_ro_number(baseline)
+    mro_number = _misc_display_mro_number(committed) if committed else ""
+    ref = f"{ro_number} / {mro_number}" if mro_number else ro_number
     row = {
         "id": str(baseline.id),
         "ref": ref,
+        "ro_number": ro_number,
+        "mro_number": mro_number or "—",
         "status": baseline.funding_status,
         "status_label": baseline.get_funding_status_display()
         if hasattr(baseline, "get_funding_status_display")
@@ -3553,7 +3683,9 @@ def _misc_task_mro_registry(task):
             seen_mpo.add(str(mpo.id))
         row = {
             "kind": "MRO",
-            "ref": mro.mro_number or "PENDING",
+            "ref": _misc_display_mro_number(mro) or mro.mro_number or "PENDING",
+            "ro_number": _misc_display_ro_number(mpo) if mpo else "—",
+            "mro_number": _misc_display_mro_number(mro) or "—",
             "mpo_ref": mpo.mpo_number if mpo else "",
             "status": mro.funding_status,
             "status_label": mro.get_funding_status_display(),
@@ -3573,9 +3705,13 @@ def _misc_task_mro_registry(task):
     for mpo_id, mpo in mpos.items():
         if mpo_id in seen_mpo:
             continue
+        if not _mpo_has_ro_number(mpo):
+            continue
         row = {
             "kind": "RO",
-            "ref": mpo.mpo_number or f"MPO-{mpo_id[:8].upper()}",
+            "ref": _misc_display_ro_number(mpo) or _misc_ro_number(mpo),
+            "ro_number": _misc_display_ro_number(mpo) or _misc_ro_number(mpo),
+            "mro_number": "—",
             "mpo_ref": mpo.mpo_number or "",
             "status": mpo.funding_status,
             "status_label": mpo.get_funding_status_display(),
@@ -3653,7 +3789,7 @@ def _misc_budget_formulation(
         source = "committed"
         provisional_ref = mro.mro_number or ""
         if mro.source_mpo and mro.source_mpo.mpo_number:
-            provisional_ref = f"{mro.source_mpo.mpo_number} / {provisional_ref}"
+            provisional_ref = mro.mro_number or ""
     elif display_mpo:
         material = live_ro_material if live_ro_material else draft_actual
         if project_budget and project_budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
@@ -3753,7 +3889,17 @@ def _get_task_baseline_mpo(task):
 
 
 def _task_has_adhoc_baseline(task):
-    return _get_task_baseline_mpo(task) is not None
+    mro = _get_task_baseline_mro(task)
+    if mro and mro.funding_status in ("LOCKED", "DISBURSED", "RECONCILED"):
+        return True
+    for mpo in MiscPurchaseOrder.objects.filter(task=task):
+        if mpo.funding_status in ("SUBMITTED", "LOCKED", "DISBURSED"):
+            return True
+        if not mpo.is_sourcing and mpo.items.exists():
+            return True
+        if mpo.items.exists() and mpo.funding_status == "PENDING":
+            return True
+    return False
 
 
 def _misc_default_gl():
@@ -3761,7 +3907,11 @@ def _misc_default_gl():
 
 
 def _ensure_mpo_reference(mpo):
-    """Every ad-hoc RO gets a permanent reference ID at creation (usable before lock)."""
+    """Assign RO number when the requisition has substance (lines or locked total)."""
+    if not mpo:
+        return ""
+    if not _mpo_has_ro_number(mpo):
+        return ""
     if not mpo.mpo_number:
         mpo.mpo_number = _next_mpo_number()
         mpo.save(update_fields=["mpo_number"])
@@ -3777,36 +3927,21 @@ def _get_active_draft_mpo(task):
     )
 
 
-def _get_or_create_draft_mpo(task, supplier_name=""):
-    """One open PENDING MPO per task — persisted scouting basket with unique RO reference."""
+def _require_draft_mpo(task, supplier_name=""):
+    """Open PENDING MPO for this task — must already exist (via + Start RO)."""
     allowed, reason = _misc_channel_allowed(task)
     if not allowed:
         raise ValueError(reason)
 
     mpo = _get_active_draft_mpo(task)
     if not mpo:
-        if _task_has_adhoc_baseline(task):
-            baseline = _get_task_baseline_mpo(task)
-            if baseline and baseline.funding_status == "PENDING":
-                _ensure_mpo_reference(baseline)
-                return baseline
-            raise ValueError(
-                "This task already has its ad-hoc baseline requisition. "
-                "One budget and one MRO per task."
-            )
-        mpo = MiscPurchaseOrder.objects.create(
-            task=task,
-            funding_status="PENDING",
-            is_sourcing=True,
-            mpo_number=_next_mpo_number(),
-            messenger_name=(supplier_name or "Officer purchase RO")[:100],
-            total_amount=Decimal("0.00"),
+        raise ValueError(
+            "No open requisition on this task. Click + Start RO before adding lines or suppliers."
         )
-    else:
-        _ensure_mpo_reference(mpo)
-        if supplier_name:
-            mpo.messenger_name = supplier_name[:100]
-            mpo.save(update_fields=["messenger_name"])
+    _ensure_mpo_reference(mpo)
+    if supplier_name:
+        mpo.messenger_name = supplier_name[:100]
+        mpo.save(update_fields=["messenger_name"])
     return mpo
 
 
@@ -3963,9 +4098,8 @@ def misc_register_supplier_ajax(request):
 
 @login_required
 def misc_purchase_builder(request):
-    tasks = ProjectTask.objects.all()
-    active_task = _task_from_request(
-        request, tasks, include_post=(request.method == "POST")
+    tasks, active_task = _resolve_misc_purchase_task(
+        request, include_post=(request.method == "POST")
     )
     if not active_task:
         if request.method == "POST":
@@ -3981,6 +4115,8 @@ def misc_purchase_builder(request):
         return render(request, "misc_purchase.html", {
             "tasks": tasks,
             "active_task": None,
+            "mro_workspace_empty": True,
+            "officer_journey_visible": True,
             "suppliers": suppliers,
             "no_task_selected": True,
         })
@@ -3988,6 +4124,8 @@ def misc_purchase_builder(request):
     suppliers = SupplierAccount.objects.all().order_by("description")
 
     default_gl = _misc_default_gl()
+    if request.method != "POST":
+        _prune_empty_numbered_draft_mpos(active_task)
 
     if request.method == "POST":
         if request.POST.get("action") == "create_officer_payment_voucher":
@@ -4041,19 +4179,18 @@ def misc_purchase_builder(request):
                             task=active_task,
                             funding_status="PENDING",
                             is_sourcing=True,
-                            mpo_number=_next_mpo_number(),
                             messenger_name="Officer purchase RO",
                             total_amount=Decimal("0.00"),
                         )
                         request.session.pop("misc_supplier", None)
                         messages.success(
                             request,
-                            f"RO {mpo.mpo_number} started — add items (qty · price). "
-                            "Payment vouchers are raised at GM Desk when purchasing.",
+                            "RO started — add item lines (qty · price). "
+                            "RO Number is assigned when the first line is saved.",
                         )
                     _sync_session_from_mpo(request, active_task, mpo)
                 else:
-                    mpo = _get_or_create_draft_mpo(active_task, "Officer purchase RO")
+                    mpo = _require_draft_mpo(active_task, "Officer purchase RO")
 
                     if "select_supplier" in request.POST:
                         sid = request.POST.get("supplier_id", "").strip()
@@ -4154,6 +4291,7 @@ def misc_purchase_builder(request):
                             total=line_total,
                         )
                         _recalc_mpo_total(mpo)
+                        _ensure_mpo_reference(mpo)
                         messages.success(request, "Line item saved to database.")
 
                     elif "delete_item" in request.POST:
@@ -4182,7 +4320,7 @@ def misc_purchase_builder(request):
     viewed_mpo = None
     baseline_mpo = _get_task_baseline_mpo(active_task)
     baseline_mro = _get_task_baseline_mro(active_task)
-    task_has_baseline = baseline_mpo is not None
+    task_has_baseline = _task_has_adhoc_baseline(active_task)
 
     if view_mpo_id:
         viewed_mpo = MiscPurchaseOrder.objects.filter(
@@ -4190,7 +4328,7 @@ def misc_purchase_builder(request):
         ).first()
         if not viewed_mpo and baseline_mpo and str(baseline_mpo.id) == view_mpo_id:
             viewed_mpo = baseline_mpo
-    elif baseline_mpo:
+    elif baseline_mpo and (_mpo_has_ro_number(baseline_mpo) or _misc_display_mro_number(baseline_mro)):
         viewed_mpo = baseline_mpo
 
     draft_mpo = _get_active_draft_mpo(active_task) if not viewed_mpo else None
@@ -4264,8 +4402,6 @@ def misc_purchase_builder(request):
     sidebar_variance_over = sidebar_variance < 0
     budget_status = _build_task_budget_status(active_task)
     channel_info = _task_budget_channel_info(active_task)
-    if display_mpo:
-        _ensure_mpo_reference(display_mpo)
 
     budget_formulation = _misc_budget_formulation(
         active_task,
@@ -4279,6 +4415,23 @@ def misc_purchase_builder(request):
     )
     show_review_budget = bool(can_review_budget) and not has_committed_adhoc_material
     pv_gate = _misc_ceo_payment_voucher_gate(active_task)
+    batch_item_count = (
+        display_mpo.items.count()
+        if display_mpo
+        else len(batch.get("items") or [])
+    )
+    officer_journey_visible = (
+        not task_has_baseline
+        and (
+            ro_mode == "empty"
+            or (
+                ro_mode == "draft"
+                and batch_item_count == 0
+                and not ro_locked
+            )
+        )
+    )
+    mro_workspace_empty = officer_journey_visible
 
     return render(
         request,
@@ -4286,6 +4439,8 @@ def misc_purchase_builder(request):
         {
             "tasks": tasks,
             "active_task": active_task,
+            "mro_workspace_empty": mro_workspace_empty,
+            "officer_journey_visible": officer_journey_visible,
             "batch": batch,
             "budget_x": misc_budget,
             "misc_budget": misc_budget,
@@ -4315,7 +4470,9 @@ def misc_purchase_builder(request):
             "adhoc_ro_listing": _misc_adhoc_ro_listing(active_task, display_mpo),
             "task_has_baseline": task_has_baseline,
             "baseline_mro": baseline_mro,
-            "baseline_mro_ref": baseline_mro.mro_number if baseline_mro else "",
+            "baseline_mro_ref": _misc_display_mro_number(baseline_mro),
+            "mro_number": _misc_display_mro_number(baseline_mro),
+            "ro_number": _misc_display_ro_number(display_mpo) if display_mpo else "",
             "has_provisional_budget": has_provisional_budget,
             "budget_formulation_source": budget_formulation["source"],
             "material_budget": sidebar_material,
@@ -4329,7 +4486,7 @@ def misc_purchase_builder(request):
             "seed_labour": budget_formulation["labour"],
             "seed_misc": budget_formulation["misc"],
             "budget_channel": channel_info,
-            "ro_reference": display_mpo.mpo_number if display_mpo else "",
+            "ro_reference": _misc_display_ro_number(display_mpo) if display_mpo else "",
         },
     )
     
@@ -4667,8 +4824,7 @@ def budget_overview(request):
 @login_required
 def misc_budget_actuals_view(request):
     """Ad-hoc purchase audit: Misc budget vs locked actuals and variance."""
-    tasks = ProjectTask.objects.all().order_by("project_id")
-    active_task = _task_from_request(request, tasks)
+    tasks, active_task = _resolve_misc_purchase_task(request)
     if not active_task:
         if not tasks.exists():
             messages.error(request, "No project task found.")
