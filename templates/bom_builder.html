@@ -9,167 +9,236 @@
         :root {
             --primary: #2563eb; --dark: #0a0f1d; --card: #1e293b; --light: #f1f5f9;
             --border: #334155; --success: #10b981; --danger: #ef4444; --text-muted: #94a3b8;
+            --warning: #f59e0b;
         }
-
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--light); display: flex; height: 100vh; }
-        .sidebar { width: 280px; background: #070b14; border-right: 1px solid var(--border); padding: 30px 20px; flex-shrink: 0; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--light); display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 280px; background: #070b14; border-right: 1px solid var(--border); padding: 30px 20px; flex-shrink: 0; display: flex; flex-direction: column; box-sizing: border-box; }
         .main-content { flex: 1; overflow-y: auto; padding: 40px; background: var(--dark); }
-        
         .nav-label { font-size: 10px; font-weight: 800; color: var(--primary); letter-spacing: 1.5px; margin-bottom: 12px; display: block; }
-        .btn-action { background: var(--primary); color: white; padding: 10px 20px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-action { background: var(--primary); color: white; padding: 10px 20px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; }
         .btn-action:hover { opacity: 0.9; }
-
-        .panel { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 25px; margin-bottom: 30px; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; color: var(--text-muted); padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .btn-secondary { background: #334155 !important; text-decoration: none; display: inline-block; text-align: center; box-sizing: border-box; }
+        .btn-success { background: var(--success) !important; }
+        .btn-disabled { opacity: 0.45; pointer-events: none; cursor: not-allowed; }
+        .form-input { width: 100%; box-sizing: border-box; padding: 10px; background: var(--dark); border: 1px solid var(--border); color: white; border-radius: 6px; font-size: 13px; }
+        .sidebar-note { color: var(--text-muted); font-size: 11px; line-height: 1.45; margin-top: 8px; }
+        .panel { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 25px; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; color: var(--text-muted); padding: 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
         td { padding: 12px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); font-size: 13px; }
-
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
-        .modal-content { background: var(--card); margin: 10% auto; padding: 40px; width: 600px; border-radius: 12px; border: 1px solid var(--border); }
-
-        @media print {
-            .sidebar, .btn-action, .modal, .nav-label, select, .return-link { display: none !important; }
-            body, .main-content { background: white !important; color: black !important; display: block; }
-            .panel { border: none !important; background: white !important; }
-            .panel-header h2 { font-size: 24px; text-align: center; border-bottom: 2px solid black; padding-bottom: 10px; }
-            table { color: black !important; width: 100%; }
-            th { color: black !important; border-bottom: 2px solid black !important; }
-            td { border-bottom: 1px solid #eee !important; color: black !important; }
-            .print-header { display: block !important; margin-bottom: 30px; }
-            .print-footer { display: flex !important; justify-content: space-between; margin-top: 100px; }
-        }
-        .print-header, .print-footer { display: none; }
+        .bom-stage-panel { text-align: left; max-width: 680px; margin: 0 auto; padding: 32px 28px; background: #0f172a; border: 1px solid var(--border); border-radius: 12px; }
+        .bom-stage-badge { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); background: rgba(37,99,235,0.15); padding: 4px 10px; border-radius: 4px; margin-bottom: 12px; }
+        .bom-stage-lead { font-size: 13px; line-height: 1.55; margin: 0 0 12px; color: var(--text-muted); }
+        .bom-stage-journey { margin: 16px 0 0; padding: 0 0 0 20px; font-size: 12px; line-height: 1.55; color: var(--text-muted); }
+        .bom-stage-journey li { margin-bottom: 10px; }
+        .bom-stage-journey li strong { color: var(--light); }
+        .bom-stage-journey li.is-current { color: #93c5fd; }
+        .bom-stage-journey li.is-current strong { color: var(--primary); }
+        .bom-stage-journey li.is-done strong { color: var(--success); }
+        .bom-stage-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
+        .bom-stage-hint { font-size: 11px; margin: 16px 0 0; color: var(--text-muted); }
+        .bom-stage-hint kbd { padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; background: #070b14; font-size: 10px; }
+        .lane-blocked { border-color: var(--warning); }
+        .lane-blocked .bom-stage-badge { color: #fcd34d; background: rgba(245,158,11,0.15); }
+        .msg-flash { padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; font-size: 13px; }
+        .msg-flash--ok { background: rgba(16,185,129,0.12); border: 1px solid var(--success); color: #6ee7b7; }
+        .msg-flash--err { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #fca5a5; }
+        a.btn-action { text-decoration: none; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <div style="margin-bottom: 40px;">
+    <div style="margin-bottom: 24px;">
         <h2 style="color: var(--primary); margin:0;">PIONEER</h2>
         <small style="color: var(--text-muted);">Somalia Ops Command</small>
     </div>
 
     <div class="nav-section">
         <span class="nav-label">SWITCH ACTIVE TASK</span>
-        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'}">
-            <option value="">-- Select project task --</option>
+        <select class="form-input" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'}">
+            <option value="">-- Select BOM task --</option>
             {% for t in tasks %}
-                <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-                    {{ t.project_id }}: {{ t.description }}
-                </option>
+            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
             {% endfor %}
         </select>
-        {% if not active_task and tasks %}
-        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message|default:"Select a task to open its BOM." }}</p>
-        {% elif setup_message %}
-        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin-top: 10px;">{{ setup_message }}</p>
+        <p class="sidebar-note">New BOM tasks only — excludes Misc PO / MRO, RFQ, LPO, RO lines, and committed major budgets.</p>
+    </div>
+
+    <div class="nav-section" style="margin-top: 24px;">
+        <span class="nav-label">BOM ACTIONS</span>
+        {% if screen_lane == 'bom' and bom_mode == 'empty' and active_task %}
+        <form method="POST" style="margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <button type="submit" name="new_bom" class="btn-action" style="width:100%;margin-bottom:10px;">Start BOM</button>
+        </form>
+        {% endif %}
+        {% if can_print_bom %}
+        <a href="{{ print_bom_url }}" class="btn-action" style="width:100%;margin-bottom:10px;background:var(--success);display:block;text-align:center;box-sizing:border-box;" target="_blank" rel="noopener">Print BOM</a>
+        <a href="{{ print_bom_pdf_url }}" class="btn-action btn-secondary" style="width:100%;margin-bottom:10px;display:block;text-align:center;box-sizing:border-box;" target="_blank" rel="noopener">BOM PDF</a>
+        {% else %}
+        <button type="button" class="btn-action btn-disabled" style="width:100%;margin-bottom:10px;background:var(--success);">Print BOM</button>
         {% endif %}
     </div>
 
-    <div class="nav-section" style="margin-top: 30px;">
-        <span class="nav-label">BOM ACTIONS</span>
-        <button class="btn-action" onclick="openModal()" style="width: 100%; margin-bottom: 10px;" {% if not active_task %}disabled{% endif %}>🏗️ Stitch New Item</button>
-        <button onclick="window.print()" class="btn-action" style="width: 100%; background: var(--success);" {% if not active_task %}disabled{% endif %}>🖨️ Print for GM</button>
-    </div>
-    
     <div style="margin-top: auto; padding-top: 20px;">
-        <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id }}{% else %}/dashboard/{% endif %}" style="color: var(--text-muted); text-decoration: none; font-size: 12px; display: flex; align-items: center; gap: 5px;">
-            ← Back to Dashboard
-        </a>
+        <a href="{% if active_task %}{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}" style="color: var(--text-muted); font-size: 12px; text-decoration: none;">← Main menu (Esc)</a>
     </div>
 </div>
 
 <div class="main-content">
-    <div class="print-header" style="color: black;">
-        <p><strong>To: Tom Kelly</strong><br>General Manager, Pioneer<br>PO Box 10, Nairobi, Kenya</p>
-        <hr>
+    {% if messages %}
+    {% for message in messages %}
+    <div class="msg-flash {% if message.tags == 'error' %}msg-flash--err{% else %}msg-flash--ok{% endif %}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    {% if screen_lane == 'misc' %}
+    <div class="bom-stage-panel lane-blocked">
+        <span class="bom-stage-badge">Wrong screen — Ad-hoc MRO path</span>
+        <h4 style="margin:0 0 8px;">Task {{ active_task.project_id }} has a Misc PO / MRO</h4>
+        <p class="bom-stage-lead">BOM Builder is for <strong>new major-procurement tasks</strong> only. This task is on the ad-hoc lane — same boundary as Misc Purchase uses for you.</p>
+        <p class="bom-stage-lead">Example: use <strong>Misc Purchase (Misc RO)</strong> for this task, not BOM Builder.</p>
+        <div class="bom-stage-actions">
+            <a href="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}" class="btn-action btn-success">Open Misc Purchase →</a>
+            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Main menu</a>
+        </div>
     </div>
 
-    <div class="panel" id="bom-panel">
-        <div class="panel-header">
+    {% elif screen_lane == 'major' %}
+    <div class="bom-stage-panel lane-blocked">
+        <span class="bom-stage-badge">Task already on major procurement</span>
+        <h4 style="margin:0 0 8px;">Task {{ active_task.project_id }} — cannot start a new BOM here</h4>
+        <p class="bom-stage-lead">This task already has <strong>RO lines, RFQ, LPO, major budget, or a submitted BOM</strong>. John should not create another BOM — continue on RO Builder or Bid Evaluation.</p>
+        <div class="bom-stage-actions">
+            <a href="{% url 'ro_builder' %}?task_id={{ active_task.project_id }}" class="btn-action">RO Builder →</a>
+            <a href="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">Bid Evaluation →</a>
+            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Main menu</a>
+        </div>
+    </div>
+
+    {% elif not active_task %}
+    <div class="bom-stage-panel">
+        <span class="bom-stage-badge">Stage field definition — BOM path</span>
+        <h4 style="margin:0 0 8px;">Start your BOM build here</h4>
+        <p class="bom-stage-lead">Select a <strong>new</strong> task from the sidebar — then press the blue <strong>Start BOM</strong> button.</p>
+        {% include "partials/bom_stage_journey.html" %}
+        <div class="bom-stage-actions">
+            <a href="{% url 'ops_dashboard' %}" class="btn-action btn-secondary">← Main menu</a>
+        </div>
+    </div>
+
+    {% else %}
+
+    {% if engineer_journey_visible %}
+    <div class="bom-stage-panel">
+        <span class="bom-stage-badge">Stage field definition — BOM path</span>
+        {% if bom_mode == 'draft' %}
+        <h4 style="margin:0 0 8px;">BOM started — add your lines below</h4>
+        <p class="bom-stage-lead">List each item, <strong>UOM</strong> and <strong>quantity</strong>. Lock and submit when done.</p>
+        {% elif bom_mode == 'locked' %}
+        <h4 style="margin:0 0 8px;">BOM locked — submit to finish your task here</h4>
+        {% else %}
+        <h4 style="margin:0 0 8px;">Start your BOM build here</h4>
+        <p class="bom-stage-lead">Press the blue <strong>Start BOM</strong> button on the side — list each item you require, UOM and quantity.</p>
+        {% endif %}
+        <p class="bom-stage-lead">One <strong>BOM Number</strong> (locked once you reach your last item) per task. Not related to Misc PO.</p>
+        {% include "partials/bom_stage_journey.html" %}
+        <div class="bom-stage-actions">
+            {% if bom_mode == 'empty' %}
+            <form method="POST" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <button type="submit" name="new_bom" class="btn-action">Start BOM</button>
+            </form>
+            {% endif %}
+            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary" id="bomBackMain">← Main menu (Esc)</a>
+        </div>
+        <p class="bom-stage-hint"><kbd>Esc</kbd> returns to the main menu</p>
+    </div>
+    {% endif %}
+
+    {% if bom_mode != 'empty' %}
+    <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
             <div>
-                <h2 style="margin:0;">Bill of Materials: {{ bom_no|default:"—" }}</h2>
-                {% if active_task %}
-                <p style="margin: 5px 0; color: var(--text-muted);"><strong>Task:</strong> {{ active_task.project_id }} — {{ active_task.description }}</p>
-                {% elif setup_message %}
-                <p style="margin: 5px 0; color: var(--text-muted);">{{ setup_message }}</p>
-                {% endif %}
+                <h2 style="margin:0;font-size:18px;">BOM {{ bom_no }}</h2>
+                <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">Task {{ active_task.project_id }} — {{ active_task.description }}</p>
             </div>
-            <span style="font-weight: 700; color: var(--primary);">STATUS: DRAFT</span>
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:var(--primary);">
+                {% if bom_submitted %}SUBMITTED{% elif bom_locked %}LOCKED{% else %}DRAFT{% endif %}
+            </span>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Item No</th>
-                    <th>Name</th>
-                    <th>Unit-Measure</th>
-                    <th>Qty</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in bom_items %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ item.description }}</td>
-                    <td>{{ item.uom }}</td>
-                    <td>{{ item.qty }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">No items added to this BOM yet.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="print-footer" style="color: black;">
-        <div style="border-top: 1px solid black; width: 250px; text-align: center; padding-top: 10px;">
-            <strong>Tom Ruku</strong><br>Senior Site Engineer
-        </div>
-        <div>
-            Date: {% now "jS F Y" %}
-        </div>
-    </div>
-</div>
-
-<div id="stitchModal" class="modal">
-    <div class="modal-content">
-        <h2 style="color: var(--primary); margin-top: 0;">{% if active_task %}Stitch Item to {{ active_task.project_id }}{% else %}Add a project task first{% endif %}</h2>
         <form method="POST">
             {% csrf_token %}
-            <input type="hidden" name="pillar_id" value="2"> 
-            
-            <div style="margin-bottom: 15px;">
-                <label style="display:block; font-size: 12px; margin-bottom: 5px;">Item Name</label>
-                <input type="text" name="description" placeholder="e.g. Nails" required style="width: 100%; box-sizing: border-box; padding: 10px; background: var(--dark); border: 1px solid var(--border); color: white; border-radius: 6px;">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                <div>
-                    <label style="display:block; font-size: 12px; margin-bottom: 5px;">UOM</label>
-                    <input type="text" name="uom" placeholder="e.g. kg" required style="width: 100%; box-sizing: border-box; padding: 10px; background: var(--dark); border: 1px solid var(--border); color: white; border-radius: 6px;">
-                </div>
-                <div>
-                    <label style="display:block; font-size: 12px; margin-bottom: 5px;">Quantity</label>
-                    <input type="number" step="0.01" name="qty" placeholder="0" required style="width: 100%; box-sizing: border-box; padding: 10px; background: var(--dark); border: 1px solid var(--border); color: white; border-radius: 6px;">
-                </div>
-            </div>
-
-            <button type="submit" name="add_item" class="btn-action" style="width: 100%;">Add to Sequence</button>
-            <button type="button" onclick="closeModal()" style="width: 100%; margin-top: 10px; background: none; border: none; color: var(--text-muted); cursor: pointer;">Cancel</button>
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <table>
+                <thead>
+                    <tr><th>#</th><th>Item / specification</th><th>UOM</th><th>Qty</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for item in bom_items %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.uom }}</td>
+                        <td>{{ item.qty }}</td>
+                        <td>{% if not bom_locked %}<button type="submit" form="del{{ item.id }}" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;">Remove</button>{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Add your first line below.</td></tr>
+                    {% endfor %}
+                    {% if not bom_locked and bom_mode != 'detail' %}
+                    <tr>
+                        <td></td>
+                        <td><input type="text" name="description" class="form-input" placeholder="Item description" required></td>
+                        <td><input type="text" name="uom" class="form-input" value="EA" required></td>
+                        <td><input type="number" step="0.01" min="0.01" name="qty" class="form-input" required></td>
+                        <td><button type="submit" name="add_item" class="btn-action" style="padding:8px 12px;font-size:12px;">Add</button></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </form>
+        {% for item in bom_items %}
+        {% if not bom_locked %}
+        <form method="POST" id="del{{ item.id }}" style="display:none;">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+            <input type="hidden" name="delete_item" value="1">
+        </form>
+        {% endif %}
+        {% endfor %}
+
+        {% if bom_mode == 'draft' and bom_items and not bom_locked %}
+        <form method="POST" style="margin-top:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <button type="submit" name="lock_bom" class="btn-action btn-success">Save / done — lock BOM items</button>
+        </form>
+        {% elif bom_mode == 'locked' and not bom_submitted %}
+        <form method="POST" style="margin-top:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <button type="submit" name="submit_bom" class="btn-action btn-success">Submit BOM to GM</button>
+        </form>
+        {% endif %}
     </div>
+    {% endif %}
+
+    {% endif %}
 </div>
 
 <script>
-    function openModal() { document.getElementById('stitchModal').style.display = 'block'; }
-    function closeModal() { document.getElementById('stitchModal').style.display = 'none'; }
-    window.onclick = function(e) { if (e.target == document.getElementById('stitchModal')) closeModal(); }
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var back = document.getElementById('bomBackMain') || document.querySelector('.bom-stage-actions a.btn-secondary');
+        if (back) window.location.href = back.href;
+    }
+});
 </script>
-
 </body>
 </html>

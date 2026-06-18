@@ -1,0 +1,8 @@
+<ol class="bom-stage-journey">
+    <li class="{% if bom_mode != 'empty' and bom_mode != 'none' %}is-done{% else %}is-current{% endif %}"><strong>Start BOM</strong> — add BOM line items (item, UOM, qty).</li>
+    <li class="{% if bom_mode == 'locked' or bom_submitted %}is-done{% elif bom_mode == 'draft' %}is-current{% endif %}"><strong>Save / done</strong> — lock the number of items in a BOM and submit when your list is complete. Your Snr Site Engineer task on this screen is finished at that point.</li>
+    <li class="{% if bom_submitted %}is-current{% endif %}"><strong>Print BOM</strong> — the request from the technical on qty and item type or specification (BOM List → PDF). Used to raise a requisition order (RO Number) with one-to-one items as in the BOM.</li>
+    <li><strong>Next step — raise requisition</strong> — confirm and request in memo to the GM; print RO and, on GM approval, print an RFQ and send to the supplier.</li>
+    <li><strong>View MRO details</strong> — when approved, open your MRO. For a partial buy, select the line (e.g. B1) and the quantity you need now.</li>
+    <li><strong>BOM view</strong> — prints for the Snr Site Engineer to sign; sent to the GM to start the budget and procurement process.</li>
+</ol>

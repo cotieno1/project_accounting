@@ -963,6 +963,76 @@ def _resolve_misc_purchase_task(request, *, include_post=False):
     return tasks, task
 
 
+def _task_has_misc_po_path(task):
+    if not task:
+        return False
+    if MiscPurchaseOrder.objects.filter(task=task).exists():
+        return True
+    if MiscRequisitionOrder.objects.filter(task=task).exists():
+        return True
+    return False
+
+
+def _task_on_major_procurement_lane(task):
+    """Task already past fresh BOM start (budget, RO lines, RFQ, LPO, submitted BOM)."""
+    if not task:
+        return False
+    if LPOTransaction.objects.filter(project_task=task).exists():
+        return True
+    if RFQTransaction.objects.filter(bom_item__project_task=task).exists():
+        return True
+    if RequisitionOrderItem.objects.filter(ro__task=task).exists():
+        return True
+    budget = _task_budget_record(task)
+    if budget and budget.budget_type == ProjectBudget.BUDGET_RFQ_LPO:
+        if budget.is_ceo_approved or (budget.total_authorized_budget or 0) > 0:
+            return True
+    if BOMHeader.objects.filter(task=task).exclude(status=BOMHeader.STATUS_DRAFT).exists():
+        return True
+    return False
+
+
+def _task_is_new_for_bom(task):
+    if not task:
+        return False
+    if _task_has_misc_po_path(task) or _task_on_major_procurement_lane(task):
+        return False
+    bom = BOMHeader.objects.filter(task=task).first()
+    if not bom:
+        return True
+    if bom.status != BOMHeader.STATUS_DRAFT:
+        return False
+    return not bom.items.exists() and not bom.items_locked
+
+
+def _task_bom_draft_in_progress(task):
+    bom = _get_task_bom(task)
+    return bool(
+        bom
+        and bom.status == BOMHeader.STATUS_DRAFT
+        and (bom.items.exists() or bom.items_locked)
+    )
+
+
+def _bom_builder_sidebar_tasks(active_task=None):
+    ids = []
+    for t in ProjectTask.objects.order_by("project_id"):
+        if _task_is_new_for_bom(t) or _task_bom_draft_in_progress(t):
+            ids.append(t.pk)
+    if active_task and active_task.pk not in ids:
+        if not _task_has_misc_po_path(active_task):
+            ids.append(active_task.pk)
+    return ProjectTask.objects.filter(pk__in=ids).order_by("project_id")
+
+
+def _bom_screen_lane(task):
+    if not task:
+        return "none"
+    if _task_has_misc_po_path(task):
+        return "misc"
+    if _task_on_major_procurement_lane(task):
+        return "major"
+    return "bom"
 
 
 def _get_task_bom(task):
@@ -988,63 +1058,165 @@ def _get_task_bom(task):
 
 @login_required
 def bom_builder(request):
-    """BOM for procuring — one header per task, same as laptop workflow."""
+    """BOM path for Snr Site Engineer — Stage A onboarding; no auto-create on visit."""
     from django.db import IntegrityError, transaction
+    from django.urls import reverse
 
-    tasks = ProjectTask.objects.all()
-    active_task = _task_from_request(request, tasks)
+    tasks = _bom_builder_sidebar_tasks()
+    active_task = _task_from_request(
+        request, ProjectTask.objects.all(), include_post=(request.method == "POST")
+    )
+    redirect_url = (
+        reverse("bom_builder") + f"?task_id={active_task.project_id}"
+        if active_task
+        else reverse("bom_builder")
+    )
+
+    def _render(**extra):
+        ctx = {
+            "tasks": _bom_builder_sidebar_tasks(active_task),
+            "active_task": active_task,
+            "bom_items": [],
+            "bom_no": "",
+            "bom_mode": "none",
+            "bom_locked": False,
+            "bom_submitted": False,
+            "screen_lane": "none",
+            "engineer_journey_visible": False,
+            "can_print_bom": False,
+            "print_bom_url": "",
+            "print_bom_pdf_url": "",
+        }
+        ctx.update(extra)
+        return render(request, "bom_builder.html", ctx)
 
     if not active_task:
-        return render(
-            request,
-            "bom_builder.html",
-            {
-                "tasks": tasks,
-                "active_task": None,
-                "bom_items": [],
-                "bom_no": "",
-                "setup_message": (
-                    "Select a project task above to open its BOM."
-                    if tasks.exists()
-                    else "Add a project task from Dashboard setup, then return here."
-                ),
-            },
+        return _render(
+            engineer_journey_visible=True,
+            setup_message="Select a new BOM task from the list (no Misc PO / MRO on task).",
         )
 
-    with transaction.atomic():
-        bom_header = _get_task_bom(active_task)
-        if not bom_header:
-            try:
-                bom_header = BOMHeader.objects.create(
-                    task=active_task,
-                    status=BOMHeader.STATUS_DRAFT,
-                )
-            except IntegrityError:
-                bom_header = _get_task_bom(active_task)
-        bom_header = _get_task_bom(active_task) or bom_header
-        if bom_header and not (bom_header.bom_id or "").strip():
-            bom_header.save()
-
-        if request.method == "POST" and "add_item" in request.POST and bom_header:
-            BOMItem.objects.create(
-                header=bom_header,
-                pillar_id=2,
-                description=request.POST.get("description"),
-                qty=request.POST.get("qty", 0),
-                uom=request.POST.get("uom", "Pcs"),
-            )
-            return redirect(f"/bom-builder/?task_id={active_task.project_id}")
+    screen_lane = _bom_screen_lane(active_task)
+    if screen_lane == "misc":
+        return _render(screen_lane="misc")
+    if screen_lane == "major":
+        return _render(screen_lane="major")
 
     bom_header = _get_task_bom(active_task)
-    return render(
-        request,
-        "bom_builder.html",
-        {
-            "tasks": tasks,
-            "active_task": active_task,
-            "bom_items": bom_header.items.all().order_by("id") if bom_header else [],
-            "bom_no": bom_header.bom_id if bom_header else "",
-        },
+
+    if request.method == "POST":
+        try:
+            with transaction.atomic():
+                if "new_bom" in request.POST:
+                    if bom_header and bom_header.items.exists():
+                        messages.info(
+                            request,
+                            f"Continuing BOM {bom_header.bom_id} — add lines below.",
+                        )
+                    elif bom_header and bom_header.items_locked:
+                        raise ValueError(f"BOM {bom_header.bom_id} is locked.")
+                    else:
+                        if not bom_header:
+                            try:
+                                bom_header = BOMHeader.objects.create(
+                                    task=active_task,
+                                    status=BOMHeader.STATUS_DRAFT,
+                                )
+                            except IntegrityError:
+                                bom_header = _get_task_bom(active_task)
+                        if bom_header and not (bom_header.bom_id or "").strip():
+                            bom_header.save()
+                        messages.success(
+                            request,
+                            f"BOM {bom_header.bom_id} started — list item, UOM and quantity.",
+                        )
+
+                elif bom_header and "add_item" in request.POST:
+                    if bom_header.items_locked:
+                        raise ValueError("BOM lines are locked.")
+                    if bom_header.status != BOMHeader.STATUS_DRAFT:
+                        raise ValueError("This BOM has been submitted.")
+                    BOMItem.objects.create(
+                        header=bom_header,
+                        pillar_id=int(request.POST.get("pillar_id") or 2),
+                        description=(request.POST.get("description") or "").strip(),
+                        qty=request.POST.get("qty", 0) or 0,
+                        uom=(request.POST.get("uom") or "EA")[:50],
+                    )
+                    messages.success(request, "Line added to BOM.")
+
+                elif bom_header and "delete_item" in request.POST:
+                    if bom_header.items_locked:
+                        raise ValueError("BOM lines are locked.")
+                    BOMItem.objects.filter(
+                        pk=request.POST.get("item_id"), header=bom_header
+                    ).delete()
+                    messages.success(request, "Line removed.")
+
+                elif bom_header and "lock_bom" in request.POST:
+                    if not bom_header.items.exists():
+                        raise ValueError("Add at least one line before locking.")
+                    if bom_header.items_locked:
+                        raise ValueError("BOM is already locked.")
+                    bom_header.items_locked = True
+                    bom_header.save(update_fields=["items_locked"])
+                    messages.success(
+                        request,
+                        "BOM item count locked. Submit when ready — your task on this screen is then complete.",
+                    )
+
+                elif bom_header and "submit_bom" in request.POST:
+                    if not bom_header.items_locked:
+                        raise ValueError("Lock the BOM item list before submitting.")
+                    bom_header.status = BOMHeader.STATUS_SENT_TO_GM
+                    bom_header.save(update_fields=["status"])
+                    messages.success(
+                        request,
+                        f"BOM {bom_header.bom_id} submitted — print for signature and raise RO next.",
+                    )
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect(redirect_url)
+
+    bom_header = _get_task_bom(active_task)
+    if not bom_header:
+        bom_mode = "empty"
+        bom_locked = bom_submitted = False
+    elif bom_header.status != BOMHeader.STATUS_DRAFT:
+        bom_mode = "detail"
+        bom_locked = bom_submitted = True
+    elif bom_header.items_locked:
+        bom_mode = "locked"
+        bom_locked = True
+        bom_submitted = False
+    elif bom_header.items.exists():
+        bom_mode = "draft"
+        bom_locked = bom_submitted = False
+    else:
+        bom_mode = "empty"
+        bom_locked = bom_submitted = False
+
+    engineer_journey_visible = bom_mode in ("empty", "draft", "locked") and not bom_submitted
+    can_print_bom = bool(
+        bom_header and bom_header.items.exists() and (bom_locked or bom_submitted)
+    )
+    print_bom_url = print_bom_pdf_url = ""
+    if can_print_bom and bom_header:
+        print_bom_url = reverse("print_bom") + f"?task_id={active_task.project_id}&print=1"
+        print_bom_pdf_url = reverse("print_bom_pdf") + f"?task_id={active_task.project_id}"
+
+    return _render(
+        screen_lane="bom",
+        bom_header=bom_header,
+        bom_items=bom_header.items.all().order_by("id") if bom_header else [],
+        bom_no=bom_header.bom_id if bom_header else "",
+        bom_mode=bom_mode,
+        bom_locked=bom_locked,
+        bom_submitted=bom_submitted,
+        engineer_journey_visible=engineer_journey_visible,
+        can_print_bom=can_print_bom,
+        print_bom_url=print_bom_url,
+        print_bom_pdf_url=print_bom_pdf_url,
     )
 
 
