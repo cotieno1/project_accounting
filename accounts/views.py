@@ -166,20 +166,20 @@ def switch_active_organization(request):
 
 @login_required
 def fin_mgmt_ops_view(request):
-    tasks = ProjectTask.objects.all()
+    tasks = ProjectTask.objects.order_by("project_id")
     active_task = _task_from_request(request, tasks)
-
-    bom_no = "N/A"
-    if active_task:
-        bom_header = BOMHeader.objects.filter(task=active_task).first()
-        if bom_header and bom_header.bom_id:
-            bom_no = bom_header.bom_id
+    task_rows = [
+        {"task": t, "hint": _bom_task_sidebar_hint(t)} for t in tasks
+    ]
+    task_panel = _ops_task_panel_context(active_task)
 
     context = {
         'page_title': 'Pioneer Financial Ops',
         'tasks': tasks,
+        'task_rows': task_rows,
         'active_task': active_task,
-        'bom_no': bom_no,
+        'task_panel': task_panel,
+        'bom_no': task_panel["bom_display"],
         'mtd_actuals': "89,200.00",
     }
     return render(request, 'Fin_Mgmt_and_OPs_dashboard.html', context)
@@ -1301,6 +1301,51 @@ def _get_task_bom(task):
             dup.items.update(header=bom)
         dup.delete()
     return bom
+
+
+def _task_meaningful_bom_header(task):
+    """BOM that counts for display — ignore empty phantom headers from old auto-create."""
+    bom = _get_task_bom(task)
+    if not bom:
+        return None
+    if bom.status != BOMHeader.STATUS_DRAFT:
+        return bom
+    if bom.items_locked or bom.items.exists():
+        return bom
+    return None
+
+
+def _ops_task_panel_context(task):
+    """Lane + procurement status for ops dashboard (no misleading BOM numbers)."""
+    if not task:
+        return {
+            "lane_label": "No task selected",
+            "status_hint": "",
+            "bom_display": "—",
+            "bom_applicable": False,
+        }
+    hint = _bom_task_sidebar_hint(task)
+    if _task_has_misc_po_path(task):
+        return {
+            "lane_label": "Ad-hoc · Lane X (Misc PO)",
+            "status_hint": hint,
+            "bom_display": "Not applicable",
+            "bom_applicable": False,
+        }
+    bom = _task_meaningful_bom_header(task)
+    if bom:
+        return {
+            "lane_label": "Major · Lane Y (BOM path)",
+            "status_hint": hint,
+            "bom_display": bom.bom_id,
+            "bom_applicable": True,
+        }
+    return {
+        "lane_label": "Uncommitted — Major BOM or Misc PO",
+        "status_hint": hint,
+        "bom_display": "No BOM started",
+        "bom_applicable": False,
+    }
 
 
 @login_required

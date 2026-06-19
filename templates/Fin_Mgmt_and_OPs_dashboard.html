@@ -101,27 +101,34 @@
 
     <div class="task-switcher">
         <span class="nav-label task-switcher-label">SWITCH ACTIVE TASK</span>
-        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='{% url 'ops_dashboard' %}'}">
+        <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='{% url 'ops_dashboard' %}'}">
             <option value="">-- Select project task --</option>
-            {% if not tasks %}
+            {% if not task_rows %}
             <option disabled>No tasks in database</option>
             {% endif %}
-            {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-                {{ t.project_id }}: {{ t.description }}
+            {% for row in task_rows %}
+            <option value="{{ row.task.project_id }}" {% if active_task and row.task.project_id == active_task.project_id %}selected{% endif %}>
+                {{ row.task.project_id }} — {{ row.hint }}
             </option>
             {% endfor %}
         </select>
+        <p class="task-switcher-note">Lane and status shown — BOM number only after a real BOM is started (not for Misc PO or blank tasks).</p>
     </div>
 
     <div class="panel">
         <div class="panel-header">
             {% if active_task %}
             <h3>Project DNA: {{ active_task.description }} (ID: {{ active_task.project_id }})</h3>
-            <span class="panel-meta">BOM: {{ bom_no }}</span>
+            <span class="panel-meta">{{ task_panel.lane_label }}</span>
+            <span class="panel-meta panel-meta--hint">{{ task_panel.status_hint }}</span>
+            {% if task_panel.bom_applicable %}
+            <span class="panel-meta">BOM: {{ task_panel.bom_display }}</span>
+            {% else %}
+            <span class="panel-meta panel-meta--muted">{{ task_panel.bom_display }}</span>
+            {% endif %}
             {% else %}
             <h3>No Active Task Selected</h3>
-            <span class="panel-meta panel-meta--danger">BOM: N/A</span>
+            <span class="panel-meta panel-meta--muted">Select a task to see lane and status</span>
             {% endif %}
             <span class="badge badge-execution">Active Site</span>
         </div>
@@ -176,10 +183,10 @@
     </div>
 {% endblock %}
 {% block modals %}
-{% if active_task %}
+{% if active_task and task_panel.bom_applicable %}
 <div id="bomModal" class="ops-modal">
     <div class="ops-modal-panel">
-        <h2 class="ops-modal-title">🏗️ Submit BOM for {{ bom_no }}</h2>
+        <h2 class="ops-modal-title">🏗️ Submit BOM for {{ task_panel.bom_display }}</h2>
         <p class="ops-modal-intro">
             <strong>Active Task:</strong> {{ active_task.project_id }} - {{ active_task.description }}
         </p>

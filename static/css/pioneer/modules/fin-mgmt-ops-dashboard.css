@@ -118,6 +118,15 @@ body.ops-dashboard { --text-muted: var(--muted); }
 .ops-dashboard .panel-header h3 { margin: 0; }
 .ops-dashboard .panel-meta { color: var(--primary); font-weight: 700; }
 .ops-dashboard .panel-meta--danger { color: var(--danger); }
+.ops-dashboard .panel-meta--muted { color: var(--muted); font-weight: 600; }
+.ops-dashboard .panel-meta--hint { color: #93c5fd; font-weight: 600; }
+
+.ops-dashboard .task-switcher-note {
+    margin: 8px 0 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--muted);
+}
 
 .ops-dashboard .badge {
     padding: 4px 8px;
