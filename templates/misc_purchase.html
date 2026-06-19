@@ -136,14 +136,7 @@
                 <div class="task-vendor-left misc-page-header-text">
                     <h1 class="page-title">Ad-Hoc Requisition Order (Misc RO)</h1>
                     <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
-                    {% if ro_number or mro_number %}
-                    <div class="doc-ref-row" style="display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:6px;font-size:12px;">
-                        {% if ro_number %}<span><span style="color:var(--muted);">Misc RO Number:</span> <strong style="font-family:monospace;color:var(--light);">{{ ro_number }}</strong></span>{% endif %}
-                        {% if mro_number %}<span><span style="color:var(--muted);">MRO Number:</span> <strong style="font-family:monospace;color:var(--success);">{{ mro_number }}</strong></span>{% endif %}
-                    </div>
-                    {% elif ro_mode == 'draft' %}
-                    <p style="margin:8px 0 0;font-size:12px;color:var(--muted);">Misc RO Number is assigned when you save the first line item.</p>
-                    {% endif %}
+                    <p class="task-description-title">{{ active_task.description }}</p>
                 </div>
                 <div class="task-vendor-right">
                     {% if ro_mode == 'empty' and not task_has_baseline %}
@@ -155,14 +148,6 @@
                     {% endif %}
         </div>
     </div>
-            <p style="color:var(--muted);margin:10px 0 0;">{{ active_task.description }}</p>
-            {% if ro_number or mro_number %}
-            <p style="font-size:12px;color:var(--success);margin-top:8px;">
-                {% if ro_number %}<span style="margin-right:16px;"><span style="color:var(--muted);">Misc RO Number:</span> <strong style="font-family:monospace;">{{ ro_number }}</strong></span>{% endif %}
-                {% if mro_number %}<span><span style="color:var(--muted);">MRO Number:</span> <strong style="font-family:monospace;color:var(--success);">{{ mro_number }}</strong></span>{% endif %}
-                {% if ro_number and display_mpo and not mro_number %} · {{ display_mpo.items.count }} line(s) · {{ display_mpo.get_funding_status_display }}{% endif %}
-            </p>
-            {% endif %}
         </div>
         
         <div class="evaluation-grid">
