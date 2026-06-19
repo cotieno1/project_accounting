@@ -62,6 +62,10 @@
         <a href="/payment-settlement/?task_id={{ active_task.project_id }}" class="nav-link">🚚 5.1 Log: Record GRN/Receipt</a>
         {% endif %}
     </div>
+
+    <div class="sidebar-footer">
+        <a href="{% url 'dashboard' %}" class="sidebar-back-link">← Main Dashboard</a>
+    </div>
 {% endblock %}
 {% block workspace %}
     <div class="ops-header">

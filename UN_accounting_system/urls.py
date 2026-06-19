@@ -23,6 +23,7 @@ urlpatterns = [
 """
 import os
 from django.contrib import admin
+from django.contrib.auth.views import LogoutView
 from django.urls import path
 from accounts import views
 from django.conf import settings
@@ -35,6 +36,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('docs/android-rollout-plan/', views.android_rollout_plan_doc, name='android_rollout_plan_doc'),
     path('api/switch-organization/', views.switch_active_organization, name='switch_active_organization'),

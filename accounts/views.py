@@ -1014,15 +1014,262 @@ def _task_bom_draft_in_progress(task):
     )
 
 
-def _bom_builder_sidebar_tasks(active_task=None):
-    ids = []
-    for t in ProjectTask.objects.order_by("project_id"):
-        if _task_is_new_for_bom(t) or _task_bom_draft_in_progress(t):
-            ids.append(t.pk)
-    if active_task and active_task.pk not in ids:
-        if not _task_has_misc_po_path(active_task):
-            ids.append(active_task.pk)
-    return ProjectTask.objects.filter(pk__in=ids).order_by("project_id")
+def _bom_can_start_bom(task):
+    """Start BOM only on fresh major-lane tasks (not misc, not past create stage)."""
+    if not task or _bom_screen_lane(task) != "bom":
+        return False
+    bom = _get_task_bom(task)
+    if not bom:
+        return True
+    if bom.status != BOMHeader.STATUS_DRAFT:
+        return False
+    return not bom.items.exists() and not bom.items_locked
+
+
+def _bom_task_sidebar_hint(task):
+    """Short status for BOM builder task picker."""
+    if not task:
+        return ""
+    if _task_has_misc_po_path(task):
+        mro = (
+            MiscRequisitionOrder.objects.filter(task=task)
+            .order_by("-updated_at")
+            .first()
+        )
+        if mro and mro.funding_status in ("LOCKED", "DISBURSED", "RECONCILED"):
+            ref = mro.mro_number or "MRO"
+            return f"Misc · {ref}"
+        mpo = MiscPurchaseOrder.objects.filter(task=task).order_by("-created_at").first()
+        if mpo:
+            return f"Misc · {mpo.get_funding_status_display()}"
+        return "Misc · Ad-hoc"
+    lpos = list(
+        LPOTransaction.objects.filter(project_task=task).exclude(
+            status=LPOTransaction.STATUS_CANCELLED
+        )
+    )
+    if lpos:
+        if all(_lpo_receipt_status(lpo) == "FULL" for lpo in lpos):
+            return "Major · Delivered"
+        if any(_lpo_receipt_status(lpo) in ("PARTIAL", "FULL") for lpo in lpos):
+            return "Major · GRN"
+        return "Major · LPO"
+    if RFQTransaction.objects.filter(bom_item__project_task=task).exists():
+        return "Major · RFQ"
+    if RequisitionOrderItem.objects.filter(ro__task=task).exists():
+        ro = RequisitionOrder.objects.filter(task=task).order_by("-date_raised").first()
+        return f"Major · RO {ro.ro_no}" if ro else "Major · RO"
+    bom = BOMHeader.objects.filter(task=task).first()
+    if bom and bom.status != BOMHeader.STATUS_DRAFT:
+        return f"BOM · {bom.get_status_display()}"
+    if bom and bom.items_locked:
+        return "BOM · Locked"
+    if bom and bom.items.exists():
+        return "BOM · Draft"
+    budget = _task_budget_record(task)
+    if budget and budget.budget_type == ProjectBudget.BUDGET_RFQ_LPO:
+        if budget.is_ceo_approved:
+            return "Major · Budget approved"
+        return "Major · Budget"
+    return "New · Start BOM"
+
+
+def _bom_builder_task_rows():
+    """All tasks with lane hint — John can scan status from one picker."""
+    rows = []
+    for task in ProjectTask.objects.order_by("project_id"):
+        rows.append(
+            {
+                "task": task,
+                "hint": _bom_task_sidebar_hint(task),
+                "lane": _bom_screen_lane(task),
+            }
+        )
+    return rows
+
+
+def _bom_task_status_snapshot(task):
+    """Read-only procurement snapshot for BOM builder (misc + major lanes)."""
+    from django.urls import reverse
+
+    lane = _bom_screen_lane(task)
+    snap = {
+        "lane": lane,
+        "can_create_bom": _bom_can_start_bom(task),
+        "stage_label": "",
+        "summary_lines": [],
+        "bom": None,
+        "bom_items": [],
+        "misc_rows": [],
+        "ros": [],
+        "rfqs": [],
+        "lpos": [],
+        "delivery_summary": "",
+        "budget_label": "",
+        "links": [],
+    }
+    if not task:
+        return snap
+
+    budget = _task_budget_record(task)
+    if budget:
+        snap["budget_label"] = (
+            f"{_budget_channel_label(budget.budget_type)}"
+            f"{' · CEO approved' if budget.is_ceo_approved else ''}"
+        )
+        if budget.total_authorized_budget:
+            snap["summary_lines"].append(
+                {
+                    "label": "Authorized budget",
+                    "value": f"{budget.total_authorized_budget:,.2f}",
+                }
+            )
+
+    if lane == "misc":
+        snap["stage_label"] = "Misc PO / MRO — cannot be processed as BOM"
+        snap["summary_lines"].append(
+            {"label": "Lane", "value": "Ad-hoc Misc Purchase (Lane X)"}
+        )
+        snap["misc_rows"] = _misc_task_mro_registry(task)
+        baseline = _get_task_baseline_mpo(task)
+        if baseline:
+            snap["summary_lines"].append(
+                {
+                    "label": "Misc RO",
+                    "value": _misc_display_ro_number(baseline) or "Draft",
+                }
+            )
+            committed = getattr(baseline, "committed_mro", None)
+            if committed:
+                mro_ref = _misc_display_mro_number(committed) or committed.mro_number or "—"
+                snap["summary_lines"].append({"label": "MRO", "value": mro_ref})
+                snap["summary_lines"].append(
+                    {
+                        "label": "MRO status",
+                        "value": committed.get_funding_status_display(),
+                    }
+                )
+        snap["links"].append(
+            {
+                "label": "Open Misc Purchase",
+                "url": reverse("misc_purchase_builder")
+                + f"?task_id={task.project_id}",
+                "primary": True,
+            }
+        )
+        return snap
+
+    bom = _get_task_bom(task)
+    if bom:
+        snap["bom"] = {
+            "bom_id": bom.bom_id,
+            "status": bom.get_status_display(),
+            "status_code": bom.status,
+            "items_locked": bom.items_locked,
+            "item_count": bom.items.count(),
+        }
+        snap["bom_items"] = list(bom.items.all().order_by("id"))
+
+    for ro in RequisitionOrder.objects.filter(task=task).order_by("-date_raised"):
+        snap["ros"].append(
+            {
+                "ro_no": ro.ro_no,
+                "status": ro.get_status_display(),
+                "item_count": ro.items.count(),
+            }
+        )
+
+    seen_rfq = set()
+    for rfq in (
+        RFQTransaction.objects.filter(bom_item__project_task=task)
+        .select_related("supplier")
+        .order_by("rfq_no")
+    ):
+        if rfq.rfq_no in seen_rfq:
+            continue
+        seen_rfq.add(rfq.rfq_no)
+        snap["rfqs"].append(
+            {
+                "rfq_no": rfq.rfq_no,
+                "supplier": rfq.supplier.description if rfq.supplier else "—",
+                "selected": rfq.is_selected,
+            }
+        )
+
+    lpos = list(
+        LPOTransaction.objects.filter(project_task=task)
+        .exclude(status=LPOTransaction.STATUS_CANCELLED)
+        .select_related("supplier")
+        .order_by("-date_issued")
+    )
+    any_received = False
+    all_full = bool(lpos)
+    for lpo in lpos:
+        receipt = _lpo_receipt_status(lpo)
+        if receipt in ("PARTIAL", "FULL"):
+            any_received = True
+        if receipt != "FULL":
+            all_full = False
+        snap["lpos"].append(
+            {
+                "lpo_no": lpo.lpo_no,
+                "supplier": lpo.supplier.description if lpo.supplier else "—",
+                "receipt": receipt,
+                "total": f"{lpo.total_amount:,.2f}",
+            }
+        )
+
+    if lpos:
+        if all_full:
+            snap["delivery_summary"] = "All LPO lines fully received (GRN complete)"
+        elif any_received:
+            snap["delivery_summary"] = "Partial delivery — GRN in progress"
+        else:
+            snap["delivery_summary"] = "Awaiting goods receipt (GRN)"
+
+    if lane == "major":
+        if lpos and all_full:
+            snap["stage_label"] = "Delivered — all items received"
+        elif lpos:
+            snap["stage_label"] = "LPO issued — goods receipt"
+        elif snap["rfqs"]:
+            snap["stage_label"] = "RFQ / bid evaluation"
+        elif snap["ros"]:
+            snap["stage_label"] = "Requisition order (RO) raised"
+        elif bom and bom.status != BOMHeader.STATUS_DRAFT:
+            snap["stage_label"] = f"BOM {bom.bom_id} — {bom.get_status_display()}"
+        elif bom and bom.items_locked:
+            snap["stage_label"] = f"BOM {bom.bom_id} — locked, awaiting submit"
+        elif bom:
+            snap["stage_label"] = f"BOM {bom.bom_id} — draft"
+        elif snap["budget_label"]:
+            snap["stage_label"] = snap["budget_label"]
+        else:
+            snap["stage_label"] = "Major procurement in progress"
+        snap["links"].extend(
+            [
+                {
+                    "label": "RO Builder",
+                    "url": reverse("ro_builder") + f"?task_id={task.project_id}",
+                    "primary": True,
+                },
+                {
+                    "label": "Bid Evaluation",
+                    "url": reverse("bid_evaluation_terminal")
+                    + f"?task_id={task.project_id}",
+                    "primary": False,
+                },
+            ]
+        )
+    else:
+        if bom and bom.items_locked and bom.status == BOMHeader.STATUS_DRAFT:
+            snap["stage_label"] = "BOM locked — submit to finish your task here"
+        elif bom and bom.items.exists():
+            snap["stage_label"] = "BOM draft — add lines, then lock"
+        else:
+            snap["stage_label"] = "Ready to start BOM"
+
+    return snap
 
 
 def _bom_screen_lane(task):
@@ -1058,11 +1305,10 @@ def _get_task_bom(task):
 
 @login_required
 def bom_builder(request):
-    """BOM path for Snr Site Engineer — Stage A onboarding; no auto-create on visit."""
+    """BOM path for Snr Site Engineer — all tasks visible; create BOM only when allowed."""
     from django.db import IntegrityError, transaction
     from django.urls import reverse
 
-    tasks = _bom_builder_sidebar_tasks()
     active_task = _task_from_request(
         request, ProjectTask.objects.all(), include_post=(request.method == "POST")
     )
@@ -1074,8 +1320,10 @@ def bom_builder(request):
 
     def _render(**extra):
         ctx = {
-            "tasks": _bom_builder_sidebar_tasks(active_task),
+            "task_rows": _bom_builder_task_rows(),
             "active_task": active_task,
+            "task_status": None,
+            "can_start_bom": False,
             "bom_items": [],
             "bom_no": "",
             "bom_mode": "none",
@@ -1093,21 +1341,38 @@ def bom_builder(request):
     if not active_task:
         return _render(
             engineer_journey_visible=True,
-            setup_message="Select a new BOM task from the list (no Misc PO / MRO on task).",
+            setup_message="Select any task — status shown in the list. Start BOM only on new major-lane tasks.",
         )
 
     screen_lane = _bom_screen_lane(active_task)
+    task_status = _bom_task_status_snapshot(active_task)
+
     if screen_lane == "misc":
-        return _render(screen_lane="misc")
+        return _render(screen_lane="misc", task_status=task_status)
     if screen_lane == "major":
-        return _render(screen_lane="major")
+        bom_info = task_status.get("bom") or {}
+        return _render(
+            screen_lane="major",
+            task_status=task_status,
+            bom_items=task_status.get("bom_items") or [],
+            bom_no=bom_info.get("bom_id", ""),
+            bom_mode="detail" if bom_info else "none",
+            bom_submitted=bom_info.get("status_code") != BOMHeader.STATUS_DRAFT
+            if bom_info
+            else False,
+        )
 
     bom_header = _get_task_bom(active_task)
+    can_start_bom = task_status["can_create_bom"]
 
     if request.method == "POST":
         try:
             with transaction.atomic():
                 if "new_bom" in request.POST:
+                    if not can_start_bom:
+                        raise ValueError(
+                            "Cannot start a BOM on this task — see current status above."
+                        )
                     if bom_header and bom_header.items.exists():
                         messages.info(
                             request,
@@ -1207,6 +1472,8 @@ def bom_builder(request):
 
     return _render(
         screen_lane="bom",
+        task_status=task_status,
+        can_start_bom=can_start_bom,
         bom_header=bom_header,
         bom_items=bom_header.items.all().order_by("id") if bom_header else [],
         bom_no=bom_header.bom_id if bom_header else "",

@@ -58,6 +58,10 @@
                 <strong>{{ username }}</strong><br>
                 <small>{{ role }}</small>
             </div>
+            <form method="post" action="{% url 'logout' %}" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Log out</button>
+            </form>
         </div>
     </div>
 </div>

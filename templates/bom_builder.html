@@ -44,6 +44,12 @@
         .msg-flash--ok { background: rgba(16,185,129,0.12); border: 1px solid var(--success); color: #6ee7b7; }
         .msg-flash--err { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #fca5a5; }
         a.btn-action { text-decoration: none; }
+        .status-kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; font-size: 12px; margin: 16px 0; }
+        .status-kv dt { color: var(--text-muted); margin: 0; }
+        .status-kv dd { margin: 0; color: var(--light); }
+        .status-table { margin-top: 16px; font-size: 12px; }
+        .status-table caption { text-align: left; font-weight: 700; color: var(--light); margin-bottom: 8px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+        .lane-tag { font-size: 10px; color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -57,17 +63,17 @@
     <div class="nav-section">
         <span class="nav-label">SWITCH ACTIVE TASK</span>
         <select class="form-input" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'}">
-            <option value="">-- Select BOM task --</option>
-            {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
+            <option value="">-- Select task --</option>
+            {% for row in task_rows %}
+            <option value="{{ row.task.project_id }}" {% if active_task and row.task.project_id == active_task.project_id %}selected{% endif %}>{{ row.task.project_id }} — {{ row.hint }}</option>
             {% endfor %}
         </select>
-        <p class="sidebar-note">New BOM tasks only — excludes Misc PO / MRO, RFQ, LPO, RO lines, and committed major budgets.</p>
+        <p class="sidebar-note">All tasks listed with current lane/status. <strong>Start BOM</strong> only when status is <em>New · Start BOM</em> — Misc and in-progress major tasks are view-only here.</p>
     </div>
 
     <div class="nav-section" style="margin-top: 24px;">
         <span class="nav-label">BOM ACTIONS</span>
-        {% if screen_lane == 'bom' and bom_mode == 'empty' and active_task %}
+        {% if can_start_bom %}
         <form method="POST" style="margin:0;">
             {% csrf_token %}
             <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
@@ -94,26 +100,92 @@
     {% endfor %}
     {% endif %}
 
-    {% if screen_lane == 'misc' %}
+    {% if screen_lane == 'misc' and task_status %}
     <div class="bom-stage-panel lane-blocked">
-        <span class="bom-stage-badge">Wrong screen — Ad-hoc MRO path</span>
-        <h4 style="margin:0 0 8px;">Task {{ active_task.project_id }} has a Misc PO / MRO</h4>
-        <p class="bom-stage-lead">BOM Builder is for <strong>new major-procurement tasks</strong> only. This task is on the ad-hoc lane — same boundary as Misc Purchase uses for you.</p>
-        <p class="bom-stage-lead">Example: use <strong>Misc Purchase (Misc RO)</strong> for this task, not BOM Builder.</p>
+        <span class="bom-stage-badge">Ad-hoc lane — cannot process as BOM</span>
+        <h4 style="margin:0 0 8px;">Task {{ active_task.project_id }}</h4>
+        <p class="bom-stage-lead">{{ task_status.stage_label }}</p>
+        {% if task_status.summary_lines %}
+        <dl class="status-kv">
+            {% for line in task_status.summary_lines %}
+            <dt>{{ line.label }}</dt><dd>{{ line.value }}</dd>
+            {% endfor %}
+        </dl>
+        {% endif %}
+        {% if task_status.misc_rows %}
+        <table class="status-table">
+            <caption>Misc RO / MRO on this task</caption>
+            <thead><tr><th>Ref</th><th>Type</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for row in task_status.misc_rows %}
+                <tr>
+                    <td><a href="{{ row.view_url }}" style="color:#93c5fd;">{{ row.ref }}</a></td>
+                    <td>{{ row.kind }}</td>
+                    <td>{{ row.status_label }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        <p class="bom-stage-lead">This task is on the <strong>Misc Purchase (Lane X)</strong> path — not BOM Builder. You can see its state here; continue work in Misc Purchase.</p>
         <div class="bom-stage-actions">
-            <a href="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}" class="btn-action btn-success">Open Misc Purchase →</a>
+            {% for link in task_status.links %}
+            <a href="{{ link.url }}" class="btn-action {% if link.primary %}btn-success{% else %}btn-secondary{% endif %}">{{ link.label }} →</a>
+            {% endfor %}
             <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Main menu</a>
         </div>
     </div>
 
-    {% elif screen_lane == 'major' %}
-    <div class="bom-stage-panel lane-blocked">
-        <span class="bom-stage-badge">Task already on major procurement</span>
-        <h4 style="margin:0 0 8px;">Task {{ active_task.project_id }} — cannot start a new BOM here</h4>
-        <p class="bom-stage-lead">This task already has <strong>RO lines, RFQ, LPO, major budget, or a submitted BOM</strong>. John should not create another BOM — continue on RO Builder or Bid Evaluation.</p>
+    {% elif screen_lane == 'major' and task_status %}
+    <div class="bom-stage-panel">
+        <span class="bom-stage-badge">Major procurement — view only</span>
+        <h4 style="margin:0 0 8px;">Task {{ active_task.project_id }}</h4>
+        <p class="bom-stage-lead"><strong>{{ task_status.stage_label }}</strong></p>
+        {% if task_status.budget_label or task_status.delivery_summary %}
+        <dl class="status-kv">
+            {% if task_status.budget_label %}<dt>Budget</dt><dd>{{ task_status.budget_label }}</dd>{% endif %}
+            {% if task_status.delivery_summary %}<dt>Delivery</dt><dd>{{ task_status.delivery_summary }}</dd>{% endif %}
+            {% for line in task_status.summary_lines %}
+            <dt>{{ line.label }}</dt><dd>{{ line.value }}</dd>
+            {% endfor %}
+        </dl>
+        {% endif %}
+        {% if task_status.bom %}
+        <p class="bom-stage-lead">BOM <strong>{{ task_status.bom.bom_id }}</strong> — {{ task_status.bom.status }} ({{ task_status.bom.item_count }} line{{ task_status.bom.item_count|pluralize }}){% if task_status.bom.items_locked %} · locked{% endif %}</p>
+        {% endif %}
+        {% if task_status.ros %}
+        <table class="status-table">
+            <caption>Requisition orders</caption>
+            <thead><tr><th>RO</th><th>Status</th><th>Lines</th></tr></thead>
+            <tbody>{% for ro in task_status.ros %}<tr><td>{{ ro.ro_no }}</td><td>{{ ro.status }}</td><td>{{ ro.item_count }}</td></tr>{% endfor %}</tbody>
+        </table>
+        {% endif %}
+        {% if task_status.rfqs %}
+        <table class="status-table">
+            <caption>RFQs</caption>
+            <thead><tr><th>RFQ</th><th>Supplier</th><th>Selected</th></tr></thead>
+            <tbody>{% for rfq in task_status.rfqs %}<tr><td>{{ rfq.rfq_no }}</td><td>{{ rfq.supplier }}</td><td>{% if rfq.selected %}Yes{% else %}—{% endif %}</td></tr>{% endfor %}</tbody>
+        </table>
+        {% endif %}
+        {% if task_status.lpos %}
+        <table class="status-table">
+            <caption>LPOs &amp; goods receipt</caption>
+            <thead><tr><th>LPO</th><th>Supplier</th><th>Receipt</th><th>Total</th></tr></thead>
+            <tbody>{% for lpo in task_status.lpos %}<tr><td>{{ lpo.lpo_no }}</td><td>{{ lpo.supplier }}</td><td>{{ lpo.receipt }}</td><td>{{ lpo.total }}</td></tr>{% endfor %}</tbody>
+        </table>
+        {% endif %}
+        {% if task_status.bom_items %}
+        <table class="status-table">
+            <caption>BOM lines (read-only)</caption>
+            <thead><tr><th>#</th><th>Item</th><th>UOM</th><th>Qty</th></tr></thead>
+            <tbody>{% for item in task_status.bom_items %}<tr><td>{{ forloop.counter }}</td><td>{{ item.description }}</td><td>{{ item.uom }}</td><td>{{ item.qty }}</td></tr>{% endfor %}</tbody>
+        </table>
+        {% endif %}
+        <p class="bom-stage-lead">Cannot start a new BOM — this task has passed the create stage. Use the links below to continue.</p>
         <div class="bom-stage-actions">
-            <a href="{% url 'ro_builder' %}?task_id={{ active_task.project_id }}" class="btn-action">RO Builder →</a>
-            <a href="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">Bid Evaluation →</a>
+            {% for link in task_status.links %}
+            <a href="{{ link.url }}" class="btn-action {% if link.primary %}{% else %}btn-secondary{% endif %}">{{ link.label }} →</a>
+            {% endfor %}
             <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Main menu</a>
         </div>
     </div>
@@ -122,7 +194,7 @@
     <div class="bom-stage-panel">
         <span class="bom-stage-badge">Stage field definition — BOM path</span>
         <h4 style="margin:0 0 8px;">Start your BOM build here</h4>
-        <p class="bom-stage-lead">Select a <strong>new</strong> task from the sidebar — then press the blue <strong>Start BOM</strong> button.</p>
+        <p class="bom-stage-lead">Select any task from the sidebar — each shows its <strong>lane and status</strong>. Press <strong>Start BOM</strong> only on <em>New · Start BOM</em> tasks.</p>
         {% include "partials/bom_stage_journey.html" %}
         <div class="bom-stage-actions">
             <a href="{% url 'ops_dashboard' %}" class="btn-action btn-secondary">← Main menu</a>
@@ -144,9 +216,12 @@
         <p class="bom-stage-lead">Press the blue <strong>Start BOM</strong> button on the side — list each item you require, UOM and quantity.</p>
         {% endif %}
         <p class="bom-stage-lead">One <strong>BOM Number</strong> (locked once you reach your last item) per task. Not related to Misc PO.</p>
+        {% if task_status.stage_label %}
+        <p class="bom-stage-lead"><span class="lane-tag">Status:</span> {{ task_status.stage_label }}</p>
+        {% endif %}
         {% include "partials/bom_stage_journey.html" %}
         <div class="bom-stage-actions">
-            {% if bom_mode == 'empty' %}
+            {% if can_start_bom %}
             <form method="POST" style="margin:0;">
                 {% csrf_token %}
                 <input type="hidden" name="task_id" value="{{ active_task.project_id }}">

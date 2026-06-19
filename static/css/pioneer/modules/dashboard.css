@@ -99,6 +99,29 @@ html.command-center-root {
     font-size: var(--font-xs);
 }
 
+.command-center .logout-form {
+    margin: 0;
+}
+
+.command-center .logout-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.command-center .logout-btn:hover {
+    color: var(--text-strong);
+    border-color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.04);
+}
+
 /* Main layout */
 .command-center .container {
     padding: clamp(16px, 3vw, 30px) clamp(16px, 4vw, 50px);
