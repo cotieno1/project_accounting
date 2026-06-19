@@ -6,14 +6,14 @@
     <title>{{ bom_no }} · {{ active_task.project_id }}</title>
     {% include "includes/lpo_document_styles.html" %}
 </head>
-<body class="{% if for_pdf %}lpo-pdf-body{% else %}pioneer-doc-print{% endif %}">
-{% if not for_pdf %}
+<body class="pioneer-doc-print">
+{% if not auto_print %}
 <div class="screen-toolbar no-print">
     <a href="{{ back_url|default:'/' }}">← Back to BOM Builder</a>
-    <a href="{% url 'print_bom_pdf' %}?task_id={{ active_task.project_id }}{% if request.GET.return %}&amp;return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>
+    <a href="{% url 'print_bom_pdf' %}?task_id={{ active_task.project_id }}{% if request.GET.return %}&amp;return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Print / Save as PDF</a>
     <button type="button" onclick="window.print()">Print</button>
 </div>
-<p class="mobile-doc-hint no-print" aria-hidden="true">For pinch-zoom on mobile, use your browser PDF viewer after printing to PDF</p>
+<p class="mobile-doc-hint no-print" aria-hidden="true">Use <strong>Print</strong> or <strong>Print / Save as PDF</strong> — same layout as this preview</p>
 {% endif %}
 <div id="printableBOM" class="lpo-paper"><div class="doc">
     <div class="brand-bar"></div>
@@ -45,7 +45,7 @@
         </tr>
     </table>
 
-    <div class="terms"><strong>Subject</strong>This Bill of Materials lists engineering quantities for task <strong>{{ active_task.project_id }}</strong> prior to requisition and procurement.</div>
+    <div class="terms"><strong>Subject</strong> This Bill of Materials lists engineering quantities for task <strong>{{ active_task.project_id }}</strong> prior to requisition and procurement.</div>
 
     <table class="lines">
         <thead>
@@ -77,7 +77,7 @@
     </tr></table>
     <p class="footer-note">BOM {{ bom_no }} · Task {{ active_task.project_id }}</p>
 </div></div>
-{% if not for_pdf and auto_print %}
+{% if auto_print %}
 <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 500); });</script>
 {% endif %}
 </body>

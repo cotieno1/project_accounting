@@ -1626,7 +1626,7 @@ def _bom_print_context(request, *, task=None, bom=None, ro=None):
         "bom_no": bom.bom_id,
         "bom_items": bom.items.all().order_by("id"),
         "active_task": task,
-        "bom_status": bom.status,
+        "bom_status": bom.get_status_display(),
         "bom_date": bom.created_at,
         "auto_print": request.GET.get("print") == "1",
         "back_url": back_url,
@@ -1637,7 +1637,7 @@ def _bom_print_context(request, *, task=None, bom=None, ro=None):
 
 @login_required
 def print_bom_view(request):
-    """Letterhead BOM print from BOM Builder (screen + browser print / PDF)."""
+    """Letterhead BOM print from BOM Builder (screen preview + browser print)."""
     context = _bom_print_context(request)
     if not context:
         messages.error(
@@ -1646,14 +1646,13 @@ def print_bom_view(request):
         )
         task_id = request.GET.get("task_id", "")
         return redirect(reverse("bom_builder") + (f"?task_id={task_id}" if task_id else ""))
-    return render(request, "bom_report_print.html", context)
+    context["auto_print"] = request.GET.get("print") == "1"
+    return render(request, "bom_print.html", context)
 
 
 @login_required
 def print_bom_pdf_view(request):
-    """Native inline PDF for BOM (mobile pinch-zoom)."""
-    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
-
+    """Same bom_print.html layout — opens browser print (Save as PDF), not xhtml2pdf."""
     context = _bom_print_context(request)
     if not context:
         messages.error(
@@ -1662,15 +1661,8 @@ def print_bom_pdf_view(request):
         )
         task_id = request.GET.get("task_id", "")
         return redirect(reverse("bom_builder") + (f"?task_id={task_id}" if task_id else ""))
-    try:
-        pdf_bytes = build_pdf_bytes("bom_report_print.html", context)
-    except ImportError:
-        messages.error(request, "PDF support is not installed on the server.")
-        return redirect(reverse("print_bom") + "?" + request.META.get("QUERY_STRING", ""))
-    except Exception as exc:
-        messages.error(request, f"PDF generation failed: {exc}")
-        return redirect(reverse("print_bom") + "?" + request.META.get("QUERY_STRING", ""))
-    return pdf_inline_response(pdf_bytes, context["bom_no"])
+    context["auto_print"] = True
+    return render(request, "bom_print.html", context)
 
 # =======================================================================
 # ⚖️ THE ULTIMATE SINGLE UNIFIED RFQ & TENDER MONITOR ENGINE
@@ -2357,7 +2349,7 @@ def print_bom_from_ro(request, ro_id):
     if not context:
         messages.error(request, "Could not build BOM print context.")
         return redirect("bom_builder")
-    return render(request, "bom_report_print.html", context)
+    return render(request, "bom_print.html", context)
     
 # ==========================================================
 from django.db import transaction

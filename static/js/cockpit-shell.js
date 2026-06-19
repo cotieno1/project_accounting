@@ -24,7 +24,7 @@
         });
     }
 
-    shell.querySelectorAll(".sidebar a, .sidebar button").forEach(function (el) {
+    shell.querySelectorAll(".sidebar a, .sidebar button, .sidebar select").forEach(function (el) {
         el.addEventListener("click", function () {
             if (window.matchMedia("(max-width: 768px)").matches) {
                 setOpen(false);
