@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pioneer | BOM Builder</title>
+    <title>Pioneer | Bills of Materials (BOM)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -26,7 +26,7 @@
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; color: var(--text-muted); padding: 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
         td { padding: 12px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); font-size: 13px; }
-        .bom-stage-panel { text-align: left; max-width: 680px; margin: 0 auto; padding: 32px 28px; background: #0f172a; border: 1px solid var(--border); border-radius: 12px; }
+        .bom-stage-panel { text-align: left; width: 100%; box-sizing: border-box; margin: 0 0 24px; padding: 25px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
         .bom-stage-badge { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); background: rgba(37,99,235,0.15); padding: 4px 10px; border-radius: 4px; margin-bottom: 12px; }
         .bom-stage-lead { font-size: 13px; line-height: 1.55; margin: 0 0 12px; color: var(--text-muted); }
         .bom-stage-journey { margin: 16px 0 0; padding: 0 0 0 20px; font-size: 12px; line-height: 1.55; color: var(--text-muted); }
@@ -50,6 +50,15 @@
         .status-table { margin-top: 16px; font-size: 12px; }
         .status-table caption { text-align: left; font-weight: 700; color: var(--light); margin-bottom: 8px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
         .lane-tag { font-size: 10px; color: var(--text-muted); }
+        .bom-page-header { width: 100%; box-sizing: border-box; margin-bottom: 24px; padding: 25px; text-align: left; }
+        .bom-page-header .page-title { margin: 0; font-size: 20px; font-weight: 700; color: var(--primary); line-height: 1.3; }
+        .bom-page-header .task-id-title { margin: 8px 0 0; font-size: 18px; font-weight: 600; color: var(--light); line-height: 1.3; }
+        .bom-page-header .task-description-title { margin: 4px 0 0; font-size: 15px; font-weight: 500; color: var(--text-muted); line-height: 1.35; }
+        .bom-heading-message { margin: 16px 0 0; font-size: 13px; line-height: 1.55; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; }
+        .bom-heading-message--create { border-color: rgba(37,99,235,0.35); color: #93c5fd; }
+        .bom-heading-message--exists { border-color: rgba(245,158,11,0.35); color: #fcd34d; }
+        .bom-heading-message--misc { border-color: rgba(245,158,11,0.35); color: #fcd34d; }
+        .bom-heading-actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
     </style>
 </head>
 <body>
@@ -89,7 +98,7 @@
     </div>
 
     <div style="margin-top: auto; padding-top: 20px;">
-        <a href="{% if active_task %}{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}" style="color: var(--text-muted); font-size: 12px; text-decoration: none;">← Main menu (Esc)</a>
+        <a href="{% if active_task %}{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}" id="bomBackMain" style="color: var(--text-muted); font-size: 12px; text-decoration: none;">← Main menu (Esc)</a>
     </div>
 </div>
 
@@ -100,10 +109,28 @@
     {% endfor %}
     {% endif %}
 
+    {% if bom_heading and active_task %}
+    <div class="panel bom-page-header">
+        <h1 class="page-title">Creating A New Bills of Materials (BOM)</h1>
+        <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
+        <p class="task-description-title">{{ active_task.description }}</p>
+        <p class="bom-heading-message bom-heading-message--{{ bom_heading.mode }}">{{ bom_heading.message }}</p>
+        {% if bom_heading.show_view_pdf %}
+        <div class="bom-heading-actions">
+            <a href="{{ bom_heading.view_pdf_url }}" class="btn-action btn-success" target="_blank" rel="noopener">View BOM PDF</a>
+        </div>
+        {% endif %}
+    </div>
+    {% elif bom_heading and not active_task %}
+    <div class="panel bom-page-header">
+        <h1 class="page-title">Creating A New Bills of Materials (BOM)</h1>
+        <p class="bom-heading-message bom-heading-message--select">{{ bom_heading.message }}</p>
+    </div>
+    {% endif %}
+
     {% if screen_lane == 'misc' and task_status %}
     <div class="bom-stage-panel lane-blocked">
         <span class="bom-stage-badge">Ad-hoc lane — cannot process as BOM</span>
-        <h4 style="margin:0 0 8px;">Task {{ active_task.project_id }}</h4>
         <p class="bom-stage-lead">{{ task_status.stage_label }}</p>
         {% if task_status.summary_lines %}
         <dl class="status-kv">
@@ -127,19 +154,17 @@
             </tbody>
         </table>
         {% endif %}
-        <p class="bom-stage-lead">This task is on the <strong>Misc Purchase (Lane X)</strong> path — not BOM Builder. You can see its state here; continue work in Misc Purchase.</p>
+        <p class="bom-stage-lead">Continue on <strong>Misc Purchase (Lane X)</strong> — not BOM Builder.</p>
         <div class="bom-stage-actions">
             {% for link in task_status.links %}
             <a href="{{ link.url }}" class="btn-action {% if link.primary %}btn-success{% else %}btn-secondary{% endif %}">{{ link.label }} →</a>
             {% endfor %}
-            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Main menu</a>
         </div>
     </div>
 
     {% elif screen_lane == 'major' and task_status %}
     <div class="bom-stage-panel">
         <span class="bom-stage-badge">Major procurement — view only</span>
-        <h4 style="margin:0 0 8px;">Task {{ active_task.project_id }}</h4>
         <p class="bom-stage-lead"><strong>{{ task_status.stage_label }}</strong></p>
         {% if task_status.budget_label or task_status.delivery_summary %}
         <dl class="status-kv">
@@ -181,12 +206,14 @@
             <tbody>{% for item in task_status.bom_items %}<tr><td>{{ forloop.counter }}</td><td>{{ item.description }}</td><td>{{ item.uom }}</td><td>{{ item.qty }}</td></tr>{% endfor %}</tbody>
         </table>
         {% endif %}
-        <p class="bom-stage-lead">Cannot start a new BOM — this task has passed the create stage. Use the links below to continue.</p>
+        <p class="bom-stage-lead">Use the links below to continue procurement on this task.</p>
         <div class="bom-stage-actions">
+            {% if bom_heading.show_view_pdf %}
+            <a href="{{ bom_heading.view_pdf_url }}" class="btn-action btn-success" target="_blank" rel="noopener">View BOM PDF</a>
+            {% endif %}
             {% for link in task_status.links %}
             <a href="{{ link.url }}" class="btn-action {% if link.primary %}{% else %}btn-secondary{% endif %}">{{ link.label }} →</a>
             {% endfor %}
-            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Main menu</a>
         </div>
     </div>
 
@@ -196,9 +223,6 @@
         <h4 style="margin:0 0 8px;">Start your BOM build here</h4>
         <p class="bom-stage-lead">Select any task from the sidebar — each shows its <strong>lane and status</strong>. Press <strong>Start BOM</strong> only on <em>New · Start BOM</em> tasks.</p>
         {% include "partials/bom_stage_journey.html" %}
-        <div class="bom-stage-actions">
-            <a href="{% url 'ops_dashboard' %}" class="btn-action btn-secondary">← Main menu</a>
-        </div>
     </div>
 
     {% else %}
@@ -228,9 +252,7 @@
                 <button type="submit" name="new_bom" class="btn-action">Start BOM</button>
             </form>
             {% endif %}
-            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary" id="bomBackMain">← Main menu (Esc)</a>
         </div>
-        <p class="bom-stage-hint"><kbd>Esc</kbd> returns to the main menu</p>
     </div>
     {% endif %}
 
@@ -310,7 +332,7 @@
 <script>
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        var back = document.getElementById('bomBackMain') || document.querySelector('.bom-stage-actions a.btn-secondary');
+        var back = document.getElementById('bomBackMain');
         if (back) window.location.href = back.href;
     }
 });

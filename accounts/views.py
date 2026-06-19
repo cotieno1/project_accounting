@@ -1348,6 +1348,48 @@ def _ops_task_panel_context(task):
     }
 
 
+def _bom_page_heading(task, screen_lane, *, can_start_bom=False, has_existing_bom=False, print_bom_pdf_url=""):
+    """Top-of-page heading copy for BOM Builder (create / exists / misc)."""
+    if not task:
+        return {
+            "mode": "select",
+            "message": "Select a task from the list to review the BOM path.",
+            "show_view_pdf": False,
+            "view_pdf_url": "",
+        }
+    tid = task.project_id
+    desc = task.description or ""
+    if screen_lane == "misc":
+        return {
+            "mode": "misc",
+            "message": (
+                f"This Task: {tid} · {desc} is already using an alternative process "
+                f"that does NOT require BOM."
+            ),
+            "show_view_pdf": False,
+            "view_pdf_url": "",
+        }
+    if screen_lane == "major" or (has_existing_bom and not can_start_bom):
+        return {
+            "mode": "exists",
+            "message": (
+                f"You cannot Create a BOM for {tid} · {desc} — a project BOM already exists. "
+                f"You can view that BOM using the button below."
+            ),
+            "show_view_pdf": bool(print_bom_pdf_url),
+            "view_pdf_url": print_bom_pdf_url,
+        }
+    return {
+        "mode": "create",
+        "message": (
+            f"Creating BOM for {tid} · {desc}. Please confirm if this Task requires "
+            f"a BOM Process as specified herein below."
+        ),
+        "show_view_pdf": False,
+        "view_pdf_url": "",
+    }
+
+
 @login_required
 def bom_builder(request):
     """BOM path for Snr Site Engineer — all tasks visible; create BOM only when allowed."""
@@ -1379,6 +1421,7 @@ def bom_builder(request):
             "can_print_bom": False,
             "print_bom_url": "",
             "print_bom_pdf_url": "",
+            "bom_heading": None,
         }
         ctx.update(extra)
         return render(request, "bom_builder.html", ctx)
@@ -1387,15 +1430,26 @@ def bom_builder(request):
         return _render(
             engineer_journey_visible=True,
             setup_message="Select any task — status shown in the list. Start BOM only on new major-lane tasks.",
+            bom_heading=_bom_page_heading(None, "none"),
         )
 
     screen_lane = _bom_screen_lane(active_task)
     task_status = _bom_task_status_snapshot(active_task)
 
     if screen_lane == "misc":
-        return _render(screen_lane="misc", task_status=task_status)
+        return _render(
+            screen_lane="misc",
+            task_status=task_status,
+            bom_heading=_bom_page_heading(active_task, screen_lane),
+        )
     if screen_lane == "major":
         bom_info = task_status.get("bom") or {}
+        meaningful_bom = _task_meaningful_bom_header(active_task)
+        print_bom_pdf_url = ""
+        if meaningful_bom:
+            print_bom_pdf_url = (
+                reverse("print_bom_pdf") + f"?task_id={active_task.project_id}"
+            )
         return _render(
             screen_lane="major",
             task_status=task_status,
@@ -1405,6 +1459,14 @@ def bom_builder(request):
             bom_submitted=bom_info.get("status_code") != BOMHeader.STATUS_DRAFT
             if bom_info
             else False,
+            can_print_bom=bool(meaningful_bom),
+            print_bom_pdf_url=print_bom_pdf_url,
+            bom_heading=_bom_page_heading(
+                active_task,
+                screen_lane,
+                has_existing_bom=bool(meaningful_bom or bom_info),
+                print_bom_pdf_url=print_bom_pdf_url,
+            ),
         )
 
     bom_header = _get_task_bom(active_task)
@@ -1529,6 +1591,14 @@ def bom_builder(request):
         can_print_bom=can_print_bom,
         print_bom_url=print_bom_url,
         print_bom_pdf_url=print_bom_pdf_url,
+        bom_heading=_bom_page_heading(
+            active_task,
+            screen_lane,
+            can_start_bom=can_start_bom,
+            has_existing_bom=bool(_task_meaningful_bom_header(active_task))
+            and not can_start_bom,
+            print_bom_pdf_url=print_bom_pdf_url if can_print_bom else "",
+        ),
     )
 
 
