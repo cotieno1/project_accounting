@@ -99,76 +99,41 @@
         </div>
     </div>
 
-    <div class="task-switcher">
-        <span class="nav-label task-switcher-label">SWITCH ACTIVE TASK</span>
-        <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='{% url 'ops_dashboard' %}'}">
-            <option value="">-- Select project task --</option>
-            {% if not task_rows %}
-            <option disabled>No tasks in database</option>
-            {% endif %}
-            {% for row in task_rows %}
-            <option value="{{ row.task.project_id }}" {% if active_task and row.task.project_id == active_task.project_id %}selected{% endif %}>
-                {{ row.task.project_id }} — {{ row.hint }}
-            </option>
-            {% endfor %}
-        </select>
-        <p class="task-switcher-note">Lane and status shown — BOM number only after a real BOM is started (not for Misc PO or blank tasks).</p>
-    </div>
-
-    <div class="panel">
-        <div class="panel-header">
-            {% if active_task %}
-            <h3>Project DNA: {{ active_task.description }} (ID: {{ active_task.project_id }})</h3>
-            <span class="panel-meta">{{ task_panel.lane_label }}</span>
-            <span class="panel-meta panel-meta--hint">{{ task_panel.status_hint }}</span>
-            {% if task_panel.bom_applicable %}
-            <span class="panel-meta">BOM: {{ task_panel.bom_display }}</span>
-            {% else %}
-            <span class="panel-meta panel-meta--muted">{{ task_panel.bom_display }}</span>
-            {% endif %}
-            {% else %}
-            <h3>No Active Task Selected</h3>
-            <span class="panel-meta panel-meta--muted">Select a task to see lane and status</span>
-            {% endif %}
-            <span class="badge badge-execution">Active Site</span>
+    <div class="panel ops-activity-panel">
+        <div class="panel-header panel-header--compact">
+            <div>
+                <h3>Cross-Task Activity Summary</h3>
+                <p class="ops-activity-lead">Major (BOM) and Ad-Hoc (Misc) lanes — latest actions across all tasks</p>
+            </div>
         </div>
-        <div class="table-scroll">
-        <table>
+        <div class="table-scroll ops-activity-scroll">
+        <table class="ops-activity-table">
             <thead>
                 <tr>
                     <th>Ref #</th>
                     <th>Actor</th>
                     <th>Action Description</th>
-                    <th>Document DNA</th>
+                    <th>Project Status/stage</th>
                     <th>Financial Impact</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
+                {% for row in activity_feed %}
                 <tr>
-                    <td><strong>TSK-101</strong></td>
-                    <td>Project Dir.</td>
-                    <td>Task Assigned: House Building</td>
-                    <td>Site: Mogadishu South</td>
-                    <td>-</td>
-                    <td><span class="badge badge-primary">Actioned</span></td>
+                    <td><strong>{{ row.ref }}</strong></td>
+                    <td>{{ row.actor }}</td>
+                    <td>{{ row.action }}</td>
+                    <td>{{ row.project_stage }}</td>
+                    <td>
+                        {% if row.financial_type == 'none' %}-
+                        {% elif row.financial_type == 'est' %}Est. {{ currency_symbol }} {{ row.financial_value }}
+                        {% else %}{{ currency_symbol }} {{ row.financial_value }}
+                        {% endif %}
+                    </td>
+                    <td><span class="badge {{ row.status_class }}">{{ row.status }}</span></td>
                 </tr>
-                <tr>
-                    <td><strong>BOM-042</strong></td>
-                    <td>Snr Site Mgr</td>
-                    <td>BOM Submitted: 600 Bags Cement</td>
-                    <td>Code: XX2 / Mazuri</td>
-                    <td>Est. {{ currency_symbol }} 12,000</td>
-                    <td><span class="badge badge-success">Baselined</span></td>
-                </tr>
-                <tr>
-                    <td><strong>LPO-001</strong></td>
-                    <td>GM / Director</td>
-                    <td>LPO Issued to Orion Supplies</td>
-                    <td>RFQ-Som-04 / Quo-98</td>
-                    <td>{{ currency_symbol }} 12,000.00</td>
-                    <td><span class="badge badge-execution">Authorized</span></td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
         </div>

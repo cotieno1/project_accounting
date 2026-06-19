@@ -164,21 +164,104 @@ def switch_active_organization(request):
         "org_code": org_code,
     })
 
+def _ops_cross_task_activity_feed():
+    """Hard-coded cross-task activity log — Major (BOM) and Ad-Hoc (Misc) lanes."""
+    return [
+        {
+            "ref": "TSK-101",
+            "actor": "Project Dir.",
+            "action": "Task Assigned: House Building",
+            "project_stage": "Task Assigned",
+            "financial_type": "none",
+            "financial_value": "",
+            "status": "Actioned",
+            "status_class": "badge-primary",
+        },
+        {
+            "ref": "BOM-042",
+            "actor": "Snr Site Mgr",
+            "action": "BOM Submitted: 600 Bags Cement",
+            "project_stage": "BOM",
+            "financial_type": "est",
+            "financial_value": "12,000",
+            "status": "Baselined",
+            "status_class": "badge-success",
+        },
+        {
+            "ref": "LPO-001",
+            "actor": "GM / Director",
+            "action": "LPO Issued to Orion Supplies",
+            "project_stage": "LPO",
+            "financial_type": "actual",
+            "financial_value": "12,000.00",
+            "status": "Authorized",
+            "status_class": "badge-execution",
+        },
+        {
+            "ref": "TSK-026",
+            "actor": "Project Dir.",
+            "action": "Task Assigned: Emergency Plumbing",
+            "project_stage": "Task Assigned",
+            "financial_type": "none",
+            "financial_value": "",
+            "status": "Actioned",
+            "status_class": "badge-primary",
+        },
+        {
+            "ref": "MRO-088",
+            "actor": "Site Officer",
+            "action": "Misc RO Submitted: Pipe Fittings & Valves",
+            "project_stage": "Misc RO",
+            "financial_type": "est",
+            "financial_value": "450",
+            "status": "Submitted",
+            "status_class": "badge-planning",
+        },
+        {
+            "ref": "MRO-088",
+            "actor": "GM / Director",
+            "action": "MRO Approved — Officer Payment Path",
+            "project_stage": "Fund Disbursed",
+            "financial_type": "actual",
+            "financial_value": "450.00",
+            "status": "Authorized",
+            "status_class": "badge-execution",
+        },
+        {
+            "ref": "TSK-3330",
+            "actor": "Project Dir.",
+            "action": "Task Assigned: Pioneer HWF Phase 2",
+            "project_stage": "Budget Approval",
+            "financial_type": "none",
+            "financial_value": "",
+            "status": "Actioned",
+            "status_class": "badge-primary",
+        },
+        {
+            "ref": "BOM-033",
+            "actor": "Snr Site Mgr",
+            "action": "BOM Draft: Structural Steel Items",
+            "project_stage": "BOM",
+            "financial_type": "est",
+            "financial_value": "8,400",
+            "status": "In Progress",
+            "status_class": "badge-planning",
+        },
+    ]
+
+
 @login_required
 def fin_mgmt_ops_view(request):
     tasks = ProjectTask.objects.order_by("project_id")
     active_task = _task_from_request(request, tasks)
-    task_rows = [
-        {"task": t, "hint": _bom_task_sidebar_hint(t)} for t in tasks
-    ]
     task_panel = _ops_task_panel_context(active_task)
 
     context = {
         'page_title': 'Pioneer Financial Ops',
         'tasks': tasks,
-        'task_rows': task_rows,
         'active_task': active_task,
         'task_panel': task_panel,
+        'activity_feed': _ops_cross_task_activity_feed(),
         'bom_no': task_panel["bom_display"],
         'mtd_actuals': "89,200.00",
     }

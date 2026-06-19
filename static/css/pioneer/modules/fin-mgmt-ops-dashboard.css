@@ -96,15 +96,43 @@ body.ops-dashboard { --text-muted: var(--muted); }
 .ops-dashboard .stat-card--success { border-top: 4px solid var(--success); }
 .ops-dashboard .stat-card--danger { border-top: 4px solid var(--danger); }
 
-.ops-dashboard .task-switcher { margin-top: 20px; margin-bottom: 25px; }
-.ops-dashboard .task-switcher-label { color: var(--muted); }
-.ops-dashboard .task-switcher select {
-    width: 100%;
-    background: var(--surface-deep);
-    color: white;
+.ops-dashboard .ops-activity-panel .panel-header--compact {
+    margin-bottom: 16px;
+    align-items: flex-start;
+}
+
+.ops-dashboard .ops-activity-lead {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.ops-dashboard .ops-activity-scroll {
+    max-height: calc(2.75rem + (6 * 2.75rem));
+    overflow-y: auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border: 1px solid var(--border);
-    padding: 10px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
+}
+
+.ops-dashboard .ops-activity-table {
+    min-width: 720px;
+    margin: 0;
+}
+
+.ops-dashboard .ops-activity-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--card);
+    box-shadow: 0 1px 0 var(--border);
+}
+
+.ops-dashboard .ops-activity-table tbody td {
+    vertical-align: top;
+    line-height: 1.4;
 }
 
 .ops-dashboard .panel-header {
@@ -120,13 +148,6 @@ body.ops-dashboard { --text-muted: var(--muted); }
 .ops-dashboard .panel-meta--danger { color: var(--danger); }
 .ops-dashboard .panel-meta--muted { color: var(--muted); font-weight: 600; }
 .ops-dashboard .panel-meta--hint { color: #93c5fd; font-weight: 600; }
-
-.ops-dashboard .task-switcher-note {
-    margin: 8px 0 0;
-    font-size: 11px;
-    line-height: 1.45;
-    color: var(--muted);
-}
 
 .ops-dashboard .badge {
     padding: 4px 8px;
