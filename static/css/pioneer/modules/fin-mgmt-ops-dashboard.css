@@ -17,14 +17,82 @@ body.ops-dashboard { --text-muted: var(--muted); }
 }
 
 .ops-dashboard .nav-section { margin-bottom: 25px; }
+.ops-dashboard .nav-section--collapsible {
+    margin-bottom: 12px;
+}
 .ops-dashboard .nav-section--adhoc {
     background: rgba(16, 185, 129, 0.05);
     padding: 12px;
     border-radius: var(--radius-md);
     border: 1px dashed var(--success);
-    margin-bottom: 30px;
+    margin-bottom: 16px;
 }
-.ops-dashboard .nav-section--adhoc .nav-label { color: var(--success); margin-bottom: 8px; }
+.ops-dashboard .nav-section--adhoc .nav-label { color: var(--success); }
+
+.ops-dashboard .nav-section-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    margin: 0;
+    padding: 0 0 8px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+}
+.ops-dashboard .nav-section-toggle .nav-label {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 0;
+}
+.ops-dashboard .nav-section-chevron {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.6);
+    position: relative;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.ops-dashboard .nav-section-chevron::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    transform: translate(-65%, -75%) rotate(45deg);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.ops-dashboard .nav-section--collapsible.is-open .nav-section-chevron::before {
+    transform: translate(-50%, -35%) rotate(-135deg);
+    border-color: var(--light);
+}
+.ops-dashboard .nav-section-toggle:hover .nav-section-chevron {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.35);
+}
+.ops-dashboard .nav-section-body {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+.ops-dashboard .nav-section--collapsible.is-open .nav-section-body {
+    max-height: 480px;
+    opacity: 1;
+    padding-top: 4px;
+}
+.ops-dashboard .nav-section--adhoc .nav-section-toggle {
+    padding-bottom: 10px;
+}
 
 .ops-dashboard .nav-link {
     display: flex;

@@ -11,18 +11,27 @@
         <small>Somalia Ops Command</small>
     </div>
 
-    <div class="nav-section nav-section--adhoc">
-        <span class="nav-label">⚡ AD-HOC PROCUREMENT</span>
+    <div class="nav-section nav-section--collapsible nav-section--adhoc" data-ops-nav="adhoc">
+        <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavAdhoc">
+            <span class="nav-label">⚡ AD-HOC PROCUREMENT</span>
+            <span class="nav-section-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-section-body" id="opsNavAdhoc">
         {% if active_task %}
         <a href="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}" class="nav-link nav-link--emph">🛒 Direct/AD-HOC Purchase</a>
         {% else %}
         <span class="nav-link nav-link--emph" style="opacity:0.5;cursor:not-allowed;">🛒 Direct/AD-HOC Purchase</span>
         {% endif %}
         <small class="nav-hint">Expedited purchase for standard items (e.g. Cement) bypassing RFQ/Bids.</small>
+        </div>
     </div>
 
-    <div class="nav-section">
-        <span class="nav-label">I. FIELD DEFINITION</span>
+    <div class="nav-section nav-section--collapsible is-open" data-ops-nav="field">
+        <button type="button" class="nav-section-toggle" aria-expanded="true" aria-controls="opsNavField">
+            <span class="nav-label">I. FIELD DEFINITION</span>
+            <span class="nav-section-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-section-body" id="opsNavField">
         {% if active_task %}
         <a href="{% url 'bom_builder' %}?task_id={{ active_task.project_id }}" class="nav-link">🏗️ 1.1 Site Eng: Build BOM</a>
         <a href="{% url 'ro_builder' %}?task_id={{ active_task.project_id }}" class="nav-link">⚖️ 1.2 Snr Eng: Issue Requisition</a>
@@ -30,37 +39,59 @@
         {% else %}
         <span class="nav-link" style="opacity:0.5;">Select a task to open workflow steps</span>
         {% endif %}
+        </div>
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section nav-section--collapsible" data-ops-nav="bid">
+        <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavBid">
+            <span class="nav-label">II. BID EVALUATION</span>
+            <span class="nav-section-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-section-body" id="opsNavBid">
         {% if active_task %}
         <a href="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}" class="nav-link">📊 2.1 System: Bid Evaluation</a>
         {% else %}
         <span class="nav-link" style="opacity:0.5;">📊 2.1 System: Bid Evaluation</span>
         {% endif %}
+        </div>
     </div>
 
-    <div class="nav-section">
-        <span class="nav-label">III. EXCO COMMITMENT</span>
+    <div class="nav-section nav-section--collapsible" data-ops-nav="exco">
+        <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavExco">
+            <span class="nav-label">III. EXCO COMMITMENT</span>
+            <span class="nav-section-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-section-body" id="opsNavExco">
         {% if active_task %}
         <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id }}" class="nav-link">💰 3.1 CEO: Budget Authorization-Funds Disbursement</a>
         {% endif %}
+        </div>
     </div>
 
-    <div class="nav-section">
-        <span class="nav-label">IV. DISBURSEMENT</span>
+    <div class="nav-section nav-section--collapsible" data-ops-nav="disbursement">
+        <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavDisbursement">
+            <span class="nav-label">IV. DISBURSEMENT</span>
+            <span class="nav-section-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-section-body" id="opsNavDisbursement">
         {% if active_task %}
         <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id }}" class="nav-link">🔒 CEO: Budget Authorization</a>
         <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}" class="nav-link nav-link--emph">🏦 4.2 GM: AIE Payments (4 Lines)</a>
         <small class="nav-hint">Goods, maintenance, labour &amp; equipment — Major or Ad-Hoc task.</small>
         {% endif %}
+        </div>
     </div>
 
-    <div class="nav-section">
-        <span class="nav-label">V. FULFILLMENT</span>
+    <div class="nav-section nav-section--collapsible" data-ops-nav="fulfillment">
+        <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavFulfillment">
+            <span class="nav-label">V. FULFILLMENT</span>
+            <span class="nav-section-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="nav-section-body" id="opsNavFulfillment">
         {% if active_task %}
         <a href="/payment-settlement/?task_id={{ active_task.project_id }}" class="nav-link">🚚 5.1 Log: Record GRN/Receipt</a>
         {% endif %}
+        </div>
     </div>
 
     <div class="sidebar-footer">
@@ -179,6 +210,60 @@
 {% endblock %}
 {% block extra_js %}
 <script>
+(function () {
+    var storageKey = 'ops-dashboard-nav-open';
+    var defaultOpen = 'field';
+    var sections = document.querySelectorAll('.ops-dashboard .nav-section--collapsible');
+
+    function readOpenId() {
+        try {
+            var saved = localStorage.getItem(storageKey);
+            if (saved && document.querySelector('[data-ops-nav="' + saved + '"]')) {
+                return saved;
+            }
+        } catch (e) {}
+        return defaultOpen;
+    }
+
+    function writeOpenId(id) {
+        try {
+            if (id) {
+                localStorage.setItem(storageKey, id);
+            } else {
+                localStorage.removeItem(storageKey);
+            }
+        } catch (e) {}
+    }
+
+    function setOpen(section, open) {
+        var toggle = section.querySelector('.nav-section-toggle');
+        section.classList.toggle('is-open', open);
+        if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function openOnly(id) {
+        sections.forEach(function (section) {
+            var sectionId = section.getAttribute('data-ops-nav');
+            setOpen(section, sectionId === id);
+        });
+        writeOpenId(id);
+    }
+
+    openOnly(readOpenId());
+
+    sections.forEach(function (section) {
+        var id = section.getAttribute('data-ops-nav');
+        var toggle = section.querySelector('.nav-section-toggle');
+        if (!toggle || !id) return;
+        toggle.addEventListener('click', function () {
+            if (section.classList.contains('is-open')) {
+                return;
+            }
+            openOnly(id);
+        });
+    });
+})();
+
 function openOpsModal(type) {
     if (type === 'bom') {
         var el = document.getElementById('bomModal');

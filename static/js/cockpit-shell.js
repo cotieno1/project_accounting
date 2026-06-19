@@ -26,6 +26,9 @@
 
     shell.querySelectorAll(".sidebar a, .sidebar button, .sidebar select").forEach(function (el) {
         el.addEventListener("click", function () {
+            if (el.classList.contains("nav-section-toggle")) {
+                return;
+            }
             if (window.matchMedia("(max-width: 768px)").matches) {
                 setOpen(false);
             }
