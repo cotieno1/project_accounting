@@ -216,6 +216,7 @@
 
             <div class="budget-card">
                 <h3 style="margin:0 0 12px;border-bottom:1px solid var(--border);padding-bottom:12px;font-size:14px;text-transform:uppercase;">Four budget lines</h3>
+                <div class="table-scroll">
                 <table class="line-budget-table">
                     <thead>
                         <tr>
@@ -244,6 +245,7 @@
                         </tr>
                     </tfoot>
                 </table>
+                </div>
                 <div style="margin-top:20px;padding-top:16px;border-top:2px dashed var(--border);">
                     <span class="nav-label" style="color:var(--muted);">Total authorized (CEO AIE ceiling)</span>
                     <div class="total-display">{{ currency_symbol }} {{ budget_summary.total_budget|floatformat:2 }}</div>

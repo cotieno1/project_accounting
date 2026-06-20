@@ -74,9 +74,153 @@ font-size: 12px;
 .pv-summary-box { background: #070b14; border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; font-size: 13px; }
 /* GM desk layout tweak */
 .gm-desk .evaluation-grid {
-grid-template-columns: minmax(0, 1fr) 400px;
+    grid-template-columns: minmax(0, 1fr) 400px;
 }
+
 .gm-desk .total-display {
-font-size: 22px;
-margin: 4px 0;
+    font-size: 22px;
+    margin: 4px 0;
+}
+
+.gm-desk .budget-card .table-scroll {
+    margin: 0 -4px;
+    padding: 0 4px;
+}
+
+.gm-desk .line-budget-table {
+    min-width: 300px;
+}
+
+@media (max-width: 1100px) {
+    .gm-desk .evaluation-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gm-desk .budget-card {
+        position: static;
+        top: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    body.gm-desk {
+        overflow-x: hidden;
+    }
+
+    body.gm-desk .cockpit-shell {
+        overflow-x: hidden;
+    }
+
+    .gm-desk .sidebar {
+        max-width: min(85vw, 320px);
+        padding: 24px 16px;
+        padding-top: 56px;
+    }
+
+    .gm-desk .main-content {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .gm-desk .workspace-scroller {
+        padding: 16px;
+        padding-top: 56px;
+        gap: 16px;
+        overflow-x: hidden;
+    }
+
+    .gm-desk .panel,
+    .gm-desk .table-pane,
+    .gm-desk .budget-card {
+        padding: 14px;
+        min-width: 0;
+    }
+
+    .gm-desk .table-pane {
+        min-height: 0;
+    }
+
+    .gm-desk .evaluation-grid {
+        gap: 16px;
+    }
+
+    .gm-desk .page-title,
+    .gm-desk .task-id-title {
+        font-size: clamp(1rem, 4.5vw, 20px);
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .gm-desk .header-row,
+    .gm-desk .header-left {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .gm-desk .line-budget-table th,
+    .gm-desk .line-budget-table td {
+        font-size: 12px;
+        padding: 10px 6px;
+    }
+
+    .gm-desk .line-budget-table td:first-child {
+        white-space: normal;
+        min-width: 88px;
+        max-width: 140px;
+    }
+
+    .gm-desk .line-budget-table .num,
+    .gm-desk .line-budget-table td:not(:first-child) {
+        white-space: nowrap;
+    }
+
+    .gm-desk .total-display {
+        font-size: clamp(1.125rem, 5vw, 22px);
+        word-break: break-word;
+    }
+
+    .gm-desk .budget-status-panel .budget-row {
+        flex-wrap: wrap;
+        gap: 2px 8px;
+    }
+
+    .gm-desk .budget-status-panel .budget-label {
+        min-width: 0;
+    }
+
+    .gm-desk .registry-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .gm-desk .registry-table {
+        min-width: 720px;
+    }
+
+    .gm-desk .registry-modal-panel {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .gm-desk .registry-filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .gm-desk .registry-filter .form-input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .gm-desk #linePreview {
+        display: flex !important;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 11px;
+    }
+
+    .gm-desk #linePreview span[style*="margin-left"] {
+        margin-left: 0 !important;
+    }
 }
