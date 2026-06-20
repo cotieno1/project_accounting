@@ -15,14 +15,17 @@
 <body class="command-center">
 
 <!-- HEADER -->
-<div class="header">
+<div class="header" id="commandHeader">
     <div class="header-top">
         <div class="header-title-row">
             <span class="header-product">{{ app_short_name }} <span class="header-saas-tag">SaaS</span></span>
             <span class="header-title-sep" aria-hidden="true">·</span>
             <h2>Command Center</h2>
         </div>
-        <div class="header-actions-row">
+        <button type="button" class="header-mobile-toggle" id="mobileHeaderToggle" aria-expanded="false" aria-controls="headerActionsPanel" aria-label="Open account and settings">
+            <span class="header-avatar" aria-hidden="true">{{ username.0|upper }}</span>
+        </button>
+        <div class="header-actions-row" id="headerActionsPanel">
             <div class="header-tools">
                 <div class="setup-wrap">
                     <button type="button" class="setup-btn" id="setupMenuBtn" onclick="MasterRegistry.toggleSetupMenu()">System &amp; Accounts Setup</button>
@@ -69,6 +72,7 @@
         </div>
         {% endif %}
     </div>
+    <div class="header-mobile-backdrop" id="mobileHeaderBackdrop" aria-hidden="true"></div>
 </div>
 
 	<!-- MAIN -->
@@ -426,6 +430,47 @@ function showSection(id) {
         if (t.getAttribute('onclick') && t.getAttribute('onclick').indexOf(id) >= 0) t.classList.add('active');
     });
 }
+</script>
+<script>
+(function () {
+    var header = document.getElementById("commandHeader");
+    var toggle = document.getElementById("mobileHeaderToggle");
+    var backdrop = document.getElementById("mobileHeaderBackdrop");
+    if (!header || !toggle) {
+        return;
+    }
+    function setOpen(open) {
+        header.classList.toggle("header-menu-open", open);
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        if (backdrop) {
+            backdrop.setAttribute("aria-hidden", open ? "false" : "true");
+        }
+    }
+    toggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setOpen(!header.classList.contains("header-menu-open"));
+    });
+    if (backdrop) {
+        backdrop.addEventListener("click", function () {
+            setOpen(false);
+        });
+    }
+    document.addEventListener("click", function (e) {
+        if (!header.contains(e.target)) {
+            setOpen(false);
+        }
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+            setOpen(false);
+        }
+    });
+    window.matchMedia("(min-width: 769px)").addEventListener("change", function (e) {
+        if (e.matches) {
+            setOpen(false);
+        }
+    });
+})();
 </script>
 
 </body>
