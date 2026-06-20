@@ -12,12 +12,18 @@ from .models import (
 # -------------------------------
 @admin.register(UserAccount)
 class UserAccountAdmin(admin.ModelAdmin):
-    list_display = ('user', 'first_name', 'last_name', 'designation', 'phone', 'email', 'access_level')
+    list_display = (
+        'user', 'first_name', 'last_name', 'designation', 'phone', 'email',
+        'access_level', 'must_change_password', 'onboarded_at',
+    )
     search_fields = ('user__username', 'first_name', 'last_name', 'designation', 'email')
+    list_filter = ('access_level', 'must_change_password')
 
 @admin.register(UserCategory)
 class UserCategoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'description')
+    list_display = ('code', 'description', 'rank')
+    search_fields = ('code', 'description')
+    ordering = ('-rank', 'description')
     filter_horizontal = ('modules',)
 
 @admin.register(Module)

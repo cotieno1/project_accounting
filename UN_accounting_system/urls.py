@@ -37,6 +37,21 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    path(
+        'accounts/set-password/<uidb64>/<token>/',
+        views.set_password_onboarding,
+        name='set_password_onboarding',
+    ),
+    path(
+        'accounts/password-required/',
+        views.password_change_required,
+        name='password_change_required',
+    ),
+    path(
+        'accounts/resend-onboarding/',
+        views.resend_onboarding_email,
+        name='resend_onboarding_email',
+    ),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('docs/android-rollout-plan/', views.android_rollout_plan_doc, name='android_rollout_plan_doc'),
     path('api/switch-organization/', views.switch_active_organization, name='switch_active_organization'),

@@ -113,6 +113,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middleware.MustChangePasswordMiddleware',
 ]
 
 ROOT_URLCONF = 'UN_accounting_system.urls'
@@ -227,6 +228,26 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
+
+SITE_BASE_URL = os.environ.get('SITE_BASE_URL', '').strip()
+
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend',
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', default=True)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@projectaccounting.local')
+SYSTEM_ADMIN_EMAIL = os.environ.get('SYSTEM_ADMIN_EMAIL', '').strip()
+
+if _on_railway and not EMAIL_HOST_USER and not DEBUG:
+    import logging
+    logging.getLogger(__name__).warning(
+        'EMAIL_HOST_USER not set on Railway — onboarding emails will fail until SMTP is configured.'
+    )
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

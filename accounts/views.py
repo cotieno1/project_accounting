@@ -1,9 +1,10 @@
+from django.utils import timezone
+import secrets
 import calendar
 import re
 import json
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
-from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -18,6 +19,7 @@ from django.db.models import Sum, F, Count
 from collections import defaultdict
 
 # SINGLE UNIFIED IMPORT BLOCK - All models imported exactly once
+from .roles import can_manage_users
 from .tenant import get_active_organization, branding_template_context
 from .currency import fmt_money
 from .models import (
@@ -68,10 +70,24 @@ class CustomLoginView(LoginView):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
+    def get_success_url(self):
+        from django.urls import reverse
+        try:
+            if self.request.user.useraccount.must_change_password:
+                return reverse("password_change_required")
+        except Exception:
+            pass
+        return super().get_success_url()
+
 def has_module_access(user, module_code):
+    from .roles import user_can, USER_ADMIN, get_role_code
+    if user and user.is_superuser:
+        return True
+    if get_role_code(user) == USER_ADMIN:
+        return True
     try:
-        return user.useraccount.access_level.modules.filter(code=module_code).exists()
-    except:
+        return user.useraccount.access_level.modules.filter(name=module_code).exists()
+    except Exception:
         return False
 
 # =======================================================================
@@ -84,6 +100,85 @@ def home(request):
 def health(request):
     """Lightweight health check for Railway (no database)."""
     return HttpResponse('ok', content_type='text/plain')
+
+
+def set_password_onboarding(request, uidb64, token):
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.encoding import force_str
+    from django.utils.http import urlsafe_base64_decode
+
+    error = None
+    success = None
+    user = None
+    user_account = None
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+        user_account = getattr(user, "useraccount", None)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        error = "This link is invalid or has expired."
+        user = None
+
+    if user and not default_token_generator.check_token(user, token):
+        error = "This link is invalid or has expired."
+
+    if request.method == "POST" and user and not error:
+        password = (request.POST.get("password") or "").strip()
+        password_confirm = (request.POST.get("password_confirm") or "").strip()
+        pw, pw_err = _validate_user_passwords(password, password_confirm, required=True)
+        if pw_err:
+            error = pw_err
+        else:
+            user.set_password(pw)
+            user.save()
+            if user_account:
+                user_account.must_change_password = False
+                if not user_account.onboarded_at:
+                    user_account.onboarded_at = timezone.now()
+                user_account.save()
+            success = "Password saved. You can now sign in."
+            user = None
+
+    return render(
+        request,
+        "set_password_onboarding.html",
+        {"error": error, "success": success, "user_account": user_account},
+    )
+
+
+@login_required
+def password_change_required(request):
+    ua = getattr(request.user, "useraccount", None)
+    return render(
+        request,
+        "password_change_required.html",
+        {
+            "email": ua.email if ua else request.user.email,
+            "can_resend": bool(ua and ua.email),
+        },
+    )
+
+
+@login_required
+def resend_onboarding_email(request):
+    from .emails import send_onboarding_email
+    from .roles import can_manage_users
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Method not allowed")
+    ua = getattr(request.user, "useraccount", None)
+    if not ua or not ua.email or not ua.must_change_password:
+        messages.error(request, "Onboarding resend is not available for this account.")
+        return redirect("dashboard")
+    ua.must_change_password = True
+    request.user.set_unusable_password()
+    request.user.save()
+    ua.save()
+    if send_onboarding_email(ua, request=request):
+        messages.success(request, "Onboarding email sent. Check your inbox.")
+    else:
+        messages.error(request, "Could not send email. Contact User Admin.")
+    return redirect("password_change_required")
 
 
 def android_rollout_plan_doc(request):
@@ -128,6 +223,7 @@ def dashboard(request):
             ],
             'can_switch_organization': request.user.is_superuser,
             'active_org_code': active_org.org_code if active_org else "",
+            'can_manage_users': request.user.is_superuser or can_manage_users(request.user),
         }
         return render(request, 'dashboard.html', context)
     except Exception:
@@ -715,8 +811,17 @@ def _validate_user_passwords(password, password_confirm, required=True):
 
 @login_required
 def create_user(request):
+    from .emails import send_onboarding_email
+    from .roles import can_manage_users
+
     if request.method != "POST":
         return HttpResponseForbidden("Method not allowed")
+
+    if not can_manage_users(request.user):
+        return JsonResponse(
+            {"status": "error", "message": "Only User Admin can create or edit user accounts."},
+            status=403,
+        )
 
     mode = request.POST.get("mode", "create")
     original_id = (request.POST.get("original_id") or "").strip()
@@ -762,11 +867,24 @@ def create_user(request):
                     return JsonResponse({"status": "error", "message": pw_err}, status=400)
                 if pw:
                     ua.user.set_password(pw)
+                    ua.must_change_password = False
+                    if not ua.onboarded_at:
+                        ua.onboarded_at = timezone.now()
                 ua.user.save()
+            ua.save()
+            resend = request.POST.get("resend_onboarding") == "1"
+            if resend and ua.email:
+                ua.must_change_password = True
+                if ua.user:
+                    ua.user.set_unusable_password()
+                    ua.user.save()
+                ua.save()
+                send_onboarding_email(ua, request=request, invited_by=request.user)
             return JsonResponse({
                 "status": "success",
                 "message": "User account updated."
-                + (" Login password changed." if (password or "").strip() else ""),
+                + (" Login password changed." if (password or "").strip() else "")
+                + (" Onboarding email sent." if resend else ""),
             })
 
         if not username:
@@ -777,28 +895,33 @@ def create_user(request):
                 status=400,
             )
 
+        if not email:
+            return JsonResponse(
+                {"status": "error", "message": "Email is required for onboarding."},
+                status=400,
+            )
+
         if User.objects.filter(username=username).exists():
             return JsonResponse(
                 {"status": "error", "message": f"Username '{username}' is already taken."},
                 status=400,
             )
 
-        pw, pw_err = _validate_user_passwords(password, password_confirm, required=True)
-        if pw_err:
-            return JsonResponse({"status": "error", "message": pw_err}, status=400)
-
         user = User.objects.create_user(
             username=username,
-            email=email or "",
-            password=pw,
+            email=email,
+            password=secrets.token_urlsafe(32),
             first_name=first_name,
             last_name=last_name,
         )
+        user.set_unusable_password()
+        user.save()
 
         if not organization:
             organization = get_active_organization(request) or Organization.get_default()
 
-        UserAccount.objects.create(
+        admin_ua = getattr(request.user, "useraccount", None)
+        ua = UserAccount.objects.create(
             user=user,
             staff_no=staff_no or username,
             first_name=first_name,
@@ -809,10 +932,20 @@ def create_user(request):
             contact_address=request.POST.get("contact_address", ""),
             access_level=category,
             organization=organization,
+            must_change_password=True,
+            onboarded_by=admin_ua,
         )
+        emailed = send_onboarding_email(ua, request=request, invited_by=request.user)
         return JsonResponse({
             "status": "success",
-            "message": f"User {username} registered with login access.",
+            "message": (
+                f"User {username} created. "
+                + (
+                    "Onboarding email sent — user must set password via the link."
+                    if emailed
+                    else "User created but email could not be sent (check EMAIL settings)."
+                )
+            ),
         })
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=400)
@@ -2892,6 +3025,10 @@ def _serialize_task_grns(task, start_date=None, end_date=None):
             "voucher_amount": f"{pv.amount:.2f}" if pv else "",
             "can_raise_voucher": has_invoice and pv is None,
             "print_url": reverse("print_grn_view", args=[grn.id]),
+            "print_notify_url": (
+                reverse("print_grn_view", args=[grn.id])
+                + "?print=1&notify_admin=1&back=gm"
+            ),
             "voucher_view_url": (
                 reverse("print_payment_voucher_view", args=[pv.id]) if pv else ""
             ),
@@ -3224,6 +3361,8 @@ def _build_grn_print_context(grn):
 
 @login_required
 def print_grn_view(request, grn_id):
+    from .emails import send_grn_admin_copy
+
     grn = get_object_or_404(
         GRNTransaction.objects.select_related(
             "lpo__project_task",
@@ -3233,6 +3372,25 @@ def print_grn_view(request, grn_id):
         id=grn_id,
     )
     context = _build_grn_print_context(grn)
+    notify_admin = request.GET.get("notify_admin") == "1"
+    auto_print = request.GET.get("print") == "1"
+    back_to = request.GET.get("back", "")
+
+    if notify_admin:
+        session_key = f"grn_admin_notify_{grn.id}"
+        if not request.session.get(session_key):
+            if send_grn_admin_copy(grn, request, print_context=context):
+                request.session[session_key] = True
+                request.session.modified = True
+
+    context["auto_print"] = auto_print
+    context["back_to_gm"] = back_to == "gm"
+    if back_to == "gm":
+        task = context["task"]
+        context["gm_back_url"] = (
+            reverse("gm_aie_disbursement")
+            + f"?task_id={task.project_id}&open_grn_period=1"
+        )
     return render(request, "grn_print_template.html", context)
 
 

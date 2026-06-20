@@ -91,15 +91,32 @@ class BOMHeader(models.Model):
 
 
 class UserCategory(models.Model):
+    code = models.CharField(
+        max_length=40,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Stable role key, e.g. SENIOR_SITE_MANAGER.",
+    )
     description = models.CharField(max_length=100)
+    rank = models.PositiveSmallIntegerField(
+        default=0,
+        help_text="Higher rank = more senior (used for display ordering).",
+    )
+    role_summary = models.TextField(
+        blank=True,
+        default="",
+        help_text="Short summary of responsibilities for admin reference.",
+    )
     modules = models.ManyToManyField(Module, blank=True)
+
+    class Meta:
+        ordering = ["-rank", "description"]
+
     def __str__(self):
         return self.description
 
 class UserAccount(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    
-    # Change this to allow null and blank
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     
     staff_no = models.CharField(max_length=20, unique=True, verbose_name="Employee Staff Number")
@@ -122,6 +139,18 @@ class UserAccount(models.Model):
         blank=True,
         related_name="user_accounts",
         help_text="Client company this user belongs to (e.g. Pioneer, Company B).",
+    )
+    must_change_password = models.BooleanField(
+        default=False,
+        help_text="User must set password via onboarding link before full access.",
+    )
+    onboarded_at = models.DateTimeField(null=True, blank=True)
+    onboarded_by = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="onboarded_users",
     )
 
     def __str__(self):

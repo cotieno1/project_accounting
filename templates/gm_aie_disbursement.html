@@ -309,13 +309,13 @@
                             <td class="num">{{ line.unit_price }}</td>
                             <td class="num">{{ line.line_total }}</td>
                             <td>{% if forloop.first %}{{ grn.invoice_ref|default:"—" }}{% endif %}</td>
-                            <td style="text-align:right;">{% if forloop.first %}<a href="{{ grn.print_url }}" class="registry-link" target="_blank">View GRN →</a>{% endif %}</td>
+                            <td style="text-align:right;">{% if forloop.first %}<a href="{{ grn.print_notify_url }}" class="registry-link" target="_blank">Print GRN →</a>{% endif %}</td>
                         </tr>
                         {% empty %}
                         <tr class="grn-line-row">
                             <td>{{ grn.grn_no }}</td>
                             <td colspan="6" style="color:var(--muted);">No line items recorded.</td>
-                            <td style="text-align:right;"><a href="{{ grn.print_url }}" class="registry-link" target="_blank">View GRN →</a></td>
+                            <td style="text-align:right;"><a href="{{ grn.print_notify_url }}" class="registry-link" target="_blank">Print GRN →</a></td>
                         </tr>
                         {% endfor %}
                         <tr class="grn-total-row">

@@ -9,7 +9,7 @@
 <div class="screen-toolbar no-print">
 <button type="button" onclick="window.print()">Print GRN and Letter</button>
 <a href="{{ lpo_list_url }}">Back to LPO Listing</a>
-<a href="/bid-evaluation/?task_id={{ task.project_id }}" class="toolbar-muted">Bid Evaluation</a>
+{% if back_to_gm %}<a href="{{ gm_back_url }}">Back to GM Disbursement</a>{% else %}<a href="/bid-evaluation/?task_id={{ task.project_id }}" class="toolbar-muted">Bid Evaluation</a>{% endif %}
 </div>
 <div class="lpo-paper lpo-sheet"><div class="doc">
 <div class="brand-bar"></div>
@@ -66,5 +66,5 @@
 </tr></table>
 <p class="footer-note">GRN — {{ grn.grn_no }} — {{ receipt_date_display }}</p>
 </div></div>
-<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},500)});</script>
+{% if auto_print %}<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},500)});</script>{% endif %}
 </body></html>
