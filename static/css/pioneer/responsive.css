@@ -49,6 +49,23 @@
         gap: 16px;
     }
 
+    .workspace-back-bar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        margin: -8px -4px 4px;
+        padding: 4px 0 8px;
+        background: linear-gradient(180deg, var(--bg, #0b1220) 65%, transparent);
+    }
+
+    .workspace-back-link {
+        font-size: 14px;
+        padding: 10px 14px;
+        margin: 0;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid var(--border);
+    }
+
     .panel,
     .table-pane,
     .budget-card {

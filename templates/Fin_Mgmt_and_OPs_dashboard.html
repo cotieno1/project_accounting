@@ -99,6 +99,9 @@
     </div>
 {% endblock %}
 {% block workspace %}
+    <nav class="workspace-back-bar" aria-label="Back navigation">
+        <a href="{% url 'dashboard' %}" class="workspace-back-link">← Main Dashboard</a>
+    </nav>
     <div class="ops-header">
         <div>
             <h1>Ops & Financial Dashboard</h1>
