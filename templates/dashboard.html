@@ -16,16 +16,52 @@
 
 <!-- HEADER -->
 <div class="header">
-
-    <div class="header-brand">
-        <h2>{{ app_short_name }} Command Center</h2>
-        <small class="header-sub">
-            Your company: <strong>{{ org_name|default:"Not assigned" }}</strong>
-            {% if tenant_count > 1 %} &bull; {{ tenant_count }} companies on this platform{% endif %}
-        </small>
+    <div class="header-top">
+        <div class="header-title-row">
+            <span class="header-product">{{ app_short_name }} <span class="header-saas-tag">SaaS</span></span>
+            <span class="header-title-sep" aria-hidden="true">·</span>
+            <h2>Command Center</h2>
+        </div>
+        <div class="header-actions-row">
+            <div class="header-tools">
+                <div class="setup-wrap">
+                    <button type="button" class="setup-btn" id="setupMenuBtn" onclick="MasterRegistry.toggleSetupMenu()">System &amp; Accounts Setup</button>
+                    <div id="setupDropdown" class="setup-dropdown">
+                        <div class="setup-item"><div><strong>Software Setup</strong><small>{{ app_name }} product branding</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openSingleton('app_settings')">Configure</button></div></div>
+                        <div class="setup-item"><div><strong>Subscriber Organizations</strong><small>Register each SaaS tenant on the platform (Pioneer, B, C…)</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('organization')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('organization')">List</button></div></div>
+                        <div class="setup-item"><div><strong>User Accounts</strong><small>Staff login &amp; roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('user')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('user')">List</button></div></div>
+                        <div class="setup-item"><div><strong>User Categories</strong><small>Access roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('role')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('role')">List</button></div></div>
+                        <div class="setup-item"><div><strong>Bank Accounts</strong><small>Treasury sources</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('bank')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('bank')">List</button></div></div>
+                        <div class="setup-item"><div><strong>Supplier Accounts</strong><small>Vendor master</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('supplier')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('supplier')">List</button></div></div>
+                        <div class="setup-item"><div><strong>GL Accounts</strong><small>Chart of accounts</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('gl')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('gl')">List</button></div></div>
+                        <div class="setup-item"><div><strong>GL Analysis Codes</strong><small>Analysis categories</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('analysis')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('analysis')">List</button></div></div>
+                        <div class="setup-item"><div><strong>Project Tasks</strong><small>Job / task IDs</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('task')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('task')">List</button></div></div>
+                        <div class="setup-item"><div><strong>Build Categories</strong><small>Project build types</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('build')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('build')">List</button></div></div>
+                        <div class="setup-item"><div><strong>Product Items</strong><small>Inventory catalogue</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('product')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('product')">List</button></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-session">
+                <div class="user-info">
+                    <strong>{{ username }}</strong>
+                    <span class="user-role">{{ role }}</span>
+                </div>
+                <form method="post" action="{% url 'logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn">Log out</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="header-meta">
+        {% if org_name %}
+        <span class="header-tenant-label">Subscriber</span>
+        <strong class="header-client">{{ org_name }}</strong>
+        {% endif %}
+        <small class="header-platform-note">Multi-tenant cloud platform{% if tenant_count > 1 %} · {{ tenant_count }} subscribers{% endif %}</small>
         {% if can_switch_organization and organization_options %}
         <div class="org-switcher">
-            <label for="orgSwitcher">Platform admin — switch company:</label>
+            <label for="orgSwitcher">Platform admin — switch subscriber:</label>
             <select id="orgSwitcher" class="master-input">
                 {% for o in organization_options %}
                 <option value="{{ o.org_code }}" {% if o.org_code == active_org_code %}selected{% endif %}>{{ o.name }}</option>
@@ -34,47 +70,17 @@
         </div>
         {% endif %}
     </div>
-
-    <div class="header-actions">
-        <div class="header-actions-inner">
-            <div class="setup-wrap">
-                <button type="button" class="setup-btn" id="setupMenuBtn" onclick="MasterRegistry.toggleSetupMenu()">System &amp; Accounts Setup</button>
-                <div id="setupDropdown" class="setup-dropdown">
-						<div class="setup-item"><div><strong>Software Setup</strong><small>{{ app_name }} product branding</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openSingleton('app_settings')">Configure</button></div></div>
-						<div class="setup-item"><div><strong>Client Organizations</strong><small>Register each company on the platform (Pioneer, B, C…)</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('organization')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('organization')">List</button></div></div>
-						<div class="setup-item"><div><strong>User Accounts</strong><small>Staff login &amp; roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('user')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('user')">List</button></div></div>
-						<div class="setup-item"><div><strong>User Categories</strong><small>Access roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('role')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('role')">List</button></div></div>
-						<div class="setup-item"><div><strong>Bank Accounts</strong><small>Treasury sources</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('bank')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('bank')">List</button></div></div>
-						<div class="setup-item"><div><strong>Supplier Accounts</strong><small>Vendor master</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('supplier')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('supplier')">List</button></div></div>
-						<div class="setup-item"><div><strong>GL Accounts</strong><small>Chart of accounts</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('gl')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('gl')">List</button></div></div>
-						<div class="setup-item"><div><strong>GL Analysis Codes</strong><small>Analysis categories</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('analysis')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('analysis')">List</button></div></div>
-						<div class="setup-item"><div><strong>Project Tasks</strong><small>Job / task IDs</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('task')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('task')">List</button></div></div>
-						<div class="setup-item"><div><strong>Build Categories</strong><small>Project build types</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('build')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('build')">List</button></div></div>
-						<div class="setup-item"><div><strong>Product Items</strong><small>Inventory catalogue</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('product')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('product')">List</button></div></div>
-                </div>
-            </div>
-
-            <div class="user-info">
-                <strong>{{ username }}</strong><br>
-                <small>{{ role }}</small>
-            </div>
-            <form method="post" action="{% url 'logout' %}" class="logout-form">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn">Log out</button>
-            </form>
-        </div>
-    </div>
 </div>
 
-<!-- MAIN -->
-<div class="container">
+	<!-- MAIN -->
+	<div class="container">
 
-   <div class="nav-tabs">
-        <div class="tab active" onclick="showSection('overview')">Executive Overview</div>
-        <div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
-        <div class="tab" onclick="showSection('budget')">Budget Variance</div>
+	   <div class="nav-tabs">
+		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+		<div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
+		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
         <a href="{% url 'ops_dashboard' %}" class="tab">Financial Ops Dashboard</a>
-    </div>
+	</div>
 
     <!-- OVERVIEW SECTION -->
     <div id="overview" class="section">
@@ -113,8 +119,8 @@
                     <tr><td>Emergency Permit</td><td>$1,200.00</td></tr>
                     <tr><td>Staff Lunch</td><td>$85.00</td></tr>
                 </table>
-            </div>
-        </div>
+    </div>
+</div>
     </div>
 
     <div class="table">
@@ -133,8 +139,8 @@
                 <td class="status-progress">In Progress</td>
             </tr>
         </table>
-        </div>
     </div>
+</div>
 
     <div class="modules">
         {% for module in modules %}
@@ -148,6 +154,15 @@
 
 </div>
 
+<footer class="command-footer">
+    <p class="command-footer-licence">
+        &copy; {% now "Y" %}
+        {% if app_vendor_name %}{{ app_vendor_name }}{% else %}{{ app_name }}{% endif %}.
+        {{ app_name }} is a multi-tenant cloud SaaS platform.
+        {% if org_name %}Subscriber: {{ org_name }}.{% endif %}
+    </p>
+</footer>
+
 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 {{ role_options|json_script:"role-options-data" }}
 {{ analysis_options|json_script:"analysis-options-data" }}
@@ -158,11 +173,11 @@
         <div class="master-panel-header">
             <div><h2 id="masterListTitle">Master Registry</h2><p id="masterListSubtitle">List, view, edit and delete</p></div>
             <button type="button" class="setup-link" onclick="MasterRegistry.closePanels()">Close</button>
-        </div>
+    </div>
         <div class="master-toolbar">
             <input type="search" id="masterSearch" class="master-search" placeholder="Search records…">
             <button type="button" class="master-btn master-btn-success" id="masterListAddBtn">+ Add New</button>
-        </div>
+</div>
         <div class="master-table-wrap">
             <table class="master-table">
                 <thead id="masterTableHead"></thead>
@@ -178,7 +193,7 @@
         <div class="master-panel-header">
             <div><h2 id="masterFormTitle">Add Record</h2><p>Complete all required fields</p></div>
             <button type="button" class="setup-link" onclick="MasterRegistry.backToList()">Back to list</button>
-        </div>
+    </div>
         <form id="masterEntityForm">
             <input type="hidden" id="masterFormMode" value="create">
             <input type="hidden" id="masterFormPk" value="">
@@ -186,7 +201,7 @@
             <div class="master-form-actions">
                 <button type="button" class="master-btn master-btn-ghost" onclick="MasterRegistry.backToList()">Cancel</button>
                 <button type="submit" class="master-btn master-btn-primary" id="masterFormSave">Save Record</button>
-            </div>
+</div>
         </form>
     </div>
 </div>
@@ -214,10 +229,10 @@ const MasterRegistry = (function () {
             ]
         },
         organization: {
-            title: "Client Organizations",
+            title: "Subscriber Organizations",
             url: "/organization/create/",
             fields: [
-                ["__org_hdr","Company profile","section",0],
+                ["__org_hdr","Subscriber profile","section",0],
                 ["org_code","Organization Code","text",1,1,"PIONEER"],
                 ["name","Company Name","text",1,0,"Pioneer Contactors Co Ltd"],
                 ["short_name","Short Name","text",1,0,"Pioneer"],
@@ -228,7 +243,7 @@ const MasterRegistry = (function () {
                 ["email","Contact Email","email",0,0,"finance@example.com"],
                 ["tax_pin","Tax PIN / VAT No","text",0],
                 ["document_tagline","Document Tagline","text",0,0,"Operations Command"],
-                ["is_default","Platform fallback (if user has no company)","checkbox",0]
+                ["is_default","Platform fallback tenant (if user has no subscriber)","checkbox",0]
             ]
         },
         user: { title: "User Accounts", url: "/users/create/",
@@ -238,7 +253,7 @@ const MasterRegistry = (function () {
                 ["first_name","First Name","text",1],["last_name","Last Name","text",1],
                 ["designation","Designation","text",1],["phone","Phone","text",0],
                 ["email","Email","email",1],["contact_address","Address","area",0],
-                ["organization_id","Client Company","organization",1],
+                ["organization_id","Subscriber Organization","organization",1],
                 ["access_level_id","Role / Access Level","role",0]
             ],
             loginFieldsCreate: [
@@ -301,7 +316,7 @@ const MasterRegistry = (function () {
             var hint = "Complete the fields below.";
             if (n==="__login_hdr") hint = "User signs in at /login/ with username and password below.";
             if (n==="__brand_hdr") hint = "Shown in app menus, login screen, and browser titles. Example: Project Accounting.";
-            if (n==="__org_hdr") hint = "Each global client on Project Accounting is registered here. Pioneer is one example. Add Company B, C, etc. the same way.";
+            if (n==="__org_hdr") hint = "Each SaaS subscriber (tenant) on the platform is registered here. Pioneer is one example. Add Company B, C, etc. the same way.";
             if (n==="__contact_hdr") hint = "Phone and email appear below the address on printed documents.";
             return '<div class="master-field master-field-hdr" style="grid-column:1/-1;margin-top:4px;"><label>'+label+'</label><p class="master-field-hint">'+hint+'</p></div>';
         }
@@ -354,7 +369,7 @@ const MasterRegistry = (function () {
     function viewRecord(pk) { openForm("view",pk); }
     function backToList() { document.getElementById("masterFormPanel").classList.remove("is-open"); document.getElementById("masterListPanel").classList.add("is-open"); document.querySelectorAll("#masterEntityForm input, #masterEntityForm select, #masterEntityForm textarea").forEach(function(el){el.disabled=false;}); refresh(); }
     function saveForm(e) {
-        e.preventDefault();
+            e.preventDefault();
         var c=CFG[activeEntityType], mode=document.getElementById("masterFormMode").value;
         if (activeEntityType==="organization") {
             var cn=document.querySelector('#masterEntityForm [name="name"]');
