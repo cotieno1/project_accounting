@@ -55,13 +55,12 @@
     </div>
     <div class="header-meta">
         {% if org_name %}
-        <span class="header-tenant-label">Subscriber</span>
         <strong class="header-client">{{ org_name }}</strong>
         {% endif %}
-        <small class="header-platform-note">Multi-tenant cloud platform{% if tenant_count > 1 %} · {{ tenant_count }} subscribers{% endif %}</small>
+        <small class="header-platform-note">Multi-tenant cloud platform{% if tenant_count > 1 %} · {{ tenant_count }} organizations{% endif %}</small>
         {% if can_switch_organization and organization_options %}
         <div class="org-switcher">
-            <label for="orgSwitcher">Platform admin — switch subscriber:</label>
+            <label for="orgSwitcher">Platform admin — switch organization:</label>
             <select id="orgSwitcher" class="master-input">
                 {% for o in organization_options %}
                 <option value="{{ o.org_code }}" {% if o.org_code == active_org_code %}selected{% endif %}>{{ o.name }}</option>
@@ -159,7 +158,7 @@
         &copy; {% now "Y" %}
         {% if app_vendor_name %}{{ app_vendor_name }}{% else %}{{ app_name }}{% endif %}.
         {{ app_name }} is a multi-tenant cloud SaaS platform.
-        {% if org_name %}Subscriber: {{ org_name }}.{% endif %}
+        {% if org_name %}{{ org_name }}.{% endif %}
     </p>
 </footer>
 
