@@ -25,9 +25,9 @@ def _friendly_email_error(exc):
     ):
         if not getattr(settings, "EMAIL_CONFIGURED", False):
             return (
-                "Email is not configured on this server. In Railway → Variables, set "
-                "RESEND_API_KEY (easiest) or EMAIL_HOST_USER + EMAIL_HOST_PASSWORD + "
-                "EMAIL_HOST (e.g. smtp.gmail.com), and DEFAULT_FROM_EMAIL."
+                "Platform email is not configured. In Railway → your web service → Variables, "
+                "set RESEND_API_KEY (one key for all companies) or SMTP settings. "
+                "This is not per-company — Pioneer and every other tenant share the same mail provider."
             )
         host = getattr(settings, "EMAIL_HOST", "localhost")
         port = getattr(settings, "EMAIL_PORT", 587)
@@ -54,7 +54,7 @@ def build_password_set_url(user, request=None):
     return f"{base}/accounts/set-password/{uid}/{token}/"
 
 
-def send_system_email(*, subject, to, text_body, html_body=None, cc=None, include_ceo_cc=True, reply_to=None):
+def send_system_email(*, subject, to, text_body, html_body=None, cc=None, include_ceo_cc=True, reply_to=None, from_email=None):
     """Send one system email. Returns (success, error_message)."""
     recipients = [e.strip() for e in (to if isinstance(to, (list, tuple)) else [to]) if e and e.strip()]
     if not recipients:
@@ -65,7 +65,7 @@ def send_system_email(*, subject, to, text_body, html_body=None, cc=None, includ
         for addr in ceo_cc_emails():
             if addr not in recipients and addr not in cc_list:
                 cc_list.append(addr)
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or "noreply@localhost"
+    from_email = from_email or getattr(settings, "DEFAULT_FROM_EMAIL", None) or "noreply@localhost"
     msg = EmailMultiAlternatives(subject=subject, body=text_body, from_email=from_email, to=recipients, cc=cc_list or None, reply_to=[reply_to] if reply_to else None)
     if html_body:
         msg.attach_alternative(html_body, "text/html")
@@ -80,13 +80,27 @@ def send_system_email(*, subject, to, text_body, html_body=None, cc=None, includ
         return False, err
 
 
+def _branded_from_email(organization=None):
+    """Use company name in the From display name; address stays the platform DEFAULT_FROM_EMAIL."""
+    base = getattr(settings, "DEFAULT_FROM_EMAIL", None) or "noreply@localhost"
+    org_label = ""
+    if organization:
+        org_label = (organization.short_name or organization.name or "").strip()
+    if org_label and "@" in base:
+        if "<" in base and ">" in base:
+            addr = base.split("<", 1)[1].rstrip(">").strip()
+            return f"{org_label} <{addr}>"
+        return f"{org_label} <{base}>"
+    return base
+
+
 def send_onboarding_email(user_account, *, request=None, invited_by=None, record=True):
     user = user_account.user
     if not user or not user_account.email:
         if record:
             user_account.onboarding_email_last_error = "No login user or email address"
             user_account.save(update_fields=["onboarding_email_last_error"])
-        return False
+        return False, "No login user or email address"
     set_url = build_password_set_url(user, request=request)
     app_name = "Project Accounting"
     try:
@@ -94,14 +108,33 @@ def send_onboarding_email(user_account, *, request=None, invited_by=None, record
         app_name = AppSettings.get().app_name or app_name
     except Exception:
         pass
+    org = getattr(user_account, "organization", None)
+    org_name = (org.name if org else "") or app_name
     inviter = ""
     if invited_by:
         inviter = getattr(invited_by, "get_full_name", lambda: "")() or getattr(invited_by, "username", "")
-    context = {"app_name": app_name, "user": user, "user_account": user_account, "set_password_url": set_url, "invited_by": inviter, "role_name": (user_account.access_level.description if user_account.access_level else "User")}
-    subject = f"{app_name} - set your password"
+    context = {
+        "app_name": app_name,
+        "org_name": org_name,
+        "user": user,
+        "user_account": user_account,
+        "set_password_url": set_url,
+        "invited_by": inviter,
+        "role_name": (user_account.access_level.description if user_account.access_level else "User"),
+    }
+    subject = f"{org_name} — set your password"
     text_body = render_to_string("emails/onboarding_set_password.txt", context)
     html_body = render_to_string("emails/onboarding_set_password.html", context)
-    ok, err = send_system_email(subject=subject, to=[user_account.email], text_body=text_body, html_body=html_body, include_ceo_cc=False)
+    reply_to = (org.email if org and org.email else None)
+    ok, err = send_system_email(
+        subject=subject,
+        to=[user_account.email],
+        text_body=text_body,
+        html_body=html_body,
+        include_ceo_cc=False,
+        reply_to=reply_to,
+        from_email=_branded_from_email(org),
+    )
     if record:
         from django.utils import timezone
 

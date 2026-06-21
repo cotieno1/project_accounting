@@ -19,11 +19,11 @@ if [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
 fi
 
 if [ -n "${RESEND_API_KEY:-}" ]; then
-  log "Email: Resend API key is set"
+  log "Platform email (all companies): Resend API key is set"
 elif [ -n "${EMAIL_HOST_USER:-}" ] && [ -n "${EMAIL_HOST_PASSWORD:-}" ]; then
-  log "Email: SMTP configured (${EMAIL_HOST:-localhost})"
+  log "Platform email (all companies): SMTP configured (${EMAIL_HOST:-localhost})"
 else
-  log "Email: NOT CONFIGURED — set RESEND_API_KEY or EMAIL_HOST_USER+EMAIL_HOST_PASSWORD on Railway"
+  log "Platform email (all companies): NOT CONFIGURED — add RESEND_API_KEY or SMTP vars on this Railway service"
 fi
 
 log "STEP 1/3: migrate"
