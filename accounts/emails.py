@@ -14,6 +14,30 @@ from .roles import PERM_GRN_EMAIL, PERM_NOTIFY_MISC_PO_APPROVED, ceo_cc_emails, 
 logger = logging.getLogger(__name__)
 
 
+def _friendly_email_error(exc):
+    err = str(exc).strip() or exc.__class__.__name__
+    lowered = err.lower()
+    if (
+        "errno 111" in lowered
+        or "connection refused" in lowered
+        or "10061" in err
+        or "connection failed" in lowered
+    ):
+        if not getattr(settings, "EMAIL_CONFIGURED", False):
+            return (
+                "Email is not configured on this server. In Railway → Variables, set "
+                "RESEND_API_KEY (easiest) or EMAIL_HOST_USER + EMAIL_HOST_PASSWORD + "
+                "EMAIL_HOST (e.g. smtp.gmail.com), and DEFAULT_FROM_EMAIL."
+            )
+        host = getattr(settings, "EMAIL_HOST", "localhost")
+        port = getattr(settings, "EMAIL_PORT", 587)
+        return (
+            f"Could not connect to mail server {host}:{port}. "
+            "Check EMAIL_HOST and EMAIL_PORT, or use RESEND_API_KEY instead of SMTP."
+        )
+    return err
+
+
 def _site_base_url(request=None):
     if request:
         return request.build_absolute_uri("/").rstrip("/")
@@ -49,9 +73,9 @@ def send_system_email(*, subject, to, text_body, html_body=None, cc=None, includ
         msg.send(fail_silently=False)
         return True, ""
     except Exception as exc:
-        err = str(exc).strip() or exc.__class__.__name__
-        if len(err) > 240:
-            err = err[:240] + "..."
+        err = _friendly_email_error(exc)
+        if len(err) > 320:
+            err = err[:320] + "..."
         logger.exception("send_system_email failed: %s", exc)
         return False, err
 

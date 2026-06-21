@@ -243,6 +243,7 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@projectaccoun
 SYSTEM_ADMIN_EMAIL = os.environ.get('SYSTEM_ADMIN_EMAIL', '').strip()
 
 _smtp_configured = bool(EMAIL_HOST_USER and EMAIL_HOST_PASSWORD)
+EMAIL_CONFIGURED = bool(RESEND_API_KEY or _smtp_configured)
 if os.environ.get('EMAIL_BACKEND'):
     EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
 elif RESEND_API_KEY:
@@ -252,7 +253,7 @@ elif _smtp_configured:
 elif DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_BACKEND = 'accounts.email_backends.UnconfiguredEmailBackend'
 
 if _on_railway and not RESEND_API_KEY and not _smtp_configured and not DEBUG:
     import logging

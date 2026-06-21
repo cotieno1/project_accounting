@@ -68,3 +68,18 @@ class ResendEmailBackend(BaseEmailBackend):
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             raise OSError(detail or str(exc)) from exc
+
+class UnconfiguredEmailBackend(BaseEmailBackend):
+    """Fail fast in production when no mail provider env vars are set."""
+
+    def send_messages(self, email_messages):
+        if not email_messages:
+            return 0
+        msg = (
+            "Email is not configured on this server. In Railway Variables, set "
+            "RESEND_API_KEY (recommended) or EMAIL_HOST_USER + EMAIL_HOST_PASSWORD "
+            "+ EMAIL_HOST (e.g. smtp.gmail.com). Also set DEFAULT_FROM_EMAIL."
+        )
+        if not self.fail_silently:
+            raise OSError(msg)
+        return 0
