@@ -7,6 +7,7 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.utils.decorators import method_decorator
@@ -16,6 +17,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.forms.models import model_to_dict
 from django.db.models import Sum, F, Count
+from django.db import IntegrityError
 from collections import defaultdict
 
 # SINGLE UNIFIED IMPORT BLOCK - All models imported exactly once
@@ -1051,6 +1053,25 @@ def create_user(request):
                 status=400,
             )
 
+        if send_invite:
+            pw, pw_err = _validate_user_passwords(
+                password, password_confirm, required=False
+            )
+            if pw_err:
+                return JsonResponse({"status": "error", "message": pw_err}, status=400)
+            if not pw and not getattr(settings, "EMAIL_CONFIGURED", False):
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": (
+                            "Platform email is not configured yet. Uncheck Send invite email "
+                            "and enter a login password (min. 8 characters), or add RESEND_API_KEY "
+                            "on Railway first."
+                        ),
+                    },
+                    status=400,
+                )
+
         if User.objects.filter(username=username).exists():
             return JsonResponse(
                 {"status": "error", "message": f"Username '{username}' is already taken."},
@@ -1120,6 +1141,25 @@ def create_user(request):
             "status": "success",
             "message": f"User {username} created.{msg_extra}",
         })
+    except IntegrityError as e:
+        err = str(e).lower()
+        if "staff_no" in err or "accounts_useraccount_staff_no" in err:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Staff number '{staff_no}' is already in use.",
+                },
+                status=400,
+            )
+        if "username" in err or "auth_user_username" in err:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Username '{username}' is already taken.",
+                },
+                status=400,
+            )
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
     except ValueError as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=400)
     except Exception as e:

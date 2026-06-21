@@ -170,6 +170,7 @@
 {{ role_options|json_script:"role-options-data" }}
 {{ analysis_options|json_script:"analysis-options-data" }}
 {{ organization_options|json_script:"organization-options-data" }}
+<script id="master-can-manage-users" type="application/json">{% if can_manage_users %}true{% else %}false{% endif %}</script>
 
 <div id="masterListPanel" class="master-overlay">
     <div class="master-panel">
@@ -294,14 +295,16 @@ const MasterRegistry = (function () {
             ["unit_of_measure","UOM","text",0],["stock_quantity","Stock","number",0]] },
     };
     let rows = [], cols = [], roles = [], analysis = [], organizations = [];
+    var canManageUsers = true;
     function csrf() { const e = document.querySelector("[name=csrfmiddlewaretoken]"); return e ? e.value : ""; }
     function toast(m, t) { const b = document.getElementById("masterToast"); b.textContent = m; b.className = "master-toast master-toast-" + (t||"success") + " master-toast-show"; clearTimeout(b._t); b._t = setTimeout(function(){b.classList.remove("master-toast-show");}, 3500); }
     function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
     function loadOpts() {
-        var r=document.getElementById("role-options-data"), a=document.getElementById("analysis-options-data"), o=document.getElementById("organization-options-data");
+        var r=document.getElementById("role-options-data"), a=document.getElementById("analysis-options-data"), o=document.getElementById("organization-options-data"), cu=document.getElementById("master-can-manage-users");
         if(r) roles=JSON.parse(r.textContent||"[]");
         if(a) analysis=JSON.parse(a.textContent||"[]");
         if(o) organizations=JSON.parse(o.textContent||"[]");
+        if(cu) canManageUsers = JSON.parse(cu.textContent||"true");
     }
     function openList(t) { activeEntityType=t; var c=CFG[t]; document.getElementById("setupDropdown").classList.remove("is-open"); document.getElementById("masterListTitle").textContent=c.title; document.getElementById("masterSearch").value=""; document.getElementById("masterListPanel").classList.add("is-open"); document.getElementById("masterFormPanel").classList.remove("is-open"); refresh(); }
     function closePanels() { document.getElementById("masterListPanel").classList.remove("is-open"); document.getElementById("masterFormPanel").classList.remove("is-open"); }
@@ -378,7 +381,7 @@ const MasterRegistry = (function () {
                 '<dt>Password set</dt><dd>' + esc(data.password_set_at || "—") + '</dd>' +
                 '</dl>';
         }
-        var checked = formMode === "create" || (data && data.can_resend_onboarding);
+        var checked = formMode === "edit" && data && data.can_resend_onboarding;
         panel.innerHTML =
             '<span class="nav-label" style="display:block;margin-bottom:10px;">Portal access — invite by email</span>' +
             statusBlock +
@@ -416,6 +419,14 @@ const MasterRegistry = (function () {
             });
         } else if (activeEntityType === "user") {
             updateUserOnboardingPanel({}, mode);
+            if (mode === "create") {
+                var orgEl = document.querySelector('#masterEntityForm [name="organization_id"]');
+                var sw = document.getElementById("orgSwitcher");
+                if (orgEl) {
+                    if (sw && sw.value) orgEl.value = sw.value;
+                    else if (organizations.length === 1) orgEl.value = organizations[0].org_code;
+                }
+            }
         }
     }
     function openSingleton(t) {
@@ -424,7 +435,14 @@ const MasterRegistry = (function () {
         document.getElementById("masterListPanel").classList.remove("is-open");
         openForm("edit", CFG[t].pk || "1");
     }
-    function openAdd(t) { if(t) openList(t); openForm("create",""); }
+    function openAdd(t) {
+        if (t === "user" && !canManageUsers) {
+            toast("Only User Admin can create user accounts.", "error");
+            return;
+        }
+        if(t) openList(t);
+        openForm("create","");
+    }
     function editRecord(pk) { openForm("edit",pk); }
     function viewRecord(pk) { openForm("view",pk); }
     function backToList() { document.getElementById("masterFormPanel").classList.remove("is-open"); document.getElementById("masterListPanel").classList.add("is-open"); document.querySelectorAll("#masterEntityForm input, #masterEntityForm select, #masterEntityForm textarea").forEach(function(el){el.disabled=false;}); refresh(); }
@@ -460,6 +478,7 @@ const MasterRegistry = (function () {
             if (ca && !ca.value.trim()) { toast("Contact / office address is required.","error"); return; }
         }
         if (activeEntityType==="user") {
+            if (!canManageUsers) { toast("Only User Admin can create or edit user accounts.","error"); return; }
             var pw=document.querySelector('#masterEntityForm [name="password"]');
             var pwc=document.querySelector('#masterEntityForm [name="password_confirm"]');
             var sendInviteEl=document.getElementById('mf_send_onboarding');
