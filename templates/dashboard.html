@@ -264,8 +264,8 @@ const MasterRegistry = (function () {
                 ["access_level_id","Role / Access Level","role",0]
             ],
             loginFieldsCreate: [
-                ["password","Login Password","password",1],
-                ["password_confirm","Confirm Password","password",1]
+                ["password","Login Password (optional if sending invite)","password",0],
+                ["password_confirm","Confirm Password","password",0]
             ],
             loginFieldsEdit: [
                 ["password","New Password (optional)","password",0],
@@ -342,27 +342,53 @@ const MasterRegistry = (function () {
         var ph = f[5] ? ' placeholder="'+esc(f[5])+'"' : '';
         return '<div class="master-field"><label>'+label+(req?" *":"")+'</label><input type="'+inpTyp+'" name="'+n+'" id="'+id+'"'+ro+ph+rq+"></div>";
     }
-    function updateUserOnboardingPanel(data) {
+    function parseJsonResponse(r) {
+        return r.text().then(function(text) {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error(r.status >= 500 ? "Server error while saving. Try again or contact support." : "Save failed — unexpected response from server.");
+            }
+        });
+    }
+    function updateUserOnboardingPanel(data, mode) {
         var panel = document.getElementById("masterUserOnboarding");
         var resendBtn = document.getElementById("masterResendInviteBtn");
         if (!panel || activeEntityType !== "user") return;
-        if (!data || document.getElementById("masterFormMode").value === "create") {
-            panel.hidden = true;
-            panel.innerHTML = "";
+        var formMode = mode || document.getElementById("masterFormMode").value;
+        if (formMode === "view") {
+            panel.hidden = false;
+            panel.innerHTML =
+                '<span class="nav-label" style="display:block;margin-bottom:10px;">Onboarding</span>' +
+                '<dl>' +
+                '<dt>Status</dt><dd>' + esc((data && data.onboarding_status) || "—") + '</dd>' +
+                '<dt>Invite email sent</dt><dd>' + esc((data && data.invite_sent_at) || "Not sent") + '</dd>' +
+                '<dt>Password set</dt><dd>' + esc((data && data.password_set_at) || "—") + '</dd>' +
+                '</dl>';
             if (resendBtn) resendBtn.style.display = "none";
             return;
         }
         panel.hidden = false;
+        var statusBlock = "";
+        if (formMode === "edit" && data) {
+            statusBlock =
+                '<dl style="margin-bottom:12px;">' +
+                '<dt>Status</dt><dd>' + esc(data.onboarding_status || "—") + '</dd>' +
+                '<dt>Invite email sent</dt><dd>' + esc(data.invite_sent_at || "Not sent") + '</dd>' +
+                '<dt>Password set</dt><dd>' + esc(data.password_set_at || "—") + '</dd>' +
+                '</dl>';
+        }
+        var checked = formMode === "create" || (data && data.can_resend_onboarding);
         panel.innerHTML =
-            '<span class="nav-label" style="display:block;margin-bottom:10px;">Onboarding</span>' +
-            '<dl>' +
-            '<dt>Status</dt><dd>' + esc(data.onboarding_status || "—") + '</dd>' +
-            '<dt>Invite email sent</dt><dd>' + esc(data.invite_sent_at || "Not sent") + '</dd>' +
-            '<dt>Password set</dt><dd>' + esc(data.password_set_at || "—") + '</dd>' +
-            '</dl>' +
-            '<p class="master-onboarding-hint">Use <strong>Resend invite email</strong> if the user did not receive the set-password link. They must complete that step before full access.</p>';
+            '<span class="nav-label" style="display:block;margin-bottom:10px;">Portal access — invite by email</span>' +
+            statusBlock +
+            '<label class="master-onboarding-check" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">' +
+            '<input type="checkbox" name="send_onboarding" id="mf_send_onboarding" value="1"' + (checked ? ' checked' : '') + ' style="margin-top:3px;width:auto;">' +
+            '<span><strong>Send invite email</strong> — user receives a link to set their password before they can use this portal.</span>' +
+            '</label>' +
+            '<p class="master-onboarding-hint">Leave login password blank when this is checked. The user must complete the email link first (status becomes Active after they set a password).</p>';
         if (resendBtn) {
-            resendBtn.style.display = data.can_resend_onboarding ? "" : "none";
+            resendBtn.style.display = (formMode === "edit" && data && data.can_resend_onboarding) ? "" : "none";
         }
     }
     function openForm(mode,pk) {
@@ -372,7 +398,7 @@ const MasterRegistry = (function () {
         document.getElementById("masterFormMode").value=mode==="view"?"edit":mode;
         document.getElementById("masterFormPk").value=pk||"";
         document.getElementById("masterFormFields").innerHTML=fields.map(function(f){return fieldHtml(f,mode);}).join("");
-        updateUserOnboardingPanel(null);
+        updateUserOnboardingPanel(null, mode);
         document.getElementById("masterFormPanel").classList.add("is-open");
         document.getElementById("masterListPanel").classList.remove("is-open");
         document.getElementById("masterFormSave").style.display=mode==="view"?"none":"";
@@ -386,8 +412,10 @@ const MasterRegistry = (function () {
                     if(el.type==="checkbox") el.checked = kv[1]===true || kv[1]==="true" || kv[1]===1 || kv[1]==="1";
                     else el.value=kv[1]!=null?kv[1]:"";
                 });
-                if (activeEntityType === "user") updateUserOnboardingPanel(res.data || {});
+                if (activeEntityType === "user") updateUserOnboardingPanel(res.data || {}, mode);
             });
+        } else if (activeEntityType === "user") {
+            updateUserOnboardingPanel({}, mode);
         }
     }
     function openSingleton(t) {
@@ -408,7 +436,7 @@ const MasterRegistry = (function () {
         fd.append("original_id", pk);
         fd.append("resend_onboarding", "1");
         fetch(CFG.user.url, { method: "POST", body: fd, headers: { "X-CSRFToken": csrf() } })
-            .then(function(r) { return r.json(); })
+            .then(parseJsonResponse)
             .then(function(res) {
                 if (res.status === "success") {
                     toast(res.message);
@@ -420,7 +448,7 @@ const MasterRegistry = (function () {
                     toast(res.message || "Resend failed", "error");
                 }
             })
-            .catch(function() { toast("Resend failed", "error"); });
+            .catch(function(err) { toast(err.message || "Resend failed", "error"); });
     }
     function saveForm(e) {
             e.preventDefault();
@@ -434,8 +462,10 @@ const MasterRegistry = (function () {
         if (activeEntityType==="user") {
             var pw=document.querySelector('#masterEntityForm [name="password"]');
             var pwc=document.querySelector('#masterEntityForm [name="password_confirm"]');
+            var sendInviteEl=document.getElementById('mf_send_onboarding');
+            var sendInvite=!sendInviteEl || sendInviteEl.checked;
             if (pw) {
-                if (mode==="create" && !pw.value.trim()) { toast("Login password is required.","error"); return; }
+                if (mode==="create" && !sendInvite && !pw.value.trim()) { toast("Enter a login password or keep Send invite email checked.","error"); return; }
                 if (pw.value && pw.value.length < 8) { toast("Password must be at least 8 characters.","error"); return; }
                 if (pw.value !== (pwc ? pwc.value : "")) { toast("Passwords do not match.","error"); return; }
             }
@@ -444,13 +474,13 @@ const MasterRegistry = (function () {
         fd.append("mode", mode);
         var pk=document.getElementById("masterFormPk").value;
         if(pk) fd.append("original_id",pk);
-        fetch(c.url,{method:"POST",body:fd,headers:{"X-CSRFToken":csrf()}}).then(function(r){return r.json();}).then(function(res){
+        fetch(c.url,{method:"POST",body:fd,headers:{"X-CSRFToken":csrf()}}).then(parseJsonResponse).then(function(res){
             if(res.status==="success"){
                 toast(res.message);
                 if(c.singleton) closePanels();
                 else backToList();
             } else toast(res.message||"Save failed","error");
-        }).catch(function(){toast("Save failed","error");});
+        }).catch(function(err){toast(err.message||"Save failed","error");});
     }
     function deleteRecord(pk) { if(!confirm("Delete this record permanently?")) return; fetch("/api/delete/"+activeEntityType+"/"+encodeURIComponent(pk)+"/",{method:"DELETE"}).then(function(r){return r.json();}).then(function(res){ if(res.status==="success"){toast(res.message);refresh();}else toast(res.message||"Delete failed","error"); }); }
     function toggleSetupMenu() { document.getElementById("setupDropdown").classList.toggle("is-open"); }

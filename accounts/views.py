@@ -873,6 +873,68 @@ def _validate_user_passwords(password, password_confirm, required=True):
     return password, None
 
 
+def _ensure_useraccount_login(ua, *, username, email, first_name, last_name):
+    """Create or refresh the Django login linked to a UserAccount."""
+    username = (username or "").strip() or (ua.staff_no or "").strip()
+    if not username and email:
+        username = email.split("@")[0].strip()
+    if not username:
+        raise ValueError("Login username is required.")
+
+    if ua.user_id:
+        user = ua.user
+        conflict = User.objects.filter(username=username).exclude(pk=user.pk).exists()
+        if conflict:
+            raise ValueError(f"Username '{username}' is already taken.")
+        user.username = username
+        if email:
+            user.email = email
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        user.save()
+        return user
+
+    if User.objects.filter(username=username).exists():
+        raise ValueError(f"Username '{username}' is already taken.")
+
+    user = User.objects.create_user(
+        username=username,
+        email=email or ua.email,
+        password=secrets.token_urlsafe(32),
+        first_name=first_name or ua.first_name,
+        last_name=last_name or ua.last_name,
+    )
+    user.set_unusable_password()
+    user.save()
+    ua.user = user
+    ua.must_change_password = True
+    ua.save(update_fields=["user", "must_change_password"])
+    return user
+
+
+def _send_user_onboarding_invite(ua, request, invited_by):
+    from .emails import send_onboarding_email
+
+    if not ua.email:
+        raise ValueError("User has no email address.")
+    _ensure_useraccount_login(
+        ua,
+        username=ua.user.username if ua.user else ua.staff_no,
+        email=ua.email,
+        first_name=ua.first_name,
+        last_name=ua.last_name,
+    )
+    ua.must_change_password = True
+    ua.user.set_unusable_password()
+    ua.user.save()
+    ua.save(update_fields=["must_change_password"])
+    if send_onboarding_email(ua, request=request, invited_by=invited_by):
+        return True
+    raise ValueError("Could not send email. Check SMTP settings.")
+
+
 @login_required
 def create_user(request):
     from .emails import send_onboarding_email
@@ -908,32 +970,14 @@ def create_user(request):
             ua = get_object_or_404(UserAccount, pk=original_id)
 
             if request.POST.get("resend_onboarding") == "1":
-                if not ua.email:
-                    return JsonResponse(
-                        {"status": "error", "message": "User has no email address."},
-                        status=400,
-                    )
-                if not ua.user:
-                    return JsonResponse(
-                        {"status": "error", "message": "User has no login account linked."},
-                        status=400,
-                    )
-                ua.must_change_password = True
-                ua.user.set_unusable_password()
-                ua.user.save()
-                ua.save(update_fields=["must_change_password"])
-                if send_onboarding_email(ua, request=request, invited_by=request.user):
+                try:
+                    _send_user_onboarding_invite(ua, request, request.user)
                     return JsonResponse({
                         "status": "success",
                         "message": f"Invite email sent to {ua.email}.",
                     })
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": "Could not send email. Check SMTP settings on Railway.",
-                    },
-                    status=400,
-                )
+                except ValueError as exc:
+                    return JsonResponse({"status": "error", "message": str(exc)}, status=400)
 
             ua.staff_no = staff_no or ua.staff_no
             ua.first_name = first_name
@@ -946,6 +990,16 @@ def create_user(request):
             if org_code:
                 ua.organization = organization
             ua.save()
+
+            if username or not ua.user_id:
+                _ensure_useraccount_login(
+                    ua,
+                    username=username,
+                    email=email or ua.email,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+
             if ua.user:
                 if email:
                     ua.user.email = email
@@ -965,21 +1019,22 @@ def create_user(request):
                         ua.onboarded_at = timezone.now()
                 ua.user.save()
             ua.save()
-            resend = request.POST.get("resend_onboarding") == "1"
-            if resend and ua.email:
-                ua.must_change_password = True
-                if ua.user:
-                    ua.user.set_unusable_password()
-                    ua.user.save()
-                ua.save()
-                send_onboarding_email(ua, request=request, invited_by=request.user)
+            send_invite = request.POST.get("send_onboarding") == "1"
+            invite_sent = False
+            if send_invite and ua.email and not (password or "").strip():
+                try:
+                    _send_user_onboarding_invite(ua, request, request.user)
+                    invite_sent = True
+                except ValueError as exc:
+                    return JsonResponse({"status": "error", "message": str(exc)}, status=400)
             return JsonResponse({
                 "status": "success",
                 "message": "User account updated."
                 + (" Login password changed." if (password or "").strip() else "")
-                + (" Onboarding email sent." if resend else ""),
+                + (f" Invite email sent to {ua.email}." if invite_sent else ""),
             })
 
+        send_invite = request.POST.get("send_onboarding") == "1"
         if not username:
             username = staff_no or (email.split("@")[0] if email else None)
         if not username:
@@ -1025,21 +1080,46 @@ def create_user(request):
             contact_address=request.POST.get("contact_address", ""),
             access_level=category,
             organization=organization,
-            must_change_password=True,
+            must_change_password=send_invite,
             onboarded_by=admin_ua,
         )
-        emailed = send_onboarding_email(ua, request=request, invited_by=request.user)
-        return JsonResponse({
-            "status": "success",
-            "message": (
-                f"User {username} created. "
-                + (
+        if send_invite:
+            pw, pw_err = _validate_user_passwords(password, password_confirm, required=False)
+            if pw_err:
+                return JsonResponse({"status": "error", "message": pw_err}, status=400)
+            if pw:
+                user.set_password(pw)
+                user.save()
+                ua.must_change_password = False
+                ua.onboarded_at = timezone.now()
+                ua.save(update_fields=["must_change_password", "onboarded_at"])
+                emailed = False
+                msg_extra = " User can log in with the admin password you set."
+            else:
+                emailed = send_onboarding_email(ua, request=request, invited_by=request.user)
+                msg_extra = (
                     "Onboarding email sent — user must set password via the link."
                     if emailed
                     else "User created but email could not be sent (check EMAIL settings)."
                 )
-            ),
+        else:
+            pw, pw_err = _validate_user_passwords(password, password_confirm, required=True)
+            if pw_err:
+                user.delete()
+                return JsonResponse({"status": "error", "message": pw_err}, status=400)
+            user.set_password(pw)
+            user.save()
+            ua.must_change_password = False
+            ua.onboarded_at = timezone.now()
+            ua.save(update_fields=["must_change_password", "onboarded_at"])
+            emailed = False
+            msg_extra = " User can log in with the password you set."
+        return JsonResponse({
+            "status": "success",
+            "message": f"User {username} created.{msg_extra}",
         })
+    except ValueError as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=400)
 

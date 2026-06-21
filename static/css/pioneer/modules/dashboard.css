@@ -731,6 +731,12 @@ html.command-center-root {
     font-weight: 600;
 }
 
+.master-onboarding-check {
+    font-size: var(--font-sm);
+    line-height: 1.45;
+    color: var(--text-strong);
+}
+
 .command-center .master-onboarding-hint {
     margin: 10px 0 0;
     font-size: var(--font-xs);
