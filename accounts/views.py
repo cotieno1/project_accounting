@@ -174,10 +174,11 @@ def resend_onboarding_email(request):
     request.user.set_unusable_password()
     request.user.save()
     ua.save()
-    if send_onboarding_email(ua, request=request):
+    ok, err = send_onboarding_email(ua, request=request)
+    if ok:
         messages.success(request, "Onboarding email sent. Check your inbox.")
     else:
-        messages.error(request, "Could not send email. Contact User Admin.")
+        messages.error(request, err or "Could not send email. Contact User Admin.")
     return redirect("password_change_required")
 
 
@@ -930,9 +931,10 @@ def _send_user_onboarding_invite(ua, request, invited_by):
     ua.user.set_unusable_password()
     ua.user.save()
     ua.save(update_fields=["must_change_password"])
-    if send_onboarding_email(ua, request=request, invited_by=invited_by):
+    ok, err = send_onboarding_email(ua, request=request, invited_by=invited_by)
+    if ok:
         return True
-    raise ValueError("Could not send email. Check SMTP settings.")
+    raise ValueError(err or "Could not send email. Check SMTP settings.")
 
 
 @login_required
@@ -1096,11 +1098,11 @@ def create_user(request):
                 emailed = False
                 msg_extra = " User can log in with the admin password you set."
             else:
-                emailed = send_onboarding_email(ua, request=request, invited_by=request.user)
+                ok, err = send_onboarding_email(ua, request=request, invited_by=request.user)
                 msg_extra = (
                     "Onboarding email sent — user must set password via the link."
-                    if emailed
-                    else "User created but email could not be sent (check EMAIL settings)."
+                    if ok
+                    else f"User created but email could not be sent: {err or 'check EMAIL settings.'}"
                 )
         else:
             pw, pw_err = _validate_user_passwords(password, password_confirm, required=True)

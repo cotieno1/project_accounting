@@ -18,6 +18,14 @@ if [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ]; then
   log "RAILWAY_PUBLIC_DOMAIN: ${RAILWAY_PUBLIC_DOMAIN}"
 fi
 
+if [ -n "${RESEND_API_KEY:-}" ]; then
+  log "Email: Resend API key is set"
+elif [ -n "${EMAIL_HOST_USER:-}" ] && [ -n "${EMAIL_HOST_PASSWORD:-}" ]; then
+  log "Email: SMTP configured (${EMAIL_HOST:-localhost})"
+else
+  log "Email: NOT CONFIGURED — set RESEND_API_KEY or EMAIL_HOST_USER+EMAIL_HOST_PASSWORD on Railway"
+fi
+
 log "STEP 1/3: migrate"
 if python manage.py migrate --noinput --verbosity 2; then
   log "STEP 1/3: migrate OK"

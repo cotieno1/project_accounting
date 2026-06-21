@@ -230,11 +230,10 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 
 SITE_BASE_URL = os.environ.get('SITE_BASE_URL', '').strip()
+if not SITE_BASE_URL and _railway_domain:
+    SITE_BASE_URL = f'https://{_railway_domain}'
 
-EMAIL_BACKEND = os.environ.get(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend',
-)
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '').strip()
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
@@ -243,10 +242,23 @@ EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', default=True)
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@projectaccounting.local')
 SYSTEM_ADMIN_EMAIL = os.environ.get('SYSTEM_ADMIN_EMAIL', '').strip()
 
-if _on_railway and not EMAIL_HOST_USER and not DEBUG:
+_smtp_configured = bool(EMAIL_HOST_USER and EMAIL_HOST_PASSWORD)
+if os.environ.get('EMAIL_BACKEND'):
+    EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
+elif RESEND_API_KEY:
+    EMAIL_BACKEND = 'accounts.email_backends.ResendEmailBackend'
+elif _smtp_configured:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+elif DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+if _on_railway and not RESEND_API_KEY and not _smtp_configured and not DEBUG:
     import logging
     logging.getLogger(__name__).warning(
-        'EMAIL_HOST_USER not set on Railway — onboarding emails will fail until SMTP is configured.'
+        'Email not configured on Railway — set RESEND_API_KEY or EMAIL_HOST_USER/EMAIL_HOST_PASSWORD '
+        'and DEFAULT_FROM_EMAIL so onboarding invites can be sent.'
     )
 
 if not DEBUG:

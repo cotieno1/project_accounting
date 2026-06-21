@@ -1,4 +1,4 @@
-"""Outbound email helpers: onboarding, notifications, CEO CC on all mail."""
+﻿"""Outbound email helpers: onboarding, notifications, CEO CC on all mail."""
 
 import logging
 
@@ -31,10 +31,11 @@ def build_password_set_url(user, request=None):
 
 
 def send_system_email(*, subject, to, text_body, html_body=None, cc=None, include_ceo_cc=True, reply_to=None):
+    """Send one system email. Returns (success, error_message)."""
     recipients = [e.strip() for e in (to if isinstance(to, (list, tuple)) else [to]) if e and e.strip()]
     if not recipients:
         logger.warning("send_system_email skipped: no recipients (%s)", subject)
-        return False
+        return False, "No recipient email address"
     cc_list = [e.strip() for e in (cc or []) if e and e.strip()]
     if include_ceo_cc:
         for addr in ceo_cc_emails():
@@ -46,10 +47,13 @@ def send_system_email(*, subject, to, text_body, html_body=None, cc=None, includ
         msg.attach_alternative(html_body, "text/html")
     try:
         msg.send(fail_silently=False)
-        return True
+        return True, ""
     except Exception as exc:
+        err = str(exc).strip() or exc.__class__.__name__
+        if len(err) > 240:
+            err = err[:240] + "..."
         logger.exception("send_system_email failed: %s", exc)
-        return False
+        return False, err
 
 
 def send_onboarding_email(user_account, *, request=None, invited_by=None, record=True):
@@ -73,7 +77,7 @@ def send_onboarding_email(user_account, *, request=None, invited_by=None, record
     subject = f"{app_name} - set your password"
     text_body = render_to_string("emails/onboarding_set_password.txt", context)
     html_body = render_to_string("emails/onboarding_set_password.html", context)
-    ok = send_system_email(subject=subject, to=[user_account.email], text_body=text_body, html_body=html_body, include_ceo_cc=False)
+    ok, err = send_system_email(subject=subject, to=[user_account.email], text_body=text_body, html_body=html_body, include_ceo_cc=False)
     if record:
         from django.utils import timezone
 
@@ -82,9 +86,9 @@ def send_onboarding_email(user_account, *, request=None, invited_by=None, record
             user_account.onboarding_email_last_error = ""
             user_account.save(update_fields=["onboarding_email_sent_at", "onboarding_email_last_error"])
         else:
-            user_account.onboarding_email_last_error = "Email could not be sent (check SMTP settings)"
+            user_account.onboarding_email_last_error = err or "Email could not be sent (check SMTP settings)"
             user_account.save(update_fields=["onboarding_email_last_error"])
-    return ok
+    return ok, err
 
 
 def notify_misc_po_approved(user, *, task_id, mro_ref, amount_display, view_url):
@@ -96,7 +100,8 @@ def notify_misc_po_approved(user, *, task_id, mro_ref, amount_display, view_url)
         return False
     subject = f"Misc PO approved - {mro_ref}"
     text_body = f"Your Misc PO {mro_ref} on task {task_id} has been approved.\nAmount: {amount_display}\nView: {view_url}\n"
-    return send_system_email(subject=subject, to=[email], text_body=text_body)
+    ok, _err = send_system_email(subject=subject, to=[email], text_body=text_body)
+    return ok
 
 
 def notify_grn_received(user, *, grn_ref, task_id, view_url):
@@ -108,7 +113,8 @@ def notify_grn_received(user, *, grn_ref, task_id, view_url):
         return False
     subject = f"GRN recorded - {grn_ref}"
     text_body = f"Goods receipt {grn_ref} for task {task_id} is recorded.\nView: {view_url}\n"
-    return send_system_email(subject=subject, to=[email], text_body=text_body)
+    ok, _err = send_system_email(subject=subject, to=[email], text_body=text_body)
+    return ok
 
 
 def notify_budget_variance(*, task_id, budget_display, actual_display, variance_display):
@@ -119,7 +125,8 @@ def notify_budget_variance(*, task_id, budget_display, actual_display, variance_
         return False
     subject = f"Budget variance alert - task {task_id}"
     text_body = f"Task {task_id} budget variance requires review.\nBudget: {budget_display}\nActual: {actual_display}\nVariance: {variance_display}\n"
-    return send_system_email(subject=subject, to=emails, text_body=text_body, include_ceo_cc=False)
+    ok, _err = send_system_email(subject=subject, to=emails, text_body=text_body, include_ceo_cc=False)
+    return ok
 
 
 def send_grn_admin_copy(grn, request, *, print_context):
@@ -160,9 +167,10 @@ def send_grn_admin_copy(grn, request, *, print_context):
         f"Print GRN: {print_url}\n"
         f"GM Disbursement: {gm_url}\n"
     )
-    return send_system_email(
+    ok, _err = send_system_email(
         subject=subject,
         to=recipients,
         text_body=text_body,
         include_ceo_cc=False,
     )
+    return ok
