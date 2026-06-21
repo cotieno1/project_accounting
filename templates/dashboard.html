@@ -197,14 +197,18 @@
             <div><h2 id="masterFormTitle">Add Record</h2><p>Complete all required fields</p></div>
             <button type="button" class="setup-link" onclick="MasterRegistry.backToList()">Back to list</button>
     </div>
-        <form id="masterEntityForm">
+        <form id="masterEntityForm" class="master-entity-form">
             <input type="hidden" id="masterFormMode" value="create">
             <input type="hidden" id="masterFormPk" value="">
-            <div class="master-form-grid" id="masterFormFields"></div>
+            <div class="master-form-body">
+                <div class="master-form-grid" id="masterFormFields"></div>
+                <div id="masterUserOnboarding" class="master-onboarding-panel" hidden></div>
+            </div>
             <div class="master-form-actions">
+                <button type="button" class="master-btn master-btn-secondary" id="masterResendInviteBtn" style="display:none;margin-right:auto;">Resend invite email</button>
                 <button type="button" class="master-btn master-btn-ghost" onclick="MasterRegistry.backToList()">Cancel</button>
                 <button type="submit" class="master-btn master-btn-primary" id="masterFormSave">Save Record</button>
-</div>
+            </div>
         </form>
     </div>
 </div>
@@ -338,6 +342,29 @@ const MasterRegistry = (function () {
         var ph = f[5] ? ' placeholder="'+esc(f[5])+'"' : '';
         return '<div class="master-field"><label>'+label+(req?" *":"")+'</label><input type="'+inpTyp+'" name="'+n+'" id="'+id+'"'+ro+ph+rq+"></div>";
     }
+    function updateUserOnboardingPanel(data) {
+        var panel = document.getElementById("masterUserOnboarding");
+        var resendBtn = document.getElementById("masterResendInviteBtn");
+        if (!panel || activeEntityType !== "user") return;
+        if (!data || document.getElementById("masterFormMode").value === "create") {
+            panel.hidden = true;
+            panel.innerHTML = "";
+            if (resendBtn) resendBtn.style.display = "none";
+            return;
+        }
+        panel.hidden = false;
+        panel.innerHTML =
+            '<span class="nav-label" style="display:block;margin-bottom:10px;">Onboarding</span>' +
+            '<dl>' +
+            '<dt>Status</dt><dd>' + esc(data.onboarding_status || "—") + '</dd>' +
+            '<dt>Invite email sent</dt><dd>' + esc(data.invite_sent_at || "Not sent") + '</dd>' +
+            '<dt>Password set</dt><dd>' + esc(data.password_set_at || "—") + '</dd>' +
+            '</dl>' +
+            '<p class="master-onboarding-hint">Use <strong>Resend invite email</strong> if the user did not receive the set-password link. They must complete that step before full access.</p>';
+        if (resendBtn) {
+            resendBtn.style.display = data.can_resend_onboarding ? "" : "none";
+        }
+    }
     function openForm(mode,pk) {
         var c=CFG[activeEntityType];
         var fields = (activeEntityType==="user") ? buildUserFields(c, mode) : c.fields;
@@ -345,6 +372,7 @@ const MasterRegistry = (function () {
         document.getElementById("masterFormMode").value=mode==="view"?"edit":mode;
         document.getElementById("masterFormPk").value=pk||"";
         document.getElementById("masterFormFields").innerHTML=fields.map(function(f){return fieldHtml(f,mode);}).join("");
+        updateUserOnboardingPanel(null);
         document.getElementById("masterFormPanel").classList.add("is-open");
         document.getElementById("masterListPanel").classList.remove("is-open");
         document.getElementById("masterFormSave").style.display=mode==="view"?"none":"";
@@ -358,6 +386,7 @@ const MasterRegistry = (function () {
                     if(el.type==="checkbox") el.checked = kv[1]===true || kv[1]==="true" || kv[1]===1 || kv[1]==="1";
                     else el.value=kv[1]!=null?kv[1]:"";
                 });
+                if (activeEntityType === "user") updateUserOnboardingPanel(res.data || {});
             });
         }
     }
@@ -371,6 +400,28 @@ const MasterRegistry = (function () {
     function editRecord(pk) { openForm("edit",pk); }
     function viewRecord(pk) { openForm("view",pk); }
     function backToList() { document.getElementById("masterFormPanel").classList.remove("is-open"); document.getElementById("masterListPanel").classList.add("is-open"); document.querySelectorAll("#masterEntityForm input, #masterEntityForm select, #masterEntityForm textarea").forEach(function(el){el.disabled=false;}); refresh(); }
+    function resendInviteEmail() {
+        var pk = document.getElementById("masterFormPk").value;
+        if (!pk || activeEntityType !== "user") return;
+        var fd = new FormData(document.getElementById("masterEntityForm"));
+        fd.append("mode", "edit");
+        fd.append("original_id", pk);
+        fd.append("resend_onboarding", "1");
+        fetch(CFG.user.url, { method: "POST", body: fd, headers: { "X-CSRFToken": csrf() } })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.status === "success") {
+                    toast(res.message);
+                    fetch("/api/detail/user/" + encodeURIComponent(pk) + "/")
+                        .then(function(r) { return r.json(); })
+                        .then(function(detail) { updateUserOnboardingPanel(detail.data || {}); });
+                    refresh();
+                } else {
+                    toast(res.message || "Resend failed", "error");
+                }
+            })
+            .catch(function() { toast("Resend failed", "error"); });
+    }
     function saveForm(e) {
             e.preventDefault();
         var c=CFG[activeEntityType], mode=document.getElementById("masterFormMode").value;
@@ -418,7 +469,7 @@ const MasterRegistry = (function () {
                 .catch(function() { toast("Switch failed", "error"); });
         });
     }
-    document.addEventListener("DOMContentLoaded",function(){ loadOpts(); bindOrgSwitcher(); document.getElementById("masterSearch").addEventListener("input",render); document.getElementById("masterEntityForm").addEventListener("submit",saveForm); document.getElementById("masterListAddBtn").addEventListener("click",function(){openAdd(activeEntityType);}); document.addEventListener("click",function(e){ var m=document.getElementById("setupDropdown"), b=document.getElementById("setupMenuBtn"); if(m&&b&&!m.contains(e.target)&&!b.contains(e.target)) m.classList.remove("is-open"); }); document.addEventListener("keydown",function(e){ if(e.key==="Escape") closePanels(); }); });
+    document.addEventListener("DOMContentLoaded",function(){ loadOpts(); bindOrgSwitcher(); document.getElementById("masterSearch").addEventListener("input",render); document.getElementById("masterEntityForm").addEventListener("submit",saveForm); document.getElementById("masterListAddBtn").addEventListener("click",function(){openAdd(activeEntityType);}); var rib=document.getElementById("masterResendInviteBtn"); if(rib) rib.addEventListener("click", resendInviteEmail); document.addEventListener("click",function(e){ var m=document.getElementById("setupDropdown"), b=document.getElementById("setupMenuBtn"); if(m&&b&&!m.contains(e.target)&&!b.contains(e.target)) m.classList.remove("is-open"); }); document.addEventListener("keydown",function(e){ if(e.key==="Escape") closePanels(); }); });
     return { openList:openList, openAdd:openAdd, openSingleton:openSingleton, editRecord:editRecord, viewRecord:viewRecord, deleteRecord:deleteRecord, backToList:backToList, closePanels:closePanels, toggleSetupMenu:toggleSetupMenu };
 })();
 function showSection(id) {

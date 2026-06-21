@@ -793,6 +793,16 @@ def get_entity_detail(request, entity_type, pk):
                 "access_level_id": ua.access_level_id or "",
                 "organization_id": ua.organization_id or "",
                 "username": ua.user.username if ua.user else "",
+                "onboarding_status": ua.onboarding_status_label(),
+                "invite_sent_at": (
+                    _format_master_datetime(ua.onboarding_email_sent_at)
+                    if ua.onboarding_email_sent_at
+                    else ("Failed" if ua.onboarding_email_last_error else "Not sent")
+                ),
+                "password_set_at": _format_master_datetime(ua.onboarded_at),
+                "can_resend_onboarding": bool(
+                    ua.email and ua.user and ua.must_change_password
+                ),
             },
         })
 
@@ -896,6 +906,35 @@ def create_user(request):
     try:
         if mode == "edit" and original_id:
             ua = get_object_or_404(UserAccount, pk=original_id)
+
+            if request.POST.get("resend_onboarding") == "1":
+                if not ua.email:
+                    return JsonResponse(
+                        {"status": "error", "message": "User has no email address."},
+                        status=400,
+                    )
+                if not ua.user:
+                    return JsonResponse(
+                        {"status": "error", "message": "User has no login account linked."},
+                        status=400,
+                    )
+                ua.must_change_password = True
+                ua.user.set_unusable_password()
+                ua.user.save()
+                ua.save(update_fields=["must_change_password"])
+                if send_onboarding_email(ua, request=request, invited_by=request.user):
+                    return JsonResponse({
+                        "status": "success",
+                        "message": f"Invite email sent to {ua.email}.",
+                    })
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "Could not send email. Check SMTP settings on Railway.",
+                    },
+                    status=400,
+                )
+
             ua.staff_no = staff_no or ua.staff_no
             ua.first_name = first_name
             ua.last_name = last_name
