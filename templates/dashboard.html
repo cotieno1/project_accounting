@@ -354,6 +354,18 @@ const MasterRegistry = (function () {
             }
         });
     }
+    function onboardingStatusHtml(data) {
+        var err = (data && data.invite_last_error) ? data.invite_last_error : "";
+        var errBlock = err
+            ? '<dt>Last email error</dt><dd style="color:#b91c1c;word-break:break-word;">' + esc(err) + '</dd>'
+            : "";
+        return (
+            '<dt>Status</dt><dd>' + esc((data && data.onboarding_status) || "—") + '</dd>' +
+            '<dt>Invite email sent</dt><dd>' + esc((data && data.invite_sent_at) || "Not sent") + '</dd>' +
+            errBlock +
+            '<dt>Password set</dt><dd>' + esc((data && data.password_set_at) || "—") + '</dd>'
+        );
+    }
     function updateUserOnboardingPanel(data, mode) {
         var panel = document.getElementById("masterUserOnboarding");
         var resendBtn = document.getElementById("masterResendInviteBtn");
@@ -363,11 +375,7 @@ const MasterRegistry = (function () {
             panel.hidden = false;
             panel.innerHTML =
                 '<span class="nav-label" style="display:block;margin-bottom:10px;">Onboarding</span>' +
-                '<dl>' +
-                '<dt>Status</dt><dd>' + esc((data && data.onboarding_status) || "—") + '</dd>' +
-                '<dt>Invite email sent</dt><dd>' + esc((data && data.invite_sent_at) || "Not sent") + '</dd>' +
-                '<dt>Password set</dt><dd>' + esc((data && data.password_set_at) || "—") + '</dd>' +
-                '</dl>';
+                '<dl>' + onboardingStatusHtml(data) + '</dl>';
             if (resendBtn) resendBtn.style.display = "none";
             return;
         }
@@ -375,11 +383,7 @@ const MasterRegistry = (function () {
         var statusBlock = "";
         if (formMode === "edit" && data) {
             statusBlock =
-                '<dl style="margin-bottom:12px;">' +
-                '<dt>Status</dt><dd>' + esc(data.onboarding_status || "—") + '</dd>' +
-                '<dt>Invite email sent</dt><dd>' + esc(data.invite_sent_at || "Not sent") + '</dd>' +
-                '<dt>Password set</dt><dd>' + esc(data.password_set_at || "—") + '</dd>' +
-                '</dl>';
+                '<dl style="margin-bottom:12px;">' + onboardingStatusHtml(data) + '</dl>';
         }
         var checked = formMode === "edit" && data && data.can_resend_onboarding;
         panel.innerHTML =

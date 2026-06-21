@@ -502,6 +502,27 @@ def _format_master_datetime(dt):
     return dt.strftime("%d %b %Y %H:%M")
 
 
+def _user_onboarding_api_fields(ua):
+    """Onboarding columns for Command Center user list and edit form."""
+    return {
+        "onboarding_status": ua.onboarding_status_label(),
+        "invite_sent_at": (
+            _format_master_datetime(ua.onboarding_email_sent_at)
+            if ua.onboarding_email_sent_at
+            else ("Failed" if ua.onboarding_email_last_error else "Not sent")
+        ),
+        "invite_last_error": ua.onboarding_email_last_error or "",
+        "password_set_at": (
+            _format_master_datetime(ua.onboarded_at)
+            if ua.onboarded_at and not ua.must_change_password
+            else "—"
+        ),
+        "can_resend_onboarding": bool(
+            ua.email and ua.user and ua.must_change_password
+        ),
+    }
+
+
 def _serialize_master_row(entity_type, obj):
     row = {"_pk": _entity_pk_value(obj)}
     if entity_type == "user":
@@ -517,13 +538,7 @@ def _serialize_master_row(entity_type, obj):
                 obj.organization.short_name if obj.organization else "—"
             ),
             "role": obj.access_level.description if obj.access_level else "—",
-            "onboarding_status": obj.onboarding_status_label(),
-            "invite_sent_at": (
-                _format_master_datetime(obj.onboarding_email_sent_at)
-                if obj.onboarding_email_sent_at
-                else ("Failed" if obj.onboarding_email_last_error else "Not sent")
-            ),
-            "password_set_at": _format_master_datetime(obj.onboarded_at),
+            **_user_onboarding_api_fields(obj),
         })
     elif entity_type == "role":
         row.update({"id": obj.id, "description": obj.description})
@@ -796,16 +811,7 @@ def get_entity_detail(request, entity_type, pk):
                 "access_level_id": ua.access_level_id or "",
                 "organization_id": ua.organization_id or "",
                 "username": ua.user.username if ua.user else "",
-                "onboarding_status": ua.onboarding_status_label(),
-                "invite_sent_at": (
-                    _format_master_datetime(ua.onboarding_email_sent_at)
-                    if ua.onboarding_email_sent_at
-                    else ("Failed" if ua.onboarding_email_last_error else "Not sent")
-                ),
-                "password_set_at": _format_master_datetime(ua.onboarded_at),
-                "can_resend_onboarding": bool(
-                    ua.email and ua.user and ua.must_change_password
-                ),
+                **_user_onboarding_api_fields(ua),
             },
         })
 
@@ -930,9 +936,10 @@ def _send_user_onboarding_invite(ua, request, invited_by):
         last_name=ua.last_name,
     )
     ua.must_change_password = True
+    ua.onboarded_at = None
     ua.user.set_unusable_password()
     ua.user.save()
-    ua.save(update_fields=["must_change_password"])
+    ua.save(update_fields=["must_change_password", "onboarded_at"])
     ok, err = send_onboarding_email(ua, request=request, invited_by=invited_by)
     if ok:
         return True
