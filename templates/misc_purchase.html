@@ -221,8 +221,9 @@
                     </div>
                     {% if ro_locked %}
                     <div class="ro-locked-banner">
-                        Grand total locked at <strong>{{ currency_symbol }} {{ actual|floatformat:2 }}</strong>.
-                        {% if ro_mode == 'draft' and not ro_submitted %}Submit the Misc RO to move it to Misc RO List.{% endif %}
+                        {% if ro_number %}Misc RO <strong>{{ ro_number }}</strong> is locked — view only.{% else %}Grand total locked{% endif %}
+                        Grand total: <strong>{{ currency_symbol }} {{ actual|floatformat:2 }}</strong>.
+                        {% if ro_mode == 'locked' and not ro_submitted %}Submit the Misc RO when ready — no further add, amend, or delete.{% endif %}
         </div>
                     {% endif %}
 
@@ -287,7 +288,7 @@
                             <button type="submit" form="lockRoForm" name="lock_ro_total" class="btn-action" style="background:#047857;">Lock Misc RO total</button>
                             <span style="font-size:11px;color:var(--muted);align-self:center;">Lock when you have entered your last line item.</span>
                         </div>
-                        {% elif ro_mode == 'draft' and ro_locked %}
+                        {% elif ro_mode == 'locked' and not ro_submitted %}
                         <form method="POST" id="submitRoForm" style="margin-top:14px;">
                             {% csrf_token %}
                             <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
@@ -311,6 +312,7 @@
                 </div>
             </div>
 
+            {% if not ro_locked %}
             <div id="supplierPickerModal" class="supplier-overlay" style="display:none;" role="dialog" aria-hidden="true">
                 <div class="supplier-overlay-backdrop" id="supplierOverlayBackdrop"></div>
                 <div class="supplier-overlay-panel">
@@ -396,6 +398,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         {% if mro_workspace_empty %}
