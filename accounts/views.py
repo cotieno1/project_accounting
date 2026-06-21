@@ -573,6 +573,37 @@ def _serialize_master_row(entity_type, obj):
     return row
 
 
+def _normalize_org_code(raw):
+    """Strip accidental JSON/list wrappers from master-registry input."""
+    code = (raw or "").strip()
+    if code.startswith("[") and code.endswith("]"):
+        inner = code[1:-1].strip().strip("'\"")
+        if inner:
+            code = inner
+    return code.strip("[]'\" ").upper()
+
+
+def _validate_organization_payload(data):
+    org_code = _normalize_org_code(data.get("org_code"))
+    name = (data.get("name") or "").strip()
+    if name.startswith("[") and name.endswith("]"):
+        name = name[1:-1].strip().strip("'\"")
+    if not org_code:
+        return None, "Organization code is required (e.g. PIONEER)."
+    if not re.match(r"^[A-Z0-9][A-Z0-9_-]{0,28}$", org_code):
+        return None, (
+            "Organization code must be 1–30 characters: letters, numbers, underscore, hyphen."
+        )
+    if not name:
+        return None, "Company name is required."
+    cleaned = dict(data)
+    cleaned["org_code"] = org_code
+    cleaned["name"] = name
+    if cleaned.get("short_name"):
+        cleaned["short_name"] = cleaned["short_name"].strip()
+    return cleaned, None
+
+
 def _apply_entity_payload(model, data, entity_type):
     """Map POST fields to model kwargs, resolving FK ids."""
     cleaned = {
@@ -657,7 +688,14 @@ def unified_api_create(request, entity_type):
                 {"status": "error", "message": "Contact / office address is required."},
                 status=400,
             )
-    data = _apply_entity_payload(model, dict(request.POST), entity_type)
+        validated, err = _validate_organization_payload(dict(request.POST))
+        if err:
+            return JsonResponse({"status": "error", "message": err}, status=400)
+        if mode == "edit" and original_id:
+            validated.pop("org_code", None)
+        data = _apply_entity_payload(model, validated, entity_type)
+    else:
+        data = _apply_entity_payload(model, dict(request.POST), entity_type)
 
     try:
         if mode == "edit" and original_id:
@@ -1044,30 +1082,28 @@ def fetch_bom_to_ro(request, ro_id):
     return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
 
 
-def _misc_ro_is_locked(mpo):
-    """Misc RO is locked once it has a permanent MPO number or the grand total was sealed."""
+def _mpo_ro_locked(mpo):
+    """True once the officer locks the Misc RO grand total (Misc RO number issued)."""
     if not mpo:
         return False
-    if (mpo.mpo_number or "").strip():
+    if mpo.funding_status in ("SUBMITTED", "LOCKED", "DISBURSED"):
         return True
     return not mpo.is_sourcing
 
 
-def _assert_misc_ro_editable(mpo):
-    if _misc_ro_is_locked(mpo):
-        ref = (mpo.mpo_number or "").strip() or "Misc RO"
-        raise ValueError(
-            f"{ref} is locked — view only. Add, amend, and delete are not allowed."
-        )
-
-
 def _mpo_has_ro_number(mpo):
-    """True once Misc RO has a permanent MPO reference or advanced funding status."""
+    """Misc RO number exists only after the grand total is locked."""
     if not mpo:
         return False
-    if (mpo.mpo_number or "").strip():
-        return True
-    return mpo.funding_status in ("SUBMITTED", "LOCKED", "DISBURSED")
+    return bool((mpo.mpo_number or "").strip()) and _mpo_ro_locked(mpo)
+
+
+def _assert_mpo_editable(mpo):
+    if _mpo_ro_locked(mpo):
+        ref = (mpo.mpo_number or "").strip() or "Misc RO"
+        raise ValueError(
+            f"{ref} is locked - view only. Add, amend, delete, and supplier changes are not allowed."
+        )
 
 
 def _misc_display_mro_number(mro):
@@ -1080,7 +1116,7 @@ def _misc_display_mro_number(mro):
 
 
 def _misc_display_ro_number(mpo):
-    if not mpo:
+    if not _mpo_has_ro_number(mpo):
         return ""
     return (mpo.mpo_number or "").strip()
 
@@ -4606,7 +4642,7 @@ def _misc_budget_formulation(
             labour = project_budget.labour_burden or Decimal("0.00")
             misc = project_budget.misc_reserve or Decimal("0.00")
         grand = material + labour + misc
-        readonly = display_mpo.funding_status in ("LOCKED", "DISBURSED")
+        readonly = _mpo_ro_locked(display_mpo)
         source = "provisional" if not mro else "ro"
         if display_mpo.mpo_number:
             provisional_ref = display_mpo.mpo_number
@@ -4707,7 +4743,7 @@ def _misc_default_gl():
 
 
 def _ensure_mpo_reference(mpo):
-    """Assign permanent Misc RO number when the RO total is locked or submitted."""
+    """Assign the permanent Misc RO number when the officer locks the grand total."""
     if not mpo.mpo_number:
         mpo.mpo_number = _next_mpo_number()
         mpo.save(update_fields=["mpo_number"])
@@ -5024,8 +5060,18 @@ def misc_purchase_builder(request):
                 else:
                     mpo = _require_draft_mpo(active_task, "Officer purchase RO")
 
+                    _MPO_EDIT_ACTIONS = (
+                        "select_supplier",
+                        "register_supplier",
+                        "save_ad_hoc_supplier",
+                        "update_supplier",
+                        "add_misc_purchase",
+                        "delete_item",
+                    )
+                    if any(k in request.POST for k in _MPO_EDIT_ACTIONS):
+                        _assert_mpo_editable(mpo)
+
                     if "select_supplier" in request.POST:
-                        _assert_misc_ro_editable(mpo)
                         sid = request.POST.get("supplier_id", "").strip()
                         supplier = SupplierAccount.objects.filter(supplier_id=sid).first()
                         if not supplier:
@@ -5035,14 +5081,12 @@ def misc_purchase_builder(request):
                         messages.success(request, f"Supplier locked: {supplier.description}")
 
                     elif "register_supplier" in request.POST:
-                        _assert_misc_ro_editable(mpo)
                         supplier = _create_supplier_from_post(request.POST)
                         _save_misc_supplier_session(request, supplier=supplier)
                         _apply_supplier_to_mpo(mpo, _misc_supplier_session(request))
                         messages.success(request, f"New supplier registered: {supplier.supplier_id}")
 
                     elif "save_ad_hoc_supplier" in request.POST:
-                        _assert_misc_ro_editable(mpo)
                         _save_misc_supplier_session(
                             request,
                             ad_hoc={
@@ -5057,7 +5101,6 @@ def misc_purchase_builder(request):
                         messages.success(request, "Ad-hoc vendor details saved (not in supplier master).")
 
                     elif "update_supplier" in request.POST:
-                        _assert_misc_ro_editable(mpo)
                         sid = request.POST.get("supplier_id", "").strip()
                         if sid:
                             supplier = SupplierAccount.objects.get(supplier_id=sid)
@@ -5078,41 +5121,27 @@ def misc_purchase_builder(request):
                     elif "lock_ro_total" in request.POST:
                         if not mpo.items.exists():
                             raise ValueError("Add at least one line item before locking the RO total.")
-                        if _misc_ro_is_locked(mpo):
-                            ref = mpo.mpo_number or "Misc RO"
-                            messages.info(
-                                request,
-                                f"Misc RO {ref} is already locked — view only.",
-                            )
-                        else:
-                            _ensure_mpo_reference(mpo)
-                            total = _recalc_mpo_total(mpo)
-                            mpo.is_sourcing = False
-                            mpo.save(update_fields=["is_sourcing", "total_amount", "mpo_number"])
-                            messages.success(
-                                request,
-                                f"Misc RO {mpo.mpo_number} locked at {fmt_money(total)}. "
-                                "Submit when ready — add, amend, and delete are no longer allowed.",
-                            )
+                        if _mpo_ro_locked(mpo):
+                            ref = (mpo.mpo_number or "").strip() or "Misc RO"
+                            raise ValueError(f"{ref} is already locked.")
+                        total = _recalc_mpo_total(mpo)
+                        ref = _ensure_mpo_reference(mpo)
+                        mpo.is_sourcing = False
+                        mpo.save(update_fields=["is_sourcing", "total_amount"])
+                        messages.success(
+                            request,
+                            f"Misc RO {ref} locked at {fmt_money(total)}. Submit the RO when ready.",
+                        )
 
                     elif "submit_ro" in request.POST:
                         if not mpo.items.exists():
                             raise ValueError("Add at least one line item before submitting the RO.")
-                        if mpo.is_sourcing and not _misc_ro_is_locked(mpo):
+                        if mpo.is_sourcing:
                             raise ValueError("Lock the RO grand total before submitting.")
                         _ensure_mpo_reference(mpo)
-                        if mpo.is_sourcing:
-                            mpo.is_sourcing = False
                         total = _recalc_mpo_total(mpo)
                         mpo.funding_status = "SUBMITTED"
-                        mpo.save(
-                            update_fields=[
-                                "funding_status",
-                                "total_amount",
-                                "mpo_number",
-                                "is_sourcing",
-                            ]
-                        )
+                        mpo.save(update_fields=["funding_status", "total_amount"])
                         request.session["batch_data"] = {"items": [], "supplier": ""}
                         request.session.modified = True
                         messages.success(
@@ -5125,7 +5154,8 @@ def misc_purchase_builder(request):
                         )
 
                     elif "add_misc_purchase" in request.POST:
-                        _assert_misc_ro_editable(mpo)
+                        if not mpo.is_sourcing:
+                            raise ValueError("RO total is locked â€” remove lock is not allowed; submit or start a new RO.")
                         if not default_gl:
                             raise ValueError("Add a GL account before adding line items.")
                         qty = _normalize_misc_qty(request.POST.get("qty", 0) or 0)
@@ -5145,7 +5175,6 @@ def misc_purchase_builder(request):
                         messages.success(request, "Line item saved to database.")
 
                     elif "delete_item" in request.POST:
-                        _assert_misc_ro_editable(mpo)
                         item_id = request.POST.get("item_id")
                         if item_id:
                             MiscPurchaseItem.objects.filter(
@@ -5185,25 +5214,20 @@ def misc_purchase_builder(request):
 
     if viewed_mpo:
         batch = _mpo_to_batch(viewed_mpo, misc_sup if viewed_mpo.funding_status == "PENDING" else {})
-        ro_locked = _misc_ro_is_locked(viewed_mpo)
-        ro_submitted = viewed_mpo.funding_status == "SUBMITTED"
-        if ro_locked and viewed_mpo.funding_status == "PENDING" and not ro_submitted:
-            ro_mode = "locked"
-        elif ro_locked or viewed_mpo.funding_status != "PENDING":
-            ro_mode = "detail"
-        else:
+        if viewed_mpo.funding_status == "PENDING" and viewed_mpo.is_sourcing:
             ro_mode = "draft"
+        elif viewed_mpo.funding_status == "PENDING":
+            ro_mode = "locked"
+        else:
+            ro_mode = "detail"
+        ro_locked = _mpo_ro_locked(viewed_mpo)
+        ro_submitted = viewed_mpo.funding_status == "SUBMITTED"
     elif draft_mpo:
         batch = _mpo_to_batch(draft_mpo, misc_sup)
         _sync_session_from_mpo(request, active_task, draft_mpo)
-        ro_locked = _misc_ro_is_locked(draft_mpo)
+        ro_mode = "locked" if _mpo_ro_locked(draft_mpo) else "draft"
+        ro_locked = _mpo_ro_locked(draft_mpo)
         ro_submitted = False
-        if ro_locked:
-            ro_mode = "locked"
-        elif draft_mpo.is_sourcing:
-            ro_mode = "draft"
-        else:
-            ro_mode = "locked"
     else:
         session_batch = request.session.get("batch_data") or {}
         batch = {
@@ -5224,7 +5248,7 @@ def misc_purchase_builder(request):
     can_review_budget = bool(
         display_mpo
         and display_mpo.items.exists()
-        and _misc_ro_is_locked(display_mpo)
+        and not display_mpo.is_sourcing
         and display_mpo.funding_status in ("PENDING", "SUBMITTED")
     )
     draft_actual = sum(Decimal(str(i.get("total", 0))) for i in batch.get("items", []))
@@ -5430,7 +5454,9 @@ def _fluid_ro_print_context(request):
 
     ro_reference = ""
     if draft_mpo:
-        ro_reference = _misc_display_ro_number(draft_mpo)
+        ro_reference = (draft_mpo.mpo_number or "").strip()
+        if not ro_reference and _mpo_ro_locked(draft_mpo):
+            ro_reference = _ensure_mpo_reference(draft_mpo)
 
     back_url = request.GET.get("return") or (
         reverse("misc_purchase_builder")
@@ -5847,7 +5873,7 @@ def authorize_mpo_action(request):
                 messages.error(request, "This RO cannot be committed in its current state.")
                 return redirect(f"/misc-purchase/?task_id={active_task.project_id}")
 
-            if draft_mpo.funding_status == "PENDING" and not _misc_ro_is_locked(draft_mpo):
+            if draft_mpo.funding_status == "PENDING" and draft_mpo.is_sourcing:
                 messages.error(
                     request,
                     "Lock and submit the RO before committing the ad-hoc budget.",

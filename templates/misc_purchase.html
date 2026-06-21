@@ -96,7 +96,7 @@
         {% endif %}
 
         <span class="nav-label" style="margin-top: 24px;">Ad-Hoc MRO</span>
-        {% if show_review_budget %}
+        {% if show_review_budget and not ro_locked %}
         <button type="button" class="btn-action" onclick="openReviewModal()" style="width:100%;margin-top:8px;" title="Lock Misc RO total with line items, then review ad-hoc budget">Review Ad-Hoc Budget</button>
         {% elif adhoc_material_committed and provisional_budget_ref %}
         <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.4;">{{ provisional_budget_ref }} confirmed — awaiting CEO approval and fund release for payment vouchers.</p>
@@ -221,9 +221,9 @@
                     </div>
                     {% if ro_locked %}
                     <div class="ro-locked-banner">
-                        {% if ro_number %}Misc RO <strong>{{ ro_number }}</strong> is locked — view only.{% else %}Grand total locked{% endif %}
-                        Grand total: <strong>{{ currency_symbol }} {{ actual|floatformat:2 }}</strong>.
-                        {% if ro_mode == 'locked' and not ro_submitted %}Submit the Misc RO when ready — no further add, amend, or delete.{% endif %}
+                        {% if ro_number %}Misc RO <strong style="font-family:monospace;">{{ ro_number }}</strong> is locked — view only.{% else %}Grand total locked — view only.{% endif %}
+                        Total <strong>{{ currency_symbol }} {{ actual|floatformat:2 }}</strong>.
+                        {% if ro_mode == 'draft' or ro_mode == 'locked' %}{% if not ro_submitted %}Submit the Misc RO to move it to Misc RO List.{% endif %}{% endif %}
         </div>
                     {% endif %}
 
@@ -288,7 +288,8 @@
                             <button type="submit" form="lockRoForm" name="lock_ro_total" class="btn-action" style="background:#047857;">Lock Misc RO total</button>
                             <span style="font-size:11px;color:var(--muted);align-self:center;">Lock when you have entered your last line item.</span>
                         </div>
-                        {% elif ro_mode == 'locked' and not ro_submitted %}
+                        {% elif ro_mode == 'draft' or ro_mode == 'locked' %}
+                        {% if ro_locked and not ro_submitted %}
                         <form method="POST" id="submitRoForm" style="margin-top:14px;">
                             {% csrf_token %}
                             <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
@@ -312,7 +313,6 @@
                 </div>
             </div>
 
-            {% if not ro_locked %}
             <div id="supplierPickerModal" class="supplier-overlay" style="display:none;" role="dialog" aria-hidden="true">
                 <div class="supplier-overlay-backdrop" id="supplierOverlayBackdrop"></div>
                 <div class="supplier-overlay-panel">
@@ -398,7 +398,6 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
         </div>
 
         {% if mro_workspace_empty %}
@@ -425,15 +424,15 @@
 
             <label class="nav-label" style="margin-top: 15px; margin-bottom: 8px;">2. Labour Cost Burden</label>
             <div style="display: flex; gap: 10px; margin-bottom: 0;">
-                <select name="labour_mode" id="labour_mode" onchange="calculateBudget()" style="flex: 1; margin-bottom: 20px;" class="form-input">
+                <select name="labour_mode" id="labour_mode" onchange="calculateBudget()" style="flex: 1; margin-bottom: 20px;" class="form-input"{% if ro_locked or formulation_readonly %} disabled{% endif %}>
                     <option value="fixed">Manual (Fixed {{ currency_symbol }})</option>
                     <option value="percent">Percent Allocation (%)</option>
                 </select>
-                <input type="number" step="0.01" id="labour_input" name="labour_input" class="input-price" style="width: 120px; margin-bottom: 20px;" oninput="calculateBudget()" value="{{ seed_labour|floatformat:2 }}">
+                <input type="number" step="0.01" id="labour_input" name="labour_input" class="input-price" style="width: 120px; margin-bottom: 20px;" oninput="calculateBudget()" value="{{ seed_labour|floatformat:2 }}"{% if ro_locked or formulation_readonly %} readonly disabled{% endif %}>
             </div>
 
             <label class="nav-label" style="margin-top: 10px; margin-bottom: 5px;">3. Misc / Logistics Operational Reserve</label>
-            <input type="number" step="0.01" id="misc_input" name="misc_input" class="input-price" style="width: 100%; margin-bottom: 20px;" oninput="calculateBudget()" value="{{ seed_misc|floatformat:2 }}">
+            <input type="number" step="0.01" id="misc_input" name="misc_input" class="input-price" style="width: 100%; margin-bottom: 20px;" oninput="calculateBudget()" value="{{ seed_misc|floatformat:2 }}"{% if ro_locked or formulation_readonly %} readonly disabled{% endif %}>
 
             <div style="margin-top: 24px; padding-top: 20px; border-top: 2px dashed var(--border); margin-bottom: 20px;">
                 <span class="nav-label" style="color: var(--muted); margin-bottom: 5px;">Total Expected Fund Disbursement</span>
@@ -448,7 +447,7 @@
             <input type="hidden" name="RO-total_amount" id="id_RO-total_amount">
 
             <div id="reviewFeedbackBanner" class="review-feedback-banner" role="status" aria-live="polite"></div>
-            {% if show_review_budget %}
+            {% if show_review_budget and not ro_locked %}
             <button type="button" onclick="openReviewModal()" class="btn-action btn-success" title="Lock Misc RO total with line items, then review ad-hoc budget">Review Ad-Hoc Budget</button>
             {% elif adhoc_material_committed %}
             <p style="font-size:11px;color:var(--muted);margin:0 0 10px;line-height:1.45;">MRO baseline confirmed — payment vouchers via GM Desk after CEO fund release.</p>
@@ -742,7 +741,7 @@
         }
 
         function calculateBudget() {
-            if (formulationReadonly && budgetFormulationSource === 'committed') {
+            if (roLocked || (formulationReadonly && budgetFormulationSource === 'committed')) {
                 return;
             }
             const materialVal = roMaterialTotal();
