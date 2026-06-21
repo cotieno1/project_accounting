@@ -14,7 +14,8 @@ from .models import (
 class UserAccountAdmin(admin.ModelAdmin):
     list_display = (
         'user', 'first_name', 'last_name', 'designation', 'phone', 'email',
-        'access_level', 'must_change_password', 'onboarded_at',
+        'access_level', 'must_change_password', 'onboarding_email_sent_at',
+        'onboarded_at',
     )
     search_fields = ('user__username', 'first_name', 'last_name', 'designation', 'email')
     list_filter = ('access_level', 'must_change_password')

@@ -152,6 +152,26 @@ class UserAccount(models.Model):
         blank=True,
         related_name="onboarded_users",
     )
+    onboarding_email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the onboarding set-password email was last sent successfully.",
+    )
+    onboarding_email_last_error = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Last onboarding email failure message, if any.",
+    )
+
+    def onboarding_status_label(self):
+        if not self.must_change_password:
+            return "Active"
+        if self.onboarding_email_last_error and not self.onboarding_email_sent_at:
+            return "Email failed"
+        if self.onboarding_email_sent_at:
+            return "Awaiting password"
+        return "Invite not sent"
 
     def __str__(self):
         return self.user.username

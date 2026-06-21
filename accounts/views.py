@@ -403,6 +403,9 @@ MASTER_ENTITY_META = {
             ("phone", "Phone"),
             ("organization", "Company"),
             ("role", "Role"),
+            ("onboarding_status", "Onboarding"),
+            ("invite_sent_at", "Invite Email Sent"),
+            ("password_set_at", "Password Set"),
         ],
     },
     "role": {
@@ -490,6 +493,12 @@ def _entity_pk_value(obj):
     return str(obj.pk)
 
 
+def _format_master_datetime(dt):
+    if not dt:
+        return "—"
+    return dt.strftime("%d %b %Y %H:%M")
+
+
 def _serialize_master_row(entity_type, obj):
     row = {"_pk": _entity_pk_value(obj)}
     if entity_type == "user":
@@ -505,6 +514,13 @@ def _serialize_master_row(entity_type, obj):
                 obj.organization.short_name if obj.organization else "—"
             ),
             "role": obj.access_level.description if obj.access_level else "—",
+            "onboarding_status": obj.onboarding_status_label(),
+            "invite_sent_at": (
+                _format_master_datetime(obj.onboarding_email_sent_at)
+                if obj.onboarding_email_sent_at
+                else ("Failed" if obj.onboarding_email_last_error else "Not sent")
+            ),
+            "password_set_at": _format_master_datetime(obj.onboarded_at),
         })
     elif entity_type == "role":
         row.update({"id": obj.id, "description": obj.description})
