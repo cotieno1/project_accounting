@@ -98,12 +98,6 @@
 <div class="panel" style="color:var(--muted);">Select a project task from the sidebar to open the GM disbursement desk.</div>
 {% else %}
 
-        {% if messages %}
-        {% for message in messages %}
-        <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
-        {% endfor %}
-        {% endif %}
-
         <div class="panel">
             <div class="header-row">
                 <div class="header-left">

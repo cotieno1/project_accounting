@@ -209,6 +209,40 @@ td {
     color: #fca5a5;
 }
 
+.flash-messages-stack {
+    margin-bottom: 16px;
+}
+
+.flash-messages-stack .msg:last-of-type {
+    margin-bottom: 10px;
+}
+
+.flash-main-menu-link {
+    margin: 0 0 8px;
+    padding: 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.flash-main-menu-link a {
+    color: var(--primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.flash-main-menu-link a:hover {
+    color: var(--light);
+    text-decoration: underline;
+}
+
+.msg-warning {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid var(--warning, #f59e0b);
+    color: #fcd34d;
+}
+
 .ro-list {
     list-style: none;
     margin: 10px 0 0;

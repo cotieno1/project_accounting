@@ -58,12 +58,6 @@
     <p><a href="{% url 'ops_dashboard' %}" style="color:#93c5fd;">Go to Ops Dashboard</a> to pick a task.</p>
 </div>
 {% else %}
-{% if messages %}
-{% for message in messages %}
-<div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
-{% endfor %}
-{% endif %}
-
 <div class="panel">
     <div class="header-row">
         <div class="header-left">

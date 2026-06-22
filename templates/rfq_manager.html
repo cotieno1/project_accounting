@@ -228,6 +228,27 @@
             font-size: 13px;
             line-height: 1.45;
         }
+        .flash-messages-stack { margin: 0 16px 12px; }
+        .flash-messages-stack .msg {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+        .flash-messages-stack .msg-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            color: #6ee7b7;
+        }
+        .flash-messages-stack .msg-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--danger);
+            color: #fca5a5;
+        }
+        .flash-main-menu-link { margin: 0; font-size: 13px; font-weight: 600; }
+        .flash-main-menu-link a { color: #60a5fa; text-decoration: none; }
+        .flash-main-menu-link a:hover { color: var(--light); text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -284,6 +305,8 @@
         </div>
         {% endif %}
     </div>
+
+    {% include "includes/flash_messages.html" %}
 
     {% if active_task %}
     <div class="workspace">

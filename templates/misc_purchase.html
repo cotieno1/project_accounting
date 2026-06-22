@@ -113,12 +113,6 @@
             <a href="{% url 'ops_dashboard' %}" class="btn-action btn-secondary">← Main menu (Esc)</a>
         </div>
         {% else %}
-        {% if messages %}
-        {% for message in messages %}
-        <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
-        {% endfor %}
-        {% endif %}
-
         <form method="POST" action="{% url 'authorize_mpo' %}" id="miscAdhocCommitForm" style="display:none;">
             {% csrf_token %}
             <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
