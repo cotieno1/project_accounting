@@ -2173,6 +2173,7 @@ def rfq_manager(request):
         "tasks": tasks,
         "active_task": active_task,
         "build": build_items,
+        "has_ro_lines": bool(build_items),
         "suppliers": suppliers,
         "total_qualified_suppliers": total_qualified_suppliers,
         'stats': stats
@@ -2625,6 +2626,69 @@ def lpo_settlement_view(request):
 
     return render(request, 'procurement/lpo_print_template.html', context)
 # =======================================================================
+# Print guards — block empty documents (no line items)
+# =======================================================================
+
+def _print_items_count(items):
+    if items is None:
+        return 0
+    if hasattr(items, "exists"):
+        return items.count()
+    try:
+        return len(items)
+    except TypeError:
+        return 0
+
+
+def _redirect_empty_print(request, message, return_url):
+    messages.error(request, message)
+    return redirect(return_url)
+
+
+def _rfq_letter_print_guard(request, context):
+    return_url = context["return_url"]
+    task = context["task"]
+    packets = context.get("supplier_packets") or []
+    if not packets:
+        return _redirect_empty_print(
+            request,
+            "Select at least one supplier before printing RFQs.",
+            return_url,
+        )
+    items = packets[0].get("items")
+    if _print_items_count(items) == 0:
+        return _redirect_empty_print(
+            request,
+            f"Cannot print RFQ for task {task.project_id}: no requisition line items. "
+            "Complete the BOM and generate a Requisition Order first.",
+            return_url,
+        )
+    return None
+
+
+def _mpo_print_guard(request, context):
+    batch = context.get("batch") or {}
+    items = batch.get("items") or []
+    if not items:
+        return _redirect_empty_print(
+            request,
+            "Cannot print this requisition: no line items have been added yet.",
+            context.get("back_url") or reverse("ops_dashboard"),
+        )
+    return None
+
+
+def _mro_print_guard(request, context):
+    if _print_items_count(context.get("items")) == 0:
+        return _redirect_empty_print(
+            request,
+            "Cannot print MRO: the linked requisition has no line items.",
+            context.get("back_url") or reverse("ops_dashboard"),
+        )
+    return None
+
+
+# =======================================================================
 # 🖨️ CLEAN UNIFIED DOCUMENTATION PRINT VISUALIZERS
 # =======================================================================
 
@@ -2637,6 +2701,13 @@ def print_memo_view(request, task_id):
 
     active_task = get_object_or_404(ProjectTask, project_id=task_id)
     build_items = BOMItem.objects.filter(header__task=active_task)
+    if not build_items.exists():
+        back = reverse("rfq_manager") + f"?task_id={task_id}"
+        return _redirect_empty_print(
+            request,
+            f"Cannot print memo for task {task_id}: no BOM line items.",
+            back,
+        )
 
     supplier_account = None
     supplier_id = request.GET.get("supplier_id")
@@ -2677,6 +2748,12 @@ def print_memo_view(request, task_id):
 @login_required
 def print_ro_view(request, ro_id):
     ro = get_object_or_404(RequisitionOrder, id=ro_id)
+    if not ro.items.exists():
+        return _redirect_empty_print(
+            request,
+            "Cannot print RO: this requisition has no line items.",
+            reverse("ops_dashboard") + f"?task_id={ro.task.project_id}",
+        )
     return render(request, "ro_print_template.html", {"ro": ro, "items": ro.items.all()})
 
 @login_required
@@ -2688,6 +2765,14 @@ def print_lpo_view(request, lpo_id):
         ),
         id=lpo_id,
     )
+    if not lpo.items.exists():
+        task = lpo.project_task
+        back = reverse("bid_evaluation_terminal") + (f"?task_id={task.project_id}" if task else "")
+        return _redirect_empty_print(
+            request,
+            "Cannot print LPO: this purchase order has no line items.",
+            back or reverse("ops_dashboard"),
+        )
     template_items = []
     materials_total = Decimal("0.00")
     for idx, line in enumerate(lpo.items.all(), start=1):
@@ -2771,7 +2856,11 @@ def _rfq_letter_context(request):
 @login_required
 def print_rfq_letter(request):
     """Screen preview for batch RFQ letters (mobile-friendly print / AirPrint)."""
-    return render(request, 'rfq_print_letter.html', _rfq_letter_context(request))
+    context = _rfq_letter_context(request)
+    blocked = _rfq_letter_print_guard(request, context)
+    if blocked:
+        return blocked
+    return render(request, 'rfq_print_letter.html', context)
 
 
 @login_required
@@ -2780,6 +2869,9 @@ def print_rfq_letter_pdf(request):
     from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
 
     context = _rfq_letter_context(request)
+    blocked = _rfq_letter_print_guard(request, context)
+    if blocked:
+        return blocked
     task = context['task']
     label = f"RFQ-{task.project_id}"
     if context['supplier_packets']:
@@ -2797,6 +2889,12 @@ def print_rfq_letter_pdf(request):
 @login_required
 def print_bom_from_ro(request, ro_id):
     ro = get_object_or_404(RequisitionOrder, id=ro_id)
+    if not ro.items.exists():
+        return _redirect_empty_print(
+            request,
+            "Cannot print BOM from RO: the requisition has no line items.",
+            reverse("bom_builder") + f"?task_id={ro.task.project_id}",
+        )
     bom = BOMHeader.objects.filter(ro=ro).first()
     if not bom:
         bom = _get_task_bom(ro.task)
@@ -5635,6 +5733,9 @@ def print_fluid_ro_view(request):
     Screen or print preview for a draft/submitted ad-hoc RO (before MRO commit).
     """
     context = _fluid_ro_print_context(request)
+    blocked = _mpo_print_guard(request, context)
+    if blocked:
+        return blocked
     if request.GET.get("print") == "1":
         from django.shortcuts import redirect
         from urllib.parse import urlencode
@@ -5707,6 +5808,9 @@ def print_fluid_ro_pdf_view(request):
     from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
 
     context = _fluid_ro_print_context(request)
+    blocked = _mpo_print_guard(request, context)
+    if blocked:
+        return blocked
     mpo = context.get("mpo")
     label = context.get("ro_reference") or "Ad-Hoc-RO"
     try:
@@ -5730,6 +5834,9 @@ def print_fluid_ro_pdf_view(request):
 def print_mpo_view(request, mpo_id):
     """Printable ad-hoc RO from a persisted MPO record."""
     context = _mpo_print_context(request, mpo_id)
+    blocked = _mpo_print_guard(request, context)
+    if blocked:
+        return blocked
     if request.GET.get("print") == "1":
         from django.shortcuts import redirect
         from urllib.parse import urlencode
@@ -5772,6 +5879,9 @@ def print_mpo_pdf_view(request, mpo_id):
     from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
 
     context = _mpo_print_context(request, mpo_id)
+    blocked = _mpo_print_guard(request, context)
+    if blocked:
+        return blocked
     mpo = context["mpo"]
     try:
         pdf_bytes = build_pdf_bytes("print_mpo.html", context)
@@ -5788,6 +5898,9 @@ def print_mpo_pdf_view(request, mpo_id):
 def print_mro_view(request, mro_id):
     """Screen HTML preview for a committed Misc Requisition Order (MRO)."""
     context = _mro_print_context(request, mro_id)
+    blocked = _mro_print_guard(request, context)
+    if blocked:
+        return blocked
     if request.GET.get("print") == "1":
         from django.shortcuts import redirect
         from urllib.parse import urlencode
@@ -5834,6 +5947,9 @@ def print_mro_pdf_view(request, mro_id):
     from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
 
     context = _mro_print_context(request, mro_id)
+    blocked = _mro_print_guard(request, context)
+    if blocked:
+        return blocked
     mro = context["mro"]
     try:
         pdf_bytes = build_pdf_bytes("print_mro.html", context)

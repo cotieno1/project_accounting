@@ -213,6 +213,21 @@
         }
         .btn-label-mobile { display: none; }
         .rfq-mobile-print-hint { display: none; }
+        .btn-action.is-disabled,
+        .btn-action:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .rfq-no-lines-notice {
+            margin: 0 0 12px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+            font-size: 13px;
+            line-height: 1.45;
+        }
     </style>
 </head>
 <body>
@@ -334,7 +349,10 @@
                 </table>
             </div>
 
-            <button id="batch-print-trigger-btn" class="btn-action btn-success" onclick="executeBatchPrintDispatch()">
+            {% if not has_ro_lines %}
+            <p class="rfq-no-lines-notice">No requisition line items on this task — complete the BOM and generate an RO before printing RFQs.</p>
+            {% endif %}
+            <button id="batch-print-trigger-btn" class="btn-action btn-success{% if not has_ro_lines %} is-disabled{% endif %}" onclick="executeBatchPrintDispatch()"{% if not has_ro_lines %} disabled title="Add BOM / RO line items before printing RFQs"{% endif %}>
                 <span class="btn-label-desktop">🖨️ COMPILE &amp; PRINT BATCH RFQ</span>
                 <span class="btn-label-mobile">📄 PREVIEW &amp; PRINT RFQ</span>
             </button>
@@ -384,6 +402,12 @@
     }
 
     function executeBatchPrintDispatch() {
+        const hasRoLines = {{ has_ro_lines|yesno:"true,false" }};
+        if (!hasRoLines) {
+            alert("Cannot print RFQ: this task has no requisition line items. Complete the BOM and generate an RO first.");
+            return;
+        }
+
         // 1. Verify active operational Project Task context index is parsed safely
         const targetActiveTaskId = "{{ active_task.project_id }}";
         if (!targetActiveTaskId || targetActiveTaskId === "None") {
