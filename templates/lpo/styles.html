@@ -6,11 +6,44 @@
         font-size: 10pt; color: #1a1a2e;
     }
     {% if for_pdf %}
-    .lpo-paper { max-width: 190mm; margin: 0 auto; padding: 6mm 8mm; background-color: #ffffff; }
+    .lpo-paper { width: 100%; max-width: 190mm; margin: 0 auto; padding: 0; background-color: #ffffff; box-sizing: border-box; }
+    body.lpo-pdf-body .doc { max-width: 100% !important; width: 100% !important; margin: 0 !important; box-sizing: border-box; }
+    body.lpo-pdf-body .meta-table,
+    body.lpo-pdf-body .parties,
+    body.lpo-pdf-body .lines,
+    body.lpo-pdf-body .signatures { table-layout: fixed; }
+    body.lpo-pdf-body .meta-table td,
+    body.lpo-pdf-body .meta-table th,
+    body.lpo-pdf-body .parties td,
+    body.lpo-pdf-body .lines td,
+    body.lpo-pdf-body .lines th { word-wrap: break-word; overflow-wrap: break-word; }
+    body.lpo-pdf-body .lines td:nth-child(2) { word-break: break-word; }
+    body.lpo-pdf-body .lines th:nth-child(1),
+    body.lpo-pdf-body .lines td:nth-child(1) { width: 5%; }
+    body.lpo-pdf-body .lines th:nth-child(2),
+    body.lpo-pdf-body .lines td:nth-child(2) { width: 38%; }
+    body.lpo-pdf-body .lines th:nth-child(3),
+    body.lpo-pdf-body .lines td:nth-child(3) { width: 10%; }
+    body.lpo-pdf-body .lines th:nth-child(4),
+    body.lpo-pdf-body .lines td:nth-child(4) { width: 12%; }
+    body.lpo-pdf-body .lines th:nth-child(5),
+    body.lpo-pdf-body .lines td:nth-child(5) { width: 16%; }
+    body.lpo-pdf-body .lines th:nth-child(6),
+    body.lpo-pdf-body .lines td:nth-child(6) { width: 19%; }
+    body.lpo-pdf-body .meta-table th,
+    body.lpo-pdf-body .lines thead th { padding: 6px 5px; font-size: 7.5pt; }
+    body.lpo-pdf-body .meta-table td,
+    body.lpo-pdf-body .lines tbody td,
+    body.lpo-pdf-body .lines tfoot td { padding: 5px; font-size: 8.5pt; }
+    body.lpo-pdf-body .header h1 { font-size: 17px !important; letter-spacing: 1px !important; line-height: 1.25 !important; }
+    body.lpo-pdf-body .header .sub { font-size: 9.5px !important; white-space: normal !important; line-height: 1.35 !important; }
+    body.lpo-pdf-body .parties .party-name { font-size: 9.5pt; }
+    body.lpo-pdf-body .terms { word-wrap: break-word; }
     {% else %}
     .lpo-paper { max-width: 210mm; margin: 0 auto; padding: 32px 40px; background-color: #ffffff; }
+    .doc { max-width: 210mm; margin: 0 auto; }
     {% endif %}
-    .doc { max-width: 210mm; margin: 0 auto; font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10pt; color: #1a1a2e; line-height: 1.45; }
+    .doc { font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10pt; color: #1a1a2e; line-height: 1.45; }
     .brand-bar { height: 6px; background-color: #1e3a8a; margin-bottom: 18px; }
     .meta-table, .parties, .lines, .signatures { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
     .meta-table th, .lines thead th { background-color: #f1f5f9; color: #475569; font-weight: bold; text-transform: uppercase; font-size: 8pt; padding: 8px 10px; border: 1px solid #cbd5e1; }
