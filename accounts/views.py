@@ -3,6 +3,7 @@ import secrets
 import calendar
 import re
 import json
+import os
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from django.shortcuts import render, redirect, get_object_or_404
@@ -102,6 +103,25 @@ def home(request):
 def health(request):
     """Lightweight health check for Railway (no database)."""
     return HttpResponse('ok', content_type='text/plain')
+
+
+def health_email(request):
+    """Public check that platform mail env vars are loaded (no secrets exposed)."""
+    from django.conf import settings
+
+    key = getattr(settings, "RESEND_API_KEY", "") or ""
+    smtp = bool(getattr(settings, "EMAIL_HOST_USER", "") and getattr(settings, "EMAIL_HOST_PASSWORD", ""))
+    configured = bool(getattr(settings, "EMAIL_CONFIGURED", False))
+    payload = {
+        "email_configured": configured,
+        "email_backend": getattr(settings, "EMAIL_BACKEND", ""),
+        "resend_key_set": bool(key),
+        "resend_key_length": len(key),
+        "smtp_configured": smtp,
+        "default_from_email": getattr(settings, "DEFAULT_FROM_EMAIL", ""),
+        "service": os.environ.get("RAILWAY_SERVICE_NAME", ""),
+    }
+    return JsonResponse(payload)
 
 
 def set_password_onboarding(request, uidb64, token):

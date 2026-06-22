@@ -32,6 +32,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('health/', views.health, name='health'),
+    path('health/email/', views.health_email, name='health_email'),
     # --- CORE & DASHBOARDS ---
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
