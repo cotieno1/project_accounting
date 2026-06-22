@@ -69,7 +69,7 @@
         <td style="width:10%"></td>
         <td><div class="line">General Manager</div><div class="hint">Authorized — budget lock</div></td>
     </tr></table>
-    <p class="footer-note">RO {{ ro_reference|default:temp_ro_id }} — Task {{ active_task.project_id }}</p>
+    <p class="footer-note">RO {{ ro_reference|default:doc_title|default:"DRAFT" }} — Task {{ active_task.project_id }}</p>
 </div></div>
 {% if not for_pdf and auto_print %}
 <script>window.addEventListener('load',function(){setTimeout(function(){window.print()},500)});</script>

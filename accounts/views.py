@@ -5737,6 +5737,7 @@ def _mpo_print_context(request, mpo_id):
         "active_task": mpo.task,
         "actual": mpo.total_amount,
         "ro_reference": mpo.mpo_number or "",
+        "temp_ro_id": mpo.mpo_number or "",
         "doc_title": mpo.mpo_number or "Ad-Hoc Requisition Order",
         "doc_status": mpo.get_funding_status_display(),
         "auto_print": request.GET.get("print") == "1",
