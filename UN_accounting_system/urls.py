@@ -73,6 +73,7 @@ urlpatterns = [
     path('rfq-manager/', views.rfq_manager, name='rfq_manager'),
     path('rfq-manager/print-memo/<str:task_id>/', views.print_memo_view, name='print_memo'),
     path('rfq-manager/print-letter/', views.print_rfq_letter, name='print_rfq_letter'),
+    path('rfq-manager/print-letter/pdf/', views.print_rfq_letter_pdf, name='print_rfq_letter_pdf'),
     
     # =========================================================
     # 4. CONSOLIDATED COMPETITIVE BIDDING (Isolate & Guarded)

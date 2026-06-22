@@ -200,7 +200,19 @@
             .metric-banner-box span:last-child {
                 font-size: 1.25rem;
             }
+            .btn-label-desktop { display: none; }
+            .btn-label-mobile { display: inline; }
+            .rfq-mobile-print-hint {
+                display: block;
+                margin-top: 10px;
+                font-size: 12px;
+                color: var(--text-muted);
+                line-height: 1.45;
+                text-align: center;
+            }
         }
+        .btn-label-mobile { display: none; }
+        .rfq-mobile-print-hint { display: none; }
     </style>
 </head>
 <body>
@@ -323,8 +335,10 @@
             </div>
 
             <button id="batch-print-trigger-btn" class="btn-action btn-success" onclick="executeBatchPrintDispatch()">
-                🖨️ COMPILE & PRINT BATCH RFQ
+                <span class="btn-label-desktop">🖨️ COMPILE &amp; PRINT BATCH RFQ</span>
+                <span class="btn-label-mobile">📄 PREVIEW &amp; PRINT RFQ</span>
             </button>
+            <p class="rfq-mobile-print-hint">Opens a full-screen letter preview, then use your phone&rsquo;s print menu (AirPrint / nearby printer).</p>
             <div id="selection-status-badge" style="margin-top: 12px; font-size: 10px; color: var(--text-muted); text-align: center; text-transform: uppercase; font-weight: bold;">
                 Selected Items: 0
             </div>
@@ -365,6 +379,10 @@
         }
     }
 
+    function isMobileRfqTerminal() {
+        return window.matchMedia('(max-width: 900px)').matches;
+    }
+
     function executeBatchPrintDispatch() {
         // 1. Verify active operational Project Task context index is parsed safely
         const targetActiveTaskId = "{{ active_task.project_id }}";
@@ -386,11 +404,17 @@
 
         // 3. Stringify array parameters and route directly to standard print template interface handler context
         const compiledQueryParamString = selectedSuppliersBatchArray.join(',');
-        const printUrl = `/rfq-manager/print-letter/?task_id=${encodeURIComponent(targetActiveTaskId)}&supplier_ids=${encodeURIComponent(compiledQueryParamString)}&print=1`;
-        const printWindow = window.open(printUrl, "_blank");
-        if (!printWindow) {
-            window.location.href = printUrl;
+        const returnParam = encodeURIComponent(window.location.pathname + window.location.search);
+        let printUrl = `/rfq-manager/print-letter/?task_id=${encodeURIComponent(targetActiveTaskId)}&supplier_ids=${encodeURIComponent(compiledQueryParamString)}&return=${returnParam}`;
+        if (!isMobileRfqTerminal()) {
+            printUrl += '&print=1';
+            const printWindow = window.open(printUrl, '_blank');
+            if (!printWindow) {
+                window.location.href = printUrl;
+            }
+            return;
         }
+        window.location.href = printUrl;
     }
 </script>
 </body>
