@@ -190,7 +190,32 @@
         .ro-list-empty { color: var(--muted); font-size: 12px; padding: 8px 0; }
         .budget-value-ok { color: var(--success); }
 
+        .misc-workspace-task-bar {
+            display: none;
+            margin-bottom: 0;
+        }
+        .misc-workspace-task-bar .nav-label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        .misc-workspace-task-bar .misc-task-select {
+            width: 100%;
+            font-size: 15px;
+        }
+        .misc-task-prompt-panel {
+            text-align: center;
+        }
+        .misc-workspace-task-bar.is-always-visible {
+            display: block;
+        }
+
         @media (max-width: 768px) {
+            .misc-workspace-task-bar {
+                display: block;
+            }
+            .misc-sidebar-task-picker {
+                display: none;
+            }
             .task-vendor-left {
                 flex-direction: column;
                 align-items: stretch;

@@ -268,3 +268,19 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Local `manage.py test` uses syncdb (no migrations) so SQLite test DB avoids
+# legacy migration FK issues; Railway/Postgres production is unchanged.
+import sys
+
+
+class _DisableMigrations:
+    def __contains__(self, item):
+        return True
+
+    def __getitem__(self, item):
+        return None
+
+
+if 'test' in sys.argv:
+    MIGRATION_MODULES = _DisableMigrations()

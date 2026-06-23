@@ -1,0 +1,20 @@
+<div class="{{ picker_wrap_class }}">
+    {% if show_label %}
+    <span class="nav-label">{{ label|default:"Switch MRO task" }}</span>
+    {% endif %}
+    <select
+        id="miscTaskSelect-{{ picker_id }}"
+        class="form-input misc-task-select"
+        aria-label="Select MRO project task"
+        onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};"
+    >
+        <option value="">-- Select project task --</option>
+        {% for t in tasks %}
+        <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
+            {{ t.project_id }}{% if t.description %} — {{ t.description|truncatechars:42 }}{% endif %}
+        </option>
+        {% empty %}
+        <option value="" disabled>No MRO tasks available</option>
+        {% endfor %}
+    </select>
+</div>

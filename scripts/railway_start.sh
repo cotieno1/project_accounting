@@ -40,6 +40,30 @@ else
   log "STEP 1b: ensure_bootstrap FAILED — continuing"
 fi
 
+log "STEP 1c: quality scorecard"
+QUALITY_MIN="${QUALITY_MIN_SCORE:-90}"
+if python manage.py quality_scorecard --min-score "$QUALITY_MIN"; then
+  log "STEP 1c: quality scorecard OK (>= ${QUALITY_MIN}%)"
+else
+  log "STEP 1c: quality scorecard FAILED (< ${QUALITY_MIN}%)"
+  if [ "${BLOCK_DEPLOY_ON_QUALITY_FAILURE:-}" = "1" ]; then
+    log "BLOCK_DEPLOY_ON_QUALITY_FAILURE=1 — aborting deploy"
+    exit 1
+  fi
+fi
+
+if [ "${RUN_TESTS_ON_DEPLOY:-}" = "1" ]; then
+  log "STEP 1d: regression tests"
+  if python manage.py test accounts.tests --verbosity 1; then
+    log "STEP 1d: regression tests OK"
+  else
+    log "STEP 1d: regression tests FAILED"
+    if [ "${BLOCK_DEPLOY_ON_TEST_FAILURE:-}" = "1" ]; then
+      exit 1
+    fi
+  fi
+fi
+
 log "STEP 2/3: collectstatic"
 if python manage.py collectstatic --noinput; then
   log "STEP 2/3: collectstatic OK"

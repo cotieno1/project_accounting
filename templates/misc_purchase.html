@@ -7,12 +7,7 @@
 {% block sidebar %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
         <small style="color: var(--muted); display: block; margin: 16px 0;">Somalia Ops Command</small>
-        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
-            <option value="">-- Select project task --</option>
-            {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
-            {% endfor %}
-        </select>
+        {% include "includes/misc_task_picker.html" with picker_id="sidebar" picker_wrap_class="misc-sidebar-task-picker" show_label=False tasks=tasks active_task=active_task only %}
         
         <div class="sidebar-block">
             <button type="button" class="btn-action" id="roListToggle" onclick="toggleRoList()" style="width:100%;background:#1e293b;">
@@ -107,9 +102,10 @@
         </div>
 {% endblock %}
 {% block workspace %}
+        {% include "includes/misc_task_picker.html" with picker_id="workspace" picker_wrap_class=no_task_selected|yesno:"misc-workspace-task-bar panel is-always-visible,misc-workspace-task-bar panel" show_label=True label="Switch MRO task" tasks=tasks active_task=active_task only %}
         {% if no_task_selected %}
-        <div class="panel mro-stage-b-panel" style="text-align:center;">
-            <p style="margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.55;">Select an <strong>MRO</strong> task from the dropdown, or return to the main menu.</p>
+        <div class="panel mro-stage-b-panel misc-task-prompt-panel">
+            <p style="margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.55;">Choose an <strong>MRO</strong> task above, or return to the main menu.</p>
             <a href="{% url 'ops_dashboard' %}" class="btn-action btn-secondary">← Main menu (Esc)</a>
         </div>
         {% else %}

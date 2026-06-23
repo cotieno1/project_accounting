@@ -1390,6 +1390,20 @@ def _misc_purchase_tasks():
     return ProjectTask.objects.filter(pk__in=ids).order_by("project_id")
 
 
+def _misc_purchase_task_list(active_task=None):
+    """Task queryset for misc-purchase pickers; keeps the active task visible when eligible."""
+    tasks = _misc_purchase_tasks()
+    if not active_task:
+        return tasks
+    if tasks.filter(pk=active_task.pk).exists():
+        return tasks
+    allowed, _ = _misc_channel_allowed(active_task)
+    if not allowed or _task_on_major_bom_lane(active_task):
+        return tasks
+    pks = list(tasks.values_list("pk", flat=True)) + [active_task.pk]
+    return ProjectTask.objects.filter(pk__in=pks).order_by("project_id")
+
+
 def _task_on_major_bom_lane(task):
     """True when BOM (Y) lane is active â€” hide from ad-hoc MRO unless real MRO work exists."""
     if not task:
@@ -5266,6 +5280,7 @@ def misc_purchase_builder(request):
     tasks, active_task = _resolve_misc_purchase_task(
         request, include_post=(request.method == "POST")
     )
+    tasks = _misc_purchase_task_list(active_task)
     if not active_task:
         requested = _task_id_from_request(
             request, include_post=(request.method == "POST")
