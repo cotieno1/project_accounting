@@ -13,11 +13,37 @@
     <a href="{% url 'print_mro_pdf' mro_id=mro.id %}{% if request.GET.return %}?return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>
     <button type="button" onclick="window.print()">Print</button>
 </div>
-<p class="mobile-doc-hint no-print" aria-hidden="true">For pinch-zoom on mobile, tap <strong>Open PDF</strong> &middot; otherwise swipe sideways</p>
+<p class="mobile-doc-hint no-print" aria-hidden="true">On mobile, tap <strong>Open PDF</strong> for the aligned document view.</p>
 {% endif %}
 <div class="lpo-paper"><div class="doc">
     <div class="brand-bar"></div>
     {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Miscellaneous Requisition Order (MRO) - Ad-Hoc Budget Baseline" %}
+    {% if for_pdf %}
+    <table class="meta-table" width="100%" cellspacing="0" cellpadding="4" border="1">
+        <tr>
+            <th width="18%">MRO No.</th>
+            <th width="22%">Linked RO</th>
+            <th width="30%">Date</th>
+            <th width="30%">Status</th>
+        </tr>
+        <tr>
+            <td class="lpo-no">{{ mro.mro_number|default:"PENDING" }}</td>
+            <td>{% if mpo %}{{ mpo.mpo_number|default:"-" }}{% else %}-{% endif %}</td>
+            <td>{{ mro.updated_at|date:"F j, Y" }}</td>
+            <td>{{ mro.get_funding_status_display }}</td>
+        </tr>
+    </table>
+    <table class="meta-table" width="100%" cellspacing="0" cellpadding="4" border="1">
+        <tr>
+            <th width="22%">Task ID</th>
+            <th width="78%">Project description</th>
+        </tr>
+        <tr>
+            <td>{{ active_task.project_id }}</td>
+            <td>{{ active_task.description }}</td>
+        </tr>
+    </table>
+    {% else %}
     <table class="meta-table">
         <tr><th style="width:18%">MRO No.</th><th style="width:22%">Linked RO</th><th style="width:24%">Date</th><th style="width:18%">Status</th></tr>
         <tr>
@@ -32,16 +58,27 @@
             <td colspan="3">{{ active_task.description }}</td>
         </tr>
     </table>
-    <table class="parties">
-        <tr><th>Messenger / Custodian</th><th>Authorized by</th></tr>
+    {% endif %}
+    <table class="parties" width="100%"{% if for_pdf %} cellspacing="0" cellpadding="4" border="1"{% endif %}>
+        <tr><th width="50%">Messenger / Custodian</th><th width="50%">Authorized by</th></tr>
         <tr>
+            {% if for_pdf %}
+            <td><span class="party-name">{{ mro.messenger_name }}</span><br/><span class="muted">Field procurement custodian</span></td>
+            <td><span class="party-name">{% if mro.authorized_by %}{{ mro.authorized_by.get_full_name|default:mro.authorized_by.username }}{% else %}General Manager{% endif %}</span><br/><span class="muted">Budget baseline lock</span></td>
+            {% else %}
             <td><div class="party-name">{{ mro.messenger_name }}</div><div class="muted">Field procurement custodian</div></td>
             <td><div class="party-name">{% if mro.authorized_by %}{{ mro.authorized_by.get_full_name|default:mro.authorized_by.username }}{% else %}General Manager{% endif %}</div><div class="muted">Budget baseline lock</div></td>
+            {% endif %}
         </tr>
     </table>
     {% if budget %}
-    <table class="meta-table">
-        <tr><th>Material</th><th>Labour</th><th>Misc reserve</th><th>Total authorized</th></tr>
+    <table class="meta-table" width="100%"{% if for_pdf %} cellspacing="0" cellpadding="4" border="1"{% endif %}>
+        <tr>
+            <th width="25%">Material</th>
+            <th width="25%">Labour</th>
+            <th width="25%">Misc reserve</th>
+            <th width="25%">Total authorized</th>
+        </tr>
         <tr>
             <td class="num">{{ currency_symbol }} {{ budget.material_total_cost|floatformat:2 }}</td>
             <td class="num">{{ currency_symbol }} {{ budget.labour_burden|floatformat:2 }}</td>
@@ -50,8 +87,16 @@
         </tr>
     </table>
     {% endif %}
+    {% if for_pdf %}
+    <table class="terms" width="100%" cellspacing="0" cellpadding="6" border="1">
+        <tr><th width="100%" align="left">Authority</th></tr>
+        <tr><td>This MRO establishes the ad-hoc budget baseline for task <strong>{{ active_task.project_id }}</strong>. One MRO per task - no duplicate baselines. Officer payment vouchers and partial purchases are raised against this locked RO at GM Disbursement.</td></tr>
+    </table>
+    {% else %}
     <div class="terms"><strong>Authority</strong>This MRO establishes the ad-hoc budget baseline for task <strong>{{ active_task.project_id }}</strong>. One MRO per task - no duplicate baselines. Officer payment vouchers and partial purchases are raised against this locked RO at GM Disbursement.</div>
-    <table class="lines">
+    {% endif %}
+    <table class="lines" width="100%"{% if for_pdf %} cellspacing="0" cellpadding="4" border="1"{% endif %}>
+        {% if not for_pdf %}
         <colgroup>
             <col style="width:5%">
             <col style="width:38%">
@@ -60,14 +105,15 @@
             <col style="width:16%">
             <col style="width:19%">
         </colgroup>
+        {% endif %}
         <thead>
             <tr>
-                <th class="center">#</th>
-                <th>Description</th>
-                <th class="center">UOM</th>
-                <th class="num">Qty</th>
-                <th class="num">Unit price</th>
-                <th class="num">Line total</th>
+                <th class="center"{% if for_pdf %} width="5%"{% endif %}>#</th>
+                <th{% if for_pdf %} width="38%"{% endif %}>Description</th>
+                <th class="center"{% if for_pdf %} width="10%"{% endif %}>UOM</th>
+                <th class="num"{% if for_pdf %} width="12%"{% endif %}>Qty</th>
+                <th class="num"{% if for_pdf %} width="16%"{% endif %}>Unit price</th>
+                <th class="num"{% if for_pdf %} width="19%"{% endif %}>Line total</th>
             </tr>
         </thead>
         <tbody>
@@ -85,17 +131,38 @@
             {% endfor %}
         </tbody>
         <tfoot>
+            {% if for_pdf %}
+            <tr>
+                <td width="5%">&nbsp;</td>
+                <td width="38%">&nbsp;</td>
+                <td width="10%">&nbsp;</td>
+                <td width="12%">&nbsp;</td>
+                <td width="16%" class="grand-label" align="right">MRO total ({{ currency_symbol }})</td>
+                <td width="19%" class="grand-value" align="right">{{ mro.total_amount|floatformat:2 }}</td>
+            </tr>
+            {% else %}
             <tr>
                 <td colspan="5" class="grand-label">MRO total ({{ currency_symbol }})</td>
                 <td class="grand-value">{{ mro.total_amount|floatformat:2 }}</td>
             </tr>
+            {% endif %}
         </tfoot>
     </table>
-    <table class="signatures"><tr>
-        <td><div class="line">{{ mro.messenger_name }}</div><div class="hint">Messenger - acknowledged</div></td>
-        <td style="width:10%"></td>
-        <td><div class="line">General Manager</div><div class="hint">Budget authorized &amp; locked</div></td>
-    </tr></table>
+    <table class="signatures" width="100%"{% if for_pdf %} cellspacing="0" cellpadding="4" border="0"{% endif %}>
+        <tr>
+            <td width="45%" align="center" valign="bottom">
+                {% if for_pdf %}
+                <div class="line">{{ mro.messenger_name }}</div><div class="hint">Messenger - acknowledged</div>
+                {% else %}
+                <div class="line">{{ mro.messenger_name }}</div><div class="hint">Messenger - acknowledged</div>
+                {% endif %}
+            </td>
+            <td width="10%" align="center">&nbsp;</td>
+            <td width="45%" align="center" valign="bottom">
+                <div class="line">General Manager</div><div class="hint">Budget authorized &amp; locked</div>
+            </td>
+        </tr>
+    </table>
     <p class="footer-note">MRO {{ mro.mro_number|default:"" }} &middot; Task {{ active_task.project_id }}{% if mpo and mpo.mpo_number %} &middot; RO {{ mpo.mpo_number }}{% endif %}</p>
 </div></div>
 {% if not for_pdf and auto_print %}

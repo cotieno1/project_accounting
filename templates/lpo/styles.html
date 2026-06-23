@@ -2,43 +2,35 @@
     @page { size: A4; margin: 10mm; }
     body.lpo-pdf-body {
         margin: 0; padding: 0; background-color: #ffffff;
-        font-family: "Segoe UI", Calibri, Arial, sans-serif;
+        font-family: Helvetica, Arial, sans-serif;
         font-size: 10pt; color: #1a1a2e;
     }
     {% if for_pdf %}
-    .lpo-paper { width: 100%; max-width: 190mm; margin: 0 auto; padding: 0; background-color: #ffffff; box-sizing: border-box; }
-    body.lpo-pdf-body .doc { max-width: 100% !important; width: 100% !important; margin: 0 !important; box-sizing: border-box; }
+    .lpo-paper { width: 100%; margin: 0; padding: 0; background-color: #ffffff; }
+    body.lpo-pdf-body .doc { width: 100%; margin: 0; padding: 0; }
     body.lpo-pdf-body .meta-table,
     body.lpo-pdf-body .parties,
     body.lpo-pdf-body .lines,
-    body.lpo-pdf-body .signatures { table-layout: fixed; }
+    body.lpo-pdf-body .signatures,
+    body.lpo-pdf-body .terms { width: 100%; -pdf-keep-in-frame-mode: shrink; }
     body.lpo-pdf-body .meta-table td,
     body.lpo-pdf-body .meta-table th,
     body.lpo-pdf-body .parties td,
     body.lpo-pdf-body .lines td,
-    body.lpo-pdf-body .lines th { word-wrap: break-word; overflow-wrap: break-word; }
-    body.lpo-pdf-body .lines td:nth-child(2) { word-break: break-word; }
-    body.lpo-pdf-body .lines th:nth-child(1),
-    body.lpo-pdf-body .lines td:nth-child(1) { width: 5%; }
-    body.lpo-pdf-body .lines th:nth-child(2),
-    body.lpo-pdf-body .lines td:nth-child(2) { width: 38%; }
-    body.lpo-pdf-body .lines th:nth-child(3),
-    body.lpo-pdf-body .lines td:nth-child(3) { width: 10%; }
-    body.lpo-pdf-body .lines th:nth-child(4),
-    body.lpo-pdf-body .lines td:nth-child(4) { width: 12%; }
-    body.lpo-pdf-body .lines th:nth-child(5),
-    body.lpo-pdf-body .lines td:nth-child(5) { width: 16%; }
-    body.lpo-pdf-body .lines th:nth-child(6),
-    body.lpo-pdf-body .lines td:nth-child(6) { width: 19%; }
+    body.lpo-pdf-body .lines th { vertical-align: top; }
+    body.lpo-pdf-body .lines td:nth-child(2) { word-wrap: break-word; }
     body.lpo-pdf-body .meta-table th,
-    body.lpo-pdf-body .lines thead th { padding: 6px 5px; font-size: 7.5pt; }
+    body.lpo-pdf-body .lines thead th { padding: 6px 5px; font-size: 7.5pt; background-color: #f1f5f9; color: #475569; font-weight: bold; text-transform: uppercase; }
     body.lpo-pdf-body .meta-table td,
     body.lpo-pdf-body .lines tbody td,
     body.lpo-pdf-body .lines tfoot td { padding: 5px; font-size: 8.5pt; }
-    body.lpo-pdf-body .header h1 { font-size: 17px !important; letter-spacing: 1px !important; line-height: 1.25 !important; }
-    body.lpo-pdf-body .header .sub { font-size: 9.5px !important; white-space: normal !important; line-height: 1.35 !important; }
-    body.lpo-pdf-body .parties .party-name { font-size: 9.5pt; }
-    body.lpo-pdf-body .terms { word-wrap: break-word; }
+    body.lpo-pdf-body .parties th { background-color: #1e3a8a; color: #ffffff; font-size: 8.5pt; text-transform: uppercase; }
+    body.lpo-pdf-body .header h1 { font-size: 16px; letter-spacing: 1px; line-height: 1.25; }
+    body.lpo-pdf-body .header .sub { font-size: 9.5px; white-space: normal; line-height: 1.35; }
+    body.lpo-pdf-body .parties .party-name { font-size: 9.5pt; font-weight: bold; text-transform: uppercase; }
+    body.lpo-pdf-body .parties .muted { font-size: 8.5pt; color: #475569; }
+    body.lpo-pdf-body .terms th { background-color: #f8fafc; color: #1e3a8a; font-size: 8pt; text-transform: uppercase; }
+    body.lpo-pdf-body .terms td { font-size: 8.5pt; color: #475569; line-height: 1.45; }
     {% else %}
     .lpo-paper { max-width: 210mm; margin: 0 auto; padding: 32px 40px; background-color: #ffffff; }
     .doc { max-width: 210mm; margin: 0 auto; }
@@ -61,7 +53,7 @@
     .lines tfoot .grand-value { text-align: right; font-size: 11pt; color: #1e3a8a; font-weight: bold; }
     .terms { border: 1px solid #cbd5e1; background-color: #f8fafc; padding: 12px 14px; margin-bottom: 28px; font-size: 8.5pt; color: #475569; }
     .terms strong { display: block; color: #1e3a8a; text-transform: uppercase; font-size: 8pt; margin-bottom: 6px; }
-    .signatures td { width: 45%; text-align: center; padding-top: 40px; vertical-align: bottom; }
+    .signatures td { text-align: center; padding-top: 40px; vertical-align: bottom; }
     .signatures .line { border-top: 1px solid #1e3a8a; padding-top: 8px; font-size: 8.5pt; font-weight: bold; text-transform: uppercase; }
     .signatures .hint { font-size: 8pt; color: #64748b; margin-top: 4px; }
     .footer-note { margin-top: 24px; text-align: center; font-size: 7.5pt; color: #94a3b8; }
@@ -75,60 +67,22 @@
     .lpo-sheet { page-break-after: always; }
     .lpo-sheet:last-of-type { page-break-after: avoid; }
     .memo-body p { margin: 0 0 14px; text-align: justify; font-size: 9.5pt; color: #475569; line-height: 1.5; }
-    
     .status-full { background-color: #ecfdf5; border: 2px solid #059669; color: #065f46; padding: 12px 16px; margin: 16px 0; font-weight: bold; text-align: center; text-transform: uppercase; font-size: 9pt; }
     .status-partial { background-color: #fffbeb; border: 2px solid #f59e0b; color: #92400e; padding: 12px 16px; margin: 16px 0; font-weight: bold; text-align: center; text-transform: uppercase; font-size: 9pt; }
 
     @media print { .no-print, .screen-toolbar { display: none !important; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
 
-    /* Mobile screen view: keep A4-style layout; pan sideways for wide tables (not a PDF embed). */
     @media screen and (max-width: 768px) {
-        body.pioneer-doc-print { overflow-x: hidden; }
-        .screen-toolbar {
-            position: sticky; top: 0; z-index: 20;
-            justify-content: stretch;
-        }
-        .screen-toolbar button, .screen-toolbar a { flex: 1; text-align: center; }
-        .lpo-paper {
-            max-width: none; margin: 0; padding: 0;
-            overflow-x: auto;
-            overflow-y: visible;
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior-x: contain;
-        }
-        .doc {
-            min-width: 680px;
-            max-width: none;
-            margin: 0;
-            padding: 16px 20px 32px;
-            box-sizing: border-box;
-        }
-        .mobile-doc-hint {
-            display: block;
-            margin: 0;
-            padding: 8px 14px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #065f46;
-            background: #ecfdf5;
-            border-bottom: 1px solid #a7f3d0;
-            text-align: center;
-            line-height: 1.4;
-            word-break: break-word;
-            overflow-wrap: anywhere;
-        }
-        .header h1 {
-            word-break: break-word;
-            overflow-wrap: anywhere;
-            line-height: 1.25 !important;
-        }
-        .header .sub {
-            word-break: break-word;
-            overflow-wrap: anywhere;
-            line-height: 1.4 !important;
-            white-space: normal !important;
-        }
+        body.pioneer-doc-print { overflow-x: auto; }
+        .screen-toolbar { position: sticky; top: 0; z-index: 20; justify-content: stretch; }
+        .screen-toolbar button, .screen-toolbar a { flex: 1; text-align: center; min-height: 44px; }
+        .lpo-paper { max-width: none; margin: 0; padding: 0; }
+        .doc { width: 100%; max-width: 100%; min-width: 0; margin: 0; padding: 12px 10px 24px; box-sizing: border-box; }
+        .meta-table, .parties, .lines, .signatures { font-size: 9pt; }
+        .lines thead th, .lines tbody td, .lines tfoot td { padding: 6px 4px; }
+        .mobile-doc-hint { display: block; margin: 0; padding: 10px 14px; font-size: 12px; font-weight: 600; color: #065f46; background: #ecfdf5; border-bottom: 1px solid #a7f3d0; text-align: center; line-height: 1.4; }
+        .header h1 { font-size: 17px; word-break: break-word; line-height: 1.25; }
+        .header .sub { font-size: 11px; word-break: break-word; line-height: 1.4; white-space: normal; }
     }
     .mobile-doc-hint { display: none; }
-
 </style>
