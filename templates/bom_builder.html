@@ -17,7 +17,7 @@
         <select class="form-input" id="bomTaskSelect" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'}">
             <option value="">-- Select task --</option>
             {% for row in task_rows %}
-            <option value="{{ row.task.project_id }}" {% if active_task and row.task.project_id == active_task.project_id %}selected{% endif %}>{{ row.task.project_id }} — {{ row.hint }}</option>
+            <option value="{{ row.pick_id }}" {% if active_pick_id and row.pick_id == active_pick_id %}selected{% endif %}>{{ row.pick_id }}{% if row.task.description %} — {{ row.task.description|truncatechars:48 }}{% endif %}</option>
             {% endfor %}
         </select>
         <p class="bom-sidebar-note">Pick a task above. Tasks on Misc Purchase cannot use BOM.</p>
@@ -28,7 +28,7 @@
         {% if can_start_bom %}
         <form method="POST" style="margin:0;">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
             <button type="submit" name="new_bom" class="btn-action">Start BOM</button>
         </form>
         {% endif %}
@@ -41,7 +41,7 @@
     </div>
 
     <div class="sidebar-footer">
-        <a href="{% if active_task %}{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}" id="bomBackMain" class="sidebar-back-link">← Main menu (Esc)</a>
+        <a href="{% if active_task %}{% url 'ops_dashboard' %}?task_id={{ active_pick_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}" id="bomBackMain" class="sidebar-back-link">← Main menu (Esc)</a>
     </div>
 {% endblock %}
 
@@ -51,14 +51,14 @@
         <select class="form-input bom-workspace-task-select" id="bomWorkspaceTaskSelect" aria-label="Select project task" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};">
             <option value="">-- Select task --</option>
             {% for row in task_rows %}
-            <option value="{{ row.task.project_id }}" {% if active_task and row.task.project_id == active_task.project_id %}selected{% endif %}>{{ row.task.project_id }} — {{ row.hint }}</option>
+            <option value="{{ row.pick_id }}" {% if active_pick_id and row.pick_id == active_pick_id %}selected{% endif %}>{{ row.pick_id }}{% if row.task.description %} — {{ row.task.description|truncatechars:48 }}{% endif %}</option>
             {% endfor %}
         </select>
     </div>
     {% if active_task %}
     <div class="panel bom-page-header">
         <h1 class="page-title">Bills of Materials</h1>
-        <h2 class="task-id-title">{{ active_task.project_id }}</h2>
+        <h2 class="task-id-title">{{ active_pick_id }}</h2>
         <p class="task-description-title">{{ active_task.description }}</p>
         {% if bom_heading %}
         <p class="bom-heading-message bom-heading-message--{{ bom_heading.mode }}">{{ bom_heading.message }}</p>
@@ -67,7 +67,7 @@
         <div class="bom-heading-actions bom-heading-actions--start">
             <form method="POST" style="margin:0;">
                 {% csrf_token %}
-                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <input type="hidden" name="task_id" value="{{ active_pick_id }}">
                 <button type="submit" name="new_bom" class="btn-action">Start BOM</button>
             </form>
         </div>
@@ -190,7 +190,7 @@
         <div class="bom-lines-header">
             <div class="bom-lines-header-text">
                 <h2>BOM {{ bom_no }}</h2>
-                <p>Task {{ active_task.project_id }} — {{ active_task.description }}</p>
+                <p>Task {{ active_pick_id }} — {{ active_task.description }}</p>
             </div>
             <span class="bom-status-badge {% if bom_submitted %}bom-status-sent{% elif bom_locked %}bom-status-awarded{% else %}bom-status-draft{% endif %}">
                 {% if bom_submitted %}SUBMITTED{% elif bom_locked %}LOCKED{% else %}DRAFT{% endif %}
@@ -199,7 +199,7 @@
 
         <form method="POST">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
             <div class="table-scroll bom-table-wrap">
             <table class="bom-table">
                 <thead>
@@ -234,7 +234,7 @@
         {% if not bom_locked %}
         <form method="POST" id="del{{ item.id }}" style="display:none;">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
             <input type="hidden" name="item_id" value="{{ item.id }}">
             <input type="hidden" name="delete_item" value="1">
         </form>
@@ -244,13 +244,13 @@
         {% if bom_mode == 'draft' and bom_items and not bom_locked %}
         <form method="POST" class="bom-form-actions">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
             <button type="submit" name="lock_bom" class="btn-action btn-success">Save / done — lock BOM items</button>
         </form>
         {% elif bom_mode == 'locked' and not bom_submitted %}
         <form method="POST" class="bom-form-actions">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
             <button type="submit" name="submit_bom" class="btn-action btn-success">Submit BOM to GM</button>
         </form>
         {% endif %}

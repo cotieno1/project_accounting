@@ -5,7 +5,13 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from accounts.models import BOMHeader, ProjectTask
-from accounts.views import _bom_active_task, _normalize_task_id, _task_from_request
+from accounts.views import (
+    _bom_active_task,
+    _bom_can_start_bom,
+    _normalize_task_id,
+    _resolve_project_task,
+    _task_from_request,
+)
 
 
 class NormalizeTaskIdTests(TestCase):
@@ -112,6 +118,37 @@ class BomBuilderTaskResolutionTests(TestCase):
         request.method = "GET"
         task = _bom_active_task(request)
         self.assertEqual(task.project_id, self.task.project_id)
+
+    def test_legacy_bracket_pk_task_133_selectable(self):
+        ProjectTask.objects.create(
+            project_id="['133']",
+            description="New task 133",
+        )
+        url = reverse("bom_builder")
+        response = self.client.get(url, {"task_id": "133"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "133")
+        self.assertContains(response, "Start BOM")
+        html = response.content.decode()
+        self.assertNotIn("New · Start BOM", html)
+        self.assertNotIn("['133']", html)
+
+    def test_malformed_tomog_url_selects_task(self):
+        ProjectTask.objects.create(
+            project_id="TOMOG-PIONEER-HWF-000029",
+            description="Pioneer HWF task 29",
+        )
+        url = reverse("bom_builder")
+        response = self.client.get(url, {"task_id": "['TOMOG-PIONEER-HWF-000029']"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "TOMOG-PIONEER-HWF-000029")
+        self.assertContains(response, "Start BOM")
+
+    def test_can_start_bom_only_checks_misc_and_bom(self):
+        task = ProjectTask.objects.create(project_id="133", description="Clean id")
+        self.assertTrue(_bom_can_start_bom(task))
+        BOMHeader.objects.create(task=task, status=BOMHeader.STATUS_DRAFT)
+        self.assertFalse(_bom_can_start_bom(task))
 
 
 class UnifiedApiCreateTaskTests(TestCase):

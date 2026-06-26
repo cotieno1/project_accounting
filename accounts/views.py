@@ -61,6 +61,35 @@ def _normalize_task_id(raw):
     return s[:50]
 
 
+def _resolve_project_task(qs, raw):
+    """Find task by clean id or legacy bracket-wrapped project_id in the database."""
+    if raw is None:
+        return None
+    raw_s = str(raw).strip()
+    if not raw_s:
+        return None
+    tid = _normalize_task_id(raw_s)
+    for candidate in (tid, raw_s):
+        if not candidate:
+            continue
+        task = qs.filter(project_id=candidate).first()
+        if task:
+            return task
+    if tid:
+        for legacy in (f"['{tid}']", f'["{tid}"]', f"[{tid}]"):
+            task = qs.filter(project_id=legacy).first()
+            if task:
+                return task
+    return None
+
+
+def _bom_task_pick_id(task):
+    """Canonical id for BOM picker URLs — always clean, no brackets."""
+    if not task:
+        return ""
+    return _normalize_task_id(task.project_id) or task.project_id
+
+
 def _task_id_from_request(request, *, include_post=False, include_session=True):
     """Resolve task_id from URL, form POST, then last user choice in session."""
     task_id = _normalize_task_id(request.GET.get("task_id"))
@@ -1557,28 +1586,25 @@ def _bom_active_task(request):
     if not raw and request.method == "POST":
         raw = (request.POST.get("task_id") or "").strip()
     if raw:
-        tid = _normalize_task_id(raw)
-        task = qs.filter(project_id=tid).first()
+        task = _resolve_project_task(qs, raw)
         if task:
-            request.session["active_task_id"] = task.project_id
+            request.session["active_task_id"] = _bom_task_pick_id(task)
             return task
     session_tid = _normalize_task_id(request.session.get("active_task_id"))
     if session_tid:
-        task = qs.filter(project_id=session_tid).first()
+        task = _resolve_project_task(qs, session_tid)
         if task:
             return task
     return qs.order_by("project_id").first()
 
 
 def _bom_can_start_bom(task):
-    """Start BOM only when task has no Misc RO/MPO and no BOM record yet."""
+    """Start BOM when task has no Misc RO/MPO and no BOM record."""
     if not task:
         return False
     if _task_has_misc_po_path(task):
         return False
     if _get_task_bom(task):
-        return False
-    if _task_on_major_procurement_lane(task):
         return False
     return True
 
@@ -1632,13 +1658,13 @@ def _bom_task_sidebar_hint(task):
 
 
 def _bom_builder_task_rows():
-    """All tasks with lane hint — John can scan status from one picker."""
+    """All tasks for BOM picker — clean id + description only."""
     rows = []
     for task in ProjectTask.objects.order_by("project_id"):
         rows.append(
             {
                 "task": task,
-                "hint": _bom_task_sidebar_hint(task),
+                "pick_id": _bom_task_pick_id(task),
                 "lane": _bom_screen_lane(task),
             }
         )
@@ -1958,10 +1984,20 @@ def bom_builder(request):
     """BOM path for Snr Site Engineer — all tasks visible; create BOM only when allowed."""
     from django.db import IntegrityError, transaction
     from django.urls import reverse
+    from urllib.parse import quote
 
     active_task = _bom_active_task(request)
+    active_pick_id = _bom_task_pick_id(active_task)
+    if request.method == "GET":
+        raw_get = (request.GET.get("task_id") or "").strip()
+        if raw_get and active_task and active_pick_id:
+            if _normalize_task_id(raw_get) == active_pick_id and raw_get != active_pick_id:
+                return redirect(
+                    reverse("bom_builder")
+                    + f"?task_id={quote(active_pick_id, safe='')}"
+                )
     redirect_url = (
-        reverse("bom_builder") + f"?task_id={active_task.project_id}"
+        reverse("bom_builder") + f"?task_id={quote(active_pick_id, safe='')}"
         if active_task
         else reverse("bom_builder")
     )
@@ -1970,6 +2006,7 @@ def bom_builder(request):
         ctx = {
             "task_rows": _bom_builder_task_rows(),
             "active_task": active_task,
+            "active_pick_id": active_pick_id,
             "task_status": None,
             "can_start_bom": False,
             "bom_items": [],
