@@ -66,7 +66,11 @@
             <h2 class="task-id-title">Task {{ active_pick_id }}</h2>
             <span class="task-badge {{ project_class.css }}">{{ project_class.label }}</span>
         </div>
+        {% if budget_summary.has_budget %}
         <button type="button" class="btn-action" onclick="openBudgetModal()">Review &amp; approve</button>
+        {% else %}
+        <a href="{% url 'budget_approval' %}" id="budgetApprovalNoBudgetEsc" class="btn-action btn-action--no-budget" style="text-decoration:none;">No Budget to be Reviewed or Approved</a>
+        {% endif %}
     </div>
     {% if fund_release %}
     <div class="fund-voucher-banner">
@@ -254,6 +258,13 @@
         document.getElementById('budgetModal')?.addEventListener('click', (e) => {
             if (e.target.id === 'budgetModal') closeBudgetModal();
         });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const esc = document.getElementById('budgetApprovalNoBudgetEsc');
+        if (esc && esc.href) {
+            window.location.href = esc.href;
+        }
     });
 </script>
 {% endblock %}

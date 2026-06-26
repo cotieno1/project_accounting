@@ -200,6 +200,9 @@ class BudgetApprovalTaskIdTests(TestCase):
             'disabled title="Complete Bid Evaluation or Ad-Hoc budget commit first."',
         )
         self.assertContains(response, "No provision budget")
+        self.assertContains(response, "No Budget to be Reviewed or Approved")
+        self.assertContains(response, 'id="budgetApprovalNoBudgetEsc"')
+        self.assertContains(response, f'href="{url}"')
 
 
 class UnifiedApiCreateTaskTests(TestCase):
