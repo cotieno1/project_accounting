@@ -2,7 +2,7 @@
 {% load static %}
 {% load pioneer_tags %}
 {% block title %}Pioneer | GM AIE Disbursement{% endblock %}
-{% block body_class %}gm-desk{% endblock %}
+{% block body_class %}gm-desk{% if active_task and not gm_funds_available %} gm-desk--no-funds{% endif %}{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}">
 {% endblock %}
@@ -10,13 +10,14 @@
 {% if not no_tasks %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
         <small style="color: var(--muted); display: block; margin: 16px 0;">GM Accounting Officer - Operations and Maintenance</small>
-        <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
+        <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};" class="form-input">
             <option value="">-- Select project task --</option>
             {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>
+            <option value="{{ t.project_id|clean_task_id }}" {% if active_task and t.project_id|clean_task_id == active_pick_id %}selected{% endif %}>{{ t.project_id|clean_task_id }}</option>
             {% endfor %}
         </select>
 
+        <div class="gm-sidebar-tools{% if not gm_funds_available %} is-blocked{% endif %}">
         <div class="sidebar-block">
             <button type="button" class="btn-action" onclick="togglePayList()" style="width:100%;background:#1e293b;">
                 💳 Payment List{% if payment_listing %} ({{ payment_listing|length }}){% endif %}
@@ -84,8 +85,9 @@
             Officer PVs (RO){% if task_caps.enable_officer_pv and officer_voucher_period_listing %} ({{ officer_voucher_period_listing|length }}){% endif %}
         </button>
         {% if task_caps.budget_hint %}<p class="sidebar-hint" style="margin-top:12px;">{{ task_caps.budget_hint }}</p>{% endif %}
+        </div>
         <div class="sidebar-footer">
-            <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Ops Dashboard</a>
+            <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_pick_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Ops Dashboard</a>
         </div>
 {% else %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
@@ -99,11 +101,25 @@
 <div class="panel" style="color:var(--muted);">Select a project task from the sidebar to open the GM disbursement desk.</div>
 {% else %}
 
+        {% if not gm_funds_available %}
+        <div class="gm-funds-blocked-banner" role="alert">
+            <strong class="gm-funds-blocked-title">This Task does not have Any budget approved therefore there No allocated Funds</strong>
+            <p class="gm-funds-blocked-detail">
+                GM disbursement is locked until CEO budget approval and fund release are complete.
+                <a href="{% url 'budget_approval' %}?task_id={{ active_pick_id }}" style="color:#fde68a;font-weight:700;">Go to Budget Authorization</a>
+                or
+                <a href="{% url 'gm_aie_disbursement' %}" id="gmDeskNoFundsEsc" style="color:#fde68a;font-weight:700;">select another task</a>
+                (<kbd>Esc</kbd>).
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="gm-workspace-tools{% if not gm_funds_available %} is-blocked{% endif %}">
         <div class="panel">
             <div class="header-row">
                 <div class="header-left">
                     <h1 class="page-title">GM AIE Disbursement</h1>
-                    <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
+                    <h2 class="task-id-title">Task {{ active_pick_id }}</h2>
                     <span class="task-badge {{ project_class.css }}">{{ project_class.label }}</span>
                 </div>
             </div>
@@ -250,10 +266,11 @@
                 <button type="button" onclick="openBudgetModal()" class="btn-action btn-secondary" style="margin-top:16px;">Full breakdown</button>
             </div>
         </div>
+        </div>
 {% endif %}
 {% endblock %}
 {% block modals %}
-{% if not no_tasks %}
+{% if not no_tasks and gm_funds_available %}
     <div id="grnPeriodModal" class="cockpit-modal" style="display:none;">
         <div class="cockpit-modal-panel registry-modal-panel">
             <h3 style="margin:0 0 4px;color:var(--accent);font-size:15px;">GRN Register — Task {{ active_task.project_id }}</h3>
@@ -630,7 +647,16 @@
 {% endif %}
 {% endblock %}
 {% block extra_js %}
-{% if not no_tasks %}
+{% if active_task and not gm_funds_available %}
+<script>
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const esc = document.getElementById('gmDeskNoFundsEsc');
+    if (esc && esc.href) window.location.href = esc.href;
+});
+</script>
+{% endif %}
+{% if not no_tasks and gm_funds_available %}
     <script>
         const lineData = {
             {% for line in budget_summary.lines %}

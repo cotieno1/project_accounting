@@ -224,3 +224,52 @@ font-size: 12px;
         margin-left: 0 !important;
     }
 }
+
+.gm-funds-blocked-banner {
+    margin-bottom: 20px;
+    padding: 22px 24px;
+    border-radius: 12px;
+    border: 3px solid #f59e0b;
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.28), rgba(245, 158, 11, 0.22));
+    box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.35), 0 8px 28px rgba(220, 38, 38, 0.25);
+    animation: gm-funds-banner-pulse 2.2s ease-in-out infinite;
+}
+
+.gm-funds-blocked-title {
+    display: block;
+    font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+    line-height: 1.45;
+    font-weight: 800;
+    color: #fef2f2;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.gm-funds-blocked-detail {
+    margin: 12px 0 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #fde68a;
+}
+
+.gm-funds-blocked-detail kbd {
+    padding: 2px 6px;
+    border: 1px solid rgba(253, 230, 138, 0.45);
+    border-radius: 4px;
+    font-size: 11px;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.gm-desk--no-funds .gm-sidebar-tools.is-blocked,
+.gm-desk--no-funds .gm-workspace-tools.is-blocked {
+    opacity: 0.42;
+    filter: grayscale(0.75);
+    pointer-events: none;
+    user-select: none;
+}
+
+@keyframes gm-funds-banner-pulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.35), 0 8px 28px rgba(220, 38, 38, 0.25); }
+    50% { box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.55), 0 10px 34px rgba(220, 38, 38, 0.38); }
+}

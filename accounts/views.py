@@ -7054,6 +7054,15 @@ def _disbursement_payment_listing(task, active_payment=None):
     return rows
 
 
+def _gm_funds_available(budget_summary):
+    """GM desk may disburse only after CEO approval and fund release."""
+    return bool(
+        budget_summary.get("has_budget")
+        and budget_summary.get("is_ceo_approved")
+        and budget_summary.get("fund_released")
+    )
+
+
 def _gm_resolve_active_task(request, tasks):
     return _task_from_request(request, tasks)
 
@@ -7111,7 +7120,20 @@ def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
 @login_required
 def gm_aie_disbursement_view(request):
     """GM Accounting office — AIE disbursement against four budget lines per task."""
+    from urllib.parse import urlencode
+
     tasks = ProjectTask.objects.all().order_by("project_id")
+
+    if request.method == "GET":
+        raw_get = (request.GET.get("task_id") or "").strip()
+        if raw_get:
+            resolved = _resolve_project_task(tasks, raw_get)
+            pick_id = _bom_task_pick_id(resolved) if resolved else _normalize_task_id(raw_get)
+            if resolved and pick_id and _normalize_task_id(raw_get) == pick_id and raw_get != pick_id:
+                qs = request.GET.copy()
+                qs["task_id"] = pick_id
+                return redirect(f"{reverse('gm_aie_disbursement')}?{urlencode(qs, doseq=True)}")
+
     active_task = _gm_resolve_active_task(request, tasks)
     if not active_task:
         return render(request, "gm_aie_disbursement.html", {
@@ -7119,11 +7141,23 @@ def gm_aie_disbursement_view(request):
             "no_tasks": not tasks.exists(),
             "no_task_selected": tasks.exists(),
             "active_task": None,
+            "gm_funds_available": False,
         })
 
+    active_pick_id = _bom_task_pick_id(active_task)
     project_class = _task_project_class(active_task)
     budget_summary = _task_disbursement_budget_summary(active_task)
+    gm_funds_available = _gm_funds_available(budget_summary)
     task_caps = _gm_task_sidebar_capabilities(active_task, project_class, budget_summary)
+    if not gm_funds_available:
+        task_caps = {
+            **task_caps,
+            "enable_grn": False,
+            "enable_supplier_pv": False,
+            "enable_goods_status": False,
+            "enable_adhoc_ro": False,
+            "enable_officer_pv": False,
+        }
 
     if request.method == "POST":
         if request.POST.get("action") == "create_payment_voucher":
@@ -7177,12 +7211,12 @@ def gm_aie_disbursement_view(request):
                         f"Payment {payment.payment_number} posted — US$ {amount:.2f} ({payment.get_budget_line_display()}).",
                     )
                     return redirect(
-                        f"/gm-disbursement/?task_id={active_task.project_id}"
+                        f"/gm-disbursement/?task_id={active_pick_id}"
                         f"&payment_id={payment.id}&pay_list=1"
                     )
         except Exception as e:
             messages.error(request, f"Payment failed: {e}")
-        return redirect(f"/gm-disbursement/?task_id={active_task.project_id}")
+        return redirect(f"/gm-disbursement/?task_id={active_pick_id}")
 
     view_payment_id = request.GET.get("payment_id")
     viewed_payment = None
@@ -7217,9 +7251,11 @@ def gm_aie_disbursement_view(request):
         {
             "tasks": tasks,
             "active_task": active_task,
+            "active_pick_id": active_pick_id,
             "project_class": project_class,
             "task_caps": task_caps,
             "budget_summary": budget_summary,
+            "gm_funds_available": gm_funds_available,
             "payment_listing": payment_listing,
             "viewed_payment": viewed_payment,
             "pay_mode": pay_mode,
