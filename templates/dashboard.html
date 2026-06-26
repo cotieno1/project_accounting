@@ -21,7 +21,7 @@
             <span class="header-product">{{ app_short_name }} <span class="header-saas-tag">SaaS</span></span>
             <span class="header-title-sep" aria-hidden="true">·</span>
             <h2>Command Center</h2>
-    </div>
+        </div>
         <button type="button" class="header-mobile-toggle" id="mobileHeaderToggle" aria-expanded="false" aria-controls="headerActionsPanel" aria-label="Open account and settings">
             <span class="header-avatar" aria-hidden="true">{{ username.0|upper }}</span>
         </button>
@@ -41,21 +41,21 @@
                         <div class="setup-item"><div><strong>Project Tasks</strong><small>Job / task IDs</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('task')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('task')">List</button></div></div>
                         <div class="setup-item"><div><strong>Build Categories</strong><small>Project build types</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('build')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('build')">List</button></div></div>
                         <div class="setup-item"><div><strong>Product Items</strong><small>Inventory catalogue</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('product')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('product')">List</button></div></div>
-	</div>
-								</div>
-								</div>
+                    </div>
+                </div>
+            </div>
             <div class="header-session">
                 <div class="user-info">
                     <strong>{{ username }}</strong>
                     <span class="user-role">{{ role }}</span>
-								</div>
+                </div>
                 <form method="post" action="{% url 'logout' %}" class="logout-form">
                     {% csrf_token %}
                     <button type="submit" class="logout-btn">Log out</button>
                 </form>
-							</div>
-					</div>
-				</div>
+            </div>
+        </div>
+    </div>
     <div class="header-meta">
         {% if org_name %}
         <strong class="header-client">{{ org_name }}</strong>
@@ -69,9 +69,9 @@
                 <option value="{{ o.org_code }}" {% if o.org_code == active_org_code %}selected{% endif %}>{{ o.name }}</option>
                 {% endfor %}
             </select>
-				</div>
+        </div>
         {% endif %}
-			</div>
+    </div>
     <div class="header-mobile-backdrop" id="mobileHeaderBackdrop" aria-hidden="true"></div>
 </div>
 
@@ -204,12 +204,12 @@
             <div class="master-form-body">
                 <div class="master-form-grid" id="masterFormFields"></div>
                 <div id="masterUserOnboarding" class="master-onboarding-panel" hidden></div>
-</div>
+            </div>
             <div class="master-form-actions">
                 <button type="button" class="master-btn master-btn-secondary" id="masterResendInviteBtn" style="display:none;margin-right:auto;">Resend invite email</button>
                 <button type="button" class="master-btn master-btn-ghost" onclick="MasterRegistry.backToList()">Cancel</button>
                 <button type="submit" class="master-btn master-btn-primary" id="masterFormSave">Save Record</button>
-</div>
+            </div>
         </form>
     </div>
 </div>

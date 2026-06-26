@@ -103,21 +103,6 @@
         <a href="{% url 'dashboard' %}" class="workspace-back-link">← Main Dashboard</a>
     </nav>
 
-    <div class="panel ops-task-picker-panel">
-        <span class="nav-label">Active project task</span>
-        <select class="form-input ops-task-select" aria-label="Select project task" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};">
-            <option value="">-- Select project task --</option>
-            {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|truncatechars:48 }}</option>
-            {% endfor %}
-        </select>
-        {% if active_task %}
-        <p class="ops-task-picker-hint"><strong>{{ task_panel.lane_label }}</strong>{% if task_panel.status_hint %} · {{ task_panel.status_hint }}{% endif %}</p>
-        {% else %}
-        <p class="ops-task-picker-hint">Select the task you just created, then use <strong>Build BOM</strong> in the sidebar.</p>
-        {% endif %}
-    </div>
-
     <div class="ops-header">
         <div>
             <h1>Ops & Financial Dashboard</h1>

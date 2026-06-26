@@ -409,14 +409,7 @@ def _ops_cross_task_activity_feed():
 @login_required
 def fin_mgmt_ops_view(request):
     tasks = ProjectTask.objects.order_by("project_id")
-    raw_tid = (request.GET.get("task_id") or "").strip()
     active_task = _task_from_request(request, tasks)
-    if raw_tid and not active_task:
-        messages.error(
-            request,
-            f"Task “{_normalize_task_id(raw_tid)}” was not found. "
-            "Select your new task below, then open Build BOM.",
-        )
     task_panel = _ops_task_panel_context(active_task)
 
     context = {
@@ -820,9 +813,6 @@ def unified_api_create(request, entity_type):
                     payload["task_id"] = tid
                     payload["bom_builder_url"] = (
                         reverse("bom_builder") + f"?task_id={quote(tid, safe='')}"
-                    )
-                    payload["ops_dashboard_url"] = (
-                        reverse("ops_dashboard") + f"?task_id={quote(tid, safe='')}"
                     )
         return JsonResponse(payload)
     except Exception as e:
