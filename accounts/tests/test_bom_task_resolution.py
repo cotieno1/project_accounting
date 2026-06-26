@@ -189,6 +189,18 @@ class BudgetApprovalTaskIdTests(TestCase):
         self.assertContains(response, "1233_0900")
         self.assertNotContains(response, "['1233_0900']")
 
+    def test_open_budget_sidebar_disabled_without_provision(self):
+        ProjectTask.objects.create(project_id="133", description="Uncommitted task")
+        url = reverse("budget_approval")
+        response = self.client.get(url, {"task_id": "133"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Open budget &amp; actions")
+        self.assertContains(
+            response,
+            'disabled title="Complete Bid Evaluation or Ad-Hoc budget commit first."',
+        )
+        self.assertContains(response, "No provision budget")
+
 
 class UnifiedApiCreateTaskTests(TestCase):
     def setUp(self):

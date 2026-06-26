@@ -36,7 +36,7 @@
 </div>
 
 <div class="sidebar-actions">
-    <button type="button" class="btn-action btn-warning" style="width:100%;" onclick="openBudgetModal()">Open budget &amp; actions</button>
+    <button type="button" class="btn-action {% if budget_summary.has_budget %}btn-warning{% else %}btn-secondary{% endif %} btn-action--block"{% if budget_summary.has_budget %} onclick="openBudgetModal()"{% else %} disabled title="Complete Bid Evaluation or Ad-Hoc budget commit first."{% endif %}>Open budget &amp; actions</button>
     {% if can_gm_pay %}
     <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}" class="btn-action btn-success btn-action--block">→ GM payment desk</a>
     {% else %}
