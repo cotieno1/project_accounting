@@ -18,7 +18,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.forms.models import model_to_dict
-from django.db.models import Sum, F, Count
+from django.db.models import Sum, F, Count, Q
 from django.db import IntegrityError
 from collections import defaultdict
 
@@ -3968,6 +3968,11 @@ def bid_evaluation_terminal_view(request):
             "grns_data": [],
             "grn_count": 0,
             "task_actual_cost": "0.00",
+            "bid_eval_allowed": False,
+            "bid_eval_blocked": False,
+            "bid_eval_block_reason": "",
+            "bid_eval_checklist": [],
+            "bid_eval_workspace": _bid_evaluation_workspace(None),
         })
 
     suppliers = SupplierAccount.objects.all().order_by("description")
@@ -3981,12 +3986,29 @@ def bid_evaluation_terminal_view(request):
     elif bom_items.exists():
         source_type, final_items = "BOM", bom_items
 
+    bid_workspace = _bid_evaluation_workspace(active_task)
+    if bid_workspace["allowed"]:
+        rfq_supplier_ids = list(
+            _task_rfq_records(active_task)
+            .values_list("supplier_id", flat=True)
+            .distinct()
+        )
+        if len(rfq_supplier_ids) >= 2:
+            suppliers = suppliers.filter(supplier_id__in=rfq_supplier_ids)
+
     if request.method == "POST":
         action = request.POST.get("action", "")
         if action == "cancel_lpo":
             return _bid_eval_cancel_lpo(request, active_task)
         if action == "create_grn":
             return _bid_eval_create_grn(request, active_task)
+
+        bid_ok, bid_reason, _ = _bid_evaluation_gate(active_task)
+        if not bid_ok:
+            messages.error(request, bid_reason)
+            return redirect(
+                f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}"
+            )
 
         try:
             supplier_ids = [
@@ -4090,6 +4112,11 @@ def bid_evaluation_terminal_view(request):
         "grns_data": grns_data,
         "grn_count": len(grns_data),
         "task_actual_cost": budget_status["used"],
+        "bid_eval_allowed": bid_workspace["allowed"],
+        "bid_eval_blocked": not bid_workspace["allowed"],
+        "bid_eval_block_reason": bid_workspace.get("reason", ""),
+        "bid_eval_checklist": bid_workspace.get("checklist", []),
+        "bid_eval_workspace": bid_workspace,
     })
 # ===============================================================================
 def print_lpo_preview(request):
@@ -4196,6 +4223,358 @@ def _rfq_channel_allowed(task):
             "Bid evaluation / project budget is not available on this task."
         )
     return True, ""
+
+
+def _task_rfq_records(task):
+    """RFQs linked to this task (RO-line hook used by RFQ Manager + legacy BOM path)."""
+    if not task:
+        return RFQTransaction.objects.none()
+    ro_item_ids = RequisitionOrderItem.objects.filter(ro__task=task).values_list(
+        "id", flat=True
+    )
+    return RFQTransaction.objects.filter(
+        Q(bom_item_id__in=ro_item_ids) | Q(bom_item__project_task=task)
+    ).distinct()
+
+
+def _bid_evaluation_gate(task):
+    """
+    Bid evaluation opens only after BOM, RO, and RFQs are on file,
+    and closes once a purchase order has been issued on the task.
+    Returns (allowed, message, snapshot).
+    """
+    snapshot = {
+        "bom_no": "",
+        "ro_no": "",
+        "rfq_nos": [],
+        "lpo_nos": [],
+        "checklist": [],
+    }
+    if not task:
+        return False, "Select a project task to open bid evaluation.", snapshot
+
+    blocked_reasons = []
+
+    channel_ok, channel_reason = _rfq_channel_allowed(task)
+    snapshot["checklist"].append({
+        "label": "Procurement path",
+        "ok": channel_ok,
+        "detail": (
+            "Major procurement (BOM → RO → RFQ)"
+            if channel_ok
+            else channel_reason
+        ),
+    })
+    if not channel_ok:
+        blocked_reasons.append(channel_reason)
+
+    bom = _task_meaningful_bom_header(task)
+    bom_no = (bom.bom_id or "").strip() if bom else ""
+    if bom_no:
+        snapshot["bom_no"] = bom_no
+        snapshot["checklist"].append({
+            "label": "BOM number",
+            "ok": True,
+            "detail": bom_no,
+        })
+    else:
+        blocked_reasons.append("missing_bom")
+        snapshot["checklist"].append({
+            "label": "BOM number",
+            "ok": False,
+            "detail": "Not on file",
+            "url_name": "bom_builder",
+        })
+
+    ro = (
+        RequisitionOrder.objects.filter(task=task)
+        .order_by("-date_raised")
+        .first()
+    )
+    ro_no = (ro.ro_no or "").strip() if ro else ""
+    if ro_no and ro.items.exists():
+        snapshot["ro_no"] = ro_no
+        snapshot["checklist"].append({
+            "label": "RO number",
+            "ok": True,
+            "detail": ro_no,
+        })
+    elif ro_no:
+        blocked_reasons.append("empty_ro")
+        snapshot["checklist"].append({
+            "label": "RO number",
+            "ok": False,
+            "detail": f"{ro_no} — no line items yet",
+            "url_name": "ro_builder",
+        })
+    else:
+        blocked_reasons.append("missing_ro")
+        snapshot["checklist"].append({
+            "label": "RO number",
+            "ok": False,
+            "detail": "Not on file",
+            "url_name": "ro_builder",
+        })
+
+    rfq_nos = [
+        n
+        for n in _task_rfq_records(task).values_list("rfq_no", flat=True).distinct()
+        if (n or "").strip()
+    ]
+    snapshot["rfq_nos"] = rfq_nos
+    if rfq_nos:
+        snapshot["checklist"].append({
+            "label": "RFQ references",
+            "ok": True,
+            "detail": ", ".join(rfq_nos[:5]),
+        })
+    else:
+        blocked_reasons.append("missing_rfq")
+        snapshot["checklist"].append({
+            "label": "RFQ references",
+            "ok": False,
+            "detail": "No quotations dispatched",
+            "url_name": "rfq_manager",
+        })
+
+    active_lpos = (
+        LPOTransaction.objects.filter(project_task=task)
+        .exclude(status=LPOTransaction.STATUS_CANCELLED)
+        .order_by("-date_issued")
+    )
+    lpo_nos = list(active_lpos.values_list("lpo_no", flat=True))
+    snapshot["lpo_nos"] = lpo_nos
+    if lpo_nos:
+        blocked_reasons.append("lpo_issued")
+        snapshot["checklist"].append({
+            "label": "Bid evaluation stage",
+            "ok": False,
+            "detail": f"Closed — LPO issued ({', '.join(lpo_nos[:3])})",
+        })
+    elif not blocked_reasons:
+        snapshot["checklist"].append({
+            "label": "Bid evaluation stage",
+            "ok": True,
+            "detail": "Open — no LPO issued yet",
+        })
+
+    if not blocked_reasons:
+        return True, "", snapshot
+
+    if "lpo_issued" in blocked_reasons:
+        shown = ", ".join(lpo_nos[:3])
+        message = (
+            f"This task already has a local purchase order ({shown}). "
+            "Bid evaluation is closed once an LPO is issued — continue with goods receipt, "
+            "invoice matching, or payment from the procurement workflow."
+        )
+    elif not channel_ok:
+        message = channel_reason
+    elif {"missing_bom", "missing_ro", "missing_rfq", "empty_ro"} & set(blocked_reasons):
+        message = (
+            "This task has not reached the Bid Evaluation stage. "
+            "Complete the Bill of Materials, requisition order (RO), and RFQ dispatch "
+            "before comparing supplier quotes here."
+        )
+    else:
+        message = (
+            "Bid evaluation is not available for this task at this stage."
+        )
+
+    return False, message, snapshot
+
+
+def _bid_evaluation_rfq_status(task):
+    """RFQ dispatch summary: sent date and quote due (30-day validity per RFQ letter)."""
+    from datetime import timedelta
+
+    validity_days = 30
+    rows = []
+    seen = set()
+    for rfq in (
+        _task_rfq_records(task)
+        .select_related("supplier", "bom_item")
+        .order_by("rfq_no")
+    ):
+        if rfq.rfq_no in seen:
+            continue
+        seen.add(rfq.rfq_no)
+        sent_dt = None
+        bi = rfq.bom_item
+        if bi and getattr(bi, "date_raised", None):
+            sent_dt = timezone.localtime(bi.date_raised)
+        sent_date = sent_dt.date() if sent_dt else None
+        due_date = sent_date + timedelta(days=validity_days) if sent_date else None
+        today = timezone.localdate()
+        rows.append({
+            "rfq_no": rfq.rfq_no,
+            "supplier": rfq.supplier.description if rfq.supplier else "—",
+            "sent_on": sent_date.strftime("%d %b %Y") if sent_date else "Not recorded",
+            "due_on": due_date.strftime("%d %b %Y") if due_date else "—",
+            "overdue": bool(due_date and today > due_date),
+            "quotes_confirmed": rfq.unit_cost_quoted is not None,
+        })
+    return {
+        "rows": rows,
+        "quotes_confirmed": bool(rows) and all(r["quotes_confirmed"] for r in rows),
+        "any_overdue": any(r["overdue"] for r in rows),
+        "validity_days": validity_days,
+    }
+
+
+def _bid_eval_budget_progress(task):
+    """Where the task sits after bid evaluation (CEO approval / fund release)."""
+    budget = _task_budget_record(task)
+    released = CEOFundRelease.objects.filter(task=task).exists()
+    approved = bool(budget and budget.is_ceo_approved)
+    if not budget:
+        label = "No project budget committed yet"
+        detail = (
+            "Complete bid evaluation and confirm the budget memorandum "
+            "to send for CEO approval."
+        )
+    elif not approved:
+        label = "Awaiting CEO budget approval"
+        detail = "Budget is committed but not yet approved by the CEO (AIE)."
+    elif not released:
+        label = "CEO approved — fund disbursement pending"
+        detail = (
+            "CEO has approved the budget. Funds have not yet been released "
+            "to GM Accounting."
+        )
+    else:
+        label = "Bid process complete — funds disbursed"
+        detail = (
+            "CEO has approved the budget and released funds. "
+            "Continue with GRN, invoice matching, and payment."
+        )
+    return {
+        "has_budget": bool(budget),
+        "is_ceo_approved": approved,
+        "fund_released": released,
+        "status_label": label,
+        "status_detail": detail,
+        "approval_url": reverse("budget_approval") + f"?task_id={task.project_id}",
+        "memo_url": reverse(
+            "procurement_authorization", kwargs={"task_id": task.project_id}
+        ),
+    }
+
+
+def _bid_evaluation_workspace(task):
+    """
+    Task-driven bid evaluation UI: which stage the task is in,
+    what to show (or hide), and where to send the user next.
+    """
+    allowed, reason, snapshot = _bid_evaluation_gate(task)
+    base = {
+        "allowed": allowed,
+        "reason": reason,
+        "checklist": snapshot.get("checklist", []),
+        "snapshot": snapshot,
+        "rfq_status": _bid_evaluation_rfq_status(task) if task else {
+            "rows": [],
+            "quotes_confirmed": False,
+            "any_overdue": False,
+            "validity_days": 30,
+        },
+        "budget_progress": _bid_eval_budget_progress(task) if task else {},
+        "stage": "none",
+        "lane": "none",
+        "headline": "",
+        "body": "",
+        "next_step_url": "",
+        "next_step_label": "",
+        "bom_url": "",
+        "misc_url": "",
+        "show_lane_choice": False,
+    }
+    if not task:
+        base["reason"] = "Select a project task to open bid evaluation."
+        return base
+
+    lane = _bom_screen_lane(task)
+    tid = task.project_id
+    bom_url = reverse("bom_builder") + f"?task_id={tid}"
+    misc_url = reverse("misc_purchase_builder") + f"?task_id={tid}"
+    base["lane"] = lane
+    base["bom_url"] = bom_url
+    base["misc_url"] = misc_url
+    base["budget_progress"] = _bid_eval_budget_progress(task)
+
+    channel_ok, channel_reason = _rfq_channel_allowed(task)
+    if lane == "misc" or not channel_ok:
+        base.update({
+            "allowed": False,
+            "stage": "misc",
+            "headline": (
+                "This task is on the Misc Purchase path"
+                if lane == "misc"
+                else "This task cannot use bid evaluation"
+            ),
+            "body": (
+                "Misc purchases are handled through the Misc PO / MRO workflow — "
+                "not through BOM, RFQ, and supplier bid comparison."
+                if lane == "misc"
+                else channel_reason
+            ),
+            "next_step_url": misc_url,
+            "next_step_label": "Open Misc Purchase",
+            "show_lane_choice": False,
+            "checklist": snapshot.get("checklist", []),
+        })
+        return base
+
+    if snapshot.get("lpo_nos"):
+        lpo_shown = ", ".join(snapshot["lpo_nos"][:3])
+        base.update({
+            "allowed": False,
+            "stage": "completed",
+            "headline": "Bid evaluation is complete for this task",
+            "body": (
+                f"Local purchase order {lpo_shown} is on file. "
+                "Bid evaluation ends once an LPO is issued — check budget approval "
+                "and fund disbursement status below."
+            ),
+            "next_step_url": base["budget_progress"]["approval_url"],
+            "next_step_label": "Check budget approval status",
+            "rfq_status": _bid_evaluation_rfq_status(task),
+        })
+        return base
+
+    if allowed:
+        base.update({
+            "allowed": True,
+            "stage": "open",
+            "headline": "Bid evaluation open",
+            "body": (
+                "Confirm RFQ dates, select two bidding suppliers, enter unit prices "
+                "against each BOM line, then review the budget. The lowest bidder "
+                "becomes the award baseline; confirming sends the CEO budget memo."
+            ),
+            "rfq_status": _bid_evaluation_rfq_status(task),
+        })
+        return base
+
+    next_url = bom_url
+    next_label = "Continue in BOM Builder"
+    if snapshot.get("bom_no") and not snapshot.get("ro_no"):
+        next_url = reverse("ro_builder") + f"?task_id={tid}"
+        next_label = "Continue in RO Builder"
+    elif snapshot.get("bom_no") and snapshot.get("ro_no") and not snapshot.get("rfq_nos"):
+        next_url = reverse("rfq_manager") + f"?task_id={tid}"
+        next_label = "Prepare & dispatch RFQs"
+
+    base.update({
+        "allowed": False,
+        "stage": "not_ready",
+        "headline": "This task has not reached the Bid Evaluation stage",
+        "body": reason,
+        "next_step_url": next_url,
+        "next_step_label": next_label,
+        "show_lane_choice": lane == "bom",
+    })
+    return base
 
 
 def _task_budget_channel_info(task):
