@@ -4533,6 +4533,8 @@ def _bid_evaluation_workspace(task):
         "bom_url": "",
         "misc_url": "",
         "show_lane_choice": False,
+        "ops_dashboard_url": "",
+        "show_prerequisites": True,
     }
     if not task:
         base["reason"] = "Select a project task to open bid evaluation."
@@ -4601,6 +4603,24 @@ def _bid_evaluation_workspace(task):
         })
         return base
 
+    ops_url = reverse("ops_dashboard") + f"?task_id={tid}"
+
+    if lane == "bom":
+        base.update({
+            "allowed": False,
+            "stage": "uncommitted",
+            "headline": "This task has no procurement path yet",
+            "body": (
+                f"Task {tid} is not on Major Procurement (BOM / competitive bidding) "
+                "or Misc Purchase (MRO) yet. Bid evaluation does not apply until "
+                "you start one of those workflows."
+            ),
+            "ops_dashboard_url": ops_url,
+            "show_prerequisites": False,
+            "checklist": [],
+        })
+        return base
+
     next_url = bom_url
     next_label = "Continue in BOM Builder"
     if snapshot.get("bom_no") and not snapshot.get("ro_no"):
@@ -4617,7 +4637,9 @@ def _bid_evaluation_workspace(task):
         "body": reason,
         "next_step_url": next_url,
         "next_step_label": next_label,
-        "show_lane_choice": lane == "bom",
+        "show_lane_choice": False,
+        "ops_dashboard_url": ops_url,
+        "show_prerequisites": True,
     })
     return base
 

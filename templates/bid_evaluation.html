@@ -100,20 +100,32 @@
         </div>
         {% endif %}
 
-        {% if bid_eval_workspace.stage == 'misc' %}
+        {% if bid_eval_workspace.stage == 'uncommitted' %}
+        <div id="bid-eval-lane-choice" data-esc-url="{% url 'ops_dashboard' %}?task_id={{ active_pick_id }}" style="margin-bottom:20px;">
+            <p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:var(--text-muted);">
+                Choose the buttons below to <strong>create BOM</strong> (major competitive bidding)
+                or <strong>create Misc Purchase</strong> (MRO),
+                or press <kbd style="padding:2px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;">Esc</kbd>
+                to return to the main menu.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <a href="{{ bid_eval_workspace.bom_url }}" class="btn-action btn-success" style="text-decoration:none;margin:0;">Create BOM</a>
+                <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action" style="text-decoration:none;margin:0;">Create Misc Purchase</a>
+            </div>
+        </div>
+        {% elif bid_eval_workspace.stage == 'misc' %}
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
             <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action btn-success" style="text-decoration:none;margin:0;">Open Misc Purchase</a>
+            <a href="{% url 'ops_dashboard' %}?task_id={{ active_pick_id }}" class="btn-action" style="text-decoration:none;margin:0;">Return to main menu</a>
         </div>
         {% elif bid_eval_workspace.stage == 'not_ready' %}
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
             <a href="{{ bid_eval_workspace.next_step_url }}" class="btn-action btn-success" style="text-decoration:none;margin:0;">{{ bid_eval_workspace.next_step_label }}</a>
-            {% if bid_eval_workspace.show_lane_choice %}
-            <a href="{{ bid_eval_workspace.bom_url }}" class="btn-action" style="text-decoration:none;margin:0;">Major procurement — start BOM</a>
-            <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action" style="text-decoration:none;margin:0;">This is a Misc Purchase</a>
-            {% endif %}
+            <a href="{{ bid_eval_workspace.ops_dashboard_url }}" class="btn-action" style="text-decoration:none;margin:0;">Return to main menu</a>
         </div>
         {% endif %}
 
+        {% if bid_eval_workspace.show_prerequisites %}
         <p style="margin:0 0 12px;font-size:11px;letter-spacing:0.5px;text-transform:uppercase;color:var(--text-muted);">Procurement prerequisites</p>
         <ul style="margin:0;padding:0;list-style:none;font-size:13px;">
             {% for row in bid_eval_checklist %}
@@ -129,9 +141,9 @@
             {% endfor %}
         </ul>
         <p style="margin:20px 0 0;font-size:12px;color:var(--text-muted);">
-            All tasks appear in the sidebar picker. Only tasks with a BOM, RO, and dispatched RFQs — and no LPO yet — open the supplier comparison workspace.
-            Tasks that do not qualify are not asked to select suppliers or enter bid prices.
+            Only tasks with a BOM, RO, and dispatched RFQs — and no LPO yet — open the supplier comparison workspace.
         </p>
+        {% endif %}
     </div>
     {% else %}
     <div class="panel" style="padding:16px 20px;margin-bottom:16px;border:1px solid var(--border);">
@@ -687,6 +699,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('open_lpo_list') === '1') openLpoListingModal();
     if (urlParams.get('open_grn_list') === '1') openGrnListingModal();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const laneChoice = document.getElementById('bid-eval-lane-choice');
+    if (laneChoice && laneChoice.dataset.escUrl) {
+        window.location.href = laneChoice.dataset.escUrl;
+    }
 });
 
 /* =========================================================
