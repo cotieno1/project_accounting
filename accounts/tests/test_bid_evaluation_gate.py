@@ -140,3 +140,24 @@ class BidEvaluationGateViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "not reached")
+
+    def test_malformed_bracket_url_redirects_clean(self):
+        ProjectTask.objects.create(
+            project_id="['1233_0900']",
+            description="Bracket legacy task",
+        )
+        url = reverse("bid_evaluation_terminal")
+        response = self.client.get(url, {"task_id": "['1233_0900']"}, follow=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("task_id=1233_0900", response.url)
+
+    def test_legacy_bracket_task_shows_clean_id(self):
+        ProjectTask.objects.create(
+            project_id="['1233_0900']",
+            description="Bracket legacy task",
+        )
+        url = reverse("bid_evaluation_terminal")
+        response = self.client.get(url, {"task_id": "1233_0900"}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "1233_0900")
+        self.assertNotContains(response, "['1233_0900']")

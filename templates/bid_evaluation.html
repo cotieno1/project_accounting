@@ -14,8 +14,8 @@
         <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};">
             <option value="">-- Select project task --</option>
             {% for t in tasks %}
-                <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-                    {{ t.project_id }}{% if t.description %}: {{ t.description|clean_task_description|truncatechars:40 }}{% endif %}
+                <option value="{{ t.project_id|clean_task_id }}" {% if active_task and t.project_id|clean_task_id == active_pick_id %}selected{% endif %}>
+                    {{ t.project_id|clean_task_id }}{% if t.description %}: {{ t.description|clean_task_description|truncatechars:40 }}{% endif %}
                 </option>
             {% empty %}
                 <option disabled>No project tasks — add one in Dashboard setup</option>
@@ -59,7 +59,7 @@
 
     <div class="sidebar-footer">
         {% if active_task %}
-        <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="sidebar-back-link">← Back to Dashboard</a>
+        <a href="{% url 'ops_dashboard' %}?task_id={{ active_pick_id }}" class="sidebar-back-link">← Back to Dashboard</a>
         {% else %}
         <a href="{% url 'ops_dashboard' %}" class="sidebar-back-link">← Back to Dashboard</a>
         {% endif %}
@@ -70,7 +70,7 @@
         <div>
             <h3 style="margin:0;">Step 1: Budget, Bid Evaluation & Award Cockpit</h3>
             {% if active_task %}
-            <small style="color: var(--text-muted); font-size: 12px;">Task: {{ active_task.project_id }} — {{ active_task.description|clean_task_description }}</small>
+            <small style="color: var(--text-muted); font-size: 12px;">Task: {{ active_pick_id }} — {{ active_task.description|clean_task_description }}</small>
             {% else %}
             <small style="color: var(--warning); font-size: 12px;">Select a project task in the sidebar to load suppliers and the evaluation matrix.</small>
             {% endif %}
@@ -122,7 +122,7 @@
                 <span style="flex:1;">
                     <strong>{{ row.label }}</strong> — {{ row.detail }}
                     {% if row.url_name and not row.ok %}
-                    <a href="{% url row.url_name %}?task_id={{ active_task.project_id }}" style="margin-left:8px;color:#93c5fd;">Open screen →</a>
+                    <a href="{% url row.url_name %}?task_id={{ active_pick_id }}" style="margin-left:8px;color:#93c5fd;">Open screen →</a>
                     {% endif %}
                 </span>
             </li>
@@ -158,7 +158,7 @@
                     {% endif %}
                 </p>
             </div>
-            <a href="{% url 'rfq_manager' %}?task_id={{ active_task.project_id }}" style="font-size:12px;color:#93c5fd;">RFQ Manager →</a>
+            <a href="{% url 'rfq_manager' %}?task_id={{ active_pick_id }}" style="font-size:12px;color:#93c5fd;">RFQ Manager →</a>
         </div>
         <table style="width:100%;font-size:12px;border-collapse:collapse;">
             <thead>
@@ -239,7 +239,7 @@
 
         <form method="POST" action="{% url 'bid_evaluation_terminal' %}" id="matrix_evaluation_form" style="margin: 0;">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
             <input type="hidden" name="supplier_names_csv" id="form-supplier-name">
             <input type="hidden" name="supplier_ids_csv" id="form-supplier-id">
             <input type="hidden" name="supplier_contact_csv" id="form-supplier-contact">
@@ -385,7 +385,7 @@
         <div class="review-summary-box">
             <div class="review-summary-row">
                 <span class="review-summary-label">Task Target ID:</span>
-                <span style="color: #f1f5f9; font-weight: bold;">{{ active_task.project_id }}</span>
+                <span style="color: #f1f5f9; font-weight: bold;">{{ active_pick_id }}</span>
             </div>
             <div class="review-summary-row">
                 <span class="review-summary-label">Locked Material Cost:</span>
@@ -426,7 +426,7 @@
     <div class="cockpit-modal-panel" style="width: 560px;">
         <div class="cockpit-modal-header">
             <h3>Budget vs Actual &amp; Variance</h3>
-            <span class="cockpit-modal-tag">Materials · Task {{ active_task.project_id }}</span>
+            <span class="cockpit-modal-tag">Materials · Task {{ active_pick_id }}</span>
         </div>
         <div style="background: #070b14; padding: 20px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px;">
             {% if budget_status.has_budget %}
@@ -478,7 +478,7 @@
     <div class="cockpit-modal-panel" style="width: 720px; max-height: 85vh; display: flex; flex-direction: column;">
         <div class="cockpit-modal-header">
             <h3>LPO Listing</h3>
-            <span class="cockpit-modal-tag">Task {{ active_task.project_id }}</span>
+            <span class="cockpit-modal-tag">Task {{ active_pick_id }}</span>
         </div>
         <div id="lpo-list-pane" style="flex: 1; overflow-y: auto; min-height: 200px;">
             <table class="lpo-list-table">
@@ -525,10 +525,10 @@
             <h3>Goods Received Note (GRN)</h3>
             <span class="cockpit-modal-tag" id="grn-modal-lpo-tag">LPO</span>
         </div>
-        <form id="grnForm" method="POST" action="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}">
+        <form id="grnForm" method="POST" action="{% url 'bid_evaluation_terminal' %}?task_id={{ active_pick_id }}">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_grn">
-            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
             <input type="hidden" name="lpo_id" id="grn-lpo-id">
 
             <div class="grn-modal-scroll">
@@ -602,9 +602,9 @@
     </div>
 </div>
 
-<form id="cancelLpoForm" method="POST" action="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}">
+<form id="cancelLpoForm" method="POST" action="{% url 'bid_evaluation_terminal' %}?task_id={{ active_pick_id }}">
     {% csrf_token %}
-    <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+    <input type="hidden" name="task_id" value="{{ active_pick_id }}">
     <input type="hidden" name="action" value="cancel_lpo">
     <input type="hidden" name="lpo_id" id="cancel-lpo-id">
 </form>
@@ -613,7 +613,7 @@
     <div class="cockpit-modal-panel" style="width: 820px; max-height: 85vh; display: flex; flex-direction: column;">
         <div class="cockpit-modal-header">
             <h3>GRN Listing</h3>
-            <span class="cockpit-modal-tag">Task {{ active_task.project_id }}</span>
+            <span class="cockpit-modal-tag">Task {{ active_pick_id }}</span>
         </div>
         <div id="grn-list-pane" style="flex: 1; overflow-y: auto; min-height: 200px;">
             <table class="lpo-list-table">
@@ -646,7 +646,7 @@
             </table>
             <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
                 <a id="grn-detail-print" href="#" target="_blank" class="btn-action" style="flex:1;text-align:center;text-decoration:none;line-height:42px;margin-top:0;background:var(--primary);">Print GRN</a>
-                <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}&open_grn_period=1" target="_blank" class="btn-action" style="flex:1;text-align:center;text-decoration:none;line-height:42px;margin-top:0;background:var(--success);">Supplier payment — GM Desk</a>
+                <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}&open_grn_period=1" target="_blank" class="btn-action" style="flex:1;text-align:center;text-decoration:none;line-height:42px;margin-top:0;background:var(--success);">Supplier payment — GM Desk</a>
             </div>
         </div>
         <button type="button" onclick="closeGrnListingModal()" class="btn-action" style="margin-top: 16px; background: #334155; flex-shrink: 0;">Close</button>

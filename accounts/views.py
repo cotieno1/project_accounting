@@ -138,6 +138,35 @@ def _task_from_request(
     return task
 
 
+def _bid_eval_active_task(request):
+    """Resolve task for bid evaluation — handles legacy bracket-wrapped project_id values."""
+    qs = ProjectTask.objects.all()
+    raw = (request.GET.get("task_id") or "").strip()
+    if not raw:
+        raw = (request.POST.get("task_id") or "").strip()
+    if raw:
+        task = _resolve_project_task(qs, raw)
+        if task:
+            request.session["active_task_id"] = _bom_task_pick_id(task)
+        return task
+    session_tid = _normalize_task_id(request.session.get("active_task_id"))
+    if session_tid:
+        task = _resolve_project_task(qs, session_tid)
+        if task:
+            return task
+    return qs.order_by("project_id").first()
+
+
+def _bid_eval_redirect_url(task):
+    """Canonical bid-evaluation URL — always clean task_id, no brackets."""
+    if not task:
+        return reverse("bid_evaluation_terminal")
+    tid = _bom_task_pick_id(task)
+    if not tid:
+        return reverse("bid_evaluation_terminal")
+    return f"{reverse('bid_evaluation_terminal')}?task_id={tid}"
+
+
 # =======================================================================
 # 🔐 AUTH & ACCESS CONTROLLERS
 # =======================================================================
@@ -2901,7 +2930,7 @@ def print_lpo_view(request, lpo_id):
     )
     if not lpo.items.exists():
         task = lpo.project_task
-        back = reverse("bid_evaluation_terminal") + (f"?task_id={task.project_id}" if task else "")
+        back = _bid_eval_redirect_url(task) if task else reverse("bid_evaluation_terminal")
         return _redirect_empty_print(
             request,
             "Cannot print LPO: this purchase order has no line items.",
@@ -3712,7 +3741,7 @@ def _bid_eval_cancel_lpo(request, active_task):
         lpo.cancelled_at = timezone.now()
         lpo.save(update_fields=["status", "cancelled_at"])
         messages.success(request, f"{lpo.lpo_no} has been cancelled.")
-    return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+    return redirect(_bid_eval_redirect_url(active_task))
 
 
 def _bid_eval_create_grn(request, active_task):
@@ -3724,7 +3753,7 @@ def _bid_eval_create_grn(request, active_task):
 
     if lpo.status == LPOTransaction.STATUS_CANCELLED:
         messages.error(request, "Cannot record GRN against a cancelled LPO.")
-        return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+        return redirect(_bid_eval_redirect_url(active_task))
 
     receipt_date_raw = (request.POST.get("receipt_date") or "").strip()
     try:
@@ -3735,12 +3764,12 @@ def _bid_eval_create_grn(request, active_task):
         )
     except ValueError:
         messages.error(request, "Invalid receipt date.")
-        return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+        return redirect(_bid_eval_redirect_url(active_task))
 
     received_by_name = (request.POST.get("received_by_name") or "").strip()
     if not received_by_name:
         messages.error(request, "Enter the name of the person receiving the goods.")
-        return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+        return redirect(_bid_eval_redirect_url(active_task))
 
     supplier_rep_name = (request.POST.get("supplier_rep_name") or "").strip()
 
@@ -3748,7 +3777,7 @@ def _bid_eval_create_grn(request, active_task):
     delivery_note_ref = (request.POST.get("delivery_note_ref") or "").strip()
     if not invoice_ref:
         messages.error(request, "Enter the supplier invoice number.")
-        return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+        return redirect(_bid_eval_redirect_url(active_task))
 
     line_payload = []
     for item in lpo.items.all():
@@ -3759,7 +3788,7 @@ def _bid_eval_create_grn(request, active_task):
             qty = Decimal(raw_qty)
         except Exception:
             messages.error(request, f"Invalid quantity for line: {item.description}")
-            return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+            return redirect(_bid_eval_redirect_url(active_task))
         if qty <= 0:
             continue
         remaining = item.qty - _lpo_item_received_qty(item)
@@ -3768,12 +3797,12 @@ def _bid_eval_create_grn(request, active_task):
                 request,
                 f"Quantity for {item.description} exceeds remaining ({remaining}).",
             )
-            return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+            return redirect(_bid_eval_redirect_url(active_task))
         line_payload.append((item, qty))
 
     if not line_payload:
         messages.error(request, "Enter at least one line quantity to receive.")
-        return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+        return redirect(_bid_eval_redirect_url(active_task))
 
     try:
         with transaction.atomic():
@@ -3802,7 +3831,7 @@ def _bid_eval_create_grn(request, active_task):
     except Exception as e:
         messages.error(request, f"GRN save failed: {e}")
 
-    return redirect(f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}")
+    return redirect(_bid_eval_redirect_url(active_task))
 
 
 def _build_grn_print_context(grn):
@@ -3943,10 +3972,23 @@ def print_payment_voucher_view(request, voucher_id):
 
 @login_required
 def bid_evaluation_terminal_view(request):
+    from urllib.parse import quote
+
     tasks = ProjectTask.objects.all()
-    active_task = _task_from_request(
-        request, tasks, include_post=(request.method == "POST")
-    )
+
+    if request.method == "GET":
+        raw_get = (request.GET.get("task_id") or "").strip()
+        if raw_get:
+            resolved = _resolve_project_task(tasks, raw_get)
+            pick_id = _bom_task_pick_id(resolved) if resolved else _normalize_task_id(raw_get)
+            if resolved and pick_id and _normalize_task_id(raw_get) == pick_id and raw_get != pick_id:
+                return redirect(
+                    reverse("bid_evaluation_terminal")
+                    + f"?task_id={quote(pick_id, safe='')}"
+                )
+
+    active_task = _bid_eval_active_task(request)
+    active_pick_id = _bom_task_pick_id(active_task)
 
     if not active_task:
         if request.method == "POST":
@@ -3956,6 +3998,7 @@ def bid_evaluation_terminal_view(request):
         budget_status = _build_task_budget_status(None)
         return render(request, "bid_evaluation.html", {
             "active_task": None,
+            "active_pick_id": "",
             "tasks": tasks,
             "bom_items": [],
             "source_type": "BOM",
@@ -4006,9 +4049,7 @@ def bid_evaluation_terminal_view(request):
         bid_ok, bid_reason, _ = _bid_evaluation_gate(active_task)
         if not bid_ok:
             messages.error(request, bid_reason)
-            return redirect(
-                f"{reverse('bid_evaluation_terminal')}?task_id={active_task.project_id}"
-            )
+            return redirect(_bid_eval_redirect_url(active_task))
 
         try:
             supplier_ids = [
@@ -4078,13 +4119,16 @@ def bid_evaluation_terminal_view(request):
                     "supplier_id": target_supplier.supplier_id,
                 })
                 return redirect(
-                    reverse("procurement_authorization", kwargs={"task_id": active_task.project_id})
+                    reverse(
+                        "procurement_authorization",
+                        kwargs={"task_id": _bom_task_pick_id(active_task)},
+                    )
                     + "?"
                     + params
                 )
 
             return redirect(
-                f"/lpo-dispatch/?task_id={active_task.project_id}&supplier_id={target_supplier.supplier_id}"
+                f"/lpo-dispatch/?task_id={_bom_task_pick_id(active_task)}&supplier_id={target_supplier.supplier_id}"
             )
         except Exception as e:
             messages.error(request, f"Save failed: {e}")
@@ -4097,6 +4141,7 @@ def bid_evaluation_terminal_view(request):
 
     return render(request, "bid_evaluation.html", {
         "active_task": active_task,
+        "active_pick_id": active_pick_id,
         "tasks": ProjectTask.objects.all(),
         "bom_items": final_items,
         "source_type": source_type,
@@ -4454,9 +4499,9 @@ def _bid_eval_budget_progress(task):
         "fund_released": released,
         "status_label": label,
         "status_detail": detail,
-        "approval_url": reverse("budget_approval") + f"?task_id={task.project_id}",
+        "approval_url": reverse("budget_approval") + f"?task_id={_bom_task_pick_id(task)}",
         "memo_url": reverse(
-            "procurement_authorization", kwargs={"task_id": task.project_id}
+            "procurement_authorization", kwargs={"task_id": _bom_task_pick_id(task)}
         ),
     }
 
@@ -4494,7 +4539,7 @@ def _bid_evaluation_workspace(task):
         return base
 
     lane = _bom_screen_lane(task)
-    tid = task.project_id
+    tid = _bom_task_pick_id(task)
     bom_url = reverse("bom_builder") + f"?task_id={tid}"
     misc_url = reverse("misc_purchase_builder") + f"?task_id={tid}"
     base["lane"] = lane
