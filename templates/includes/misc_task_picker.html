@@ -1,3 +1,4 @@
+{% load bom_builder_tags %}
 <div class="{{ picker_wrap_class }}">
     {% if show_label %}
     <span class="nav-label">{{ label|default:"Switch MRO task" }}</span>
@@ -10,8 +11,8 @@
     >
         <option value="">-- Select project task --</option>
         {% for t in tasks %}
-        <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-            {{ t.project_id }}{% if t.description %} — {{ t.description|truncatechars:42 }}{% endif %}
+        <option value="{{ t.project_id|clean_task_id }}" {% if active_pick_id and t.project_id|clean_task_id == active_pick_id %}selected{% endif %}>
+            {{ t.project_id|clean_task_id }}{% if t.description %} — {{ t.description|truncatechars:42 }}{% endif %}
         </option>
         {% empty %}
         <option value="" disabled>No MRO tasks available</option>

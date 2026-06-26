@@ -1507,24 +1507,34 @@ def _task_on_major_bom_lane(task):
 
 
 def _resolve_misc_purchase_task(request, *, include_post=False):
-    """Resolve active task for misc/MRO pages within the ad-hoc task list only."""
+    """Resolve active task for misc/MRO — clean and legacy bracket-wrapped ids."""
     tasks = _misc_purchase_tasks()
-    requested = _task_id_from_request(request, include_post=include_post)
-    if requested:
-        task = tasks.filter(project_id=requested).first()
-        if not task:
-            if ProjectTask.objects.filter(project_id=requested).exists():
+    raw = (request.GET.get("task_id") or "").strip()
+    if not raw and include_post:
+        raw = (request.POST.get("task_id") or "").strip()
+    if raw:
+        task = _resolve_project_task(tasks, raw)
+        if task:
+            request.session["active_task_id"] = _bom_task_pick_id(task)
+            return tasks, task
+        blocked = _resolve_project_task(ProjectTask.objects.all(), raw)
+        if blocked:
+            allowed, reason = _misc_channel_allowed(blocked)
+            if _task_on_major_bom_lane(blocked) or not allowed:
                 messages.error(
                     request,
-                    "That task is not on the MRO path. "
-                    "Choose an MRO task from the list, or return to the main menu.",
+                    reason
+                    or "This task is not on the MRO path. Choose an MRO task from the list.",
                 )
-            return tasks, None
-        request.session["active_task_id"] = task.project_id
-        return tasks, task
+                return _misc_purchase_task_list(blocked), None
+    session_tid = _normalize_task_id(request.session.get("active_task_id"))
+    if session_tid:
+        task = _resolve_project_task(tasks, session_tid)
+        if task:
+            return tasks, task
     task = tasks.order_by("project_id").first()
     if task:
-        request.session["active_task_id"] = task.project_id
+        request.session["active_task_id"] = _bom_task_pick_id(task)
     return tasks, task
 
 
@@ -5384,25 +5394,21 @@ def misc_register_supplier_ajax(request):
 
 @login_required
 def misc_purchase_builder(request):
+    from urllib.parse import quote
+
     tasks, active_task = _resolve_misc_purchase_task(
         request, include_post=(request.method == "POST")
     )
     tasks = _misc_purchase_task_list(active_task)
+    active_pick_id = _bom_task_pick_id(active_task)
+    if request.method == "GET" and active_task and active_pick_id:
+        raw_get = (request.GET.get("task_id") or "").strip()
+        if raw_get and _normalize_task_id(raw_get) == active_pick_id and raw_get != active_pick_id:
+            return redirect(
+                reverse("misc_purchase_builder")
+                + f"?task_id={quote(active_pick_id, safe='')}"
+            )
     if not active_task:
-        requested = _task_id_from_request(
-            request, include_post=(request.method == "POST")
-        )
-        if requested:
-            blocked_task = ProjectTask.objects.filter(project_id=requested).first()
-            if blocked_task:
-                allowed, reason = _misc_channel_allowed(blocked_task)
-                if _task_on_major_bom_lane(blocked_task) or not allowed:
-                    messages.error(
-                        request,
-                        reason
-                        or "This task is not on the MRO path. Press Esc or return to the main menu.",
-                    )
-                    return redirect(reverse("ops_dashboard"))
         if request.method == "POST":
             messages.error(request, "Select a project task before saving.")
             return redirect(reverse("misc_purchase_builder"))
@@ -5412,20 +5418,11 @@ def misc_purchase_builder(request):
                 "Add a project task from Dashboard setup before using Misc Purchase.",
             )
             return redirect("dashboard")
-        first_adhoc = tasks.order_by("project_id").first()
-        if requested and first_adhoc:
-            messages.info(
-                request,
-                "Choose an MRO task from the list, or press Esc to return to the main menu.",
-            )
-            return redirect(
-                reverse("misc_purchase_builder")
-                + f"?task_id={first_adhoc.project_id}"
-            )
         suppliers = SupplierAccount.objects.all().order_by("description")
         return render(request, "misc_purchase.html", {
             "tasks": tasks,
             "active_task": None,
+            "active_pick_id": "",
             "mro_workspace_empty": False,
             "officer_journey_visible": False,
             "suppliers": suppliers,
@@ -5758,6 +5755,7 @@ def misc_purchase_builder(request):
         {
             "tasks": tasks,
             "active_task": active_task,
+            "active_pick_id": active_pick_id,
             "mro_workspace_empty": mro_workspace_empty,
             "officer_journey_visible": officer_journey_visible,
             "batch": batch,
