@@ -1550,18 +1550,34 @@ def _task_bom_draft_in_progress(task):
     )
 
 
+def _bom_active_task(request):
+    """Resolve task for BOM builder — never leave a blank screen when tasks exist."""
+    qs = ProjectTask.objects.all()
+    raw = (request.GET.get("task_id") or "").strip()
+    if not raw and request.method == "POST":
+        raw = (request.POST.get("task_id") or "").strip()
+    if raw:
+        tid = _normalize_task_id(raw)
+        task = qs.filter(project_id=tid).first()
+        if task:
+            request.session["active_task_id"] = task.project_id
+            return task
+    session_tid = _normalize_task_id(request.session.get("active_task_id"))
+    if session_tid:
+        task = qs.filter(project_id=session_tid).first()
+        if task:
+            return task
+    return qs.order_by("project_id").first()
+
+
 def _bom_can_start_bom(task):
-    """Start BOM when task has no Misc RO/MPO and no BOM yet."""
+    """Start BOM only when task has no Misc RO/MPO and no BOM record yet."""
     if not task:
         return False
     if _task_has_misc_po_path(task):
         return False
-    bom = _get_task_bom(task)
-    if bom:
-        if bom.status != BOMHeader.STATUS_DRAFT:
-            return False
-        if bom.items.exists() or bom.items_locked:
-            return False
+    if _get_task_bom(task):
+        return False
     if _task_on_major_procurement_lane(task):
         return False
     return True
@@ -1904,6 +1920,20 @@ def _bom_page_heading(task, screen_lane, *, can_start_bom=False, has_existing_bo
             "show_view_pdf": False,
             "view_pdf_url": "",
         }
+    if can_start_bom:
+        return {
+            "mode": "create",
+            "message": "No BOM on this task yet — press Start BOM.",
+            "show_view_pdf": False,
+            "view_pdf_url": "",
+        }
+    if screen_lane == "bom" and has_existing_bom:
+        return {
+            "mode": "draft",
+            "message": "BOM started — add item, UOM and quantity below.",
+            "show_view_pdf": False,
+            "view_pdf_url": "",
+        }
     if has_existing_bom or (screen_lane == "major" and not can_start_bom):
         return {
             "mode": "exists",
@@ -1917,7 +1947,7 @@ def _bom_page_heading(task, screen_lane, *, can_start_bom=False, has_existing_bo
         }
     return {
         "mode": "create",
-        "message": f"No BOM on this task yet — press Start BOM.",
+        "message": "",
         "show_view_pdf": False,
         "view_pdf_url": "",
     }
@@ -1929,9 +1959,7 @@ def bom_builder(request):
     from django.db import IntegrityError, transaction
     from django.urls import reverse
 
-    active_task = _task_from_request(
-        request, ProjectTask.objects.all(), include_post=(request.method == "POST")
-    )
+    active_task = _bom_active_task(request)
     redirect_url = (
         reverse("bom_builder") + f"?task_id={active_task.project_id}"
         if active_task
@@ -1960,10 +1988,7 @@ def bom_builder(request):
         return render(request, "bom_builder.html", ctx)
 
     if not active_task:
-        return _render(
-            engineer_journey_visible=False,
-            bom_heading=None,
-        )
+        return _render(bom_heading=None)
 
     screen_lane = _bom_screen_lane(active_task)
     task_status = _bom_task_status_snapshot(active_task)
@@ -2094,11 +2119,8 @@ def bom_builder(request):
         bom_mode = "locked"
         bom_locked = True
         bom_submitted = False
-    elif bom_header.items.exists():
-        bom_mode = "draft"
-        bom_locked = bom_submitted = False
     else:
-        bom_mode = "empty"
+        bom_mode = "draft"
         bom_locked = bom_submitted = False
 
     engineer_journey_visible = bom_mode in ("empty", "draft", "locked") and not bom_submitted
@@ -2128,8 +2150,7 @@ def bom_builder(request):
             active_task,
             screen_lane,
             can_start_bom=can_start_bom,
-            has_existing_bom=bool(_task_meaningful_bom_header(active_task))
-            and not can_start_bom,
+            has_existing_bom=bool(bom_header),
             print_bom_pdf_url=print_bom_pdf_url if can_print_bom else "",
         ),
     )

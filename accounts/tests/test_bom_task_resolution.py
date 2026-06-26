@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from accounts.models import BOMHeader, ProjectTask
-from accounts.views import _normalize_task_id, _task_from_request
+from accounts.views import _bom_active_task, _normalize_task_id, _task_from_request
 
 
 class NormalizeTaskIdTests(TestCase):
@@ -49,24 +49,23 @@ class BomBuilderTaskResolutionTests(TestCase):
         self.assertContains(response, "BOM-TASK-133")
         self.assertContains(response, "Start BOM")
 
-    def test_unknown_explicit_task_shows_error_not_wrong_task(self):
+    def test_bad_url_falls_back_to_existing_task(self):
         ProjectTask.objects.create(
             project_id="OTHER-TASK-999",
             description="Different task",
         )
         url = reverse("bom_builder")
-        response = self.client.get(url, {"task_id": "['NO-SUCH-TASK']"})
+        response = self.client.get(url, {"task_id": "NO-SUCH-TASK"})
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "was not found")
-        self.assertNotContains(response, "Select a task from the list")
-        self.assertContains(response, "bomWorkspaceTaskSelect")
+        self.assertContains(response, self.task.project_id)
 
-    def test_placeholder_task_id_shows_picker_without_error(self):
+    def test_placeholder_task_id_falls_back_without_error(self):
         url = reverse("bom_builder")
         response = self.client.get(url, {"task_id": "YOUR-ACTUAL-TASK-ID"})
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "was not found")
-        self.assertNotContains(response, "YOUR-ACTUAL-TASK-ID")
+        self.assertContains(response, self.task.project_id)
 
     def test_workspace_picker_visible_on_mobile_markup(self):
         url = reverse("bom_builder")
@@ -85,6 +84,15 @@ class BomBuilderTaskResolutionTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(BOMHeader.objects.filter(task=self.task).exists())
 
+    def test_start_bom_shows_line_entry_form(self):
+        url = reverse("bom_builder") + f"?task_id={self.task.project_id}"
+        self.client.post(url, {"new_bom": "1", "task_id": self.task.project_id})
+        response = self.client.get(url)
+        html = response.content.decode()
+        self.assertIn("Add your first line below", html)
+        self.assertIn('name="add_item"', html)
+        self.assertNotContains(response, 'name="new_bom"')
+
     def test_task_from_request_no_fallback_on_bad_explicit_id(self):
         from django.test import RequestFactory
 
@@ -94,6 +102,16 @@ class BomBuilderTaskResolutionTests(TestCase):
         request.session = {}
         task = _task_from_request(request, ProjectTask.objects.all())
         self.assertIsNone(task)
+
+    def test_bom_active_task_ignores_bad_url(self):
+        from django.test import RequestFactory
+
+        factory = RequestFactory()
+        request = factory.get("/bom-builder/", {"task_id": "BAD-ID"})
+        request.session = {"active_task_id": self.task.project_id}
+        request.method = "GET"
+        task = _bom_active_task(request)
+        self.assertEqual(task.project_id, self.task.project_id)
 
 
 class UnifiedApiCreateTaskTests(TestCase):

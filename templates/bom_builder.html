@@ -20,7 +20,7 @@
             <option value="{{ row.task.project_id }}" {% if active_task and row.task.project_id == active_task.project_id %}selected{% endif %}>{{ row.task.project_id }} — {{ row.hint }}</option>
             {% endfor %}
         </select>
-        <p class="bom-sidebar-note">All tasks listed with current lane/status. <strong>Start BOM</strong> only when status is <em>New · Start BOM</em> — Misc and in-progress major tasks are view-only here.</p>
+        <p class="bom-sidebar-note">Pick a task above. Tasks on Misc Purchase cannot use BOM.</p>
     </div>
 
     <div class="sidebar-block bom-sidebar-actions">
@@ -55,16 +55,13 @@
             {% endfor %}
         </select>
     </div>
-    {% if bom_heading and active_task %}
+    {% if active_task %}
     <div class="panel bom-page-header">
-        <h1 class="page-title">Bills of Materials (BOM)</h1>
-        <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
+        <h1 class="page-title">Bills of Materials</h1>
+        <h2 class="task-id-title">{{ active_task.project_id }}</h2>
         <p class="task-description-title">{{ active_task.description }}</p>
+        {% if bom_heading %}
         <p class="bom-heading-message bom-heading-message--{{ bom_heading.mode }}">{{ bom_heading.message }}</p>
-        {% if bom_heading.show_view_pdf %}
-        <div class="bom-heading-actions">
-            <a href="{{ bom_heading.view_pdf_url }}" class="btn-action btn-success" target="_blank" rel="noopener">View BOM PDF</a>
-        </div>
         {% endif %}
         {% if can_start_bom %}
         <div class="bom-heading-actions bom-heading-actions--start">
@@ -73,6 +70,10 @@
                 <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                 <button type="submit" name="new_bom" class="btn-action">Start BOM</button>
             </form>
+        </div>
+        {% elif bom_heading.show_view_pdf %}
+        <div class="bom-heading-actions">
+            <a href="{{ bom_heading.view_pdf_url }}" class="btn-action btn-success" target="_blank" rel="noopener">View BOM PDF</a>
         </div>
         {% endif %}
     </div>
@@ -178,37 +179,13 @@
     </div>
 
     {% elif not active_task %}
+    <div class="panel bom-page-header">
+        <p class="bom-heading-message">No project tasks yet — create a task on the Command Center first.</p>
+    </div>
 
     {% else %}
 
-    {% if engineer_journey_visible %}
-    <div class="bom-stage-panel">
-        <span class="bom-stage-badge">Stage field definition — BOM path</span>
-        {% if bom_mode == 'draft' %}
-        <h4 class="bom-stage-title">BOM started — add your lines below</h4>
-        <p class="bom-stage-lead">List each item, <strong>UOM</strong> and <strong>quantity</strong>. Lock and submit when done.</p>
-        {% elif bom_mode == 'locked' %}
-        <h4 class="bom-stage-title">BOM locked — submit to finish your task here</h4>
-        {% else %}
-        <h4 class="bom-stage-title">Add BOM lines below</h4>
-        {% endif %}
-        {% if task_status.stage_label %}
-        <p class="bom-stage-lead"><span class="lane-tag">Status:</span> {{ task_status.stage_label }}</p>
-        {% endif %}
-        {% include "partials/bom_stage_journey.html" %}
-        <div class="bom-stage-actions">
-            {% if can_start_bom %}
-            <form method="POST" style="margin:0;">
-                {% csrf_token %}
-                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
-                <button type="submit" name="new_bom" class="btn-action">Start BOM</button>
-            </form>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    {% if bom_mode != 'empty' %}
+    {% if bom_mode == 'draft' or bom_mode == 'locked' or bom_mode == 'detail' %}
     <div class="panel">
         <div class="bom-lines-header">
             <div class="bom-lines-header-text">
