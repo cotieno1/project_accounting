@@ -1,16 +1,17 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ ro_reference|default:doc_title|default:"Ad-Hoc RO" }} · {{ active_task.project_id }}</title>
+    <title>{{ ro_reference|default:doc_title|default:"Ad-Hoc RO" }} · {{ active_task.project_id|clean_task_id }}</title>
     {% include "includes/lpo_document_styles.html" %}
 </head>
 <body class="{% if for_pdf %}lpo-pdf-body{% else %}pioneer-doc-print{% endif %}">
 {% if not for_pdf %}
 <div class="screen-toolbar no-print">
     <a href="{{ back_url|default:'/' }}">← Back to MRO List</a>
-    {% if mpo %}<a href="{% url 'print_mpo_pdf' mpo_id=mpo.id %}{% if request.GET.return %}?return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>{% else %}<a href="{% url 'print_fluid_ro_pdf' %}?task_id={{ active_task.project_id }}{% if request.GET.mpo_id %}&amp;mpo_id={{ request.GET.mpo_id }}{% endif %}{% if request.GET.return %}&amp;return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>{% endif %}
+    {% if mpo %}<a href="{% url 'print_mpo_pdf' mpo_id=mpo.id %}{% if request.GET.return %}?return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>{% else %}<a href="{% url 'print_fluid_ro_pdf' %}?task_id={{ active_task.project_id|clean_task_id }}{% if request.GET.mpo_id %}&amp;mpo_id={{ request.GET.mpo_id }}{% endif %}{% if request.GET.return %}&amp;return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>{% endif %}
     <button type="button" onclick="window.print()">Print</button>
 </div>
 <p class="mobile-doc-hint no-print" aria-hidden="true">For pinch-zoom on mobile, tap <strong>Open PDF</strong> · otherwise swipe sideways</p>
@@ -22,7 +23,7 @@
         <tr><th>RO Ref</th><th>Task ID</th><th>Date</th><th>Status</th></tr>
         <tr>
             <td class="lpo-no">{{ ro_reference|default:doc_title|default:"DRAFT" }}</td>
-            <td>{{ active_task.project_id }}</td>
+            <td>{{ active_task.project_id|clean_task_id }}</td>
             <td>{% now "F j, Y" %}</td>
             <td>{{ doc_status|default:"Draft" }}</td>
         </tr>
@@ -31,7 +32,7 @@
         <tr><th>To</th><th>From</th></tr>
         <tr><td><div class="party-name">General Manager</div></td><td><div class="party-name">{{ batch.supplier|default:"Mr. Omambo" }}</div><div class="muted">Logistics / Operations</div></td></tr>
     </table>
-    <div class="terms"><strong>Request</strong>Please authorize disbursement of cash for the following ad-hoc operational requirements. Receipts will be provided upon purchase. Project: {{ active_task.description }}.</div>
+    <div class="terms"><strong>Request</strong>Please authorize disbursement of cash for the following ad-hoc operational requirements. Receipts will be provided upon purchase. Project: {{ active_task.description|clean_task_description }}.</div>
     <table class="lines">
         <thead>
             <tr>
@@ -69,7 +70,7 @@
         <td style="width:10%"></td>
         <td><div class="line">General Manager</div><div class="hint">Authorized — budget lock</div></td>
     </tr></table>
-    <p class="footer-note">RO {{ ro_reference|default:doc_title|default:"DRAFT" }} — Task {{ active_task.project_id }}</p>
+    <p class="footer-note">RO {{ ro_reference|default:doc_title|default:"DRAFT" }} — Task {{ active_task.project_id|clean_task_id }}</p>
 </div></div>
 {% if not for_pdf and auto_print %}
 <script>window.addEventListener('load',function(){setTimeout(function(){window.print()},500)});</script>

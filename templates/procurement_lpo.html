@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,7 +48,7 @@
     
     <span class="nav-label">I. Selected Task Objective</span>
     <div style="background: #030712; padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 25px;">
-        <span style="color: var(--text); font-weight: 700; text-transform: uppercase; font-size: 14px;">{{ active_task.project_id }}</span>
+        <span style="color: var(--text); font-weight: 700; text-transform: uppercase; font-size: 14px;">{{ active_task.project_id|clean_task_id }}</span>
     </div>
 
     <span class="nav-label">II. Baseline Target</span>
@@ -63,7 +64,7 @@
             <h3 style="margin:0;">Step 2: Executive Sign-Off & Fund Settlement Board</h3>
         </div>
         <div style="font-size: 12px; color: var(--text-muted);">
-            TASK REF: <span style="color: var(--text); font-weight: 700; text-transform: uppercase;">{{ active_task.project_id }}</span>
+            TASK REF: <span style="color: var(--text); font-weight: 700; text-transform: uppercase;">{{ active_task.project_id|clean_task_id }}</span>
         </div>
     </div>
 
@@ -76,7 +77,7 @@
                 
                 <div class="memo-row">
                     <span style="color: var(--text-muted);">Target Project Assignment</span>
-                    <strong style="text-transform: uppercase;">{{ active_task.description|default:"Pioneer Construction Execution" }}</strong>
+                    <strong style="text-transform: uppercase;">{{ active_task.description|clean_task_description|default:"Pioneer Construction Execution" }}</strong>
                 </div>
                 <div class="memo-row">
                     <span style="color: var(--text-muted);">Awarded Lowest Bidder Supplier</span>

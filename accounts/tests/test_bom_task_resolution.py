@@ -27,6 +27,12 @@ class NormalizeTaskIdTests(TestCase):
     def test_double_quoted(self):
         self.assertEqual(_normalize_task_id('"TOMOG-001"'), "TOMOG-001")
 
+    def test_normalize_task_description_strips_brackets(self):
+        from accounts.views import _normalize_task_description
+
+        self.assertEqual(_normalize_task_description("['Building Flats ']"), "Building Flats")
+        self.assertEqual(_normalize_task_description("['build x house']"), "build x house")
+
     def test_empty_and_none(self):
         self.assertEqual(_normalize_task_id(None), "")
         self.assertEqual(_normalize_task_id(""), "")

@@ -1,5 +1,6 @@
 {% extends "layouts/cockpit.html" %}
 {% load static %}
+{% load pioneer_tags %}
 {% block title %}Pioneer | GM AIE Disbursement{% endblock %}
 {% block body_class %}gm-desk{% endblock %}
 {% block extra_css %}
@@ -106,7 +107,7 @@
                     <span class="task-badge {{ project_class.css }}">{{ project_class.label }}</span>
                 </div>
             </div>
-            <p style="color:var(--muted);margin:8px 0 0;">{{ active_task.description }}</p>
+            <p style="color:var(--muted);margin:8px 0 0;">{{ active_task.description|clean_task_description }}</p>
             <p class="aie-flow">
                 <strong>CEO AIE</strong> → Authority to Incur Expenditure →
                 <strong>GM Accounting</strong> pays under this task budget.

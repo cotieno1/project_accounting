@@ -1,16 +1,17 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ bom_no }} · {{ active_task.project_id }}</title>
+    <title>{{ bom_no }} · {{ active_task.project_id|clean_task_id }}</title>
     {% include "includes/lpo_document_styles.html" %}
 </head>
 <body class="pioneer-doc-print">
 {% if not auto_print %}
 <div class="screen-toolbar no-print">
     <a href="{{ back_url|default:'/' }}">← Back to BOM Builder</a>
-    <a href="{% url 'print_bom_pdf' %}?task_id={{ active_task.project_id }}{% if request.GET.return %}&amp;return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Print / Save as PDF</a>
+    <a href="{% url 'print_bom_pdf' %}?task_id={{ active_task.project_id|clean_task_id }}{% if request.GET.return %}&amp;return={{ request.GET.return|urlencode }}{% endif %}" class="toolbar-muted" style="display:inline-block;">Print / Save as PDF</a>
     <button type="button" onclick="window.print()">Print</button>
 </div>
 <p class="mobile-doc-hint no-print" aria-hidden="true">Use <strong>Print</strong> or <strong>Print / Save as PDF</strong> — same layout as this preview</p>
@@ -23,12 +24,12 @@
         <tr><th>BOM ref</th><th>Task ID</th><th>Date</th><th>Status</th></tr>
         <tr>
             <td class="lpo-no">{{ bom_no }}</td>
-            <td>{{ active_task.project_id }}</td>
+            <td>{{ active_task.project_id|clean_task_id }}</td>
             <td>{% if bom_date %}{{ bom_date|date:"F j, Y" }}{% else %}{% now "F j, Y" %}{% endif %}</td>
             <td>{{ bom_status|default:"Draft" }}</td>
         </tr>
         <tr><th colspan="4">Project description</th></tr>
-        <tr><td colspan="4">{{ active_task.description }}</td></tr>
+        <tr><td colspan="4">{{ active_task.description|clean_task_description }}</td></tr>
     </table>
 
     <table class="parties">
@@ -40,12 +41,12 @@
             </td>
             <td>
                 <div class="party-name">Senior Site Engineer</div>
-                <div class="muted">Site Engineering — {{ active_task.project_id }}</div>
+                <div class="muted">Site Engineering — {{ active_task.project_id|clean_task_id }}</div>
             </td>
         </tr>
     </table>
 
-    <div class="terms"><strong>Subject</strong> This Bill of Materials lists engineering quantities for task <strong>{{ active_task.project_id }}</strong> prior to requisition and procurement.</div>
+    <div class="terms"><strong>Subject</strong> This Bill of Materials lists engineering quantities for task <strong>{{ active_task.project_id|clean_task_id }}</strong> prior to requisition and procurement.</div>
 
     <table class="lines">
         <thead>
@@ -75,7 +76,7 @@
         <td style="width:10%"></td>
         <td><div class="line">General Manager</div><div class="hint">Reviewed &amp; approved</div></td>
     </tr></table>
-    <p class="footer-note">BOM {{ bom_no }} · Task {{ active_task.project_id }}</p>
+    <p class="footer-note">BOM {{ bom_no }} · Task {{ active_task.project_id|clean_task_id }}</p>
 </div></div>
 {% if auto_print %}
 <script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 500); });</script>

@@ -1,9 +1,10 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ mro.mro_number|default:"MRO" }} &middot; {{ active_task.project_id }}</title>
+    <title>{{ mro.mro_number|default:"MRO" }} &middot; {{ active_task.project_id|clean_task_id }}</title>
     {% include "includes/lpo_document_styles.html" %}
 </head>
 <body class="{% if for_pdf %}lpo-pdf-body{% else %}pioneer-doc-print{% endif %}">
@@ -39,8 +40,8 @@
             <th width="78%">Project description</th>
         </tr>
         <tr>
-            <td>{{ active_task.project_id }}</td>
-            <td>{{ active_task.description }}</td>
+            <td>{{ active_task.project_id|clean_task_id }}</td>
+            <td>{{ active_task.description|clean_task_description }}</td>
         </tr>
     </table>
     {% else %}
@@ -54,8 +55,8 @@
         </tr>
         <tr><th style="width:18%">Task ID</th><th colspan="3">Project description</th></tr>
         <tr>
-            <td>{{ active_task.project_id }}</td>
-            <td colspan="3">{{ active_task.description }}</td>
+            <td>{{ active_task.project_id|clean_task_id }}</td>
+            <td colspan="3">{{ active_task.description|clean_task_description }}</td>
         </tr>
     </table>
     {% endif %}
@@ -90,10 +91,10 @@
     {% if for_pdf %}
     <table class="terms" width="100%" cellspacing="0" cellpadding="6" border="1">
         <tr><th width="100%" align="left">Authority</th></tr>
-        <tr><td>This MRO establishes the ad-hoc budget baseline for task <strong>{{ active_task.project_id }}</strong>. One MRO per task - no duplicate baselines. Officer payment vouchers and partial purchases are raised against this locked RO at GM Disbursement.</td></tr>
+        <tr><td>This MRO establishes the ad-hoc budget baseline for task <strong>{{ active_task.project_id|clean_task_id }}</strong>. One MRO per task - no duplicate baselines. Officer payment vouchers and partial purchases are raised against this locked RO at GM Disbursement.</td></tr>
     </table>
     {% else %}
-    <div class="terms"><strong>Authority</strong>This MRO establishes the ad-hoc budget baseline for task <strong>{{ active_task.project_id }}</strong>. One MRO per task - no duplicate baselines. Officer payment vouchers and partial purchases are raised against this locked RO at GM Disbursement.</div>
+    <div class="terms"><strong>Authority</strong>This MRO establishes the ad-hoc budget baseline for task <strong>{{ active_task.project_id|clean_task_id }}</strong>. One MRO per task - no duplicate baselines. Officer payment vouchers and partial purchases are raised against this locked RO at GM Disbursement.</div>
     {% endif %}
     <table class="lines" width="100%"{% if for_pdf %} cellspacing="0" cellpadding="4" border="1"{% endif %}>
         {% if not for_pdf %}
@@ -163,7 +164,7 @@
             </td>
         </tr>
     </table>
-    <p class="footer-note">MRO {{ mro.mro_number|default:"" }} &middot; Task {{ active_task.project_id }}{% if mpo and mpo.mpo_number %} &middot; RO {{ mpo.mpo_number }}{% endif %}</p>
+    <p class="footer-note">MRO {{ mro.mro_number|default:"" }} &middot; Task {{ active_task.project_id|clean_task_id }}{% if mpo and mpo.mpo_number %} &middot; RO {{ mpo.mpo_number }}{% endif %}</p>
 </div></div>
 {% if not for_pdf and auto_print %}
 <script>window.addEventListener('load',function(){setTimeout(function(){window.print()},500)});</script>

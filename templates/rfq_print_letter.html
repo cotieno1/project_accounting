@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,7 +47,7 @@
 {% if not for_pdf %}
 <div class="screen-toolbar no-print">
     <a href="{{ return_url }}">&larr; Back to RFQ Manager</a>
-    <a href="{% url 'print_rfq_letter_pdf' %}?task_id={{ task.project_id }}&supplier_ids={{ request.GET.supplier_ids|urlencode }}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>
+    <a href="{% url 'print_rfq_letter_pdf' %}?task_id={{ task.project_id|clean_task_id }}&supplier_ids={{ request.GET.supplier_ids|urlencode }}" class="toolbar-muted" style="display:inline-block;">Open PDF</a>
     <button type="button" onclick="window.print()">Print RFQ package</button>
 </div>
 <p class="mobile-doc-hint no-print" aria-hidden="true">
@@ -54,7 +55,7 @@
 </p>
 {% if supplier_packets %}
 <div class="rfq-preview-banner no-print" style="margin: 12px 16px 0;">
-    <strong>{{ supplier_count }} RFQ letter{{ supplier_count|pluralize }}</strong> for task <strong>{{ task.project_id }}</strong>
+    <strong>{{ supplier_count }} RFQ letter{{ supplier_count|pluralize }}</strong> for task <strong>{{ task.project_id|clean_task_id }}</strong>
     {% for packet in supplier_packets %}
     <span class="rfq-supplier-pill">{{ packet.supplier.description }}</span>
     {% endfor %}
@@ -78,13 +79,13 @@
             <div style="text-align: right;">
                 <strong>RFQ REF:</strong> {{ packet.ro_no }}<br>
                 <strong>DATE:</strong> {{ today|date:"d M Y" }}<br>
-                <strong>TASK ID:</strong> {{ task.project_id }}
+                <strong>TASK ID:</strong> {{ task.project_id|clean_task_id }}
             </div>
         </div>
 
         <div class="content-body">
             <p>Dear Sir/Madam,</p>
-            <p>We kindly invite your reputable company to provide a formal quotation for the supply of materials/services as detailed in the table below. This request is part of our project procurement for <strong>Task: {{ task.description }}</strong>.</p>
+            <p>We kindly invite your reputable company to provide a formal quotation for the supply of materials/services as detailed in the table below. This request is part of our project procurement for <strong>Task: {{ task.description|clean_task_description }}</strong>.</p>
             
             <table class="lines">
                 <thead>
@@ -120,7 +121,7 @@
             <td style="width:10%"></td>
             <td><div class="line">Official stamp</div><div class="hint">Procurement dispatch</div></td>
         </tr></table>
-        <p class="footer-note">RFQ — {{ packet.ro_no }} — {{ task.project_id }}</p>
+        <p class="footer-note">RFQ — {{ packet.ro_no }} — {{ task.project_id|clean_task_id }}</p>
     </div></div>
     {% empty %}
     <div style="padding: 48px 24px; text-align: center; color: #94a3b8;">

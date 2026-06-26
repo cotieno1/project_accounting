@@ -1,5 +1,6 @@
 {% extends "layouts/cockpit.html" %}
 {% load static %}
+{% load pioneer_tags %}
 {% block title %}Pioneer | Misc Budget vs Actuals{% endblock %}
 {% block body_class %}misc-audit{% endblock %}
 {% block extra_css %}
@@ -11,7 +12,7 @@
 <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
     <option value="">-- Select project task --</option>
     {% for t in tasks %}
-    <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|truncatechars:28 }}</option>
+    <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|clean_task_description|truncatechars:28 }}</option>
     {% endfor %}
 </select>
 
@@ -47,7 +48,7 @@
     <div class="page-header">
         <div class="page-header-text">
             <span class="task-id">TASK REF: {{ active_task.project_id }}</span>
-            <h1 title="{{ active_task.description }}">{{ active_task.description }}</h1>
+            <h1 title="{{ active_task.description|clean_task_description }}">{{ active_task.description|clean_task_description }}</h1>
         </div>
         <button type="button" class="btn-action page-header-action" onclick="window.print()">🖨️ Print Report</button>
     </div>

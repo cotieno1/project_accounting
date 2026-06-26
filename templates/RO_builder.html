@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,8 +58,8 @@
         <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'}">
             <option value="">-- Select project task --</option>
             {% for t in tasks %}
-                <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-                    {{ t.project_id }}: {{ t.description }}
+                <option value="{{ t.project_id|clean_task_id }}" {% if active_task and t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>
+                    {{ t.project_id|clean_task_id }}: {{ t.description|clean_task_description }}
                 </option>
             {% endfor %}
         </select>
@@ -91,7 +92,7 @@
     {% endif %}
     
     <div style="margin-top: auto;">
-        <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id }}{% else %}/dashboard/{% endif %}" style="color: var(--text-muted); text-decoration: none; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+        <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id|clean_task_id }}{% else %}/dashboard/{% endif %}" style="color: var(--text-muted); text-decoration: none; font-size: 12px; display: flex; align-items: center; gap: 8px;">
             ← Return to Dashboard
         </a>
     </div>
@@ -104,7 +105,7 @@
                 <h2 style="margin:0; font-size: 24px;">{% if ro %}Requisition Order #{{ ro.ro_no }}{% else %}Requisition Order{% endif %}</h2>
                 <p style="margin: 8px 0 0 0; color: var(--text-muted); font-size: 14px;">
                     {% if active_task %}
-                    Linked Task: <span style="color: var(--light);">{{ active_task.description }}</span>
+                    Linked Task: <span style="color: var(--light);">{{ active_task.description|clean_task_description }}</span>
                     {% elif setup_message %}
                     {{ setup_message }}
                     {% endif %}

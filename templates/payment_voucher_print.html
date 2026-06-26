@@ -1,8 +1,9 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>{{ voucher.pay_order_no }} — Task {{ task.project_id }}</title>
+<title>{{ voucher.pay_order_no }} — Task {{ task.project_id|clean_task_id }}</title>
 {% include "includes/lpo_document_styles.html" %}
 <style>
     @page { size: A4 portrait; margin: 7mm; }
@@ -71,7 +72,7 @@
 <tr><th>To — Supplier</th><th>Re — Project / GRN</th></tr>
 <tr>
 <td><div class="party-name">{% if supplier %}{{ supplier.description }}{% else %}Supplier{% endif %}</div><div class="muted">Invoice: {{ grn.invoice_ref|default:"—" }}</div></td>
-<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|truncatechars:90 }}</div><div class="muted">GRN {{ grn.grn_no }} · LPO {{ lpo.lpo_no }}</div></td>
+<td><div class="party-name">Task {{ task.project_id|clean_task_id }}</div><div class="muted">{{ task.description|clean_task_description|truncatechars:90 }}</div><div class="muted">GRN {{ grn.grn_no }} · LPO {{ lpo.lpo_no }}</div></td>
 </tr>
 </table>
 <table class="meta-table">
@@ -82,17 +83,17 @@
 <strong>Memorandum</strong>
 <div class="memo-body">
 <p>Dear Sir/Madam,</p>
-<p>We confirm receipt of goods per GRN <strong>{{ grn.grn_no }}</strong> against LPO <strong>{{ lpo.lpo_no }}</strong> and supplier invoice <strong>{{ grn.invoice_ref }}</strong> for Task <strong>{{ task.project_id }}</strong> — {{ task.description|truncatechars:100 }}.</p>
+<p>We confirm receipt of goods per GRN <strong>{{ grn.grn_no }}</strong> against LPO <strong>{{ lpo.lpo_no }}</strong> and supplier invoice <strong>{{ grn.invoice_ref }}</strong> for Task <strong>{{ task.project_id|clean_task_id }}</strong> — {{ task.description|clean_task_description|truncatechars:100 }}.</p>
 <p>General Manager Accounting authorizes settlement of <strong>US$ {{ amount|floatformat:2 }}</strong> (gross plus taxes per invoice) via the attached payment input voucher <strong>{{ voucher.pay_order_no }}</strong>.</p>
 </div>
 </div>
-<p class="gm-attestation"><strong>GM confirmation:</strong> I confirm that goods were received per GRN <strong>{{ grn.grn_no }}</strong> and authorize payment of US$ <strong>{{ amount|floatformat:2 }}</strong> against invoice <strong>{{ grn.invoice_ref }}</strong> for Task <strong>{{ task.project_id }}</strong>.</p>
+<p class="gm-attestation"><strong>GM confirmation:</strong> I confirm that goods were received per GRN <strong>{{ grn.grn_no }}</strong> and authorize payment of US$ <strong>{{ amount|floatformat:2 }}</strong> against invoice <strong>{{ grn.invoice_ref }}</strong> for Task <strong>{{ task.project_id|clean_task_id }}</strong>.</p>
 <table class="signatures"><tr>
 <td><div class="line">________________________</div><div class="hint">General Manager — Authorized payment</div></td>
 <td style="width:8%"></td>
 <td><div class="line">{{ voucher.created_at|date:"d M Y" }}</div><div class="hint">Date</div></td>
 </tr></table>
-<p class="footer-note">Memo · {{ voucher.pay_order_no }} · Task {{ task.project_id }}</p>
+<p class="footer-note">Memo · {{ voucher.pay_order_no }} · Task {{ task.project_id|clean_task_id }}</p>
 </div></div>
 </div>
 
@@ -109,7 +110,7 @@
 <tr><th>Payee — Supplier</th><th>Project / References</th></tr>
 <tr>
 <td><div class="party-name">{% if supplier %}{{ supplier.description }}{% endif %}</div><div class="muted">Method: {{ voucher.get_payment_method_display }}</div><div class="muted">Bank: {{ voucher.source_bank.description }} ({{ voucher.source_bank.account_number }})</div>{% if voucher.payment_method == "BANK" %}<div class="muted">Transfer ref: {{ voucher.transfer_reference }}</div>{% elif voucher.payment_method == "CHQ" %}<div class="muted">Cheque: {{ voucher.cheque_number }}</div>{% endif %}</td>
-<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|truncatechars:90 }}</div><div class="muted">GRN: {{ grn.grn_no }} · LPO: {{ lpo.lpo_no }}</div><div class="muted">Invoice: {{ grn.invoice_ref }}</div></td>
+<td><div class="party-name">Task {{ task.project_id|clean_task_id }}</div><div class="muted">{{ task.description|clean_task_description|truncatechars:90 }}</div><div class="muted">GRN: {{ grn.grn_no }} · LPO: {{ lpo.lpo_no }}</div><div class="muted">Invoice: {{ grn.invoice_ref }}</div></td>
 </tr>
 </table>
 <table class="lines">
@@ -123,7 +124,7 @@
 <td style="width:8%"></td>
 <td><div class="line">________________________</div><div class="hint">Authorised by — General Manager</div></td>
 </tr></table>
-<p class="footer-note">{{ voucher.pay_order_no }} · Task {{ task.project_id }} · {{ voucher.created_at|date:"Y-m-d" }}</p>
+<p class="footer-note">{{ voucher.pay_order_no }} · Task {{ task.project_id|clean_task_id }} · {{ voucher.created_at|date:"Y-m-d" }}</p>
 </div></div>
 </div>
 {% if auto_print %}

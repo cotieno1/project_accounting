@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -260,8 +261,8 @@
     <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};" style="width: 100%; padding: 8px; border-radius: 4px;">
         <option value="">-- Select project task --</option>
 		{% for t in tasks %}
-			<option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-				{{ t.project_id }}{% if t.description %} — {{ t.description|truncatechars:40 }}{% endif %}
+			<option value="{{ t.project_id|clean_task_id }}" {% if active_task and t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>
+				{{ t.project_id|clean_task_id }}{% if t.description %} — {{ t.description|clean_task_description|truncatechars:40 }}{% endif %}
 			</option>
 		{% empty %}
 			<option disabled>No project tasks — add one in Dashboard setup</option>
@@ -287,7 +288,7 @@
 
     <div class="sidebar-footer">
         {% if active_task %}
-        <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="sidebar-back-link">← Back to Dashboard</a>
+        <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id|clean_task_id }}" class="sidebar-back-link">← Back to Dashboard</a>
         {% else %}
         <a href="{% url 'ops_dashboard' %}" class="sidebar-back-link">← Back to Dashboard</a>
         {% endif %}
@@ -301,7 +302,7 @@
         </div>
         {% if active_task %}
         <div class="task-ref" style="font-size: 12px; color: var(--text-muted);">
-            TASK REFERENCE: <span style="color: var(--light); font-weight: 700;">{{ active_task.description }}</span>
+            TASK REFERENCE: <span style="color: var(--light); font-weight: 700;">{{ active_task.description|clean_task_description }}</span>
         </div>
         {% endif %}
     </div>
@@ -432,7 +433,7 @@
         }
 
         // 1. Verify active operational Project Task context index is parsed safely
-        const targetActiveTaskId = "{{ active_task.project_id }}";
+        const targetActiveTaskId = "{{ active_task.project_id|clean_task_id }}";
         if (!targetActiveTaskId || targetActiveTaskId === "None") {
             alert("Operational Exception: Please load an active project task workspace first.");
             return;

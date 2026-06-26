@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,7 +27,7 @@
             <select name="task_id" id="task_id" required>
                 <option value="">-- Select project task --</option>
                 {% for t in tasks %}
-                <option value="{{ t.project_id }}">{{ t.project_id }}: {{ t.description }}</option>
+                <option value="{{ t.project_id|clean_task_id }}">{{ t.project_id|clean_task_id }}: {{ t.description|clean_task_description }}</option>
                 {% endfor %}
             </select>
             <button type="submit" id="continueBtn" disabled>Continue</button>

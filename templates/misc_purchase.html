@@ -7,7 +7,7 @@
 {% block sidebar %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
         <small style="color: var(--muted); display: block; margin: 16px 0;">Somalia Ops Command</small>
-        {% include "includes/misc_task_picker.html" with picker_id="sidebar" picker_wrap_class="misc-sidebar-task-picker" show_label=False tasks=tasks active_task=active_task active_pick_id=active_pick_id only %}
+        {% include "includes/misc_task_picker.html" with picker_id="sidebar" picker_wrap_class="misc-sidebar-task-picker" show_label=False tasks=tasks active_task=active_task only %}
         
         <div class="sidebar-block">
             <button type="button" class="btn-action" id="roListToggle" onclick="toggleRoList()" style="width:100%;background:#1e293b;">
@@ -18,7 +18,7 @@
                     {% for ro in adhoc_ro_listing %}
                     {% if ro.id %}
                     <li class="ro-list-item {{ ro.status_class }}{% if ro.is_active %} ro-list-active{% endif %}"
-                        onclick="window.location.href='?task_id={{ active_pick_id }}&mpo_id={{ ro.id }}&ro_list=1'">
+                        onclick="window.location.href='?task_id={{ active_task.project_id }}&mpo_id={{ ro.id }}&ro_list=1'">
                         <span class="ro-list-ref">
                             <span style="display:block;font-size:10px;color:var(--muted);">Misc RO {{ ro.ro_number }}</span>
                             {% if ro.mro_number and ro.mro_number != "—" %}<span style="display:block;font-size:10px;color:var(--success);margin-top:2px;">MRO {{ ro.mro_number }}</span>{% endif %}
@@ -48,7 +48,7 @@
                     {% endif %}
                     {% empty %}
                     <li class="ro-list-empty">No Misc ROs for this task yet.</li>
-                    {% endfor %}
+            {% endfor %}
                 </ul>
             </div>
         </div>
@@ -85,7 +85,7 @@
             <strong style="color:var(--primary);display:block;margin-bottom:6px;">Payment vouchers</strong>
             {{ pv_gate.message }}
             {% if pv_gate.can_raise_pv %}
-            <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}&open_adhoc_ro_period=1" class="btn-action btn-success" style="width:100%;margin-top:10px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">GM Disbursement desk →</a>
+            <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}&open_adhoc_ro_period=1" class="btn-action btn-success" style="width:100%;margin-top:10px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">GM Disbursement desk →</a>
             {% endif %}
         </div>
         {% endif %}
@@ -96,13 +96,13 @@
         {% elif adhoc_material_committed and provisional_budget_ref %}
         <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.4;">{{ provisional_budget_ref }} confirmed — awaiting CEO approval and fund release for payment vouchers.</p>
         {% endif %}
-        <button type="button" class="btn-action" onclick="window.location.href='{% url 'misc_budget_actuals' %}?task_id={{ active_pick_id }}'" style="width:100%;margin-top:10px;background:#047857;">Purchase Audit</button>
+        <button type="button" class="btn-action" onclick="window.location.href='{% url 'misc_budget_actuals' %}?task_id={{ active_task.project_id }}'" style="width:100%;margin-top:10px;background:#047857;">Purchase Audit</button>
         <div style="margin-top: auto; padding-top: 20px;">
-            <a href="/ops-dashboard/?task_id={{ active_pick_id }}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Dashboard</a>
+            <a href="/ops-dashboard/?task_id={{ active_task.project_id }}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Dashboard</a>
         </div>
 {% endblock %}
 {% block workspace %}
-        {% include "includes/misc_task_picker.html" with picker_id="workspace" picker_wrap_class=no_task_selected|yesno:"misc-workspace-task-bar panel is-always-visible,misc-workspace-task-bar panel" show_label=True label="Switch MRO task" tasks=tasks active_task=active_task active_pick_id=active_pick_id only %}
+        {% include "includes/misc_task_picker.html" with picker_id="workspace" picker_wrap_class=no_task_selected|yesno:"misc-workspace-task-bar panel is-always-visible,misc-workspace-task-bar panel" show_label=True label="Switch MRO task" tasks=tasks active_task=active_task only %}
         {% if no_task_selected %}
         <div class="panel mro-stage-b-panel misc-task-prompt-panel">
             <p style="margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.55;">Choose an <strong>MRO</strong> task above, or return to the main menu.</p>
@@ -111,7 +111,7 @@
         {% else %}
         <form method="POST" action="{% url 'authorize_mpo' %}" id="miscAdhocCommitForm" style="display:none;">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
             <input type="hidden" name="mpo_id" id="commit_mpo_id" value="{% if viewed_mpo %}{{ viewed_mpo.id }}{% elif draft_mpo %}{{ draft_mpo.id }}{% endif %}">
             <input type="hidden" name="budget-material_total_cost" id="commit_budget-material_total_cost">
             <input type="hidden" name="budget-labour_burden" id="commit_budget-labour_burden">
@@ -125,14 +125,14 @@
             <div class="task-vendor-row">
                 <div class="task-vendor-left misc-page-header-text">
                     <h1 class="page-title">Ad-Hoc Requisition Order (Misc RO)</h1>
-                    <h2 class="task-id-title">Task {{ active_pick_id }}</h2>
-                    <p class="task-description-title">{{ active_task.description }}</p>
+                    <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
+                    <p class="task-description-title">{{ active_task.description|clean_task_description }}</p>
                 </div>
                 <div class="task-vendor-right">
                     {% if ro_mode == 'empty' and not task_has_baseline %}
                     <form method="POST" style="margin:0;">
                         {% csrf_token %}
-                        <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                         <button type="submit" name="new_ro" class="btn-action btn-success">Start Misc Purchase (Misc RO)</button>
                     </form>
                     {% endif %}
@@ -185,11 +185,11 @@
                             {% if ro_mode == 'empty' %}
                             <form method="POST" style="margin:0;">
                                 {% csrf_token %}
-                                <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                                 <button type="submit" name="new_ro" class="btn-action btn-success">Start Misc Purchase (Misc RO)</button>
                             </form>
                             {% endif %}
-                            <a href="{% url 'ops_dashboard' %}?task_id={{ active_pick_id }}" class="btn-action btn-secondary" id="mroStageBBack">← Back to main menu (Esc)</a>
+                            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary" id="mroStageBBack">← Back to main menu (Esc)</a>
                         </div>
                         <p class="mro-stage-b-hint"><kbd>Esc</kbd> returns to the main menu · Budget figures stay at zero until you add Misc RO lines</p>
                     </div>
@@ -199,8 +199,8 @@
                         <p class="mro-stage-b-lead">One <strong>Misc RO</strong> and one <strong>MRO</strong> baseline per task. This task already has a confirmed baseline{% if baseline_mro_ref %} (MRO {{ baseline_mro_ref }}){% endif %}.</p>
                         <div class="mro-stage-b-actions">
                             <button type="button" class="btn-action btn-success" disabled style="opacity:0.45;cursor:not-allowed;">Start Misc Purchase (Misc RO)</button>
-                            <a href="{% url 'misc_budget_actuals' %}?task_id={{ active_pick_id }}" class="btn-action">View MRO registry →</a>
-                            <a href="{% url 'ops_dashboard' %}?task_id={{ active_pick_id }}" class="btn-action btn-secondary">← Back to main menu (Esc)</a>
+                            <a href="{% url 'misc_budget_actuals' %}?task_id={{ active_task.project_id }}" class="btn-action">View MRO registry →</a>
+                            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="btn-action btn-secondary">← Back to main menu (Esc)</a>
                         </div>
                     </div>
                     {% endif %}
@@ -219,7 +219,7 @@
 
                     <form method="POST" id="addItemForm">
                         {% csrf_token %}
-                        <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
 
                         <div class="table-scroll">
                         <table class="ro-lines-table">
@@ -282,7 +282,7 @@
                         {% if ro_locked and not ro_submitted %}
                         <form method="POST" id="submitRoForm" style="margin-top:14px;">
                             {% csrf_token %}
-                            <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                            <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                             <button type="submit" name="submit_ro" class="btn-action btn-success">Submit Misc RO</button>
                             <span style="font-size:11px;color:var(--muted);margin-left:10px;">Moves this Misc RO to Misc RO List only.</span>
                         </form>
@@ -291,13 +291,13 @@
                     </form>
                     <form method="POST" id="lockRoForm" style="display:none;">
                 {% csrf_token %}
-                        <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
             </form>
                     {% endif %}
                     {% for item in batch.items %}
                     <form method="POST" id="deleteItemForm{{ item.id|default:forloop.counter0 }}" style="display:none;">
                         {% csrf_token %}
-                        <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                        <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                         {% if item.id %}<input type="hidden" name="item_id" value="{{ item.id }}">{% else %}<input type="hidden" name="index" value="{{ forloop.counter0 }}">{% endif %}
                     </form>
                     {% endfor %}
@@ -352,7 +352,7 @@
                             {% endif %}
                             <form method="POST" id="selectSupplierForm" style="padding:10px;border-top:1px solid var(--border);">
                                 {% csrf_token %}
-                                <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                                 <input type="hidden" name="supplier_id" id="pick_supplier_id" value="{{ batch.supplier_id }}">
                                 <button type="submit" name="select_supplier" class="btn-action btn-success" style="width:100%;">Confirm vault selection</button>
                             </form>
@@ -375,7 +375,7 @@
                                 <span class="nav-label">Ad-hoc vendor</span>
                                 <form method="POST">
                                     {% csrf_token %}
-                                    <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                                    <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                                     <input type="text" name="adhoc_name" id="adhoc_name" class="form-input" placeholder="Supplier name" value="{% if batch.is_ad_hoc %}{{ batch.supplier }}{% endif %}" style="margin-bottom:6px;">
                                     <div class="grid-2">
                                         <input type="text" name="adhoc_phone" class="form-input" placeholder="Phone" value="{{ batch.supplier_phone }}">
@@ -464,7 +464,7 @@
                 <li class="{% if pv_gate.can_raise_pv %}is-done{% else %}is-pending{% endif %}">④ GM raises officer payment vouchers at Disbursement desk</li>
             </ul>
             {% if pv_gate.can_raise_pv %}
-            <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}&open_adhoc_ro_period=1" class="btn-action btn-success" style="width:100%;margin-top:14px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">Open GM Disbursement desk →</a>
+            <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}&open_adhoc_ro_period=1" class="btn-action btn-success" style="width:100%;margin-top:14px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">Open GM Disbursement desk →</a>
             {% endif %}
         </div>
         {% endif %}
@@ -483,7 +483,7 @@
             <div style="background:#070b14;padding:20px;border-radius:8px;border:1px solid var(--border);margin-bottom:20px;font-family:monospace;font-size:13px;">
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
                     <span style="color:var(--muted);">Task Target ID:</span>
-                    <span style="font-weight:bold;">{{ active_pick_id }}</span>
+                    <span style="font-weight:bold;">{{ active_task.project_id }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
                     <span style="color:var(--muted);">Misc RO Number:</span>
@@ -529,7 +529,7 @@
     <div id="budgetModal" class="cockpit-modal" style="display:none;">
         <div class="cockpit-modal-panel" style="width:560px;">
             <h3 style="margin:0 0 8px;color:var(--primary);font-size:14px;text-transform:uppercase;">Ad-Hoc Budget vs Actual</h3>
-            <p style="margin:0 0 16px;font-size:12px;color:var(--muted);">Task {{ active_pick_id }}</p>
+            <p style="margin:0 0 16px;font-size:12px;color:var(--muted);">Task {{ active_task.project_id }}</p>
             <div style="background:#070b14;padding:20px;border-radius:8px;border:1px solid var(--border);font-size:13px;">
                 <div class="budget-row" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
                     <span style="color:var(--muted);">Material (budget line)</span>
@@ -561,7 +561,7 @@
             <p class="register-modal-lead">Saves to SupplierAccount and selects for this Misc RO.</p>
             <form method="POST" id="registerSupplierForm">
                 {% csrf_token %}
-                <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                 <div class="register-field">
                     <label class="nav-label">Supplier ID (optional)</label>
                     <input type="text" name="new_supplier_id" class="form-input" placeholder="Auto if blank">
@@ -605,7 +605,7 @@
     <script>
         const CURRENCY_SYMBOL = "{{ currency_symbol|escapejs }}";
         const csrfToken = '{{ csrf_token }}';
-        const taskId = '{{ active_pick_id }}';
+        const taskId = '{{ active_task.project_id }}';
         const roMode = '{{ ro_mode }}';
         const roLocked = {{ ro_locked|yesno:"true,false" }};
         const roSubmitted = {{ ro_submitted|yesno:"true,false" }};
@@ -935,7 +935,7 @@
                 if (e.target.id === 'budgetModal') closeBudgetModal();
             });
 
-            const mainMenuUrl = '{% url "ops_dashboard" %}{% if active_task %}?task_id={{ active_pick_id }}{% endif %}';
+            const mainMenuUrl = '{% url "ops_dashboard" %}{% if active_task %}?task_id={{ active_task.project_id }}{% endif %}';
             const escToMainMenu = {{ officer_journey_visible|default:mro_workspace_empty|yesno:"true,false" }} || {{ no_task_selected|default:False|yesno:"true,false" }};
             document.addEventListener('keydown', (e) => {
                 if (e.key !== 'Escape') return;

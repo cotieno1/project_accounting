@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +22,7 @@
 <tr><th>Payee — Officer</th><th>Project / RO</th></tr>
 <tr>
 <td><div class="party-name">{{ voucher.officer_name }}</div><div class="muted">{{ voucher.get_payment_method_display }}{% if voucher.payment_method == "MPESA" %} · {{ voucher.mpesa_reference }}{% endif %}</div></td>
-<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description }}</div><div class="muted">RO: {{ mpo.mpo_number }}</div></td>
+<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|clean_task_description }}</div><div class="muted">RO: {{ mpo.mpo_number }}</div></td>
 </tr>
 </table>
 <table class="meta-table"><tr><th>Payment amount ({{ currency_symbol }})</th></tr><tr><td class="lpo-no" style="font-family:monospace;font-size:12pt;">{{ voucher.amount|floatformat:2 }}</td></tr></table>

@@ -1,5 +1,6 @@
 {% extends "layouts/cockpit.html" %}
 {% load static %}
+{% load pioneer_tags %}
 {% block title %}Pioneer | CEO Budget Authorization{% endblock %}
 {% block body_class %}budget-approval{% endblock %}
 {% block extra_css %}
@@ -16,7 +17,7 @@
 <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
     <option value="">-- Select project task --</option>
     {% for t in tasks %}
-    <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|truncatechars:28 }}</option>
+    <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|clean_task_description|truncatechars:28 }}</option>
     {% endfor %}
 </select>
 
@@ -73,11 +74,11 @@
         <div class="fund-voucher-grid">
             <div><span style="color:var(--muted);">Disbursement PV No. (PV-DSB)</span><br><strong style="color:#a5b4fc;font-family:monospace;">{{ fund_release.release_number }}</strong></div>
             <div><span style="color:var(--muted);">Task ID</span><br><strong>{{ active_task.project_id }}</strong></div>
-            <div><span style="color:var(--muted);">Project description</span><br><strong>{{ active_task.description }}</strong></div>
+            <div><span style="color:var(--muted);">Project description</span><br><strong>{{ active_task.description|clean_task_description }}</strong></div>
         </div>
     </div>
     {% else %}
-    <p style="color:var(--muted);margin:8px 0 0;">{{ active_task.description }}</p>
+    <p style="color:var(--muted);margin:8px 0 0;">{{ active_task.description|clean_task_description }}</p>
     {% endif %}
     <p class="aie-flow">
         <strong>CEO (AIE holder)</strong> approves the provision budget and locks line figures →
@@ -123,7 +124,7 @@
         <tbody>
             <tr><td style="color:var(--muted);font-family:inherit;">Disbursement PV No. (PV-DSB)</td><td style="font-family:monospace;font-weight:700;color:#a5b4fc;">{{ fund_release.release_number }}</td></tr>
             <tr><td style="color:var(--muted);font-family:inherit;">Task ID</td><td>{{ active_task.project_id }}</td></tr>
-            <tr><td style="color:var(--muted);font-family:inherit;">Project description</td><td style="font-family:inherit;">{{ active_task.description }}</td></tr>
+            <tr><td style="color:var(--muted);font-family:inherit;">Project description</td><td style="font-family:inherit;">{{ active_task.description|clean_task_description }}</td></tr>
             <tr><td style="color:var(--muted);font-family:inherit;">From</td><td style="font-family:inherit;">{{ fund_release.from_office }}</td></tr>
             <tr><td style="color:var(--muted);font-family:inherit;">To</td><td style="font-family:inherit;">{{ fund_release.to_officer }}</td></tr>
             <tr><td style="color:var(--muted);font-family:inherit;">Amount</td><td style="color:var(--success);">US$ {{ fund_release.amount|floatformat:2 }}</td></tr>

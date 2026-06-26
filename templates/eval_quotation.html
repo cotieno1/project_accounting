@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,19 +52,19 @@
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h2 style="margin:0;">Ops Evaluation Terminal | <span style="color: var(--primary);">Bid Evaluation & Financial Budget Baseline</span></h2>
-            <small style="color: var(--text-muted);">PROJECT TASK : <span style="color: var(--text);">{{ active_task.description }}</span></small>
+            <small style="color: var(--text-muted);">PROJECT TASK : <span style="color: var(--text);">{{ active_task.description|clean_task_description }}</span></small>
         </div>
         <div style="text-align: right; display: flex; gap: 25px; align-items: center;">
             <div>
                 <span class="budget-label" style="margin:0;">Task ID</span>
-                <strong style="color: var(--warning);">{{ active_task.project_id }}</strong>
+                <strong style="color: var(--warning);">{{ active_task.project_id|clean_task_id }}</strong>
             </div>
-            <a href="/rfq-manager/?task_id={{ active_task.project_id }}" style="color: var(--text-muted); text-decoration: none; font-size: 11px; font-weight: 700; border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; background: #070b14; transition: 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">← ESCAPE TO TERMINAL</a>
+            <a href="/rfq-manager/?task_id={{ active_task.project_id|clean_task_id }}" style="color: var(--text-muted); text-decoration: none; font-size: 11px; font-weight: 700; border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; background: #070b14; transition: 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">← ESCAPE TO TERMINAL</a>
         </div>
     </div>
 </div>
 
-<form method="POST" action="?task_id={{ active_task.project_id }}&phase=evaluate" class="container">
+<form method="POST" action="?task_id={{ active_task.project_id|clean_task_id }}&phase=evaluate" class="container">
     {% csrf_token %}
     
     <div class="workspace">

@@ -1,8 +1,9 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>{{ pv_no }} — Task {{ task.project_id }}</title>
+<title>{{ pv_no }} — Task {{ task.project_id|clean_task_id }}</title>
 {% include "includes/lpo_document_styles.html" %}
 <style>
     @page { size: A4 portrait; margin: 7mm; }
@@ -71,7 +72,7 @@
 <tr><th>To</th><th>From / Project</th></tr>
 <tr>
 <td><div class="party-name">{{ release.to_officer }}</div></td>
-<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|truncatechars:80 }}</div></td>
+<td><div class="party-name">Task {{ task.project_id|clean_task_id }}</div><div class="muted">{{ task.description|clean_task_description|truncatechars:80 }}</div></td>
 </tr>
 </table>
 <table class="meta-table">
@@ -82,16 +83,16 @@
 <strong>Memorandum</strong>
 <div class="memo-body">
 <p>Dear General Manager,</p>
-<p>The CEO (AIE) authorizes transfer of <strong>US$ {{ release.amount|floatformat:2 }}</strong> to your office for Task <strong>{{ task.project_id }}</strong> — {{ task.description|truncatechars:100 }}. Disburse only against the attached CEO-approved budget (voucher <strong>{{ pv_no }}</strong>). Bank ref: <strong>{{ release.bank_reference }}</strong>.</p>
+<p>The CEO (AIE) authorizes transfer of <strong>US$ {{ release.amount|floatformat:2 }}</strong> to your office for Task <strong>{{ task.project_id|clean_task_id }}</strong> — {{ task.description|clean_task_description|truncatechars:100 }}. Disburse only against the attached CEO-approved budget (voucher <strong>{{ pv_no }}</strong>). Bank ref: <strong>{{ release.bank_reference }}</strong>.</p>
 </div>
 </div>
-<p class="ceo-attestation"><strong>CEO confirmation:</strong> I confirm that I have authorised the budget herein and disbursed funding for project Task <strong>{{ task.project_id }}</strong> — {{ task.description|truncatechars:120 }}.</p>
+<p class="ceo-attestation"><strong>CEO confirmation:</strong> I confirm that I have authorised the budget herein and disbursed funding for project Task <strong>{{ task.project_id|clean_task_id }}</strong> — {{ task.description|clean_task_description|truncatechars:120 }}.</p>
 <table class="signatures"><tr>
 <td><div class="line">{{ ceo_name|default:"Chief Executive Officer" }}</div><div class="hint">CEO — AIE Holder · Authorised &amp; disbursed</div></td>
 <td style="width:8%"></td>
 <td><div class="line">{{ release.released_at|date:"d M Y" }}</div><div class="hint">Date</div></td>
 </tr></table>
-<p class="footer-note">Memo {{ pv_no }} · Task {{ task.project_id }}</p>
+<p class="footer-note">Memo {{ pv_no }} · Task {{ task.project_id|clean_task_id }}</p>
 </div></div>
 </div>
 
@@ -108,7 +109,7 @@
 <tr><th>Payee</th><th>Project</th></tr>
 <tr>
 <td><div class="party-name">{{ release.to_officer }}</div><div class="muted">{{ release.from_office }}</div><div class="muted">Bank: {{ release.bank_reference }}</div></td>
-<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|truncatechars:90 }}</div><div class="muted">{{ budget_label }} v{{ budget_version }}</div></td>
+<td><div class="party-name">Task {{ task.project_id|clean_task_id }}</div><div class="muted">{{ task.description|clean_task_description|truncatechars:90 }}</div><div class="muted">{{ budget_label }} v{{ budget_version }}</div></td>
 </tr>
 </table>
 <table class="lines">
@@ -123,14 +124,14 @@
 <tr><td class="grand-label">This transfer</td><td class="grand-value">{{ release.amount|floatformat:2 }}</td></tr>
 </tfoot>
 </table>
-<p class="ceo-attestation"><strong>CEO confirmation:</strong> I confirm that I have authorised the budget herein and disbursed funding for project Task <strong>{{ task.project_id }}</strong> — {{ task.description|truncatechars:120 }}.</p>
+<p class="ceo-attestation"><strong>CEO confirmation:</strong> I confirm that I have authorised the budget herein and disbursed funding for project Task <strong>{{ task.project_id|clean_task_id }}</strong> — {{ task.description|clean_task_description|truncatechars:120 }}.</p>
 <div class="terms"><strong>Payment instruction</strong>Record transfer of US$ {{ release.amount|floatformat:2 }} to {{ release.to_officer }}. AIE ref: {{ ceo_aie_reference|default:"—" }}. Disbursement PV: {{ pv_no }}.</div>
 <table class="signatures"><tr>
 <td><div class="line">{{ ceo_name|default:"Chief Executive Officer" }}</div><div class="hint">CEO — Authorised budget &amp; disbursement</div></td>
 <td style="width:8%"></td>
 <td><div class="line">________________________</div><div class="hint">GM Accounting — Received</div></td>
 </tr></table>
-<p class="footer-note">{{ pv_no }} · Task {{ task.project_id }} · {{ release.released_at|date:"Y-m-d" }}</p>
+<p class="footer-note">{{ pv_no }} · Task {{ task.project_id|clean_task_id }} · {{ release.released_at|date:"Y-m-d" }}</p>
 </div></div>
 </div>
 {% if auto_print %}

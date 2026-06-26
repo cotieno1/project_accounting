@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,7 +14,7 @@
 </head>
 <body>
     {% include "includes/print_correspondence_header.html" with doc_subtitle="Ad-Hoc Purchase Memorandum" %}
-    <p><strong>Task:</strong> {{ active_task.project_id }} — {{ active_task.description }}</p>
+    <p><strong>Task:</strong> {{ active_task.project_id }} — {{ active_task.description|clean_task_description }}</p>
     <p><strong>Supplier:</strong> {{ batch.supplier|default:"TBD" }}</p>
     <div class="fin"><span>Misc budget</span><span>US$ {{ misc_budget|floatformat:2 }}</span></div>
     <div class="fin"><span>Draft total</span><span>US$ {{ actual|floatformat:2 }}</span></div>

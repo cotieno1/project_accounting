@@ -1,5 +1,6 @@
 {% extends "layouts/cockpit.html" %}
 {% load static %}
+{% load pioneer_tags %}
 {% block title %}Pioneer | Evaluation & Budget Formulation Terminal{% endblock %}
 {% block body_class %}bid-eval{% endblock %}
 {% block extra_css %}
@@ -14,7 +15,7 @@
             <option value="">-- Select project task --</option>
             {% for t in tasks %}
                 <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>
-                    {{ t.project_id }}{% if t.description %}: {{ t.description|truncatechars:40 }}{% endif %}
+                    {{ t.project_id }}{% if t.description %}: {{ t.description|clean_task_description|truncatechars:40 }}{% endif %}
                 </option>
             {% empty %}
                 <option disabled>No project tasks — add one in Dashboard setup</option>
@@ -69,7 +70,7 @@
         <div>
             <h3 style="margin:0;">Step 1: Budget, Bid Evaluation & Award Cockpit</h3>
             {% if active_task %}
-            <small style="color: var(--text-muted); font-size: 12px;">Task: {{ active_task.project_id }} — {{ active_task.description }}</small>
+            <small style="color: var(--text-muted); font-size: 12px;">Task: {{ active_task.project_id }} — {{ active_task.description|clean_task_description }}</small>
             {% else %}
             <small style="color: var(--warning); font-size: 12px;">Select a project task in the sidebar to load suppliers and the evaluation matrix.</small>
             {% endif %}

@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <div class="doc">
     <div class="brand-bar"></div>
     {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Local Purchase Order" %}
@@ -29,7 +30,7 @@
             </td>
             <td>
                 <div class="party-name">Task {{ task.project_id }}</div>
-                <div class="muted">{{ task.description|default:"Infrastructure execution" }}</div>
+                <div class="muted">{{ task.description|clean_task_description|default:"Infrastructure execution" }}</div>
                 <div class="muted" style="margin-top:8px;"><strong>Deliver to:</strong> {{ org_short_name|default:org_name }}{% if org_contact_address %} — {{ org_contact_address }}{% endif %}</div>
             </td>
         </tr>

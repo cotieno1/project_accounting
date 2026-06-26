@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,11 +23,11 @@
 <tr><th>To — Supplier</th><th>Re — Project</th></tr>
 <tr>
 <td><div class="party-name">{% if supplier %}{{ supplier.description }}{% else %}Supplier{% endif %}</div><div class="muted">Attn: {{ supplier_rep }}</div></td>
-<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description }}</div><div class="muted">Invoice: {{ grn.invoice_ref|default:"—" }}</div></td>
+<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|clean_task_description }}</div><div class="muted">Invoice: {{ grn.invoice_ref|default:"—" }}</div></td>
 </tr>
 </table>
 {% if is_full_delivery %}<div class="status-full">Complete / Full Delivery Confirmed</div>
-<div class="terms"><strong>Letter</strong><div class="memo-body"><p>Dear Sir/Madam,</p><p>We formally acknowledge the <strong>complete delivery</strong> against LPO <strong>{{ lpo.lpo_no }}</strong> for task <strong>{{ task.project_id }} — {{ task.description }}</strong>.</p><p>All ordered line items have been received in full. Please retain the attached signed GRN.</p><p>Thank you for your continued partnership.</p></div></div>
+<div class="terms"><strong>Letter</strong><div class="memo-body"><p>Dear Sir/Madam,</p><p>We formally acknowledge the <strong>complete delivery</strong> against LPO <strong>{{ lpo.lpo_no }}</strong> for task <strong>{{ task.project_id }} — {{ task.description|clean_task_description }}</strong>.</p><p>All ordered line items have been received in full. Please retain the attached signed GRN.</p><p>Thank you for your continued partnership.</p></div></div>
 {% else %}<div class="status-partial">Partial Delivery — Balance Outstanding</div>
 <div class="terms"><strong>Letter</strong><div class="memo-body"><p>Dear Sir/Madam,</p><p>We acknowledge a <strong>partial delivery</strong> against LPO <strong>{{ lpo.lpo_no }}</strong> (GRN <strong>{{ grn.grn_no }}</strong>).</p></div></div>
 <table class="lines"><thead><tr><th>RFQ</th><th>Description</th><th>UOM</th><th class="num">Ordered</th><th class="num">Item delivered</th><th class="num">Items outstanding</th></tr></thead>
@@ -51,7 +52,7 @@
 <tr><th>Supplier</th><th>Project / LPO</th></tr>
 <tr>
 <td><div class="party-name">{% if supplier %}{{ supplier.description }}{% else %}—{% endif %}</div><div class="muted">ID: {% if supplier %}{{ supplier.supplier_id }}{% else %}—{% endif %}</div><div class="muted">Delivery note: {{ grn.delivery_note_ref|default:"—" }}</div></td>
-<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description }}</div><div class="muted">LPO: {{ lpo.lpo_no }} · Invoice: {{ grn.invoice_ref|default:"—" }}</div><div class="muted">Status: {% if is_full_delivery %}FULL{% else %}PARTIAL{% endif %}</div></td>
+<td><div class="party-name">Task {{ task.project_id }}</div><div class="muted">{{ task.description|clean_task_description }}</div><div class="muted">LPO: {{ lpo.lpo_no }} · Invoice: {{ grn.invoice_ref|default:"—" }}</div><div class="muted">Status: {% if is_full_delivery %}FULL{% else %}PARTIAL{% endif %}</div></td>
 </tr>
 </table>
 <table class="lines">

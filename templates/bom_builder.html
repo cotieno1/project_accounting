@@ -18,7 +18,7 @@
         <select class="form-input" id="bomTaskSelect" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'}">
             <option value="">-- Select task --</option>
             {% for row in task_rows %}
-            <option value="{{ row.pick_id|clean_task_id }}" {% if active_pick_id and row.pick_id|clean_task_id == active_pick_id|clean_task_id %}selected{% endif %}>{{ row.pick_id|clean_task_id }}{% if row.task.description %} — {{ row.task.description|truncatechars:48 }}{% endif %}</option>
+            <option value="{{ row.pick_id|clean_task_id }}" {% if active_pick_id and row.pick_id|clean_task_id == active_pick_id|clean_task_id %}selected{% endif %}>{{ row.pick_id|clean_task_id }}{% if row.task.description %} — {{ row.task.description|clean_task_description|truncatechars:48 }}{% endif %}</option>
             {% endfor %}
         </select>
         <p class="bom-sidebar-note">Pick a task above. Tasks on Misc Purchase cannot use BOM.</p>
@@ -52,7 +52,7 @@
         <select class="form-input bom-workspace-task-select" id="bomWorkspaceTaskSelect" aria-label="Select project task" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};">
             <option value="">-- Select task --</option>
             {% for row in task_rows %}
-            <option value="{{ row.pick_id|clean_task_id }}" {% if active_pick_id and row.pick_id|clean_task_id == active_pick_id|clean_task_id %}selected{% endif %}>{{ row.pick_id|clean_task_id }}{% if row.task.description %} — {{ row.task.description|truncatechars:48 }}{% endif %}</option>
+            <option value="{{ row.pick_id|clean_task_id }}" {% if active_pick_id and row.pick_id|clean_task_id == active_pick_id|clean_task_id %}selected{% endif %}>{{ row.pick_id|clean_task_id }}{% if row.task.description %} — {{ row.task.description|clean_task_description|truncatechars:48 }}{% endif %}</option>
             {% endfor %}
         </select>
     </div>
@@ -60,15 +60,15 @@
     <div class="panel bom-page-header">
         <h1 class="page-title">Bills of Materials</h1>
         <h2 class="task-id-title">{{ active_pick_id|clean_task_id }}</h2>
-        <p class="task-description-title">{{ active_task.description }}</p>
+        <p class="task-description-title">{{ active_task.description|clean_task_description }}</p>
         {% if bom_heading %}
         <p class="bom-heading-message bom-heading-message--{{ bom_heading.mode }}">
             {% if bom_heading.mode == 'misc' %}
-            {{ active_pick_id|clean_task_id }} · {{ active_task.description }} uses Misc Purchase (MRO) — no BOM required.
+            {{ active_pick_id|clean_task_id }} · {{ active_task.description|clean_task_description }} uses Misc Purchase (MRO) — no BOM required.
             {% elif bom_heading.mode == 'exists' and not bom_heading.show_view_pdf %}
-            {{ active_pick_id|clean_task_id }} · {{ active_task.description }} is past the BOM-create step.
+            {{ active_pick_id|clean_task_id }} · {{ active_task.description|clean_task_description }} is past the BOM-create step.
             {% elif bom_heading.mode == 'exists' %}
-            BOM already exists for {{ active_pick_id|clean_task_id }} · {{ active_task.description }}.
+            BOM already exists for {{ active_pick_id|clean_task_id }} · {{ active_task.description|clean_task_description }}.
             {% else %}
             {{ bom_heading.message }}
             {% endif %}
@@ -201,7 +201,7 @@
         <div class="bom-lines-header">
             <div class="bom-lines-header-text">
                 <h2>BOM {{ bom_no }}</h2>
-                <p>Task {{ active_pick_id|clean_task_id }} — {{ active_task.description }}</p>
+                <p>Task {{ active_pick_id|clean_task_id }} — {{ active_task.description|clean_task_description }}</p>
             </div>
             <span class="bom-status-badge {% if bom_submitted %}bom-status-sent{% elif bom_locked %}bom-status-awarded{% else %}bom-status-draft{% endif %}">
                 {% if bom_submitted %}SUBMITTED{% elif bom_locked %}LOCKED{% else %}DRAFT{% endif %}

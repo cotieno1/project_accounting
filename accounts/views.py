@@ -39,8 +39,8 @@ from .models import (
 )
 #=========================================================================
 
-def _normalize_task_id(raw):
-    """Clean task_id from URL/session — handles quotes, brackets, and list-like strings."""
+def _clean_bracketed_text(raw, *, max_len=200):
+    """Strip list-like brackets and quotes from stored text (task id, description, etc.)."""
     if raw is None:
         return ""
     s = str(raw).strip()
@@ -58,7 +58,17 @@ def _normalize_task_id(raw):
             if inner:
                 s = inner.split(",")[0].strip().strip("'\"")
     s = s.strip("'\"[]")
-    return s[:50]
+    return s[:max_len] if max_len else s
+
+
+def _normalize_task_id(raw):
+    """Clean task_id from URL/session — handles quotes, brackets, and list-like strings."""
+    return _clean_bracketed_text(raw, max_len=50)
+
+
+def _normalize_task_description(raw):
+    """Clean task description — same bracket/quote rules as project_id."""
+    return _clean_bracketed_text(raw, max_len=200)
 
 
 def _resolve_project_task(qs, raw):
@@ -751,8 +761,11 @@ def _apply_entity_payload(model, data, entity_type):
         cleaned["amount"] = Decimal(str(cleaned["amount"]))
     if entity_type == "product" and cleaned.get("stock_quantity"):
         cleaned["stock_quantity"] = int(cleaned["stock_quantity"])
-    if entity_type == "task" and cleaned.get("project_id"):
-        cleaned["project_id"] = _normalize_task_id(cleaned["project_id"])
+    if entity_type == "task":
+        if cleaned.get("project_id"):
+            cleaned["project_id"] = _normalize_task_id(cleaned["project_id"])
+        if cleaned.get("description"):
+            cleaned["description"] = _normalize_task_description(cleaned["description"])
     return cleaned
 
 
@@ -1507,34 +1520,24 @@ def _task_on_major_bom_lane(task):
 
 
 def _resolve_misc_purchase_task(request, *, include_post=False):
-    """Resolve active task for misc/MRO — clean and legacy bracket-wrapped ids."""
+    """Resolve active task for misc/MRO pages within the ad-hoc task list only."""
     tasks = _misc_purchase_tasks()
-    raw = (request.GET.get("task_id") or "").strip()
-    if not raw and include_post:
-        raw = (request.POST.get("task_id") or "").strip()
-    if raw:
-        task = _resolve_project_task(tasks, raw)
-        if task:
-            request.session["active_task_id"] = _bom_task_pick_id(task)
-            return tasks, task
-        blocked = _resolve_project_task(ProjectTask.objects.all(), raw)
-        if blocked:
-            allowed, reason = _misc_channel_allowed(blocked)
-            if _task_on_major_bom_lane(blocked) or not allowed:
+    requested = _task_id_from_request(request, include_post=include_post)
+    if requested:
+        task = tasks.filter(project_id=requested).first()
+        if not task:
+            if ProjectTask.objects.filter(project_id=requested).exists():
                 messages.error(
                     request,
-                    reason
-                    or "This task is not on the MRO path. Choose an MRO task from the list.",
+                    "That task is not on the MRO path. "
+                    "Choose an MRO task from the list, or return to the main menu.",
                 )
-                return _misc_purchase_task_list(blocked), None
-    session_tid = _normalize_task_id(request.session.get("active_task_id"))
-    if session_tid:
-        task = _resolve_project_task(tasks, session_tid)
-        if task:
-            return tasks, task
+            return tasks, None
+        request.session["active_task_id"] = task.project_id
+        return tasks, task
     task = tasks.order_by("project_id").first()
     if task:
-        request.session["active_task_id"] = _bom_task_pick_id(task)
+        request.session["active_task_id"] = task.project_id
     return tasks, task
 
 
@@ -5394,21 +5397,25 @@ def misc_register_supplier_ajax(request):
 
 @login_required
 def misc_purchase_builder(request):
-    from urllib.parse import quote
-
     tasks, active_task = _resolve_misc_purchase_task(
         request, include_post=(request.method == "POST")
     )
     tasks = _misc_purchase_task_list(active_task)
-    active_pick_id = _bom_task_pick_id(active_task)
-    if request.method == "GET" and active_task and active_pick_id:
-        raw_get = (request.GET.get("task_id") or "").strip()
-        if raw_get and _normalize_task_id(raw_get) == active_pick_id and raw_get != active_pick_id:
-            return redirect(
-                reverse("misc_purchase_builder")
-                + f"?task_id={quote(active_pick_id, safe='')}"
-            )
     if not active_task:
+        requested = _task_id_from_request(
+            request, include_post=(request.method == "POST")
+        )
+        if requested:
+            blocked_task = ProjectTask.objects.filter(project_id=requested).first()
+            if blocked_task:
+                allowed, reason = _misc_channel_allowed(blocked_task)
+                if _task_on_major_bom_lane(blocked_task) or not allowed:
+                    messages.error(
+                        request,
+                        reason
+                        or "This task is not on the MRO path. Press Esc or return to the main menu.",
+                    )
+                    return redirect(reverse("ops_dashboard"))
         if request.method == "POST":
             messages.error(request, "Select a project task before saving.")
             return redirect(reverse("misc_purchase_builder"))
@@ -5418,11 +5425,20 @@ def misc_purchase_builder(request):
                 "Add a project task from Dashboard setup before using Misc Purchase.",
             )
             return redirect("dashboard")
+        first_adhoc = tasks.order_by("project_id").first()
+        if requested and first_adhoc:
+            messages.info(
+                request,
+                "Choose an MRO task from the list, or press Esc to return to the main menu.",
+            )
+            return redirect(
+                reverse("misc_purchase_builder")
+                + f"?task_id={first_adhoc.project_id}"
+            )
         suppliers = SupplierAccount.objects.all().order_by("description")
         return render(request, "misc_purchase.html", {
             "tasks": tasks,
             "active_task": None,
-            "active_pick_id": "",
             "mro_workspace_empty": False,
             "officer_journey_visible": False,
             "suppliers": suppliers,
@@ -5755,7 +5771,6 @@ def misc_purchase_builder(request):
         {
             "tasks": tasks,
             "active_task": active_task,
-            "active_pick_id": active_pick_id,
             "mro_workspace_empty": mro_workspace_empty,
             "officer_journey_visible": officer_journey_visible,
             "batch": batch,

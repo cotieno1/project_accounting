@@ -1,5 +1,6 @@
 {% extends "layouts/cockpit.html" %}
 {% load static %}
+{% load pioneer_tags %}
 {% block title %}Pioneer | Financial Ops & Supply Chain{% endblock %}
 {% block body_class %}ops-dashboard{% endblock %}
 {% block extra_css %}
@@ -170,7 +171,7 @@
     <div class="ops-modal-panel">
         <h2 class="ops-modal-title">🏗️ Submit BOM for {{ task_panel.bom_display }}</h2>
         <p class="ops-modal-intro">
-            <strong>Active Task:</strong> {{ active_task.project_id }} - {{ active_task.description }}
+            <strong>Active Task:</strong> {{ active_task.project_id }} - {{ active_task.description|clean_task_description }}
         </p>
         <form method="POST">
             {% csrf_token %}

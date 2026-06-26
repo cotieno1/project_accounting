@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,7 +32,7 @@
     <h1>Payment & GRN Settlement</h1>
 
     <div class="panel">
-        <h3>Deliveries & Invoices: {{ active_task.description }}</h3>
+        <h3>Deliveries & Invoices: {{ active_task.description|clean_task_description }}</h3>
         <table>
             <thead>
                 <tr>

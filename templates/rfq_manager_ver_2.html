@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,8 +55,8 @@
     <select onchange="window.location.href='?task_id=' + this.value;">
         <option value="">-- Select Active Project --</option>
         {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
-                {{ t.project_id }}
+            <option value="{{ t.project_id|clean_task_id }}" {% if t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>
+                {{ t.project_id|clean_task_id }}
             </option>
         {% endfor %}
     </select>
@@ -82,7 +83,7 @@
         
         <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 11px; align-items: center;">
             {% if active_task %}
-            <a href="?task_id={{ active_task.project_id }}&phase=evaluate" 
+            <a href="?task_id={{ active_task.project_id|clean_task_id }}&phase=evaluate" 
                style="color: var(--light); text-decoration: none; font-weight: 600; border-bottom: 1px dashed var(--primary);">
                 EVALUATION IN PROGRESS
             </a>
@@ -106,7 +107,7 @@
         </div>
         {% if active_task %}
         <div style="font-size: 12px; color: var(--text-muted);">
-            TASK REFERENCE: <span style="color: var(--light); font-weight: 700;">{{ active_task.description }}</span>
+            TASK REFERENCE: <span style="color: var(--light); font-weight: 700;">{{ active_task.description|clean_task_description }}</span>
         </div>
         {% endif %}
     </div>
@@ -244,7 +245,7 @@
     function executePrint() {
         if (lockedSid) {
             // Updated to trigger the print_rfq phase from your view
-            window.location.href = `?task_id={{ active_task.project_id }}&phase=print_rfq&supplier_id=${lockedSid}`;
+            window.location.href = `?task_id={{ active_task.project_id|clean_task_id }}&phase=print_rfq&supplier_id=${lockedSid}`;
         } else {
             alert("Please select and LOCK a supplier from the vault first.");
         }
