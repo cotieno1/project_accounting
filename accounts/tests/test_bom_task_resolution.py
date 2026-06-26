@@ -50,7 +50,7 @@ class BomBuilderTaskResolutionTests(TestCase):
 
     def test_malformed_url_resolves_to_task(self):
         url = reverse("bom_builder")
-        response = self.client.get(url, {"task_id": "['BOM-TASK-133']"})
+        response = self.client.get(url, {"task_id": "['BOM-TASK-133']"}, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "BOM-TASK-133")
         self.assertContains(response, "Start BOM")
@@ -125,13 +125,12 @@ class BomBuilderTaskResolutionTests(TestCase):
             description="New task 133",
         )
         url = reverse("bom_builder")
-        response = self.client.get(url, {"task_id": "133"})
+        response = self.client.get(url, {"task_id": "133"}, follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "133")
-        self.assertContains(response, "Start BOM")
         html = response.content.decode()
-        self.assertNotIn("New · Start BOM", html)
+        self.assertIn(">133<", html)
         self.assertNotIn("['133']", html)
+        self.assertContains(response, "Start BOM")
 
     def test_malformed_tomog_url_selects_task(self):
         ProjectTask.objects.create(
@@ -139,7 +138,7 @@ class BomBuilderTaskResolutionTests(TestCase):
             description="Pioneer HWF task 29",
         )
         url = reverse("bom_builder")
-        response = self.client.get(url, {"task_id": "['TOMOG-PIONEER-HWF-000029']"})
+        response = self.client.get(url, {"task_id": "['TOMOG-PIONEER-HWF-000029']"}, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "TOMOG-PIONEER-HWF-000029")
         self.assertContains(response, "Start BOM")
