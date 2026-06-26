@@ -125,6 +125,42 @@ CHECKS: list[dict] = [
         ),
     },
     {
+        "id": "bom.task_id_normalize",
+        "category": "BOM workflow",
+        "title": "BOM views normalize malformed task_id query strings",
+        "weight": 10,
+        "run": lambda: (
+            _ok()
+            if "_normalize_task_id" in _read("accounts/views.py")
+            and "explicit_request" in _read("accounts/views.py")
+            else _fail("views.py must normalize task_id and avoid silent fallback")
+        ),
+    },
+    {
+        "id": "bom.workspace_task_picker",
+        "category": "BOM workflow",
+        "title": "BOM builder workspace task picker for mobile",
+        "weight": 8,
+        "run": lambda: (
+            _ok()
+            if "bom-workspace-task-bar" in _read("templates/bom_builder.html")
+            and "bomWorkspaceTaskSelect" in _read("templates/bom_builder.html")
+            else _fail("bom_builder.html must include workspace task picker")
+        ),
+    },
+    {
+        "id": "bom.mobile_css_workspace_visible",
+        "category": "BOM workflow",
+        "title": "BOM builder CSS shows workspace picker on small screens",
+        "weight": 6,
+        "run": lambda: (
+            _ok()
+            if ".bom-workspace-task-bar" in _read("static/css/pioneer/modules/bom-builder.css")
+            and "768px" in _read("static/css/pioneer/modules/bom-builder.css")
+            else _fail("bom-builder.css missing mobile workspace task bar rules")
+        ),
+    },
+    {
         "id": "mobile.cockpit_hamburger",
         "category": "Mobile & responsive UX",
         "title": "Cockpit shell has mobile sidebar toggle",

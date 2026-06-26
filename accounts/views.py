@@ -3,6 +3,7 @@ import secrets
 import calendar
 import re
 import json
+import ast
 import os
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
@@ -38,24 +39,60 @@ from .models import (
 )
 #=========================================================================
 
+def _normalize_task_id(raw):
+    """Clean task_id from URL/session — handles quotes, brackets, and list-like strings."""
+    if raw is None:
+        return ""
+    s = str(raw).strip()
+    if not s:
+        return ""
+    if s.startswith("[") and s.endswith("]"):
+        try:
+            parsed = ast.literal_eval(s)
+            if isinstance(parsed, (list, tuple)) and parsed:
+                s = str(parsed[0]).strip()
+            elif isinstance(parsed, str):
+                s = parsed.strip()
+        except (ValueError, SyntaxError):
+            inner = s[1:-1].strip().strip("'\"")
+            if inner:
+                s = inner.split(",")[0].strip().strip("'\"")
+    s = s.strip("'\"[]")
+    return s[:50]
+
+
 def _task_id_from_request(request, *, include_post=False, include_session=True):
     """Resolve task_id from URL, form POST, then last user choice in session."""
-    task_id = (request.GET.get("task_id") or "").strip()
+    task_id = _normalize_task_id(request.GET.get("task_id"))
     if not task_id and include_post:
-        task_id = (request.POST.get("task_id") or "").strip()
+        task_id = _normalize_task_id(request.POST.get("task_id"))
     if not task_id and include_session:
-        task_id = (request.session.get("active_task_id") or "").strip()
+        task_id = _normalize_task_id(request.session.get("active_task_id"))
     return task_id
 
 
-def _task_from_request(request, tasks_qs=None, *, include_post=False, persist_session=True):
-    """Resolve task from URL, form, session, then first task (demo default). Updates session."""
-    task_id = _task_id_from_request(request, include_post=include_post)
+def _task_from_request(
+    request,
+    tasks_qs=None,
+    *,
+    include_post=False,
+    persist_session=True,
+    allow_fallback=True,
+):
+    """Resolve task from URL, form, or session. Optional fallback to first task only when no id was given."""
+    raw_requested = (request.GET.get("task_id") or "").strip()
+    if not raw_requested and include_post:
+        raw_requested = (request.POST.get("task_id") or "").strip()
+    explicit_request = bool(raw_requested)
+
+    task_id = _task_id_from_request(request, include_post=include_post, include_session=True)
     qs = tasks_qs if tasks_qs is not None else ProjectTask.objects.all()
     task = qs.filter(project_id=task_id).first() if task_id else None
     if task_id and not task:
         request.session.pop("active_task_id", None)
-    if not task:
+    if not task and explicit_request:
+        return None
+    if not task and allow_fallback:
         task = qs.order_by("project_id").first()
     if task and persist_session:
         request.session["active_task_id"] = task.project_id
@@ -372,7 +409,14 @@ def _ops_cross_task_activity_feed():
 @login_required
 def fin_mgmt_ops_view(request):
     tasks = ProjectTask.objects.order_by("project_id")
+    raw_tid = (request.GET.get("task_id") or "").strip()
     active_task = _task_from_request(request, tasks)
+    if raw_tid and not active_task:
+        messages.error(
+            request,
+            f"Task “{_normalize_task_id(raw_tid)}” was not found. "
+            "Select your new task below, then open Build BOM.",
+        )
     task_panel = _ops_task_panel_context(active_task)
 
     context = {
@@ -685,6 +729,8 @@ def _apply_entity_payload(model, data, entity_type):
         cleaned["amount"] = Decimal(str(cleaned["amount"]))
     if entity_type == "product" and cleaned.get("stock_quantity"):
         cleaned["stock_quantity"] = int(cleaned["stock_quantity"])
+    if entity_type == "task" and cleaned.get("project_id"):
+        cleaned["project_id"] = _normalize_task_id(cleaned["project_id"])
     return cleaned
 
 
@@ -760,9 +806,25 @@ def unified_api_create(request, entity_type):
             obj.save()
             msg = f"{MASTER_ENTITY_META.get(entity_type, {}).get('title', entity_type)} updated."
         else:
-            model.objects.create(**data)
+            obj = model.objects.create(**data)
             msg = f"{MASTER_ENTITY_META.get(entity_type, {}).get('title', entity_type)} created."
-        return JsonResponse({"status": "success", "message": msg})
+        payload = {"status": "success", "message": msg}
+        if entity_type == "task":
+            tid = _normalize_task_id(getattr(obj, "project_id", ""))
+            if tid:
+                request.session["active_task_id"] = tid
+                if mode != "edit":
+                    from urllib.parse import quote
+                    from django.urls import reverse
+
+                    payload["task_id"] = tid
+                    payload["bom_builder_url"] = (
+                        reverse("bom_builder") + f"?task_id={quote(tid, safe='')}"
+                    )
+                    payload["ops_dashboard_url"] = (
+                        reverse("ops_dashboard") + f"?task_id={quote(tid, safe='')}"
+                    )
+        return JsonResponse(payload)
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
@@ -1883,6 +1945,15 @@ def bom_builder(request):
     active_task = _task_from_request(
         request, ProjectTask.objects.all(), include_post=(request.method == "POST")
     )
+    raw_tid = (request.GET.get("task_id") or "").strip()
+    if not raw_tid and request.method == "POST":
+        raw_tid = (request.POST.get("task_id") or "").strip()
+    if raw_tid and not active_task:
+        messages.error(
+            request,
+            f"Task “{_normalize_task_id(raw_tid)}” was not found. "
+            "Pick the correct task from the list, then press Start BOM.",
+        )
     redirect_url = (
         reverse("bom_builder") + f"?task_id={active_task.project_id}"
         if active_task

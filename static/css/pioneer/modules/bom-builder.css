@@ -440,3 +440,28 @@ body.bom-builder .cockpit-shell {
         width: 100%;
     }
 }
+
+.bom-workspace-task-bar {
+    display: none;
+    margin-bottom: 16px;
+}
+
+.bom-workspace-task-bar .nav-label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.bom-workspace-task-bar .bom-workspace-task-select {
+    width: 100%;
+    font-size: 15px;
+}
+
+@media (max-width: 768px) {
+    .bom-workspace-task-bar {
+        display: block;
+    }
+
+    body.bom-builder .bom-sidebar-task-picker {
+        display: none;
+    }
+}
