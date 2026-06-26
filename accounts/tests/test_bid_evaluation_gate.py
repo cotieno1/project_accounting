@@ -123,7 +123,7 @@ class BidEvaluationGateViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "no mans land")
         self.assertContains(response, "Create BOM")
-        self.assertContains(response, "Create Misc Purchase")
+        self.assertContains(response, "Create Misc Requisition Order")
         self.assertContains(response, "bid-eval-lane-choice")
         self.assertContains(response, "Abandon (Esc)")
         self.assertContains(response, "Start the Bid Eval / Budget Process")

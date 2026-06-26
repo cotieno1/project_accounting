@@ -4588,7 +4588,7 @@ def _bid_evaluation_workspace(task):
                 "not through BOM, RFQ, and supplier bid comparison."
             ),
             "next_step_url": misc_url,
-            "next_step_label": "Open Misc Purchase",
+            "next_step_label": "Create Misc Requisition Order",
             "show_lane_choice": False,
             "checklist": snapshot.get("checklist", []),
             "ops_dashboard_url": ops_url,
