@@ -57,7 +57,16 @@ class BomBuilderTaskResolutionTests(TestCase):
         url = reverse("bom_builder")
         response = self.client.get(url, {"task_id": "['NO-SUCH-TASK']"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "was not found")
+        self.assertNotContains(response, "was not found")
+        self.assertNotContains(response, "Select a task from the list")
+        self.assertContains(response, "bomWorkspaceTaskSelect")
+
+    def test_placeholder_task_id_shows_picker_without_error(self):
+        url = reverse("bom_builder")
+        response = self.client.get(url, {"task_id": "YOUR-ACTUAL-TASK-ID"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "was not found")
+        self.assertNotContains(response, "YOUR-ACTUAL-TASK-ID")
 
     def test_workspace_picker_visible_on_mobile_markup(self):
         url = reverse("bom_builder")

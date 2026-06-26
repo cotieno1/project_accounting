@@ -57,7 +57,7 @@
     </div>
     {% if bom_heading and active_task %}
     <div class="panel bom-page-header">
-        <h1 class="page-title">Creating A New Bills of Materials (BOM)</h1>
+        <h1 class="page-title">Bills of Materials (BOM)</h1>
         <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
         <p class="task-description-title">{{ active_task.description }}</p>
         <p class="bom-heading-message bom-heading-message--{{ bom_heading.mode }}">{{ bom_heading.message }}</p>
@@ -66,11 +66,15 @@
             <a href="{{ bom_heading.view_pdf_url }}" class="btn-action btn-success" target="_blank" rel="noopener">View BOM PDF</a>
         </div>
         {% endif %}
-    </div>
-    {% elif bom_heading and not active_task %}
-    <div class="panel bom-page-header">
-        <h1 class="page-title">Creating A New Bills of Materials (BOM)</h1>
-        <p class="bom-heading-message bom-heading-message--select">{{ bom_heading.message }}</p>
+        {% if can_start_bom %}
+        <div class="bom-heading-actions bom-heading-actions--start">
+            <form method="POST" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <button type="submit" name="new_bom" class="btn-action">Start BOM</button>
+            </form>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 
@@ -174,12 +178,6 @@
     </div>
 
     {% elif not active_task %}
-    <div class="bom-stage-panel">
-        <span class="bom-stage-badge">Stage field definition — BOM path</span>
-        <h4 class="bom-stage-title">Start your BOM build here</h4>
-        <p class="bom-stage-lead">Select any task from the sidebar — each shows its <strong>lane and status</strong>. Press <strong>Start BOM</strong> only on <em>New · Start BOM</em> tasks.</p>
-        {% include "partials/bom_stage_journey.html" %}
-    </div>
 
     {% else %}
 
@@ -192,10 +190,8 @@
         {% elif bom_mode == 'locked' %}
         <h4 class="bom-stage-title">BOM locked — submit to finish your task here</h4>
         {% else %}
-        <h4 class="bom-stage-title">Start your BOM build here</h4>
-        <p class="bom-stage-lead">Press the blue <strong>Start BOM</strong> button on the side — list each item you require, UOM and quantity.</p>
+        <h4 class="bom-stage-title">Add BOM lines below</h4>
         {% endif %}
-        <p class="bom-stage-lead">One <strong>BOM Number</strong> (locked once you reach your last item) per task. Not related to Misc PO.</p>
         {% if task_status.stage_label %}
         <p class="bom-stage-lead"><span class="lane-tag">Status:</span> {{ task_status.stage_label }}</p>
         {% endif %}

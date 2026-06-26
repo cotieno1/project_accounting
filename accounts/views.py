@@ -1561,15 +1561,20 @@ def _task_bom_draft_in_progress(task):
 
 
 def _bom_can_start_bom(task):
-    """Start BOM only on fresh major-lane tasks (not misc, not past create stage)."""
-    if not task or _bom_screen_lane(task) != "bom":
+    """Start BOM when task has no Misc RO/MPO and no BOM yet."""
+    if not task:
+        return False
+    if _task_has_misc_po_path(task):
         return False
     bom = _get_task_bom(task)
-    if not bom:
-        return True
-    if bom.status != BOMHeader.STATUS_DRAFT:
+    if bom:
+        if bom.status != BOMHeader.STATUS_DRAFT:
+            return False
+        if bom.items.exists() or bom.items_locked:
+            return False
+    if _task_on_major_procurement_lane(task):
         return False
-    return not bom.items.exists() and not bom.items_locked
+    return True
 
 
 def _bom_task_sidebar_hint(task):
@@ -1897,40 +1902,32 @@ def _ops_task_panel_context(task):
 def _bom_page_heading(task, screen_lane, *, can_start_bom=False, has_existing_bom=False, print_bom_pdf_url=""):
     """Top-of-page heading copy for BOM Builder (create / exists / misc)."""
     if not task:
-        return {
-            "mode": "select",
-            "message": "Select a task from the list to review the BOM path.",
-            "show_view_pdf": False,
-            "view_pdf_url": "",
-        }
+        return None
     tid = task.project_id
     desc = task.description or ""
     if screen_lane == "misc":
         return {
             "mode": "misc",
             "message": (
-                f"This Task: {tid} · {desc} is already using an alternative process "
-                f"that does NOT require BOM."
+                f"{tid} · {desc} uses Misc Purchase (MRO) — no BOM required."
             ),
             "show_view_pdf": False,
             "view_pdf_url": "",
         }
-    if screen_lane == "major" or (has_existing_bom and not can_start_bom):
+    if has_existing_bom or (screen_lane == "major" and not can_start_bom):
         return {
             "mode": "exists",
             "message": (
-                f"You cannot Create a BOM for {tid} · {desc} — a project BOM already exists. "
-                f"You can view that BOM using the button below."
+                f"BOM already exists for {tid} · {desc}."
+                if has_existing_bom
+                else f"{tid} · {desc} is past the BOM-create step."
             ),
             "show_view_pdf": bool(print_bom_pdf_url),
             "view_pdf_url": print_bom_pdf_url,
         }
     return {
         "mode": "create",
-        "message": (
-            f"Creating BOM for {tid} · {desc}. Please confirm if this Task requires "
-            f"a BOM Process as specified herein below."
-        ),
+        "message": f"No BOM on this task yet — press Start BOM.",
         "show_view_pdf": False,
         "view_pdf_url": "",
     }
@@ -1945,15 +1942,6 @@ def bom_builder(request):
     active_task = _task_from_request(
         request, ProjectTask.objects.all(), include_post=(request.method == "POST")
     )
-    raw_tid = (request.GET.get("task_id") or "").strip()
-    if not raw_tid and request.method == "POST":
-        raw_tid = (request.POST.get("task_id") or "").strip()
-    if raw_tid and not active_task:
-        messages.error(
-            request,
-            f"Task “{_normalize_task_id(raw_tid)}” was not found. "
-            "Pick the correct task from the list, then press Start BOM.",
-        )
     redirect_url = (
         reverse("bom_builder") + f"?task_id={active_task.project_id}"
         if active_task
@@ -1983,9 +1971,8 @@ def bom_builder(request):
 
     if not active_task:
         return _render(
-            engineer_journey_visible=True,
-            setup_message="Select any task — status shown in the list. Start BOM only on new major-lane tasks.",
-            bom_heading=_bom_page_heading(None, "none"),
+            engineer_journey_visible=False,
+            bom_heading=None,
         )
 
     screen_lane = _bom_screen_lane(active_task)
@@ -2019,6 +2006,7 @@ def bom_builder(request):
             bom_heading=_bom_page_heading(
                 active_task,
                 screen_lane,
+                can_start_bom=False,
                 has_existing_bom=bool(meaningful_bom or bom_info),
                 print_bom_pdf_url=print_bom_pdf_url,
             ),
