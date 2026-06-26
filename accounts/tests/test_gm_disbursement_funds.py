@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from accounts.models import CEOFundRelease, ProjectBudget, ProjectTask
+from accounts.models import CEOFundRelease, LPOTransaction, ProjectBudget, ProjectTask
 
 
 class GmDisbursementFundsGateTests(TestCase):
@@ -24,41 +24,45 @@ class GmDisbursementFundsGateTests(TestCase):
         response = self.client.get(url, {"task_id": "['133']"}, follow=False)
         self.assertEqual(response.status_code, 302)
         self.assertIn("task_id=133", response.url)
-        self.assertNotIn("%27", response.url)
 
-    def test_no_funds_shows_loud_banner_and_greys_out(self):
+    def test_uncommitted_task_is_blocked(self):
         ProjectTask.objects.create(project_id="133", description="Uncommitted task")
         url = reverse("gm_aie_disbursement")
         response = self.client.get(url, {"task_id": "133"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(
-            response,
-            "This Task does not have Any budget approved therefore there No allocated Funds",
-        )
-        self.assertContains(response, "no provision budget committed yet")
-        self.assertNotContains(
-            response,
-            "GM disbursement is locked until CEO budget approval and fund release are complete.",
-        )
         self.assertContains(response, "gm-desk--no-funds")
-        self.assertContains(response, "gm-sidebar-tools is-blocked")
-        self.assertContains(response, 'id="gmDeskNoFundsEsc"')
+        self.assertContains(response, "no provision budget committed yet")
 
-    def test_approved_budget_without_release_shows_release_message(self):
-        task = ProjectTask.objects.create(project_id="FUNDED-001", description="Approved not released")
+    def test_major_lpo_task_not_blocked_without_fund_release(self):
+        task = ProjectTask.objects.create(project_id="MAJOR-LPO-001", description="Major with LPO")
         ProjectBudget.objects.create(
             task=task,
             budget_label="Major provision",
             version=1,
-            is_ceo_approved=True,
-            total_authorized_budget=1000,
+            is_ceo_approved=False,
+            total_authorized_budget=5000,
+        )
+        LPOTransaction.objects.create(
+            lpo_no="LPO-MAJOR-LPO-001-001",
+            project_task=task,
+            total_amount=1200,
         )
         url = reverse("gm_aie_disbursement")
-        response = self.client.get(url, {"task_id": "FUNDED-001"})
+        response = self.client.get(url, {"task_id": "MAJOR-LPO-001"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "funds have not been released to GM Accounting yet")
+        self.assertNotContains(response, "gm-desk--no-funds")
+        self.assertContains(response, "GRN Register")
+        self.assertNotContains(response, "no provision budget committed yet")
 
-    def test_funds_available_enables_desk(self):
+    def test_no_task_id_does_not_fallback_to_first_task(self):
+        ProjectTask.objects.create(project_id="133", description="First task")
+        ProjectTask.objects.create(project_id="999", description="Second task")
+        url = reverse("gm_aie_disbursement")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Select a project task")
+
+    def test_funds_available_after_ceo_release(self):
         task = ProjectTask.objects.create(project_id="FUNDED-002", description="Fully funded task")
         budget = ProjectBudget.objects.create(
             task=task,

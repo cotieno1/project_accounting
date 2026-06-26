@@ -2,7 +2,7 @@
 {% load static %}
 {% load pioneer_tags %}
 {% block title %}Pioneer | GM AIE Disbursement{% endblock %}
-{% block body_class %}gm-desk{% if active_task and not gm_funds_available %} gm-desk--no-funds{% endif %}{% endblock %}
+{% block body_class %}gm-desk{% if active_task and gm_desk_blocked %} gm-desk--no-funds{% endif %}{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}">
 {% endblock %}
@@ -17,7 +17,7 @@
             {% endfor %}
         </select>
 
-        <div class="gm-sidebar-tools{% if not gm_funds_available %} is-blocked{% endif %}">
+        <div class="gm-sidebar-tools{% if gm_desk_blocked %} is-blocked{% endif %}">
         <div class="sidebar-block">
             <button type="button" class="btn-action" onclick="togglePayList()" style="width:100%;background:#1e293b;">
                 💳 Payment List{% if payment_listing %} ({{ payment_listing|length }}){% endif %}
@@ -101,19 +101,11 @@
 <div class="panel" style="color:var(--muted);">Select a project task from the sidebar to open the GM disbursement desk.</div>
 {% else %}
 
-        {% if not gm_funds_available %}
+        {% if gm_desk_blocked %}
         <div class="gm-funds-blocked-banner" role="alert">
             <strong class="gm-funds-blocked-title">This Task does not have Any budget approved therefore there No allocated Funds</strong>
             <p class="gm-funds-blocked-detail">
-                {% if not budget_summary.has_budget %}
                 This task has no provision budget committed yet — there is nothing for the CEO to approve and no funds to allocate.
-                {% elif not budget_summary.is_ceo_approved %}
-                A provision budget exists on this task, but the CEO has not approved and locked it yet.
-                <a href="{% url 'budget_approval' %}?task_id={{ active_pick_id }}" style="color:#fde68a;font-weight:700;">Go to Budget Authorization</a>.
-                {% else %}
-                The CEO approved this budget, but funds have not been released to GM Accounting yet.
-                <a href="{% url 'budget_approval' %}?task_id={{ active_pick_id }}" style="color:#fde68a;font-weight:700;">Go to Budget Authorization</a> to release funds.
-                {% endif %}
                 Or
                 <a href="{% url 'gm_aie_disbursement' %}" id="gmDeskNoFundsEsc" style="color:#fde68a;font-weight:700;">select another task</a>
                 (<kbd>Esc</kbd>).
@@ -121,7 +113,7 @@
         </div>
         {% endif %}
 
-        <div class="gm-workspace-tools{% if not gm_funds_available %} is-blocked{% endif %}">
+        <div class="gm-workspace-tools{% if gm_desk_blocked %} is-blocked{% endif %}">
         <div class="panel">
             <div class="header-row">
                 <div class="header-left">
@@ -277,7 +269,7 @@
 {% endif %}
 {% endblock %}
 {% block modals %}
-{% if not no_tasks and gm_funds_available %}
+{% if not no_tasks and active_task and not gm_desk_blocked %}
     <div id="grnPeriodModal" class="cockpit-modal" style="display:none;">
         <div class="cockpit-modal-panel registry-modal-panel">
             <h3 style="margin:0 0 4px;color:var(--accent);font-size:15px;">GRN Register — Task {{ active_task.project_id }}</h3>
@@ -654,7 +646,7 @@
 {% endif %}
 {% endblock %}
 {% block extra_js %}
-{% if active_task and not gm_funds_available %}
+{% if active_task and gm_desk_blocked %}
 <script>
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
@@ -663,7 +655,7 @@ document.addEventListener('keydown', (e) => {
 });
 </script>
 {% endif %}
-{% if not no_tasks and gm_funds_available %}
+{% if not no_tasks and active_task and not gm_desk_blocked %}
     <script>
         const lineData = {
             {% for line in budget_summary.lines %}

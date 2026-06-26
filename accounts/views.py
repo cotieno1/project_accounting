@@ -7055,7 +7055,7 @@ def _disbursement_payment_listing(task, active_payment=None):
 
 
 def _gm_funds_available(budget_summary):
-    """GM desk may disburse only after CEO approval and fund release."""
+    """Generic four-line post payment requires CEO approval and fund release."""
     return bool(
         budget_summary.get("has_budget")
         and budget_summary.get("is_ceo_approved")
@@ -7063,8 +7063,17 @@ def _gm_funds_available(budget_summary):
     )
 
 
+def _gm_desk_blocked(task, budget_summary, project_class):
+    """Block the full GM desk only for uncommitted tasks with no budget and no procurement lane."""
+    if budget_summary.get("has_budget"):
+        return False
+    if project_class.get("code") in ("MAJOR", "ADHOC"):
+        return False
+    return True
+
+
 def _gm_resolve_active_task(request, tasks):
-    return _task_from_request(request, tasks)
+    return _task_from_request(request, tasks, allow_fallback=False)
 
 
 def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
@@ -7142,22 +7151,15 @@ def gm_aie_disbursement_view(request):
             "no_task_selected": tasks.exists(),
             "active_task": None,
             "gm_funds_available": False,
+            "gm_desk_blocked": False,
         })
 
     active_pick_id = _bom_task_pick_id(active_task)
     project_class = _task_project_class(active_task)
     budget_summary = _task_disbursement_budget_summary(active_task)
     gm_funds_available = _gm_funds_available(budget_summary)
+    gm_desk_blocked = _gm_desk_blocked(active_task, budget_summary, project_class)
     task_caps = _gm_task_sidebar_capabilities(active_task, project_class, budget_summary)
-    if not gm_funds_available:
-        task_caps = {
-            **task_caps,
-            "enable_grn": False,
-            "enable_supplier_pv": False,
-            "enable_goods_status": False,
-            "enable_adhoc_ro": False,
-            "enable_officer_pv": False,
-        }
 
     if request.method == "POST":
         if request.POST.get("action") == "create_payment_voucher":
@@ -7256,6 +7258,7 @@ def gm_aie_disbursement_view(request):
             "task_caps": task_caps,
             "budget_summary": budget_summary,
             "gm_funds_available": gm_funds_available,
+            "gm_desk_blocked": gm_desk_blocked,
             "payment_listing": payment_listing,
             "viewed_payment": viewed_payment,
             "pay_mode": pay_mode,
