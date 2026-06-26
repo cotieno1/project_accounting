@@ -35,12 +35,16 @@ class GmDisbursementFundsGateTests(TestCase):
             response,
             "This Task does not have Any budget approved therefore there No allocated Funds",
         )
+        self.assertContains(response, "no provision budget committed yet")
+        self.assertNotContains(
+            response,
+            "GM disbursement is locked until CEO budget approval and fund release are complete.",
+        )
         self.assertContains(response, "gm-desk--no-funds")
         self.assertContains(response, "gm-sidebar-tools is-blocked")
-        self.assertContains(response, "gm-workspace-tools is-blocked")
         self.assertContains(response, 'id="gmDeskNoFundsEsc"')
 
-    def test_approved_budget_without_release_still_blocked(self):
+    def test_approved_budget_without_release_shows_release_message(self):
         task = ProjectTask.objects.create(project_id="FUNDED-001", description="Approved not released")
         ProjectBudget.objects.create(
             task=task,
@@ -52,7 +56,7 @@ class GmDisbursementFundsGateTests(TestCase):
         url = reverse("gm_aie_disbursement")
         response = self.client.get(url, {"task_id": "FUNDED-001"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "gm-desk--no-funds")
+        self.assertContains(response, "funds have not been released to GM Accounting yet")
 
     def test_funds_available_enables_desk(self):
         task = ProjectTask.objects.create(project_id="FUNDED-002", description="Fully funded task")

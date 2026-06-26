@@ -105,9 +105,18 @@
         <div class="gm-funds-blocked-banner" role="alert">
             <strong class="gm-funds-blocked-title">This Task does not have Any budget approved therefore there No allocated Funds</strong>
             <p class="gm-funds-blocked-detail">
-                GM disbursement is locked until CEO budget approval and fund release are complete.
-                <a href="{% url 'budget_approval' %}?task_id={{ active_pick_id }}" style="color:#fde68a;font-weight:700;">Go to Budget Authorization</a>
-                or
+                {% if not budget_summary.has_budget %}
+                This task has no provision budget committed yet — there is nothing for the CEO to approve and no funds to allocate.
+                Start procurement on the <a href="{% url 'bid_evaluation_terminal' %}?task_id={{ active_pick_id }}" style="color:#fde68a;font-weight:700;">Bid Evaluation</a>
+                or <a href="{% url 'misc_purchase_builder' %}?task_id={{ active_pick_id }}" style="color:#fde68a;font-weight:700;">Misc Requisition Order</a> path first.
+                {% elif not budget_summary.is_ceo_approved %}
+                A provision budget exists on this task, but the CEO has not approved and locked it yet.
+                <a href="{% url 'budget_approval' %}?task_id={{ active_pick_id }}" style="color:#fde68a;font-weight:700;">Go to Budget Authorization</a>.
+                {% else %}
+                The CEO approved this budget, but funds have not been released to GM Accounting yet.
+                <a href="{% url 'budget_approval' %}?task_id={{ active_pick_id }}" style="color:#fde68a;font-weight:700;">Go to Budget Authorization</a> to release funds.
+                {% endif %}
+                Or
                 <a href="{% url 'gm_aie_disbursement' %}" id="gmDeskNoFundsEsc" style="color:#fde68a;font-weight:700;">select another task</a>
                 (<kbd>Esc</kbd>).
             </p>
