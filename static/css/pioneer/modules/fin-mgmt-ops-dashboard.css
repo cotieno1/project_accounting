@@ -27,7 +27,14 @@ body.ops-dashboard { --text-muted: var(--muted); }
     border: 1px dashed var(--success);
     margin-bottom: 16px;
 }
-.ops-dashboard .nav-section--adhoc .nav-label { color: var(--success); }
+.ops-dashboard .nav-section--adhoc .nav-label {
+    color: var(--success);
+    display: block;
+    margin-bottom: 8px;
+}
+.ops-dashboard .nav-section--adhoc .nav-link--emph {
+    padding: 10px;
+}
 
 .ops-dashboard .nav-section-toggle {
     display: flex;
@@ -90,10 +97,6 @@ body.ops-dashboard { --text-muted: var(--muted); }
     opacity: 1;
     padding-top: 4px;
 }
-.ops-dashboard .nav-section--adhoc .nav-section-toggle {
-    padding-bottom: 10px;
-}
-
 .ops-dashboard .nav-link {
     display: flex;
     align-items: center;

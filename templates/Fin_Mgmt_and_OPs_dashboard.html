@@ -1,6 +1,5 @@
 {% extends "layouts/cockpit.html" %}
 {% load static %}
-{% load pioneer_tags %}
 {% block title %}Pioneer | Financial Ops & Supply Chain{% endblock %}
 {% block body_class %}ops-dashboard{% endblock %}
 {% block extra_css %}
@@ -12,15 +11,10 @@
         <small>Somalia Ops Command</small>
     </div>
 
-    <div class="nav-section nav-section--collapsible nav-section--adhoc" data-ops-nav="adhoc">
-        <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavAdhoc">
-            <span class="nav-label">⚡ AD-HOC PROCUREMENT</span>
-            <span class="nav-section-chevron" aria-hidden="true"></span>
-        </button>
-        <div class="nav-section-body" id="opsNavAdhoc">
+    <div class="nav-section nav-section--adhoc">
+        <span class="nav-label">⚡ AD-HOC PROCUREMENT</span>
         <a href="{% url 'misc_purchase_builder' %}" class="nav-link nav-link--emph">🛒 Direct/AD-HOC Purchase</a>
         <small class="nav-hint">Expedited purchase for standard items (e.g. Cement) bypassing RFQ/Bids.</small>
-        </div>
     </div>
 
     <div class="nav-section nav-section--collapsible is-open" data-ops-nav="field">
@@ -171,7 +165,7 @@
     <div class="ops-modal-panel">
         <h2 class="ops-modal-title">🏗️ Submit BOM for {{ task_panel.bom_display }}</h2>
         <p class="ops-modal-intro">
-            <strong>Active Task:</strong> {{ active_task.project_id }} - {{ active_task.description|clean_task_description }}
+            <strong>Active Task:</strong> {{ active_task.project_id }} - {{ active_task.description }}
         </p>
         <form method="POST">
             {% csrf_token %}
