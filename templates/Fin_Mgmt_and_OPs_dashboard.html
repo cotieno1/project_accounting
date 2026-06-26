@@ -17,11 +17,7 @@
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavAdhoc">
-        {% if active_task %}
-        <a href="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}" class="nav-link nav-link--emph">🛒 Direct/AD-HOC Purchase</a>
-        {% else %}
-        <span class="nav-link nav-link--emph" style="opacity:0.5;cursor:not-allowed;">🛒 Direct/AD-HOC Purchase</span>
-        {% endif %}
+        <a href="{% url 'misc_purchase_builder' %}" class="nav-link nav-link--emph">🛒 Direct/AD-HOC Purchase</a>
         <small class="nav-hint">Expedited purchase for standard items (e.g. Cement) bypassing RFQ/Bids.</small>
         </div>
     </div>
@@ -32,13 +28,9 @@
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavField">
-        {% if active_task %}
-        <a href="{% url 'bom_builder' %}?task_id={{ active_task.project_id }}" class="nav-link">🏗️ 1.1 Site Eng: Build BOM</a>
-        <a href="{% url 'ro_builder' %}?task_id={{ active_task.project_id }}" class="nav-link">⚖️ 1.2 Snr Eng: Issue Requisition</a>
-        <a href="{% url 'rfq_manager' %}?task_id={{ active_task.project_id }}" class="nav-link">✉️ 1.3 GM: Prepare & Dispatch RFQs (Min 2)</a>
-        {% else %}
-        <span class="nav-link" style="opacity:0.5;">Select a task to open workflow steps</span>
-        {% endif %}
+        <a href="{% url 'bom_builder' %}" class="nav-link">🏗️ 1.1 Site Eng: Build BOM</a>
+        <a href="{% url 'ro_builder' %}" class="nav-link">⚖️ 1.2 Snr Eng: Issue Requisition</a>
+        <a href="{% url 'rfq_manager' %}" class="nav-link">✉️ 1.3 GM: Prepare & Dispatch RFQs (Min 2)</a>
         </div>
     </div>
 
@@ -48,11 +40,7 @@
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavBid">
-        {% if active_task %}
-        <a href="{% url 'bid_evaluation_terminal' %}?task_id={{ active_task.project_id }}" class="nav-link">📊 2.1 System: Bid Evaluation</a>
-        {% else %}
-        <span class="nav-link" style="opacity:0.5;">📊 2.1 System: Bid Evaluation</span>
-        {% endif %}
+        <a href="{% url 'bid_evaluation_terminal' %}" class="nav-link">📊 2.1 System: Bid Evaluation</a>
         </div>
     </div>
 
@@ -62,9 +50,7 @@
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavExco">
-        {% if active_task %}
-        <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id }}" class="nav-link">💰 3.1 CEO: Budget Authorization-Funds Disbursement</a>
-        {% endif %}
+        <a href="{% url 'budget_approval' %}" class="nav-link">💰 3.1 CEO: Budget Authorization-Funds Disbursement</a>
         </div>
     </div>
 
@@ -74,11 +60,9 @@
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavDisbursement">
-        {% if active_task %}
-        <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id }}" class="nav-link">🔒 CEO: Budget Authorization</a>
-        <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}" class="nav-link nav-link--emph">🏦 4.2 GM: AIE Payments (4 Lines)</a>
+        <a href="{% url 'budget_approval' %}" class="nav-link">🔒 CEO: Budget Authorization</a>
+        <a href="{% url 'gm_aie_disbursement' %}" class="nav-link nav-link--emph">🏦 4.2 GM: AIE Payments (4 Lines)</a>
         <small class="nav-hint">Goods, maintenance, labour &amp; equipment — Major or Ad-Hoc task.</small>
-        {% endif %}
         </div>
     </div>
 
@@ -88,9 +72,7 @@
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavFulfillment">
-        {% if active_task %}
-        <a href="/payment-settlement/?task_id={{ active_task.project_id }}" class="nav-link">🚚 5.1 Log: Record GRN/Receipt</a>
-        {% endif %}
+        <a href="/payment-settlement/" class="nav-link">🚚 5.1 Log: Record GRN/Receipt</a>
         </div>
     </div>
 
