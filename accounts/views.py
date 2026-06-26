@@ -4548,26 +4548,55 @@ def _bid_evaluation_workspace(task):
     base["bom_url"] = bom_url
     base["misc_url"] = misc_url
     base["budget_progress"] = _bid_eval_budget_progress(task)
+    ops_url = reverse("ops_dashboard") + f"?task_id={tid}"
+
+    # No man's land — not on Major (BOM/bidding) or Misc Purchase yet
+    if lane == "bom":
+        base.update({
+            "allowed": False,
+            "stage": "uncommitted",
+            "headline": "This task is not on Major Procurement or Misc Purchase",
+            "body": (
+                f"Task {tid} is in no mans land — it has not started the BOM "
+                "(competitive bidding) path or the Misc Purchase (MRO) path. "
+                "Bid evaluation does not apply here. Choose one of the three "
+                "options below."
+            ),
+            "ops_dashboard_url": ops_url,
+            "show_prerequisites": False,
+            "checklist": [],
+        })
+        return base
 
     channel_ok, channel_reason = _rfq_channel_allowed(task)
-    if lane == "misc" or not channel_ok:
+    if lane == "misc":
         base.update({
             "allowed": False,
             "stage": "misc",
-            "headline": (
-                "This task is on the Misc Purchase path"
-                if lane == "misc"
-                else "This task cannot use bid evaluation"
-            ),
+            "headline": "This task is on the Misc Purchase path",
             "body": (
                 "Misc purchases are handled through the Misc PO / MRO workflow — "
                 "not through BOM, RFQ, and supplier bid comparison."
-                if lane == "misc"
-                else channel_reason
             ),
             "next_step_url": misc_url,
             "next_step_label": "Open Misc Purchase",
             "show_lane_choice": False,
+            "checklist": snapshot.get("checklist", []),
+            "ops_dashboard_url": ops_url,
+            "show_prerequisites": False,
+        })
+        return base
+
+    if not channel_ok:
+        base.update({
+            "allowed": False,
+            "stage": "blocked",
+            "headline": "This task cannot use bid evaluation",
+            "body": channel_reason,
+            "next_step_url": ops_url,
+            "next_step_label": "Return to main menu",
+            "ops_dashboard_url": ops_url,
+            "show_prerequisites": False,
             "checklist": snapshot.get("checklist", []),
         })
         return base
@@ -4600,24 +4629,6 @@ def _bid_evaluation_workspace(task):
                 "becomes the award baseline; confirming sends the CEO budget memo."
             ),
             "rfq_status": _bid_evaluation_rfq_status(task),
-        })
-        return base
-
-    ops_url = reverse("ops_dashboard") + f"?task_id={tid}"
-
-    if lane == "bom":
-        base.update({
-            "allowed": False,
-            "stage": "uncommitted",
-            "headline": "This task has no procurement path yet",
-            "body": (
-                f"Task {tid} is not on Major Procurement (BOM / competitive bidding) "
-                "or Misc Purchase (MRO) yet. Bid evaluation does not apply until "
-                "you start one of those workflows."
-            ),
-            "ops_dashboard_url": ops_url,
-            "show_prerequisites": False,
-            "checklist": [],
         })
         return base
 

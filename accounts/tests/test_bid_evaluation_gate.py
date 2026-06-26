@@ -121,10 +121,11 @@ class BidEvaluationGateViewTests(TestCase):
     def test_uncommitted_task_shows_lane_choice(self):
         response = self.client.get(self.url, {"task_id": self.task.project_id})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "no procurement path yet")
+        self.assertContains(response, "no mans land")
         self.assertContains(response, "Create BOM")
         self.assertContains(response, "Create Misc Purchase")
         self.assertContains(response, "bid-eval-lane-choice")
+        self.assertContains(response, "Abandon (Esc)")
         self.assertNotContains(response, "Select Two Bidders")
         self.assertNotContains(response, "Procurement prerequisites")
 

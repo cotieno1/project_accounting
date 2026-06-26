@@ -101,16 +101,17 @@
         {% endif %}
 
         {% if bid_eval_workspace.stage == 'uncommitted' %}
-        <div id="bid-eval-lane-choice" data-esc-url="{% url 'ops_dashboard' %}?task_id={{ active_pick_id }}" style="margin-bottom:20px;">
+        <div id="bid-eval-lane-choice" data-esc-url="{{ bid_eval_workspace.ops_dashboard_url }}" style="margin-bottom:20px;">
             <p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:var(--text-muted);">
-                Choose the buttons below to <strong>create BOM</strong> (major competitive bidding)
-                or <strong>create Misc Purchase</strong> (MRO),
-                or press <kbd style="padding:2px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;">Esc</kbd>
-                to return to the main menu.
+                Choose the buttons below to <strong>create BOM</strong> (major competitive bidding),
+                <strong>create Misc Purchase</strong> (MRO),
+                or <strong>abandon</strong> and return to the main menu
+                (<kbd style="padding:2px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;">Esc</kbd>).
             </p>
             <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
                 <a href="{{ bid_eval_workspace.bom_url }}" class="btn-action btn-success" style="text-decoration:none;margin:0;">Create BOM</a>
                 <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action" style="text-decoration:none;margin:0;">Create Misc Purchase</a>
+                <a href="{{ bid_eval_workspace.ops_dashboard_url }}" class="btn-action" style="text-decoration:none;margin:0;background:#334155;">Abandon (Esc)</a>
             </div>
         </div>
         {% elif bid_eval_workspace.stage == 'misc' %}
