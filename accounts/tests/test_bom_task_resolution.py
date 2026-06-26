@@ -156,6 +156,40 @@ class BomBuilderTaskResolutionTests(TestCase):
         self.assertFalse(_bom_can_start_bom(task))
 
 
+class BudgetApprovalTaskIdTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user = user_model.objects.create_superuser(
+            username="budget_approval_admin",
+            email="budget@test.local",
+            password="test-pass-123",
+        )
+        self.client = Client()
+        self.client.login(username="budget_approval_admin", password="test-pass-123")
+
+    def test_malformed_bracket_url_redirects_clean(self):
+        ProjectTask.objects.create(
+            project_id="['1233_0900']",
+            description="Bracket legacy task",
+        )
+        url = reverse("budget_approval")
+        response = self.client.get(url, {"task_id": "['1233_0900']"}, follow=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("task_id=1233_0900", response.url)
+        self.assertNotIn("%27", response.url)
+
+    def test_clean_url_renders_without_brackets(self):
+        ProjectTask.objects.create(
+            project_id="['1233_0900']",
+            description="Bracket legacy task",
+        )
+        url = reverse("budget_approval")
+        response = self.client.get(url, {"task_id": "1233_0900"}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "1233_0900")
+        self.assertNotContains(response, "['1233_0900']")
+
+
 class UnifiedApiCreateTaskTests(TestCase):
     def setUp(self):
         user_model = get_user_model()

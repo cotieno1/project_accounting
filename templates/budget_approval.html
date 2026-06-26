@@ -14,10 +14,10 @@
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
 <small style="color: var(--muted); display: block; margin: 16px 0;">CEO · AIE Budget Authorization</small>
 <label class="nav-label">Select task</label>
-<select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
+<select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};" class="form-input">
     <option value="">-- Select project task --</option>
     {% for t in tasks %}
-    <option value="{{ t.project_id }}" {% if active_task and t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }} — {{ t.description|clean_task_description|truncatechars:28 }}</option>
+    <option value="{{ t.project_id|clean_task_id }}" {% if active_task and t.project_id|clean_task_id == active_pick_id %}selected{% endif %}>{{ t.project_id|clean_task_id }} — {{ t.description|clean_task_description|truncatechars:28 }}</option>
     {% endfor %}
 </select>
 
@@ -38,14 +38,14 @@
 <div class="sidebar-actions">
     <button type="button" class="btn-action btn-warning" style="width:100%;" onclick="openBudgetModal()">Open budget &amp; actions</button>
     {% if can_gm_pay %}
-    <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}" class="btn-action btn-success btn-action--block">→ GM payment desk</a>
+    <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}" class="btn-action btn-success btn-action--block">→ GM payment desk</a>
     {% else %}
     <button type="button" class="btn-action btn-secondary btn-action--block" disabled title="Complete approval and fund release first">GM payment desk</button>
     {% endif %}
 </div>
 
 <div class="sidebar-footer">
-    <a href="/ops-dashboard/?task_id={{ active_task.project_id }}" class="sidebar-back-link">← Ops Dashboard</a>
+    <a href="/ops-dashboard/?task_id={{ active_pick_id }}" class="sidebar-back-link">← Ops Dashboard</a>
 </div>
 {% endif %}
 {% endif %}
@@ -63,7 +63,7 @@
     <div class="header-row">
         <div class="header-left">
             <h1 class="page-title">Budget Authorization</h1>
-            <h2 class="task-id-title">Task {{ active_task.project_id }}</h2>
+            <h2 class="task-id-title">Task {{ active_pick_id }}</h2>
             <span class="task-badge {{ project_class.css }}">{{ project_class.label }}</span>
         </div>
         <button type="button" class="btn-action" onclick="openBudgetModal()">Review &amp; approve</button>
@@ -73,7 +73,7 @@
         <span class="nav-label" style="margin:0 0 8px;">Fund transfer voucher</span>
         <div class="fund-voucher-grid">
             <div><span style="color:var(--muted);">Disbursement PV No. (PV-DSB)</span><br><strong style="color:#a5b4fc;font-family:monospace;">{{ fund_release.release_number }}</strong></div>
-            <div><span style="color:var(--muted);">Task ID</span><br><strong>{{ active_task.project_id }}</strong></div>
+            <div><span style="color:var(--muted);">Task ID</span><br><strong>{{ active_pick_id }}</strong></div>
             <div><span style="color:var(--muted);">Project description</span><br><strong>{{ active_task.description|clean_task_description }}</strong></div>
         </div>
     </div>
@@ -123,7 +123,7 @@
     <table class="line-budget-table">
         <tbody>
             <tr><td style="color:var(--muted);font-family:inherit;">Disbursement PV No. (PV-DSB)</td><td style="font-family:monospace;font-weight:700;color:#a5b4fc;">{{ fund_release.release_number }}</td></tr>
-            <tr><td style="color:var(--muted);font-family:inherit;">Task ID</td><td>{{ active_task.project_id }}</td></tr>
+            <tr><td style="color:var(--muted);font-family:inherit;">Task ID</td><td>{{ active_pick_id }}</td></tr>
             <tr><td style="color:var(--muted);font-family:inherit;">Project description</td><td style="font-family:inherit;">{{ active_task.description|clean_task_description }}</td></tr>
             <tr><td style="color:var(--muted);font-family:inherit;">From</td><td style="font-family:inherit;">{{ fund_release.from_office }}</td></tr>
             <tr><td style="color:var(--muted);font-family:inherit;">To</td><td style="font-family:inherit;">{{ fund_release.to_officer }}</td></tr>
@@ -147,7 +147,7 @@
 {% if active_task and not no_tasks and not no_task_selected %}
 <div id="budgetModal" class="cockpit-modal">
     <div class="cockpit-modal-panel">
-        <h3 style="margin:0 0 8px;color:var(--primary);font-size:14px;text-transform:uppercase;">Budget vs Actual — Task {{ active_task.project_id }}</h3>
+        <h3 style="margin:0 0 8px;color:var(--primary);font-size:14px;text-transform:uppercase;">Budget vs Actual — Task {{ active_pick_id }}</h3>
         <p style="margin:0 0 8px;font-size:12px;color:var(--muted);">{{ project_class.label }} · Standard four-line reporting
             {% if budget and budget.is_ceo_approved %} · <span style="color:#6ee7b7;">CEO LOCKED</span>{% elif budget_summary.has_budget %} · <span style="color:var(--warning);">PROVISION</span>{% endif %}
         </p>

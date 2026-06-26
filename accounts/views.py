@@ -126,7 +126,11 @@ def _task_from_request(
 
     task_id = _task_id_from_request(request, include_post=include_post, include_session=True)
     qs = tasks_qs if tasks_qs is not None else ProjectTask.objects.all()
-    task = qs.filter(project_id=task_id).first() if task_id else None
+    task = None
+    if raw_requested:
+        task = _resolve_project_task(qs, raw_requested)
+    elif task_id:
+        task = _resolve_project_task(qs, task_id)
     if task_id and not task:
         request.session.pop("active_task_id", None)
     if not task and explicit_request:
@@ -134,7 +138,7 @@ def _task_from_request(
     if not task and allow_fallback:
         task = qs.order_by("project_id").first()
     if task and persist_session:
-        request.session["active_task_id"] = task.project_id
+        request.session["active_task_id"] = _bom_task_pick_id(task)
     return task
 
 
@@ -7301,7 +7305,7 @@ def _build_ceo_fund_release_voucher_context(release):
         "budget_version": provision["budget_version"],
         "ceo_aie_reference": release.aie_memo_ref or provision["ceo_aie_reference"],
         "ceo_name": ceo_name,
-        "back_url": f"/budget-approval/?task_id={task.project_id}",
+        "back_url": f"/budget-approval/?task_id={_bom_task_pick_id(task)}",
     }
 
 
@@ -7322,9 +7326,22 @@ def print_ceo_fund_release_voucher_view(request, release_id):
 @login_required
 def budget_approval_view(request):
     """CEO AIE: approve provision budget (lock lines) then release funds to GM Accounting."""
+    from urllib.parse import quote
+
     tasks = ProjectTask.objects.all().order_by("project_id")
     if not tasks.exists():
         return render(request, "budget_approval.html", {"tasks": [], "no_tasks": True})
+
+    if request.method == "GET":
+        raw_get = (request.GET.get("task_id") or "").strip()
+        if raw_get:
+            resolved = _resolve_project_task(tasks, raw_get)
+            pick_id = _bom_task_pick_id(resolved) if resolved else _normalize_task_id(raw_get)
+            if resolved and pick_id and _normalize_task_id(raw_get) == pick_id and raw_get != pick_id:
+                return redirect(
+                    reverse("budget_approval") + f"?task_id={quote(pick_id, safe='')}"
+                )
+
     active_task = _task_from_request(request, tasks, include_post=(request.method == "POST"))
     if not active_task:
         return render(request, "budget_approval.html", {
@@ -7403,7 +7420,7 @@ def budget_approval_view(request):
                     )
         except Exception as e:
             messages.error(request, str(e))
-        return redirect(f"/budget-approval/?task_id={active_task.project_id}")
+        return redirect(f"/budget-approval/?task_id={_bom_task_pick_id(active_task)}")
 
     provision_status = "none"
     if budget:
@@ -7415,6 +7432,7 @@ def budget_approval_view(request):
         {
             "tasks": tasks,
             "active_task": active_task,
+            "active_pick_id": _bom_task_pick_id(active_task),
             "project_class": project_class,
             "budget": budget,
             "budget_summary": budget_summary,

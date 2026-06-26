@@ -201,7 +201,7 @@
                         {% if not budget_summary.has_budget or not budget_summary.is_ceo_approved or not budget_summary.fund_released %}disabled
                         title="Requires CEO-approved budget and fund release from Budget Authorization"{% endif %}>Post payment</button>
                     {% if not budget_summary.is_ceo_approved %}
-                    <p style="font-size:11px;color:var(--muted);margin-top:8px;">CEO must approve budget at <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id }}" style="color:#93c5fd;">Budget Authorization</a>.</p>
+                    <p style="font-size:11px;color:var(--muted);margin-top:8px;">CEO must approve budget at <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id|clean_task_id }}" style="color:#93c5fd;">Budget Authorization</a>.</p>
                     {% elif not budget_summary.fund_released %}
                     <p style="font-size:11px;color:var(--muted);margin-top:8px;">CEO must release funds to GM before payments can be posted.</p>
                     {% endif %}
