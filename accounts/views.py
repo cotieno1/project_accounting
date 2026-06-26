@@ -6976,42 +6976,95 @@ def _next_disbursement_payment_number():
     return f"{prefix}{seq:04d}"
 
 
+def _task_grn_received_total(task):
+    """Sum GRN line value received on this task (partial or full delivery)."""
+    if not task:
+        return Decimal("0.00")
+    total = Decimal("0.00")
+    grns = GRNTransaction.objects.filter(lpo__project_task=task).prefetch_related(
+        "lines__lpo_item"
+    )
+    for grn in grns:
+        total += _grn_receipt_amount(grn)
+    return total
+
+
+def _task_has_major_procurement(task):
+    if not task:
+        return False
+    return LPOTransaction.objects.filter(project_task=task).exclude(
+        status=LPOTransaction.STATUS_CANCELLED
+    ).exists()
+
+
 def _task_project_class(task):
-    """Major vs Ad-Hoc label derived from committed budget channel."""
+    """Major vs Ad-Hoc label derived from procurement lane activity."""
     budget = _task_budget_record(task)
-    if budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
-        return {"label": "Project (Ad-Hoc)", "css": "task-adhoc", "code": "ADHOC"}
+    if _task_has_major_procurement(task):
+        return {"label": "Project (Major)", "css": "task-major", "code": "MAJOR"}
     if budget and budget.budget_type == ProjectBudget.BUDGET_RFQ_LPO:
         return {"label": "Project (Major)", "css": "task-major", "code": "MAJOR"}
+    if budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
+        return {"label": "Project (Ad-Hoc)", "css": "task-adhoc", "code": "ADHOC"}
     if MiscPurchaseOrder.objects.filter(task=task).exists():
         return {"label": "Project (Ad-Hoc)", "css": "task-adhoc", "code": "ADHOC"}
-    if LPOTransaction.objects.filter(project_task=task).exists():
-        return {"label": "Project (Major)", "css": "task-major", "code": "MAJOR"}
     return {"label": "Task (Uncommitted)", "css": "task-neutral", "code": "NONE"}
 
 
-def _disbursement_line_budget_amount(budget, line_key):
+def _disbursement_line_budget_amount(budget, line_key, *, major_status=None):
     field_map = {k: f for k, f, _ in DISBURSEMENT_BUDGET_LINES}
     if not budget:
         return Decimal("0.00")
-    return getattr(budget, field_map[line_key], Decimal("0.00")) or Decimal("0.00")
+    amount = getattr(budget, field_map[line_key], Decimal("0.00")) or Decimal("0.00")
+    if amount > 0:
+        return amount
+    if line_key == TaskDisbursementPayment.LINE_MATERIAL and major_status:
+        material = Decimal(str(major_status.get("material") or "0"))
+        if material > 0:
+            return material
+    if line_key == TaskDisbursementPayment.LINE_LABOUR and major_status:
+        labour = Decimal(str(major_status.get("labour") or "0"))
+        if labour > 0:
+            return labour
+    if line_key == TaskDisbursementPayment.LINE_MAINTENANCE and major_status:
+        misc = Decimal(str(major_status.get("misc") or "0"))
+        if misc > 0:
+            return misc
+    total = budget.total_authorized_budget or Decimal("0.00")
+    if total > 0 and line_key == TaskDisbursementPayment.LINE_MATERIAL:
+        return total
+    return Decimal("0.00")
 
 
-def _disbursement_line_actual(task, line_key):
-    return (
+def _disbursement_line_actual(task, line_key, *, major_status=None):
+    posted = (
         TaskDisbursementPayment.objects.filter(task=task, budget_line=line_key).aggregate(
             t=Sum("amount")
         )["t"]
         or Decimal("0.00")
     )
+    if line_key != TaskDisbursementPayment.LINE_MATERIAL or not task:
+        return posted
+    grn_total = _task_grn_received_total(task)
+    if grn_total > 0:
+        return grn_total
+    if major_status:
+        used = Decimal(str(major_status.get("used") or "0"))
+        if used > 0:
+            return used
+        lpo_material = Decimal(str(major_status.get("lpo_material") or "0"))
+        if lpo_material > 0:
+            return lpo_material
+    return posted
 
 
 def _task_disbursement_budget_summary(task):
     budget = _task_budget_record(task)
+    major_status = _build_task_budget_status(task) if task else None
     lines = []
     for key, _field, label in DISBURSEMENT_BUDGET_LINES:
-        bud = _disbursement_line_budget_amount(budget, key)
-        actual = _disbursement_line_actual(task, key)
+        bud = _disbursement_line_budget_amount(budget, key, major_status=major_status)
+        actual = _disbursement_line_actual(task, key, major_status=major_status)
         variance = bud - actual
         lines.append({
             "key": key,
@@ -7024,16 +7077,19 @@ def _task_disbursement_budget_summary(task):
         })
     total_budget = sum(l["budget"] for l in lines)
     total_actual = sum(l["actual"] for l in lines)
+    has_budget = budget is not None or bool(
+        major_status and major_status.get("has_budget")
+    ) or _task_has_major_procurement(task)
     return {
         "lines": lines,
         "total_budget": total_budget,
         "total_actual": total_actual,
         "total_variance": total_budget - total_actual,
-        "has_budget": budget is not None,
-        "budget_label": budget.budget_label if budget else "",
-        "budget_version": budget.version if budget else 0,
+        "has_budget": has_budget,
+        "budget_label": budget.budget_label if budget else (major_status or {}).get("label", ""),
+        "budget_version": budget.version if budget else (major_status or {}).get("version", 0),
         "is_ceo_approved": bool(budget and budget.is_ceo_approved),
-        "fund_released": CEOFundRelease.objects.filter(task=task).exists(),
+        "fund_released": CEOFundRelease.objects.filter(task=task).exists() if task else False,
     }
 
 
@@ -7073,13 +7129,19 @@ def _gm_desk_blocked(task, budget_summary, project_class):
 
 
 def _gm_resolve_active_task(request, tasks):
-    return _task_from_request(request, tasks, allow_fallback=False)
+    raw = (request.GET.get("task_id") or "").strip()
+    if not raw and request.method == "POST":
+        raw = (request.POST.get("task_id") or "").strip()
+    if not raw:
+        return None
+    return _resolve_project_task(tasks, raw)
 
 
 def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
     code = project_class["code"]
-    is_major = code == "MAJOR"
-    is_adhoc = code == "ADHOC"
+    has_major_lane = code == "MAJOR" or _task_has_major_procurement(task)
+    is_major = has_major_lane
+    is_adhoc = code == "ADHOC" and not has_major_lane
     has_budget = budget_summary.get("has_budget", False)
     approved = budget_summary.get("is_ceo_approved", False)
     released = budget_summary.get("fund_released", False)
@@ -7112,9 +7174,9 @@ def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
         "has_budget": has_budget,
         "budget_approved": approved,
         "fund_released": released,
-        "enable_grn": is_major,
-        "enable_supplier_pv": is_major,
-        "enable_goods_status": is_major,
+        "enable_grn": has_major_lane,
+        "enable_supplier_pv": has_major_lane,
+        "enable_goods_status": has_major_lane,
         "enable_adhoc_ro": is_adhoc,
         "enable_officer_pv": is_adhoc,
         "grn_hint": grn_hint,

@@ -17,6 +17,7 @@
             {% endfor %}
         </select>
 
+        {% if active_task %}
         <div class="gm-sidebar-tools{% if gm_desk_blocked %} is-blocked{% endif %}">
         <div class="sidebar-block">
             <button type="button" class="btn-action" onclick="togglePayList()" style="width:100%;background:#1e293b;">
@@ -86,8 +87,13 @@
         </button>
         {% if task_caps.budget_hint %}<p class="sidebar-hint" style="margin-top:12px;">{{ task_caps.budget_hint }}</p>{% endif %}
         </div>
+        {% endif %}
         <div class="sidebar-footer">
-            <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_pick_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Ops Dashboard</a>
+            {% if active_task %}
+            <a href="/ops-dashboard/?task_id={{ active_pick_id }}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Ops Dashboard</a>
+            {% else %}
+            <a href="{% url 'ops_dashboard' %}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Ops Dashboard</a>
+            {% endif %}
         </div>
 {% else %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
