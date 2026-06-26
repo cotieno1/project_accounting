@@ -167,6 +167,13 @@ def _bid_eval_redirect_url(task):
     return f"{reverse('bid_evaluation_terminal')}?task_id={tid}"
 
 
+def _bid_eval_sidebar_tools_enabled(workspace):
+    """LPO / budget sidebar modals only when bid eval is open or post-LPO."""
+    if not workspace:
+        return False
+    return workspace.get("stage") in ("open", "completed")
+
+
 # =======================================================================
 # 🔐 AUTH & ACCESS CONTROLLERS
 # =======================================================================
@@ -4016,6 +4023,7 @@ def bid_evaluation_terminal_view(request):
             "bid_eval_block_reason": "",
             "bid_eval_checklist": [],
             "bid_eval_workspace": _bid_evaluation_workspace(None),
+            "bid_eval_sidebar_tools_enabled": False,
         })
 
     suppliers = SupplierAccount.objects.all().order_by("description")
@@ -4162,6 +4170,7 @@ def bid_evaluation_terminal_view(request):
         "bid_eval_block_reason": bid_workspace.get("reason", ""),
         "bid_eval_checklist": bid_workspace.get("checklist", []),
         "bid_eval_workspace": bid_workspace,
+        "bid_eval_sidebar_tools_enabled": _bid_eval_sidebar_tools_enabled(bid_workspace),
     })
 # ===============================================================================
 def print_lpo_preview(request):

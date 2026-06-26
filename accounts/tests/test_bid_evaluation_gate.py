@@ -129,6 +129,7 @@ class BidEvaluationGateViewTests(TestCase):
         self.assertContains(response, "Start the Bid Eval / Budget Process")
         self.assertNotContains(response, "Select Two Bidders")
         self.assertNotContains(response, "Procurement prerequisites")
+        self.assertContains(response, "btn-budget-modal\" disabled")
 
     def test_malformed_bracket_url_redirects_clean(self):
         ProjectTask.objects.create(

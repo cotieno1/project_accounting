@@ -52,9 +52,9 @@
     {% endif %}
     <div class="nav-section">
         <span class="nav-label">Project Task LPO / Budget Status</span>
-        <button type="button" class="btn-action btn-budget-modal" onclick="openBudgetModal()">Materials: Budget vs Actual &amp; Variance</button>
-        <button type="button" class="btn-action btn-lpo-list" onclick="openLpoListingModal()">LPO Listing ({{ budget_status.lpo_count }})</button>
-        <button type="button" class="btn-action btn-grn-list" onclick="openGrnListingModal()">GRN Listing ({{ grn_count }})</button>
+        <button type="button" class="btn-action btn-budget-modal"{% if bid_eval_sidebar_tools_enabled %} onclick="openBudgetModal()"{% else %} disabled title="Available after bid evaluation starts (BOM, RO, and RFQs complete)."{% endif %}>Materials: Budget vs Actual &amp; Variance</button>
+        <button type="button" class="btn-action btn-lpo-list"{% if bid_eval_sidebar_tools_enabled %} onclick="openLpoListingModal()"{% else %} disabled title="Available after bid evaluation starts (BOM, RO, and RFQs complete)."{% endif %}>LPO Listing ({{ budget_status.lpo_count }})</button>
+        <button type="button" class="btn-action btn-grn-list"{% if bid_eval_sidebar_tools_enabled %} onclick="openGrnListingModal()"{% else %} disabled title="Available after bid evaluation starts (BOM, RO, and RFQs complete)."{% endif %}>GRN Listing ({{ grn_count }})</button>
     </div>
 
     <div class="sidebar-footer">

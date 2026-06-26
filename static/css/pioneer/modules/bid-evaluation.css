@@ -44,6 +44,11 @@ body.bid-eval .workspace-scroller { padding: 0; overflow: hidden; gap: 0; displa
 .btn-budget-modal { width: 100%; margin-bottom: 10px; margin-top: 0; }
 .btn-lpo-list { width: 100%; background: var(--success); margin-top: 0; }
 .btn-grn-list { width: 100%; background: var(--accent); margin-top: 10px; }
+.bid-eval .nav-section .btn-action:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.35);
+}
 .bid-eval .selection-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 5px; }
 .bid-eval .vault-pane { background: var(--card); border-radius: var(--radius-md); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
 .vault-pane-head { padding: 15px; background: var(--surface-deep); border-bottom: 1px solid var(--border); }
