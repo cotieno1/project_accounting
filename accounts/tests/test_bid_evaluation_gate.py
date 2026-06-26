@@ -126,6 +126,7 @@ class BidEvaluationGateViewTests(TestCase):
         self.assertContains(response, "Create Misc Purchase")
         self.assertContains(response, "bid-eval-lane-choice")
         self.assertContains(response, "Abandon (Esc)")
+        self.assertContains(response, "Start the Bid Eval / Budget Process")
         self.assertNotContains(response, "Select Two Bidders")
         self.assertNotContains(response, "Procurement prerequisites")
 

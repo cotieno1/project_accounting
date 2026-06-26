@@ -107,11 +107,17 @@
                 <strong>create Misc Purchase</strong> (MRO),
                 or <strong>abandon</strong> and return to the main menu
                 (<kbd style="padding:2px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;">Esc</kbd>).
+                <strong>Start the Bid Eval / Budget Process</strong> stays unavailable until BOM, RO, and RFQs are complete.
             </p>
             <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
                 <a href="{{ bid_eval_workspace.bom_url }}" class="btn-action btn-success" style="text-decoration:none;margin:0;">Create BOM</a>
                 <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action" style="text-decoration:none;margin:0;">Create Misc Purchase</a>
                 <a href="{{ bid_eval_workspace.ops_dashboard_url }}" class="btn-action" style="text-decoration:none;margin:0;background:#334155;">Abandon (Esc)</a>
+                <button type="button" class="btn-action" disabled
+                    title="Complete BOM, RO, and RFQ dispatch on the major procurement path first."
+                    style="margin:0;opacity:0.45;cursor:not-allowed;background:#475569;color:var(--text-muted);">
+                    Start the Bid Eval / Budget Process
+                </button>
             </div>
         </div>
         {% elif bid_eval_workspace.stage == 'misc' %}
