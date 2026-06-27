@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.core.management.base import BaseCommand
 from django.db import connection
 
@@ -45,3 +47,20 @@ class Command(BaseCommand):
         except Exception as exc:
             self.stdout.write(self.style.ERROR(f"Organization bootstrap failed: {exc}"))
             self.stdout.write("Run: python manage.py migrate --noinput")
+
+        try:
+            from accounts.ledger import ensure_fund_control_accounts, fund_ceo_disbursement_account
+            from django.contrib.auth import get_user_model
+
+            ensure_fund_control_accounts()
+            User = get_user_model()
+            admin = User.objects.filter(is_superuser=True).order_by("id").first()
+            if admin:
+                fund_ceo_disbursement_account(
+                    Decimal("1000000.00"),
+                    admin,
+                    memo="Bootstrap treasury funding of CEO disbursement account",
+                )
+            self.stdout.write(self.style.SUCCESS("Ledger control accounts OK."))
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f"Ledger bootstrap skipped: {exc}"))

@@ -163,6 +163,14 @@ class UserAccount(models.Model):
         default="",
         help_text="Last onboarding email failure message, if any.",
     )
+    control_gl_account = models.ForeignKey(
+        "GLAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="employee_controls",
+        help_text="Employee advance control account for GM cash/M-Pesa disbursements.",
+    )
 
     def onboarding_status_label(self):
         if not self.must_change_password:
@@ -277,6 +285,14 @@ class BankAccount(models.Model):
     contact_address = models.TextField()
     phone = models.CharField(max_length=20)
     email = models.EmailField()
+    ledger_gl_account = models.ForeignKey(
+        "GLAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="bank_ledgers",
+        help_text="Linked GL control account for this bank.",
+    )
 
     def __str__(self):
         return f"{self.bank_account_id} - {self.description}"
@@ -293,6 +309,14 @@ class SupplierAccount(models.Model):
     contact_address = models.TextField()
     phone = models.CharField(max_length=20)
     email = models.EmailField()
+    control_gl_account = models.ForeignKey(
+        "GLAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="supplier_controls",
+        help_text="Supplier sub-ledger control account for GM payments.",
+    )
 
     def __str__(self):
         return f"{self.supplier_id} - {self.description}"
@@ -324,6 +348,24 @@ class GLAccount(models.Model):
     description = models.CharField(max_length=200)
 
     analysis_category = models.ForeignKey(GLAnalysisCategory, on_delete=models.SET_NULL, null=True)
+
+    ROLE_CEO_DISBURSEMENT = "CEO_DISBURSEMENT"
+    ROLE_GM_OPERATING = "GM_OPERATING"
+    ROLE_SUPPLIER_CONTROL = "SUPPLIER_CONTROL"
+    ROLE_EMPLOYEE_CONTROL = "EMPLOYEE_CONTROL"
+    ROLE_CHOICES = [
+        (ROLE_CEO_DISBURSEMENT, "CEO Disbursement Account"),
+        (ROLE_GM_OPERATING, "GM Operating / Expense Account"),
+        (ROLE_SUPPLIER_CONTROL, "Supplier Control"),
+        (ROLE_EMPLOYEE_CONTROL, "Employee Control"),
+    ]
+    account_role = models.CharField(
+        max_length=30,
+        choices=ROLE_CHOICES,
+        blank=True,
+        default="",
+        help_text="System role for fund-control accounts.",
+    )
 
     currency = models.CharField(max_length=10)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -637,6 +679,13 @@ class PaymentOrder(models.Model):
 
     is_confirmed_by_director = models.BooleanField(default=False)
     date_confirmed = models.DateTimeField(null=True, blank=True)
+    ledger_posting = models.ForeignKey(
+        "GLLedgerPosting",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="payment_orders",
+    )
 
     def save(self, *args, **kwargs):
         if not self.pay_order_no:
@@ -823,6 +872,14 @@ class AdHocOfficerPaymentVoucher(models.Model):
     )
     task = models.ForeignKey("ProjectTask", on_delete=models.PROTECT)
     officer_name = models.CharField(max_length=255, help_text="Receiving / purchasing officer")
+    employee = models.ForeignKey(
+        "UserAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="officer_vouchers",
+        help_text="Linked employee registry record for control-account posting.",
+    )
     PAY_METHODS = [
         ("CASH", "Cash"),
         ("MPESA", "M-Pesa"),
@@ -846,6 +903,13 @@ class AdHocOfficerPaymentVoucher(models.Model):
         "auth.User", on_delete=models.SET_NULL, null=True, blank=True
     )
     created_at = models.DateTimeField(default=timezone.now)
+    ledger_posting = models.ForeignKey(
+        "GLLedgerPosting",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="officer_vouchers",
+    )
 
     @property
     def is_settled(self):
@@ -1049,12 +1113,107 @@ class CEOFundRelease(models.Model):
         related_name="ceo_fund_releases",
     )
     released_at = models.DateTimeField(auto_now_add=True)
+    ledger_posting = models.ForeignKey(
+        "GLLedgerPosting",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="fund_releases",
+    )
 
     class Meta:
         ordering = ["-released_at"]
 
     def __str__(self):
         return f"{self.release_number} — KES {self.amount} → {self.to_officer}"
+
+
+class LedgerControlSettings(models.Model):
+    """Singleton mapping for CEO → GM fund-control GL and bank accounts."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    ceo_disbursement_gl = models.ForeignKey(
+        GLAccount,
+        on_delete=models.PROTECT,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+    ceo_disbursement_bank = models.ForeignKey(
+        BankAccount,
+        on_delete=models.PROTECT,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+    gm_operating_gl = models.ForeignKey(
+        GLAccount,
+        on_delete=models.PROTECT,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+    gm_operating_bank = models.ForeignKey(
+        BankAccount,
+        on_delete=models.PROTECT,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = "Ledger control settings"
+        verbose_name_plural = "Ledger control settings"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class GLLedgerPosting(models.Model):
+    """Immutable GL movement for CEO disbursement and GM payments."""
+
+    TYPE_CEO_TO_GM = "CEO_TO_GM"
+    TYPE_OFFICER_ADVANCE = "OFFICER_ADVANCE"
+    TYPE_SUPPLIER_PAYMENT = "SUPPLIER_PAYMENT"
+    TYPE_GM_EXPENSE = "GM_EXPENSE"
+    TYPE_CHOICES = [
+        (TYPE_CEO_TO_GM, "CEO to GM transfer"),
+        (TYPE_OFFICER_ADVANCE, "Employee advance"),
+        (TYPE_SUPPLIER_PAYMENT, "Supplier payment"),
+        (TYPE_GM_EXPENSE, "GM expense payment"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    task = models.ForeignKey(
+        ProjectTask, on_delete=models.PROTECT, null=True, blank=True, related_name="ledger_postings"
+    )
+    posting_type = models.CharField(max_length=30, choices=TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    debit_gl = models.ForeignKey(
+        GLAccount, on_delete=models.PROTECT, related_name="ledger_debits"
+    )
+    credit_gl = models.ForeignKey(
+        GLAccount, on_delete=models.PROTECT, related_name="ledger_credits"
+    )
+    reference_type = models.CharField(max_length=50, blank=True, default="")
+    reference_id = models.CharField(max_length=100, blank=True, default="")
+    memo = models.TextField(blank=True, default="")
+    posted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="ledger_postings"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.posting_type} {self.amount} ({self.reference_type}:{self.reference_id})"
 
 
 # ====================================================================

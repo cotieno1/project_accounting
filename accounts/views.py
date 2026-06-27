@@ -3717,7 +3717,14 @@ def _gm_create_payment_voucher(request, active_task, task_caps=None):
     prepared_by = (request.POST.get("prepared_by_name") or "").strip()
     notes = (request.POST.get("payment_notes") or "").strip()
 
+    gate = _misc_ceo_payment_voucher_gate(active_task)
+    if not gate.get("can_raise_pv"):
+        messages.error(request, gate.get("message") or "CEO budget approval and fund release required.")
+        return redirect(_gm_disbursement_redirect(active_task, **gm_return))
+
     try:
+        from accounts.ledger import post_supplier_payment_voucher
+
         with db_transaction.atomic():
             pv = PaymentOrder.objects.create(
                 grn=grn,
@@ -3729,6 +3736,7 @@ def _gm_create_payment_voucher(request, active_task, task_caps=None):
                 payment_notes=notes,
                 prepared_by_name=prepared_by,
             )
+            post_supplier_payment_voucher(pv, request.user)
         messages.success(
             request,
             f"Payment voucher {pv.pay_order_no} raised for GRN {grn.grn_no} — "
@@ -4737,7 +4745,7 @@ def _misc_planned_budget(task):
         return material + misc if (material + misc) > 0 else Decimal("0.00")
     if budget and budget.budget_type == ProjectBudget.BUDGET_RFQ_LPO:
         return budget.misc_reserve or Decimal("0.00")
-    return Decimal("120000.00")
+    return Decimal("0.00")
 
 
 def _misc_locked_total(task):
@@ -5071,7 +5079,14 @@ def _gm_create_officer_payment_voucher(request, active_task, task_caps):
         messages.error(request, "Enter a purchase quantity greater than zero for at least one line.")
         return redirect(_gm_officer_pv_return(active_task, **gm_return))
 
+    pv_gate = _misc_ceo_payment_voucher_gate(active_task)
+    if not pv_gate.get("can_raise_pv"):
+        messages.error(request, pv_gate.get("message") or "CEO budget approval and fund release required.")
+        return redirect(_gm_officer_pv_return(active_task, **gm_return))
+
     try:
+        from accounts.ledger import post_officer_advance_voucher
+
         with db_transaction.atomic():
             pv = AdHocOfficerPaymentVoucher.objects.create(
                 mpo=mpo,
@@ -5095,6 +5110,7 @@ def _gm_create_officer_payment_voucher(request, active_task, task_caps):
                     unit_price=unit_price,
                     line_total=line_total,
                 )
+            post_officer_advance_voucher(pv, request.user)
             _misc_mark_mpo_disbursed_if_complete(mpo)
     except ValueError as e:
         messages.error(request, str(e))
@@ -7259,6 +7275,9 @@ def gm_aie_disbursement_view(request):
                     payee = (request.POST.get("payee") or "").strip()
                     method = request.POST.get("payment_method", "BANK")
                     aie_ref = (request.POST.get("aie_reference") or "").strip()
+                    from accounts.ledger import assert_task_can_disburse, post_task_disbursement_payment
+
+                    assert_task_can_disburse(active_task, amount, require_ceo_gate=True)
                     payment = TaskDisbursementPayment.objects.create(
                         payment_number=_next_disbursement_payment_number(),
                         task=active_task,
@@ -7270,6 +7289,7 @@ def gm_aie_disbursement_view(request):
                         aie_reference=aie_ref,
                         posted_by=request.user,
                     )
+                    post_task_disbursement_payment(payment, request.user)
                     messages.success(
                         request,
                         f"Payment {payment.payment_number} posted — US$ {amount:.2f} ({payment.get_budget_line_display()}).",
@@ -7499,7 +7519,9 @@ def budget_approval_view(request):
                     if not bank_ref:
                         raise ValueError("Enter the bank transfer reference.")
                     memo = (request.POST.get("aie_memo_ref") or budget.ceo_aie_reference or "").strip()
-                    CEOFundRelease.objects.create(
+                    from accounts.ledger import post_ceo_fund_release
+
+                    release = CEOFundRelease.objects.create(
                         release_number=_next_fund_release_number(),
                         task=active_task,
                         budget=budget,
@@ -7514,6 +7536,7 @@ def budget_approval_view(request):
                         notes=(request.POST.get("release_notes") or "").strip(),
                         authorized_by=request.user,
                     )
+                    post_ceo_fund_release(release, request.user)
                     messages.success(
                         request,
                         f"Bank transfer US$ {budget.total_authorized_budget:.2f} "
