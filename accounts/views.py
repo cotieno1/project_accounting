@@ -7363,6 +7363,7 @@ def gm_aie_disbursement_view(request):
             "adhoc_ro_period_open": request.GET.get("open_adhoc_ro_period") == "1",
             "officer_pv_period_open": request.GET.get("open_officer_pv_period") == "1",
             "goods_status_open": request.GET.get("open_goods_status") == "1",
+            "can_view_fund_ledger": _can_view_fund_ledger(request.user),
         },
     )
 
@@ -7569,5 +7570,56 @@ def budget_approval_view(request):
             "can_gm_pay": bool(
                 budget and budget.is_ceo_approved and fund_release
             ),
+            "can_view_fund_ledger": _can_view_fund_ledger(request.user),
         },
     )
+
+
+def _can_view_fund_ledger(user):
+    from .roles import user_can, PERM_VIEW_FUND_LEDGER
+
+    return user_can(user, PERM_VIEW_FUND_LEDGER)
+
+
+def _fund_ledger_context(request):
+    from accounts.ledger import build_fund_ledger_report
+
+    task_filter = (request.GET.get("task_id") or "").strip()
+    active_task = None
+    if task_filter:
+        active_task = _resolve_project_task(
+            ProjectTask.objects.all(), task_filter
+        ) or ProjectTask.objects.filter(project_id=task_filter).first()
+    report = build_fund_ledger_report(task=active_task)
+    return {
+        "tasks": ProjectTask.objects.all().order_by("project_id"),
+        "active_task": active_task,
+        "active_pick_id": _bom_task_pick_id(active_task) if active_task else "",
+        "report": report,
+        "ceo_gl": report["ceo_gl"],
+        "gm_gl": report["gm_gl"],
+        "ceo_bank": report["ceo_bank"],
+        "gm_bank": report["gm_bank"],
+        "control_accounts": report["control_accounts"],
+        "postings": report["postings"],
+        "task_wallets": report["task_wallets"],
+        "generated_at": report["generated_at"],
+        "auto_print": request.GET.get("print") == "1",
+        "back_url": request.GET.get("back") or request.META.get("HTTP_REFERER") or "/ops-dashboard/",
+    }
+
+
+@login_required
+def fund_ledger_view(request):
+    """CEO / GM fund-control ledger — balances and GL journal."""
+    if not _can_view_fund_ledger(request.user):
+        return HttpResponseForbidden("Fund ledger is restricted to CEO and GM roles.")
+    return render(request, "fund_ledger.html", _fund_ledger_context(request))
+
+
+@login_required
+def print_fund_ledger_view(request):
+    """Printable fund-control ledger for CEO / GM audit."""
+    if not _can_view_fund_ledger(request.user):
+        return HttpResponseForbidden("Fund ledger is restricted to CEO and GM roles.")
+    return render(request, "fund_ledger_print.html", _fund_ledger_context(request))

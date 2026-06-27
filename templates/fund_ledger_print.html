@@ -1,0 +1,85 @@
+﻿{% load pioneer_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fund Control Ledger — {{ generated_at|date:"d M Y" }}</title>
+{% include "includes/lpo_document_styles.html" %}
+<style>
+@page { size: A4 landscape; margin: 8mm; }
+body { font-size: 8.5pt; }
+.ledger-print h1 { font-size: 14px; margin: 0 0 4px; color: #1e3a8a; }
+.ledger-print .meta { color: #64748b; font-size: 8pt; margin-bottom: 10px; }
+.ledger-print table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+.ledger-print th, .ledger-print td { border: 1px solid #cbd5e1; padding: 4px 6px; }
+.ledger-print th { background: #f1f5f9; font-size: 7pt; text-transform: uppercase; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 14px; }
+.summary-box { border: 1px solid #1e3a8a; padding: 8px; background: #f8fafc; }
+.summary-box .label { font-size: 7pt; text-transform: uppercase; color: #64748b; }
+.summary-box .amt { font-size: 14pt; font-weight: 700; color: #1e3a8a; }
+@media print { .no-print { display: none !important; } }
+</style>
+</head>
+<body class="pioneer-doc-print ledger-print">
+<div class="screen-toolbar no-print">
+<button type="button" onclick="window.print()">Print ledger</button>
+<a href="{% url 'fund_ledger' %}{% if active_pick_id %}?task_id={{ active_pick_id }}{% endif %}">Back to ledger screen</a>
+</div>
+<div class="lpo-paper"><div class="doc">
+<div class="brand-bar"></div>
+{% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Fund Control Ledger — CEO & GM" %}
+<p class="meta">Generated {{ generated_at|date:"d M Y H:i" }}{% if active_task %} · Task filter: {{ active_pick_id }}{% else %} · All tasks{% endif %}</p>
+<div class="summary-grid">
+<div class="summary-box">
+<div class="label">CEO Disbursement Account</div>
+<div class="amt">US$ {% if ceo_gl %}{{ ceo_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+<small>{% if ceo_gl %}{{ ceo_gl.gl_account_id }}{% endif %}{% if ceo_bank %} · {{ ceo_bank.account_number }}{% endif %}</small>
+</div>
+<div class="summary-box">
+<div class="label">GM Operating / Expense Account</div>
+<div class="amt">US$ {% if gm_gl %}{{ gm_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+<small>{% if gm_gl %}{{ gm_gl.gl_account_id }}{% endif %}{% if gm_bank %} · {{ gm_bank.account_number }}{% endif %}</small>
+</div>
+</div>
+{% if task_wallets %}
+<h2 style="font-size:10pt;margin:8px 0 4px;">Task CEO-released wallets</h2>
+<table>
+<thead><tr><th>Task</th><th>Released</th><th>Spent</th><th>Available</th></tr></thead>
+<tbody>
+{% for row in task_wallets %}
+<tr>
+<td>{{ row.task.project_id|clean_task_id }}</td>
+<td>{{ row.released|floatformat:2 }}</td>
+<td>{{ row.spent|floatformat:2 }}</td>
+<td><strong>{{ row.wallet|floatformat:2 }}</strong></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+<h2 style="font-size:10pt;margin:8px 0 4px;">GL journal</h2>
+<table>
+<thead>
+<tr><th>Date</th><th>Type</th><th>Task</th><th>Debit GL</th><th>Credit GL</th><th>Amount</th><th>Ref</th></tr>
+</thead>
+<tbody>
+{% for p in postings %}
+<tr>
+<td>{{ p.created_at|date:"d/m/Y H:i" }}</td>
+<td>{{ p.get_posting_type_display }}</td>
+<td>{% if p.task %}{{ p.task.project_id|clean_task_id }}{% else %}—{% endif %}</td>
+<td>{{ p.debit_gl.gl_account_id }}</td>
+<td>{{ p.credit_gl.gl_account_id }}</td>
+<td><strong>{{ p.amount|floatformat:2 }}</strong></td>
+<td>{{ p.reference_type }}:{{ p.reference_id }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="7">No postings recorded.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<p class="footer-note" style="font-size:7pt;color:#64748b;margin-top:8px;">Fund-control GL: CEO releases credit CEO Disbursement and debit GM Operating; GM payments debit supplier/employee control and credit GM Operating.</p>
+</div></div>
+{% if auto_print %}<script>window.addEventListener("load",function(){window.print();});</script>{% endif %}
+</body>
+</html>

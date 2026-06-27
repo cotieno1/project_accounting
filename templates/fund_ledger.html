@@ -1,0 +1,117 @@
+﻿{% extends "layouts/cockpit.html" %}
+{% load static %}
+{% load pioneer_tags %}
+{% block title %}Pioneer | Fund Control Ledger{% endblock %}
+{% block body_class %}fund-ledger{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/budget-approval.css' %}">
+<style>
+.fund-ledger .ledger-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:16px 0 24px; }
+.fund-ledger .ledger-card { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:14px; }
+.fund-ledger .ledger-card h3 { margin:0 0 6px; font-size:13px; color:#64748b; text-transform:uppercase; letter-spacing:.04em; }
+.fund-ledger .ledger-card .bal { font-size:22px; font-weight:700; color:#1e3a8a; }
+.fund-ledger table.ledger-table { width:100%; border-collapse:collapse; font-size:13px; }
+.fund-ledger table.ledger-table th, .fund-ledger table.ledger-table td { border:1px solid #e2e8f0; padding:8px 10px; text-align:left; }
+.fund-ledger table.ledger-table th { background:#f8fafc; font-size:11px; text-transform:uppercase; color:#475569; }
+.fund-ledger .toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0 20px; }
+</style>
+{% endblock %}
+{% block sidebar %}
+<h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
+<small style="color: var(--muted); display: block; margin: 16px 0;">Fund control ledger — CEO &amp; GM</small>
+<label class="nav-label">Filter by task</label>
+<select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='{% url 'fund_ledger' %}'};" class="form-input">
+    <option value="">All tasks</option>
+    {% for t in tasks %}
+    <option value="{{ t.project_id|clean_task_id }}" {% if active_task and t.project_id|clean_task_id == active_pick_id %}selected{% endif %}>{{ t.project_id|clean_task_id }}</option>
+    {% endfor %}
+</select>
+<div class="sidebar-actions" style="margin-top:16px;">
+    <a href="{% url 'print_fund_ledger' %}{% if active_pick_id %}?task_id={{ active_pick_id }}&print=1{% else %}?print=1{% endif %}" target="_blank" class="btn-action btn-success btn-action--block">Print ledger report</a>
+    <a href="{% url 'budget_approval' %}" class="btn-action btn-secondary btn-action--block">CEO budget desk</a>
+    <a href="{% url 'gm_aie_disbursement' %}" class="btn-action btn-secondary btn-action--block">GM payment desk</a>
+</div>
+<div class="sidebar-footer">
+    <a href="/ops-dashboard/" class="sidebar-back-link">← Ops Dashboard</a>
+</div>
+{% endblock %}
+{% block workspace %}
+<div class="fund-ledger">
+    <h1>Fund Control Ledger</h1>
+    <p style="color:var(--muted);margin-top:4px;">CEO Disbursement → GM Operating wallet · supplier &amp; employee control accounts</p>
+    <p style="font-size:12px;color:var(--muted);">Generated {{ generated_at|date:"d M Y H:i" }}{% if active_task %} · Task {{ active_pick_id }}{% endif %}</p>
+    <div class="toolbar">
+        <a href="{% url 'print_fund_ledger' %}{% if active_pick_id %}?task_id={{ active_pick_id }}&print=1{% else %}?print=1{% endif %}" target="_blank" class="btn-action btn-success">Print / PDF</a>
+    </div>
+    <div class="ledger-summary">
+        <div class="ledger-card">
+            <h3>CEO Disbursement GL</h3>
+            <div class="bal">{{ currency_symbol }} {% if ceo_gl %}{{ ceo_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+            <small>{% if ceo_gl %}{{ ceo_gl.gl_account_id }} — {{ ceo_gl.description }}{% endif %}</small>
+            {% if ceo_bank %}<br><small>Bank: {{ ceo_bank.description }} ({{ ceo_bank.account_number }})</small>{% endif %}
+        </div>
+        <div class="ledger-card">
+            <h3>GM Operating GL</h3>
+            <div class="bal">{{ currency_symbol }} {% if gm_gl %}{{ gm_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+            <small>{% if gm_gl %}{{ gm_gl.gl_account_id }} — {{ gm_gl.description }}{% endif %}</small>
+            {% if gm_bank %}<br><small>Bank: {{ gm_bank.description }} ({{ gm_bank.account_number }})</small>{% endif %}
+        </div>
+    </div>
+    {% if task_wallets %}
+    <h2 style="font-size:16px;margin:20px 0 10px;">Task CEO-released wallets</h2>
+    <table class="ledger-table">
+        <thead><tr><th>Task</th><th>Released</th><th>Spent</th><th>Available</th></tr></thead>
+        <tbody>
+        {% for row in task_wallets %}
+        <tr>
+            <td>{{ row.task.project_id|clean_task_id }} — {{ row.task.description|clean_task_description|truncatechars:40 }}</td>
+            <td>{{ currency_symbol }} {{ row.released|floatformat:2 }}</td>
+            <td>{{ currency_symbol }} {{ row.spent|floatformat:2 }}</td>
+            <td><strong>{{ currency_symbol }} {{ row.wallet|floatformat:2 }}</strong></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if control_accounts|length > 2 %}
+    <h2 style="font-size:16px;margin:24px 0 10px;">Supplier &amp; employee control accounts</h2>
+    <table class="ledger-table">
+        <thead><tr><th>GL ID</th><th>Role</th><th>Description</th><th>Balance</th></tr></thead>
+        <tbody>
+        {% for row in control_accounts %}
+        {% if row.gl.account_role != 'CEO_DISBURSEMENT' and row.gl.account_role != 'GM_OPERATING' %}
+        <tr>
+            <td>{{ row.gl.gl_account_id }}</td>
+            <td>{{ row.role_label }}</td>
+            <td>{{ row.gl.description }}</td>
+            <td>{{ currency_symbol }} {{ row.balance|floatformat:2 }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    <h2 style="font-size:16px;margin:24px 0 10px;">GL journal (latest {{ postings|length }})</h2>
+    <table class="ledger-table">
+        <thead>
+            <tr><th>Date</th><th>Type</th><th>Task</th><th>Debit</th><th>Credit</th><th>Amount</th><th>Reference</th><th>Memo</th></tr>
+        </thead>
+        <tbody>
+        {% for p in postings %}
+        <tr>
+            <td>{{ p.created_at|date:"d M Y H:i" }}</td>
+            <td>{{ p.get_posting_type_display }}</td>
+            <td>{% if p.task %}{{ p.task.project_id|clean_task_id }}{% else %}—{% endif %}</td>
+            <td>{{ p.debit_gl.gl_account_id }}</td>
+            <td>{{ p.credit_gl.gl_account_id }}</td>
+            <td><strong>{{ currency_symbol }} {{ p.amount|floatformat:2 }}</strong></td>
+            <td>{{ p.reference_type }}:{{ p.reference_id }}</td>
+            <td>{{ p.memo|truncatechars:60 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" style="color:var(--muted);">No GL postings yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

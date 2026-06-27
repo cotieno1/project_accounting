@@ -131,6 +131,8 @@ urlpatterns = [
         views.print_ceo_fund_release_voucher_view,
         name='print_ceo_fund_release_voucher',
     ),
+    path('fund-ledger/', views.fund_ledger_view, name='fund_ledger'),
+    path('fund-ledger/print/', views.print_fund_ledger_view, name='print_fund_ledger'),
 
     # GM AIE — Accounting, Ops & Maintenance disbursement (Major + Ad-Hoc tasks)
     path('gm-disbursement/', views.gm_aie_disbursement_view, name='gm_aie_disbursement'),

@@ -42,6 +42,9 @@
     {% else %}
     <button type="button" class="btn-action btn-secondary btn-action--block" disabled title="Complete approval and fund release first">GM payment desk</button>
     {% endif %}
+    {% if can_view_fund_ledger %}
+    <a href="{% url 'fund_ledger' %}{% if active_pick_id %}?task_id={{ active_pick_id }}{% endif %}" class="btn-action btn-secondary btn-action--block">📒 Fund control ledger</a>
+    {% endif %}
 </div>
 
 <div class="sidebar-footer">

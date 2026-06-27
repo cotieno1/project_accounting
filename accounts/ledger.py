@@ -413,3 +413,70 @@ def post_task_disbursement_payment(payment, user):
         memo=f"GM disbursement - {payment.description}"[:200],
         user=user,
     )
+
+def build_fund_ledger_report(*, task=None, posting_limit=150):
+    """Snapshot of fund-control GL balances and journal for CEO / GM print."""
+    from django.utils import timezone as tz
+
+    settings = ensure_fund_control_accounts()
+    for gl in (settings.ceo_disbursement_gl, settings.gm_operating_gl):
+        if gl:
+            gl.refresh_from_db()
+
+    primary_roles = (
+        GLAccount.ROLE_CEO_DISBURSEMENT,
+        GLAccount.ROLE_GM_OPERATING,
+        GLAccount.ROLE_SUPPLIER_CONTROL,
+        GLAccount.ROLE_EMPLOYEE_CONTROL,
+    )
+    control_accounts = []
+    for gl in GLAccount.objects.filter(account_role__in=primary_roles).order_by(
+        "account_role", "gl_account_id"
+    ):
+        gl.refresh_from_db()
+        control_accounts.append(
+            {
+                "gl": gl,
+                "role_label": gl.get_account_role_display() or "Control",
+                "balance": _money(gl.amount),
+            }
+        )
+
+    postings_qs = GLLedgerPosting.objects.select_related(
+        "debit_gl", "credit_gl", "task", "posted_by"
+    ).order_by("-created_at")
+    if task:
+        postings_qs = postings_qs.filter(task=task)
+    postings = list(postings_qs[:posting_limit])
+
+    task_wallets = []
+    seen_tasks = set()
+    for release in CEOFundRelease.objects.select_related("task").order_by("-released_at"):
+        if not release.task_id or release.task_id in seen_tasks:
+            continue
+        seen_tasks.add(release.task_id)
+        released = (
+            CEOFundRelease.objects.filter(task=release.task).aggregate(t=Sum("amount"))["t"]
+            or Decimal("0.00")
+        )
+        wallet = task_gm_wallet_balance(release.task)
+        task_wallets.append(
+            {
+                "task": release.task,
+                "released": _money(released),
+                "wallet": wallet,
+                "spent": _money(released - wallet),
+            }
+        )
+
+    return {
+        "settings": settings,
+        "ceo_gl": settings.ceo_disbursement_gl,
+        "gm_gl": settings.gm_operating_gl,
+        "ceo_bank": settings.ceo_disbursement_bank,
+        "gm_bank": settings.gm_operating_bank,
+        "control_accounts": control_accounts,
+        "postings": postings,
+        "task_wallets": task_wallets,
+        "generated_at": tz.now(),
+    }

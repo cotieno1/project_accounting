@@ -86,6 +86,9 @@
             Officer PVs (RO){% if task_caps.enable_officer_pv and officer_voucher_period_listing %} ({{ officer_voucher_period_listing|length }}){% endif %}
         </button>
         {% if task_caps.budget_hint %}<p class="sidebar-hint" style="margin-top:12px;">{{ task_caps.budget_hint }}</p>{% endif %}
+        {% if can_view_fund_ledger %}
+        <a href="{% url 'fund_ledger' %}{% if active_pick_id %}?task_id={{ active_pick_id }}{% endif %}" class="btn-action btn-secondary" style="width:100%;margin-top:12px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">📒 Fund control ledger</a>
+        {% endif %}
         </div>
         {% endif %}
         <div class="sidebar-footer">
