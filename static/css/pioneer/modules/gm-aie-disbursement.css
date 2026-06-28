@@ -262,11 +262,90 @@ font-size: 12px;
 }
 
 .gm-desk--no-funds .gm-sidebar-tools.is-blocked,
-.gm-desk--no-funds .gm-workspace-tools.is-blocked {
+.gm-desk--no-funds .gm-workspace-tools.is-blocked,
+.gm-desk--hold .gm-sidebar-tools.is-blocked,
+.gm-desk--hold .gm-workspace-tools.is-blocked {
     opacity: 0.42;
     filter: grayscale(0.75);
     pointer-events: none;
     user-select: none;
+}
+
+.gm-budget-hold-zone {
+    position: relative;
+    z-index: 30;
+    margin-bottom: 20px;
+}
+
+.gm-budget-hold-banner {
+    margin-bottom: 14px;
+    padding: 20px 22px;
+    border-radius: 12px;
+    border: 3px solid #dc2626;
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.45), rgba(69, 10, 10, 0.35));
+    box-shadow: 0 8px 28px rgba(220, 38, 38, 0.28);
+}
+
+.gm-budget-hold-title {
+    display: block;
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    font-weight: 800;
+    color: #fef2f2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.gm-budget-hold-detail {
+    margin: 10px 0 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #fecaca;
+}
+
+.gm-budget-hold-slip {
+    padding: 20px 22px;
+    border-radius: 12px;
+    border: 2px solid #f59e0b;
+    background: #0f172a;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.gm-budget-hold-slip-label {
+    margin: 0 0 12px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fde68a;
+    font-weight: 700;
+}
+
+.gm-budget-hold-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.gm-budget-hold-table th,
+.gm-budget-hold-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.gm-budget-hold-table th {
+    width: 42%;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.gm-budget-hold-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 72px;
 }
 
 @keyframes gm-funds-banner-pulse {

@@ -1045,12 +1045,14 @@ class BudgetReviewEvent(models.Model):
 
     ACTION_GM_SUBMIT = "GM_SUBMIT"
     ACTION_GM_RESUBMIT = "GM_RESUBMIT"
+    ACTION_GM_REMIND = "GM_REMIND"
     ACTION_CEO_RETURN = "CEO_RETURN"
     ACTION_CEO_APPROVE = "CEO_APPROVE"
     ACTION_CEO_RELEASE = "CEO_RELEASE"
     ACTION_CHOICES = [
         (ACTION_GM_SUBMIT, "GM submitted budget to CEO"),
         (ACTION_GM_RESUBMIT, "GM resubmitted after CEO return"),
+        (ACTION_GM_REMIND, "GM sent CEO budget approval reminder (desk on hold)"),
         (ACTION_CEO_RETURN, "CEO returned budget to GM"),
         (ACTION_CEO_APPROVE, "CEO approved and locked budget (AIE)"),
         (ACTION_CEO_RELEASE, "CEO released funds to GM"),

@@ -3688,6 +3688,10 @@ def _banks_select_data():
 def _gm_create_payment_voucher(request, active_task, task_caps=None):
     from django.db import transaction as db_transaction
 
+    if _gm_budget_compliance_hold(active_task):
+        messages.error(request, "Task on hold — CEO budget approval required.")
+        return redirect(_gm_disbursement_redirect(active_task))
+
     if task_caps and not task_caps.get("enable_supplier_pv"):
         messages.error(request, "Supplier payment vouchers are only for Major (LPO/GRN) tasks.")
         return redirect(_gm_disbursement_redirect(active_task, open_grn_period="1"))
@@ -5030,6 +5034,13 @@ def _gm_officer_pv_return(task, **query):
 def _gm_create_officer_payment_voucher(request, active_task, task_caps):
     from django.db import transaction as db_transaction
 
+    if _gm_budget_compliance_hold(active_task):
+        messages.error(
+            request,
+            "Task on hold — send CEO budget approval reminder before any further payment.",
+        )
+        return redirect(_gm_disbursement_redirect(active_task))
+
     if not task_caps.get("enable_adhoc_ro"):
         messages.error(request, "Officer payment vouchers are only for Ad-Hoc tasks.")
         return redirect(_gm_disbursement_redirect(active_task))
@@ -5161,6 +5172,10 @@ def _gm_create_officer_payment_voucher(request, active_task, task_caps):
 
 
 def _gm_settle_officer_payment_voucher(request, active_task, task_caps):
+    if _gm_budget_compliance_hold(active_task):
+        messages.error(request, "Task on hold — CEO budget approval required.")
+        return redirect(_gm_disbursement_redirect(active_task))
+
     if not task_caps.get("enable_officer_pv"):
         messages.error(request, "Officer PV accounting is only for Ad-Hoc tasks.")
         return redirect(_gm_disbursement_redirect(active_task, open_officer_pv_period="1"))
@@ -7318,6 +7333,139 @@ def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
     }
 
 
+def _gm_budget_compliance_hold(task):
+    """
+    Forensic hold: ad-hoc disbursements exist but CEO never approved the provision budget.
+    Blocks further GM desk transactions until CEO AIE lock.
+    """
+    if not task:
+        return None
+    budget = _task_budget_record(task)
+    if budget and budget.is_ceo_approved:
+        return None
+
+    is_adhoc = bool(
+        (budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC)
+        or _task_has_misc_po_path(task)
+    )
+    if not is_adhoc:
+        return None
+
+    officer_qs = AdHocOfficerPaymentVoucher.objects.filter(task=task)
+    payment_qs = TaskDisbursementPayment.objects.filter(task=task)
+    officer_count = officer_qs.count()
+    payment_count = payment_qs.count()
+    if officer_count + payment_count == 0:
+        return None
+
+    from django.db.models import Sum
+
+    officer_total = officer_qs.aggregate(t=Sum("amount"))["t"] or Decimal("0.00")
+    payment_total = payment_qs.aggregate(t=Sum("amount"))["t"] or Decimal("0.00")
+    disbursed_total = officer_total + payment_total
+
+    baseline_mro = _get_task_baseline_mro(task)
+    baseline_mpo = _get_task_baseline_mpo(task)
+    mro_ref = ""
+    if baseline_mro and baseline_mro.mro_number:
+        mro_ref = baseline_mro.mro_number
+    elif baseline_mpo and baseline_mpo.mpo_number:
+        mro_ref = baseline_mpo.mpo_number
+
+    from accounts.budget_review import budget_review_status_label, gm_can_send_ceo_budget_reminder
+
+    pick_id = _bom_task_pick_id(task)
+    provision_total = budget.total_authorized_budget if budget else Decimal("0.00")
+
+    return {
+        "active": True,
+        "title": "Task on hold — CEO budget approval required",
+        "detail": (
+            "Cash or officer payments were posted before the CEO confirmed this ad-hoc "
+            "provision budget. All further GM transactions are blocked until the CEO "
+            "approves the budget at Budget Authorization."
+        ),
+        "disbursed_total": disbursed_total,
+        "officer_pv_count": officer_count,
+        "officer_pv_total": officer_total,
+        "task_payment_count": payment_count,
+        "task_payment_total": payment_total,
+        "provision_total": provision_total,
+        "mro_ref": mro_ref,
+        "budget_review_status": budget_review_status_label(budget),
+        "has_provision_budget": bool(budget),
+        "can_send_reminder": gm_can_send_ceo_budget_reminder(budget),
+        "ceo_approval_url": reverse("budget_approval") + f"?task_id={pick_id}",
+        "misc_purchase_url": reverse("misc_purchase_builder") + f"?task_id={pick_id}",
+    }
+
+
+def _gm_send_ceo_budget_reminder(request, active_task):
+    from accounts.budget_review import gm_can_send_ceo_budget_reminder, record_budget_review_event
+
+    hold = _gm_budget_compliance_hold(active_task)
+    if not hold:
+        messages.error(request, "This task is not on budget compliance hold.")
+        return redirect(_gm_disbursement_redirect(active_task))
+
+    budget = _task_budget_record(active_task)
+    if not budget:
+        messages.error(
+            request,
+            "No provision budget on file. Complete the MRO baseline on Misc Purchase first.",
+        )
+        return redirect(_gm_disbursement_redirect(active_task))
+    if not gm_can_send_ceo_budget_reminder(budget):
+        messages.info(request, "CEO has already approved this task budget.")
+        return redirect(_gm_disbursement_redirect(active_task))
+
+    extra_notes = (request.POST.get("reminder_notes") or "").strip()
+    baseline_mro = _get_task_baseline_mro(active_task)
+    baseline_mpo = _get_task_baseline_mpo(active_task)
+    pick_id = _bom_task_pick_id(active_task)
+
+    memo_body = (
+        f"URGENT — GM Disbursement desk is ON HOLD for Task {pick_id}.\n\n"
+        f"Disbursements totalling US$ {hold['disbursed_total']:.2f} were posted before "
+        f"CEO budget confirmation (AIE lock).\n"
+        f"Officer PVs: {hold['officer_pv_count']} (US$ {hold['officer_pv_total']:.2f})\n"
+        f"GM line payments: {hold['task_payment_count']} (US$ {hold['task_payment_total']:.2f})\n"
+    )
+    if hold.get("mro_ref"):
+        memo_body += f"MRO / Misc RO: {hold['mro_ref']}\n"
+    if hold["provision_total"] > 0:
+        memo_body += f"Provisional budget ceiling: US$ {hold['provision_total']:.2f}\n"
+    memo_body += (
+        "\nPlease review and approve the ad-hoc provision budget so GM may resume "
+        "lawful disbursements under AIE control.\n"
+    )
+    if extra_notes:
+        memo_body += f"\nGM notes:\n{extra_notes}\n"
+
+    record_budget_review_event(
+        budget=budget,
+        task=active_task,
+        action=BudgetReviewEvent.ACTION_GM_REMIND,
+        user=request.user,
+        memo_subject=f"REMINDER — CEO budget approval required — Task {pick_id}",
+        memo_body=memo_body,
+        from_officer=(request.POST.get("gm_from_officer") or "General Manager — Accounting Officer").strip(),
+        to_officer=(request.POST.get("gm_to_officer") or "CEO — AIE Holder").strip(),
+        source_mpo=baseline_mpo,
+        source_mro=baseline_mro,
+    )
+    budget.review_status = ProjectBudget.REVIEW_WITH_CEO
+    budget.save(update_fields=["review_status"])
+    messages.success(
+        request,
+        "CEO budget approval reminder sent. GM desk remains on hold until CEO approves the budget.",
+    )
+    return redirect(
+        reverse("print_gm_ceo_budget_memo")
+        + f"?task_id={pick_id}&print=1"
+    )
+
+
 @login_required
 def gm_aie_disbursement_view(request):
     """GM Accounting office — AIE disbursement against four budget lines per task."""
@@ -7344,16 +7492,36 @@ def gm_aie_disbursement_view(request):
             "active_task": None,
             "gm_funds_available": False,
             "gm_desk_blocked": False,
+            "gm_budget_hold": None,
         })
 
     active_pick_id = _bom_task_pick_id(active_task)
     project_class = _task_project_class(active_task)
     budget_summary = _task_disbursement_budget_summary(active_task)
+    gm_budget_hold = _gm_budget_compliance_hold(active_task)
     gm_funds_available = _gm_funds_available(budget_summary)
     gm_desk_blocked = _gm_desk_blocked(active_task, budget_summary, project_class)
     task_caps = _gm_task_sidebar_capabilities(active_task, project_class, budget_summary)
+    if gm_budget_hold:
+        task_caps = {
+            **task_caps,
+            "enable_grn": False,
+            "enable_supplier_pv": False,
+            "enable_goods_status": False,
+            "enable_adhoc_ro": False,
+            "enable_officer_pv": False,
+            "budget_hint": "Desk on hold — CEO must approve ad-hoc budget before further payments.",
+        }
 
     if request.method == "POST":
+        if request.POST.get("action") == "send_ceo_budget_reminder":
+            return _gm_send_ceo_budget_reminder(request, active_task)
+        if gm_budget_hold:
+            messages.error(
+                request,
+                "Task on hold — CEO budget approval required before any further GM transaction.",
+            )
+            return redirect(_gm_disbursement_redirect(active_task))
         if request.POST.get("action") == "create_payment_voucher":
             return _gm_create_payment_voucher(request, active_task, task_caps)
         if request.POST.get("action") == "create_officer_payment_voucher":
@@ -7455,6 +7623,7 @@ def gm_aie_disbursement_view(request):
             "budget_summary": budget_summary,
             "gm_funds_available": gm_funds_available,
             "gm_desk_blocked": gm_desk_blocked,
+            "gm_budget_hold": gm_budget_hold,
             "payment_listing": payment_listing,
             "viewed_payment": viewed_payment,
             "pay_mode": pay_mode,
@@ -7836,24 +8005,29 @@ def print_gm_ceo_budget_memo_view(request):
         if ev.action in (
             BudgetReviewEvent.ACTION_GM_SUBMIT,
             BudgetReviewEvent.ACTION_GM_RESUBMIT,
+            BudgetReviewEvent.ACTION_GM_REMIND,
         ):
             latest_submit = ev
             break
     baseline_mro = _get_task_baseline_mro(active_task)
     baseline_mpo = _get_task_baseline_mpo(active_task)
+    pick_id = _bom_task_pick_id(active_task)
+    if latest_submit and latest_submit.action == BudgetReviewEvent.ACTION_GM_REMIND:
+        back_url = reverse("gm_aie_disbursement") + f"?task_id={pick_id}"
+    else:
+        back_url = reverse("misc_purchase_builder") + f"?task_id={pick_id}"
     return render(
         request,
         "gm_ceo_budget_request_memo.html",
         {
             "active_task": active_task,
-            "active_pick_id": _bom_task_pick_id(active_task),
+            "active_pick_id": pick_id,
             "budget": budget,
             "event": latest_submit,
             "baseline_mro": baseline_mro,
             "baseline_mpo": baseline_mpo,
             "review_thread": events,
             "auto_print": request.GET.get("print") == "1",
-            "back_url": reverse("misc_purchase_builder")
-            + f"?task_id={_bom_task_pick_id(active_task)}",
+            "back_url": back_url,
         },
     )

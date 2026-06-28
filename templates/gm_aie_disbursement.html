@@ -2,7 +2,7 @@
 {% load static %}
 {% load pioneer_tags %}
 {% block title %}Pioneer | GM AIE Disbursement{% endblock %}
-{% block body_class %}gm-desk{% if active_task and gm_desk_blocked %} gm-desk--no-funds{% endif %}{% endblock %}
+{% block body_class %}gm-desk{% if active_task and gm_budget_hold %} gm-desk--hold{% elif active_task and gm_desk_blocked %} gm-desk--no-funds{% endif %}{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}">
 {% endblock %}
@@ -18,7 +18,7 @@
         </select>
 
         {% if active_task %}
-        <div class="gm-sidebar-tools{% if gm_desk_blocked %} is-blocked{% endif %}">
+        <div class="gm-sidebar-tools{% if gm_desk_blocked or gm_budget_hold %} is-blocked{% endif %}">
         <div class="sidebar-block">
             <button type="button" class="btn-action" onclick="togglePayList()" style="width:100%;background:#1e293b;">
                 💳 Payment List{% if payment_listing %} ({{ payment_listing|length }}){% endif %}
@@ -122,7 +122,48 @@
         </div>
         {% endif %}
 
-        <div class="gm-workspace-tools{% if gm_desk_blocked %} is-blocked{% endif %}">
+        {% if gm_budget_hold %}
+        <div class="gm-budget-hold-zone" role="alert">
+            <div class="gm-budget-hold-banner">
+                <strong class="gm-budget-hold-title">{{ gm_budget_hold.title }}</strong>
+                <p class="gm-budget-hold-detail">{{ gm_budget_hold.detail }}</p>
+            </div>
+            <div class="gm-budget-hold-slip">
+                <p class="gm-budget-hold-slip-label">Compliance slip — task {{ active_pick_id }}</p>
+                <table class="gm-budget-hold-table">
+                    <tr><th>Review status</th><td>{{ gm_budget_hold.budget_review_status }}</td></tr>
+                    {% if gm_budget_hold.mro_ref %}<tr><th>MRO / Misc RO</th><td>{{ gm_budget_hold.mro_ref }}</td></tr>{% endif %}
+                    {% if gm_budget_hold.provision_total %}<tr><th>Provisional budget</th><td>{{ currency_symbol }} {{ gm_budget_hold.provision_total|floatformat:2 }}</td></tr>{% endif %}
+                    <tr><th>Already disbursed (non-compliant)</th><td style="color:#fca5a5;font-weight:700;">{{ currency_symbol }} {{ gm_budget_hold.disbursed_total|floatformat:2 }}</td></tr>
+                    <tr><th>Officer PVs</th><td>{{ gm_budget_hold.officer_pv_count }} · {{ currency_symbol }} {{ gm_budget_hold.officer_pv_total|floatformat:2 }}</td></tr>
+                    <tr><th>GM line payments</th><td>{{ gm_budget_hold.task_payment_count }} · {{ currency_symbol }} {{ gm_budget_hold.task_payment_total|floatformat:2 }}</td></tr>
+                </table>
+                {% if gm_budget_hold.can_send_reminder %}
+                <form method="POST" action="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}" class="gm-budget-hold-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                    <input type="hidden" name="action" value="send_ceo_budget_reminder">
+                    <label class="nav-label" style="margin:12px 0 6px;display:block;">Additional note to CEO (optional)</label>
+                    <textarea name="reminder_notes" class="form-input" rows="3" placeholder="e.g. Task 1 officer PVs were posted in error — please approve MRO baseline US$ …"></textarea>
+                    <button type="submit" class="btn-action btn-success" style="width:100%;margin-top:14px;">
+                        Send reminder to CEO — approve budget
+                    </button>
+                </form>
+                <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.45;">
+                    Prints the GM→CEO memo and logs the reminder. Desk stays on hold until
+                    <a href="{{ gm_budget_hold.ceo_approval_url }}" style="color:#93c5fd;">CEO Budget Authorization</a> locks the budget.
+                </p>
+                {% else %}
+                <p style="font-size:12px;color:var(--warning);margin:12px 0 0;">
+                    No provision budget on file —
+                    <a href="{{ gm_budget_hold.misc_purchase_url }}" style="color:#fde68a;">complete Misc Purchase MRO baseline</a> first.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="gm-workspace-tools{% if gm_desk_blocked or gm_budget_hold %} is-blocked{% endif %}">
         <div class="panel">
             <div class="header-row">
                 <div class="header-left">
@@ -278,7 +319,7 @@
 {% endif %}
 {% endblock %}
 {% block modals %}
-{% if not no_tasks and active_task and not gm_desk_blocked %}
+{% if not no_tasks and active_task and not gm_desk_blocked and not gm_budget_hold %}
     <div id="grnPeriodModal" class="cockpit-modal" style="display:none;">
         <div class="cockpit-modal-panel registry-modal-panel">
             <h3 style="margin:0 0 4px;color:var(--accent);font-size:15px;">GRN Register — Task {{ active_task.project_id }}</h3>
@@ -664,7 +705,7 @@ document.addEventListener('keydown', (e) => {
 });
 </script>
 {% endif %}
-{% if not no_tasks and active_task and not gm_desk_blocked %}
+{% if not no_tasks and active_task and not gm_desk_blocked and not gm_budget_hold %}
     <script>
         const lineData = {
             {% for line in budget_summary.lines %}

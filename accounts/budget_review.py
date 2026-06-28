@@ -51,6 +51,11 @@ def record_budget_review_event(
     )
 
 
+def gm_can_send_ceo_budget_reminder(budget):
+    """GM may nudge CEO while ad-hoc budget is not yet AIE-approved."""
+    return bool(budget and not budget.is_ceo_approved)
+
+
 def gm_can_submit_budget(budget):
     if not budget or budget.is_ceo_approved:
         return False
