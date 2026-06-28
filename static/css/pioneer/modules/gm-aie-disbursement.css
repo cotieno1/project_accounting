@@ -310,6 +310,82 @@ font-size: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
+.gm-compliance-slip-box {
+    padding: 0;
+    border: 2px solid #475569;
+    border-radius: 10px;
+    background: #0b1220;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.15);
+}
+
+.gm-compliance-slip-header {
+    margin: 0;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fde68a;
+    border-bottom: 1px solid #334155;
+    background: rgba(15, 23, 42, 0.9);
+}
+
+.gm-compliance-slip-list {
+    margin: 0;
+    padding: 16px 18px 16px 34px;
+    list-style: disc;
+    font-size: 13px;
+    line-height: 1.65;
+    color: #e2e8f0;
+}
+
+.gm-compliance-slip-list li {
+    margin-bottom: 8px;
+}
+
+.gm-compliance-slip-list li:last-child {
+    margin-bottom: 0;
+}
+
+.gm-budget-hold-form {
+    padding: 0 18px 18px;
+    border-top: 1px dashed #334155;
+    margin-top: 0;
+}
+
+.gm-compliance-slip-note-label {
+    margin: 14px 0 6px !important;
+    display: block;
+}
+
+.gm-compliance-slip-cta {
+    width: 100%;
+    margin-top: 12px;
+}
+
+.gm-compliance-slip-footnote {
+    font-size: 11px;
+    color: var(--muted);
+    margin: 10px 0 0;
+    line-height: 1.45;
+}
+
+.gm-compliance-slip-footnote a {
+    color: #93c5fd;
+}
+
+.gm-compliance-slip-warning {
+    font-size: 12px;
+    color: var(--warning);
+    margin: 0;
+    padding: 14px 18px 18px;
+    border-top: 1px dashed #334155;
+}
+
+.gm-compliance-slip-warning a {
+    color: #fde68a;
+}
+
 .gm-budget-hold-slip-label {
     margin: 0 0 12px;
     font-size: 11px;

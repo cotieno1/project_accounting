@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from accounts.models import (
     AdHocOfficerPaymentVoucher,
+    CEOFundRelease,
     MiscPurchaseOrder,
     ProjectBudget,
     ProjectTask,
@@ -54,6 +55,44 @@ class GmBudgetComplianceHoldTests(TestCase):
         self.assertIsNotNone(hold)
         self.assertEqual(hold["officer_pv_count"], 1)
         self.assertEqual(hold["disbursed_total"], Decimal("1200.00"))
+
+    def test_hold_when_ceo_released_funds_without_aie_lock(self):
+        CEOFundRelease.objects.create(
+            release_number="PV-DSB-2026-0099",
+            task=self.task,
+            budget=self.budget,
+            amount=Decimal("6000.00"),
+        )
+        hold = _gm_budget_compliance_hold(self.task)
+        self.assertIsNotNone(hold)
+        self.assertEqual(hold["release_count"], 1)
+
+    def test_compliance_slip_box_on_task_133_url(self):
+        task133 = ProjectTask.objects.create(project_id="133", description="Task 133 misc")
+        ProjectBudget.objects.create(
+            task=task133,
+            budget_type=ProjectBudget.BUDGET_ADHOC_MISC,
+            budget_label="Ad-hoc 133",
+            total_authorized_budget=Decimal("4000.00"),
+        )
+        mpo133 = MiscPurchaseOrder.objects.create(
+            task=task133,
+            funding_status="SUBMITTED",
+            mpo_number="MPO-133",
+            total_amount=Decimal("4000.00"),
+        )
+        AdHocOfficerPaymentVoucher.objects.create(
+            mpo=mpo133,
+            task=task133,
+            officer_name="Officer",
+            amount=Decimal("500.00"),
+            payment_method="CASH",
+        )
+        url = reverse("gm_aie_disbursement") + "?task_id=133"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Compliance slip — task 133")
+        self.assertContains(response, "gm-compliance-slip-box")
 
     def test_hold_cleared_after_ceo_approval(self):
         AdHocOfficerPaymentVoucher.objects.create(

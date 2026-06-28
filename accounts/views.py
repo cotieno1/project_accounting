@@ -7335,8 +7335,8 @@ def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
 
 def _gm_budget_compliance_hold(task):
     """
-    Forensic hold: ad-hoc disbursements exist but CEO never approved the provision budget.
-    Blocks further GM desk transactions until CEO AIE lock.
+    Forensic hold: ad-hoc disbursements or CEO fund release without CEO AIE approval.
+    Blocks further GM desk transactions until CEO locks the provision budget.
     """
     if not task:
         return None
@@ -7351,18 +7351,23 @@ def _gm_budget_compliance_hold(task):
     if not is_adhoc:
         return None
 
+    from django.db.models import Sum
+
     officer_qs = AdHocOfficerPaymentVoucher.objects.filter(task=task)
     payment_qs = TaskDisbursementPayment.objects.filter(task=task)
+    fund_releases = CEOFundRelease.objects.filter(task=task)
     officer_count = officer_qs.count()
     payment_count = payment_qs.count()
-    if officer_count + payment_count == 0:
-        return None
-
-    from django.db.models import Sum
+    release_count = fund_releases.count()
 
     officer_total = officer_qs.aggregate(t=Sum("amount"))["t"] or Decimal("0.00")
     payment_total = payment_qs.aggregate(t=Sum("amount"))["t"] or Decimal("0.00")
+    released_total = fund_releases.aggregate(t=Sum("amount"))["t"] or Decimal("0.00")
     disbursed_total = officer_total + payment_total
+
+    # Hold when cash moved (PVs/payments) OR CEO released wallet without AIE lock.
+    if disbursed_total <= 0 and release_count == 0:
+        return None
 
     baseline_mro = _get_task_baseline_mro(task)
     baseline_mpo = _get_task_baseline_mpo(task)
@@ -7377,15 +7382,35 @@ def _gm_budget_compliance_hold(task):
     pick_id = _bom_task_pick_id(task)
     provision_total = budget.total_authorized_budget if budget else Decimal("0.00")
 
+    slip_lines = []
+    if disbursed_total > 0:
+        slip_lines.append(
+            f"Already disbursed: US$ {disbursed_total:.2f} "
+            f"(Officer PVs {officer_count} · US$ {officer_total:.2f}; "
+            f"GM line payments {payment_count} · US$ {payment_total:.2f})"
+        )
+    if release_count > 0 and not (budget and budget.is_ceo_approved):
+        slip_lines.append(
+            f"CEO fund release on file without AIE lock: US$ {released_total:.2f} "
+            f"({release_count} release{'s' if release_count != 1 else ''}) — "
+            "budget was never CEO-approved."
+        )
+    if provision_total > 0:
+        slip_lines.append(f"Provisional budget ceiling: US$ {provision_total:.2f}")
+    elif mro_ref:
+        slip_lines.append(f"MRO / Misc RO baseline: {mro_ref} — provision budget not CEO-confirmed.")
+
     return {
         "active": True,
         "title": "Task on hold — CEO budget approval required",
         "detail": (
-            "Cash or officer payments were posted before the CEO confirmed this ad-hoc "
+            "Cash or CEO fund release happened before the CEO confirmed this ad-hoc "
             "provision budget. All further GM transactions are blocked until the CEO "
             "approves the budget at Budget Authorization."
         ),
         "disbursed_total": disbursed_total,
+        "released_total": released_total,
+        "release_count": release_count,
         "officer_pv_count": officer_count,
         "officer_pv_total": officer_total,
         "task_payment_count": payment_count,
@@ -7397,6 +7422,7 @@ def _gm_budget_compliance_hold(task):
         "can_send_reminder": gm_can_send_ceo_budget_reminder(budget),
         "ceo_approval_url": reverse("budget_approval") + f"?task_id={pick_id}",
         "misc_purchase_url": reverse("misc_purchase_builder") + f"?task_id={pick_id}",
+        "slip_lines": slip_lines,
     }
 
 
@@ -7431,6 +7457,11 @@ def _gm_send_ceo_budget_reminder(request, active_task):
         f"Officer PVs: {hold['officer_pv_count']} (US$ {hold['officer_pv_total']:.2f})\n"
         f"GM line payments: {hold['task_payment_count']} (US$ {hold['task_payment_total']:.2f})\n"
     )
+    if hold.get("release_count", 0) > 0:
+        memo_body += (
+            f"CEO fund release without AIE lock: US$ {hold['released_total']:.2f} "
+            f"({hold['release_count']} release(s) on file).\n"
+        )
     if hold.get("mro_ref"):
         memo_body += f"MRO / Misc RO: {hold['mro_ref']}\n"
     if hold["provision_total"] > 0:
