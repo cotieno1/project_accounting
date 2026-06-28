@@ -36,6 +36,7 @@ from .models import (
     MiscPurchaseOrder, MiscPurchaseItem,
     AdHocOfficerPaymentVoucher, AdHocOfficerPaymentVoucherLine,
     ProjectBudget, BudgetTransaction, TaskDisbursementPayment, CEOFundRelease,
+    BudgetReviewEvent,
 )
 #=========================================================================
 
@@ -5938,6 +5939,64 @@ def misc_purchase_builder(request):
         _prune_empty_numbered_draft_mpos(active_task)
 
     if request.method == "POST":
+        if request.POST.get("action") == "submit_budget_to_ceo":
+            from accounts.budget_review import (
+                gm_can_submit_budget,
+                record_budget_review_event,
+            )
+
+            budget = _task_budget_record(active_task)
+            if not budget or not _get_task_baseline_mro(active_task):
+                messages.error(
+                    request,
+                    "Confirm the MRO baseline before sending the budget to the CEO.",
+                )
+                return redirect(f"/misc-purchase/?task_id={active_task.project_id}")
+            if not gm_can_submit_budget(budget):
+                messages.error(
+                    request,
+                    "Budget is already with the CEO or CEO-approved. "
+                    "Wait for CEO response or check Budget Authorization.",
+                )
+                return redirect(f"/misc-purchase/?task_id={active_task.project_id}")
+            memo_body = (request.POST.get("gm_memo_body") or "").strip()
+            if not memo_body:
+                messages.error(request, "Enter the memo text for the CEO.")
+                return redirect(f"/misc-purchase/?task_id={active_task.project_id}")
+            from_officer = (request.POST.get("gm_from_officer") or "General Manager").strip()
+            to_officer = (request.POST.get("gm_to_officer") or "CEO — AIE Holder").strip()
+            baseline_mro = _get_task_baseline_mro(active_task)
+            baseline_mpo = _get_task_baseline_mpo(active_task)
+            action = (
+                BudgetReviewEvent.ACTION_GM_RESUBMIT
+                if budget.review_status == ProjectBudget.REVIEW_RETURNED
+                else BudgetReviewEvent.ACTION_GM_SUBMIT
+            )
+            record_budget_review_event(
+                budget=budget,
+                task=active_task,
+                action=action,
+                user=request.user,
+                memo_subject=f"Ad-Hoc Budget Confirmation — Task {active_task.project_id}",
+                memo_body=memo_body,
+                from_officer=from_officer,
+                to_officer=to_officer,
+                source_mpo=baseline_mpo,
+                source_mro=baseline_mro,
+            )
+            budget.review_status = ProjectBudget.REVIEW_WITH_CEO
+            budget.last_return_reason = ""
+            budget.save(update_fields=["review_status", "last_return_reason"])
+            messages.success(
+                request,
+                "Budget memo sent to CEO for confirmation. "
+                "CEO will approve, return with comments, or release funds after lock.",
+            )
+            return redirect(
+                reverse("print_gm_ceo_budget_memo")
+                + f"?task_id={_bom_task_pick_id(active_task)}&print=1"
+            )
+
         if request.POST.get("action") == "create_officer_payment_voucher":
             messages.info(
                 request,
@@ -6251,6 +6310,17 @@ def misc_purchase_builder(request):
     )
     mro_workspace_empty = officer_journey_visible
 
+    from accounts.budget_review import (
+        budget_review_events,
+        budget_review_status_label,
+        gm_can_submit_budget,
+    )
+
+    budget_review_thread = budget_review_events(project_budget)
+    can_submit_budget_to_ceo = bool(
+        has_committed_adhoc_material and gm_can_submit_budget(project_budget)
+    )
+
     return render(
         request,
         "misc_purchase.html",
@@ -6305,6 +6375,16 @@ def misc_purchase_builder(request):
             "seed_misc": budget_formulation["misc"],
             "budget_channel": channel_info,
             "ro_reference": _misc_display_ro_number(display_mpo) if display_mpo else "",
+            "budget_review_thread": budget_review_thread,
+            "budget_review_status": budget_review_status_label(project_budget),
+            "can_submit_budget_to_ceo": can_submit_budget_to_ceo,
+            "budget_review_returned": bool(
+                project_budget
+                and project_budget.review_status == ProjectBudget.REVIEW_RETURNED
+            ),
+            "last_return_reason": (
+                project_budget.last_return_reason if project_budget else ""
+            ),
         },
     )
     
@@ -6888,6 +6968,9 @@ def authorize_mpo_action(request):
                     ro_total,
                     label=f"Ad-Hoc Budget — {active_task.project_id}",
                 )
+            if budget and not budget.is_ceo_approved:
+                budget.review_status = ProjectBudget.REVIEW_PROVISION
+                budget.save(update_fields=["review_status"])
 
             BudgetTransaction.objects.create(
                 budget=budget,
@@ -7480,13 +7563,51 @@ def budget_approval_view(request):
 
     if request.method == "POST":
         try:
+            from accounts.budget_review import (
+                ceo_can_approve_budget,
+                ceo_can_return_budget,
+                record_budget_review_event,
+            )
+
             with transaction.atomic():
                 budget = _task_budget_record(active_task)
-                if "approve_budget" in request.POST:
+                if "return_to_gm" in request.POST:
+                    if not budget:
+                        raise ValueError("No provision budget to return.")
+                    if not ceo_can_return_budget(budget):
+                        raise ValueError(
+                            "Budget is not with CEO for review, or is already approved."
+                        )
+                    reason = (request.POST.get("return_reason") or "").strip()
+                    if not reason:
+                        raise ValueError("Enter the reason for returning the budget to GM.")
+                    record_budget_review_event(
+                        budget=budget,
+                        task=active_task,
+                        action=BudgetReviewEvent.ACTION_CEO_RETURN,
+                        user=request.user,
+                        reason=reason,
+                        from_officer="CEO — AIE Holder",
+                        to_officer="General Manager",
+                    )
+                    budget.review_status = ProjectBudget.REVIEW_RETURNED
+                    budget.last_return_reason = reason
+                    budget.save(update_fields=["review_status", "last_return_reason"])
+                    messages.warning(
+                        request,
+                        f"Budget returned to GM — {reason[:120]}",
+                    )
+
+                elif "approve_budget" in request.POST:
                     if not budget:
                         raise ValueError(
                             "No provision budget for this task. "
                             "Complete Bid Evaluation (Major) or Ad-Hoc Purchase first."
+                        )
+                    if not ceo_can_approve_budget(budget):
+                        raise ValueError(
+                            "Ad-hoc budgets must be submitted by GM before CEO can confirm. "
+                            "Check the GM→CEO memo on Misc Purchase."
                         )
                     if budget.total_authorized_budget <= 0:
                         raise ValueError("Provision budget total must be greater than zero.")
@@ -7497,13 +7618,25 @@ def budget_approval_view(request):
                     budget.approved_at = timezone.now()
                     budget.approved_by = request.user
                     budget.ceo_aie_reference = aie_ref
+                    budget.review_status = ProjectBudget.REVIEW_APPROVED
                     budget.save(
                         update_fields=[
                             "is_ceo_approved",
                             "approved_at",
                             "approved_by",
                             "ceo_aie_reference",
+                            "review_status",
                         ]
+                    )
+                    record_budget_review_event(
+                        budget=budget,
+                        task=active_task,
+                        action=BudgetReviewEvent.ACTION_CEO_APPROVE,
+                        user=request.user,
+                        memo_subject=f"CEO AIE approval — Task {active_task.project_id}",
+                        memo_body=f"CEO confirmed provision budget US$ {budget.total_authorized_budget:.2f}.",
+                        from_officer="CEO — AIE Holder",
+                        to_officer="General Manager",
                     )
                     messages.success(
                         request,
@@ -7538,6 +7671,18 @@ def budget_approval_view(request):
                         authorized_by=request.user,
                     )
                     post_ceo_fund_release(release, request.user)
+                    record_budget_review_event(
+                        budget=budget,
+                        task=active_task,
+                        action=BudgetReviewEvent.ACTION_CEO_RELEASE,
+                        user=request.user,
+                        memo_subject=f"Fund release {release.release_number}",
+                        memo_body=f"CEO disbursed US$ {budget.total_authorized_budget:.2f} to GM Accounting.",
+                        from_officer=release.from_office,
+                        to_officer=release.to_officer,
+                    )
+                    budget.review_status = ProjectBudget.REVIEW_RELEASED
+                    budget.save(update_fields=["review_status"])
                     messages.success(
                         request,
                         f"Bank transfer US$ {budget.total_authorized_budget:.2f} "
@@ -7549,7 +7694,23 @@ def budget_approval_view(request):
 
     provision_status = "none"
     if budget:
-        provision_status = "locked" if budget.is_ceo_approved else "provision"
+        if budget.is_ceo_approved and fund_release:
+            provision_status = "released"
+        elif budget.is_ceo_approved:
+            provision_status = "locked"
+        elif budget.review_status == ProjectBudget.REVIEW_WITH_CEO:
+            provision_status = "with_ceo"
+        elif budget.review_status == ProjectBudget.REVIEW_RETURNED:
+            provision_status = "returned"
+        else:
+            provision_status = "provision"
+
+    from accounts.budget_review import (
+        budget_review_events,
+        budget_review_status_label,
+        ceo_can_approve_budget,
+        ceo_can_return_budget,
+    )
 
     return render(
         request,
@@ -7563,7 +7724,8 @@ def budget_approval_view(request):
             "budget_summary": budget_summary,
             "provision_status": provision_status,
             "fund_release": fund_release,
-            "can_approve": bool(budget and not budget.is_ceo_approved),
+            "can_approve": ceo_can_approve_budget(budget),
+            "can_return_to_gm": ceo_can_return_budget(budget),
             "can_release": bool(
                 budget and budget.is_ceo_approved and not fund_release
             ),
@@ -7571,6 +7733,9 @@ def budget_approval_view(request):
                 budget and budget.is_ceo_approved and fund_release
             ),
             "can_view_fund_ledger": _can_view_fund_ledger(request.user),
+            "budget_review_thread": budget_review_events(budget),
+            "budget_review_status": budget_review_status_label(budget),
+            "last_return_reason": budget.last_return_reason if budget else "",
         },
     )
 
@@ -7624,3 +7789,40 @@ def print_fund_ledger_view(request):
     if not _can_view_fund_ledger(request.user):
         return HttpResponseForbidden("Fund ledger is restricted to CEO and GM roles.")
     return render(request, "fund_ledger_print.html", _fund_ledger_context(request))
+
+
+@login_required
+def print_gm_ceo_budget_memo_view(request):
+    """Printable GM → CEO memo requesting ad-hoc budget confirmation."""
+    task_id = (request.GET.get("task_id") or "").strip()
+    active_task = get_object_or_404(ProjectTask, project_id=task_id)
+    budget = _task_budget_record(active_task)
+    from accounts.budget_review import budget_review_events
+
+    events = budget_review_events(budget)
+    latest_submit = None
+    for ev in reversed(events):
+        if ev.action in (
+            BudgetReviewEvent.ACTION_GM_SUBMIT,
+            BudgetReviewEvent.ACTION_GM_RESUBMIT,
+        ):
+            latest_submit = ev
+            break
+    baseline_mro = _get_task_baseline_mro(active_task)
+    baseline_mpo = _get_task_baseline_mpo(active_task)
+    return render(
+        request,
+        "gm_ceo_budget_request_memo.html",
+        {
+            "active_task": active_task,
+            "active_pick_id": _bom_task_pick_id(active_task),
+            "budget": budget,
+            "event": latest_submit,
+            "baseline_mro": baseline_mro,
+            "baseline_mpo": baseline_mpo,
+            "review_thread": events,
+            "auto_print": request.GET.get("print") == "1",
+            "back_url": reverse("misc_purchase_builder")
+            + f"?task_id={_bom_task_pick_id(active_task)}",
+        },
+    )

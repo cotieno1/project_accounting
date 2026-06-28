@@ -26,8 +26,14 @@
     <span class="nav-label">Workflow status</span>
     {% if provision_status == 'none' %}
     <span class="status-pill status-none">No provision budget</span>
+    {% elif provision_status == 'returned' %}
+    <span class="status-pill status-provision">Returned to GM</span>
+    {% elif provision_status == 'with_ceo' %}
+    <span class="status-pill status-provision">GM memo — review required</span>
     {% elif provision_status == 'provision' %}
-    <span class="status-pill status-provision">Awaiting CEO approval</span>
+    <span class="status-pill status-provision">Provisional — awaiting GM memo</span>
+    {% elif provision_status == 'released' %}
+    <span class="status-pill status-released">Funds released to GM</span>
     {% elif fund_release %}
     <span class="status-pill status-released">Funds released to GM</span>
     {% else %}
@@ -88,10 +94,13 @@
     <p style="color:var(--muted);margin:8px 0 0;">{{ active_task.description|clean_task_description }}</p>
     {% endif %}
     <p class="aie-flow">
-        <strong>CEO (AIE holder)</strong> approves the provision budget and locks line figures →
-        authorizes <strong>bank transfer</strong> to <strong>GM Accounting Officer</strong> →
-        GM may disburse cash/payments only against an approved task budget.
+        <strong>Ad-hoc path:</strong> GM locks MRO (provisional budget) → sends memo to CEO →
+        CEO confirms or returns with reason → CEO releases funds →
+        GM disburses partial/full via Misc Payment Orders to staff.
     </p>
+    {% if budget_review_status %}
+    <p style="font-size:12px;color:var(--muted);margin:8px 0 0;">Review status: <strong>{{ budget_review_status }}</strong></p>
+    {% endif %}
 </div>
 
 <div class="step-grid">
@@ -193,6 +202,31 @@
         </table>
         </div>
         <p style="font-size:11px;color:var(--muted);margin-top:16px;">After approval, line budget figures are read-only. Global Pioneer rollup across tasks (future).</p>
+        {% endif %}
+
+        {% if budget_review_thread %}
+        <div style="margin-top:16px;padding:12px;background:#070b14;border:1px solid var(--border);border-radius:8px;">
+            <span class="nav-label">GM ↔ CEO review thread</span>
+            <ul style="margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--muted);">
+            {% for ev in budget_review_thread %}
+            <li style="margin-bottom:8px;">
+                <strong>{{ ev.get_action_display }}</strong> — {{ ev.created_at|date:"d M Y H:i" }}
+                {% if ev.memo_body %}<br><span style="color:#94a3b8;">{{ ev.memo_body|truncatechars:120 }}</span>{% endif %}
+                {% if ev.reason %}<br><span style="color:#fcd34d;">Reason: {{ ev.reason|truncatechars:120 }}</span>{% endif %}
+            </li>
+            {% endfor %}
+            </ul>
+            <a href="{% url 'print_gm_ceo_budget_memo' %}?task_id={{ active_pick_id }}" target="_blank" style="font-size:11px;color:#93c5fd;">Print latest GM memo</a>
+        </div>
+        {% endif %}
+
+        {% if can_return_to_gm %}
+        <form method="POST" class="modal-actions" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+            {% csrf_token %}
+            <span class="nav-label">Return budget to GM (with reason)</span>
+            <textarea name="return_reason" class="form-input" rows="3" placeholder="Explain what GM must correct before resubmission…" required></textarea>
+            <button type="submit" name="return_to_gm" class="btn-action btn-warning" style="width:100%;margin-top:8px;">Return to GM for correction</button>
+        </form>
         {% endif %}
 
         <form method="POST" class="modal-actions">

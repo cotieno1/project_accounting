@@ -1,0 +1,49 @@
+﻿{% load pioneer_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GM Memo — Budget Confirmation — Task {{ active_pick_id }}</title>
+{% include "includes/lpo_document_styles.html" %}
+<style>
+@page { size: A4 portrait; margin: 10mm; }
+.memo-body { font-size: 10pt; line-height: 1.5; white-space: pre-wrap; margin: 16px 0; }
+.meta-table td, .meta-table th { font-size: 9pt; }
+@media print { .no-print { display: none !important; } }
+</style>
+</head>
+<body class="pioneer-doc-print">
+<div class="screen-toolbar no-print">
+<button type="button" onclick="window.print()">Print memo</button>
+<a href="{{ back_url }}">Back to Misc Purchase</a>
+</div>
+<div class="lpo-paper"><div class="doc">
+<div class="brand-bar"></div>
+{% include "includes/pioneer_letterhead_block.html" with doc_subtitle="GM Memorandum — Request CEO Budget Confirmation" %}
+<table class="meta-table">
+<tr><th>Date</th><th>From</th><th>To</th><th>Task (cost center)</th></tr>
+<tr>
+<td>{% if event %}{{ event.created_at|date:"d M Y" }}{% else %}{% now "d M Y" %}{% endif %}</td>
+<td>{% if event %}{{ event.from_officer }}{% else %}General Manager{% endif %}</td>
+<td>{% if event %}{{ event.to_officer }}{% else %}CEO — AIE Holder{% endif %}</td>
+<td><strong>{{ active_pick_id }}</strong></td>
+</tr>
+</table>
+<p><strong>Subject:</strong> {% if event %}{{ event.memo_subject }}{% else %}Ad-Hoc Provision Budget Confirmation{% endif %}</p>
+<p><strong>Project:</strong> {{ active_task.description|clean_task_description }}</p>
+{% if baseline_mro %}<p><strong>MRO:</strong> {{ baseline_mro.mro_number }} · {% if baseline_mpo %}{{ baseline_mpo.mpo_number }}{% endif %}</p>{% endif %}
+{% if budget %}<p><strong>Provision ceiling:</strong> US$ {{ budget.total_authorized_budget|floatformat:2 }} (provisional — pending CEO confirmation)</p>{% endif %}
+<div class="memo-body">{% if event %}{{ event.memo_body }}{% else %}Please review and confirm the attached ad-hoc provision budget.{% endif %}</div>
+<p style="font-size:9pt;color:#64748b;margin-top:24px;">This memo does not authorize expenditure. CEO must lock the budget (AIE) and release funds before GM may issue Misc Payment Orders.</p>
+{% if review_thread %}
+<h3 style="font-size:10pt;margin-top:20px;">Review thread</h3>
+<ul style="font-size:9pt;color:#475569;">
+{% for ev in review_thread %}
+<li>{{ ev.created_at|date:"d M Y H:i" }} — {{ ev.get_action_display }}{% if ev.reason %} ({{ ev.reason|truncatechars:60 }}){% endif %}</li>
+{% endfor %}
+</ul>
+{% endif %}
+</div></div>
+{% if auto_print %}<script>window.addEventListener("load",function(){window.print();});</script>{% endif %}
+</body>
+</html>

@@ -72,7 +72,7 @@
                 <span class="budget-value {% if material_variance_over %}budget-value-over{% else %}budget-value-ok{% endif %}" id="sidebarVarianceVal">{{ currency_symbol }} {{ material_variance|floatformat:2 }}</span>
             </div>
             {% if adhoc_material_committed and provisional_budget_ref %}
-            <p style="font-size:10px;color:var(--success);margin:8px 0 0;">Task budget confirmed — {{ provisional_budget_ref }}.</p>
+            <p style="font-size:10px;color:var(--warning);margin:8px 0 0;">MRO baseline locked ({{ provisional_budget_ref }}) — <strong>provisional only</strong>, not CEO-confirmed.</p>
             {% elif has_provisional_budget %}
             <p style="font-size:10px;color:var(--warning);margin:8px 0 0;">Provisional budget — confirm via Review to create MRO baseline.</p>
             {% elif not adhoc_material_committed %}
@@ -95,7 +95,7 @@
         {% if show_review_budget and not ro_locked %}
         <button type="button" class="btn-action" onclick="openReviewModal()" style="width:100%;margin-top:8px;" title="Lock Misc RO total with line items, then review ad-hoc budget">Review Ad-Hoc Budget</button>
         {% elif adhoc_material_committed and provisional_budget_ref %}
-        <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.4;">{{ provisional_budget_ref }} confirmed — awaiting CEO approval and fund release for payment vouchers.</p>
+        <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.4;">{{ provisional_budget_ref }} locked — send GM memo to CEO for budget confirmation before payment vouchers.</p>
         {% endif %}
         <button type="button" class="btn-action" onclick="window.location.href='{% url 'misc_budget_actuals' %}?task_id={{ active_task.project_id }}'" style="width:100%;margin-top:10px;background:#047857;">Purchase Audit</button>
         <div style="margin-top: auto; padding-top: 20px;">
@@ -459,17 +459,60 @@
             <span class="nav-label" style="margin:0 0 10px;">Officer payment vouchers</span>
             <p>{{ pv_gate.message }}</p>
             <ul class="pv-gate-steps">
-                <li class="{% if adhoc_material_committed %}is-done{% else %}is-pending{% endif %}">① MRO baseline confirmed on this page</li>
-                <li class="{% if pv_gate.is_ceo_approved %}is-done{% else %}is-pending{% endif %}">② CEO approves provision budget (AIE)</li>
-                <li class="{% if pv_gate.fund_released %}is-done{% else %}is-pending{% endif %}">③ CEO disburses funds to GM Accounting</li>
-                <li class="{% if pv_gate.can_raise_pv %}is-done{% else %}is-pending{% endif %}">④ GM raises officer payment vouchers at Disbursement desk</li>
+                <li class="{% if adhoc_material_committed %}is-done{% else %}is-pending{% endif %}">① MRO baseline locked (provisional budget)</li>
+                <li class="{% if budget_review_status == 'With CEO — awaiting confirmation' or pv_gate.is_ceo_approved %}is-done{% else %}is-pending{% endif %}">② GM sends memo → CEO reviews budget</li>
+                <li class="{% if pv_gate.is_ceo_approved %}is-done{% else %}is-pending{% endif %}">③ CEO confirms budget (AIE lock)</li>
+                <li class="{% if pv_gate.fund_released %}is-done{% else %}is-pending{% endif %}">④ CEO disburses funds to GM Accounting</li>
+                <li class="{% if pv_gate.can_raise_pv %}is-done{% else %}is-pending{% endif %}">⑤ GM issues Misc Payment Orders / officer PVs (partial or full)</li>
             </ul>
             {% if pv_gate.can_raise_pv %}
             <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_task.project_id }}&open_adhoc_ro_period=1" class="btn-action btn-success" style="width:100%;margin-top:14px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">Open GM Disbursement desk →</a>
             {% endif %}
         </div>
+        {% if adhoc_material_committed %}
+        <div class="panel" style="margin-top:16px;border-color:{% if budget_review_returned %}#f59e0b{% else %}var(--border){% endif %};">
+            <span class="nav-label" style="margin:0 0 8px;">GM → CEO budget confirmation</span>
+            <p style="font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.5;">
+                Status: <strong>{{ budget_review_status|default:"Provisional" }}</strong>.
+                Locking the MRO creates a <em>provisional</em> budget only — GM must request CEO confirmation before funds can move.
+            </p>
+            {% if budget_review_returned and last_return_reason %}
+            <div style="background:#422006;border:1px solid #f59e0b;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;">
+                <strong style="color:#fcd34d;">CEO returned budget:</strong> {{ last_return_reason }}
+            </div>
+            {% endif %}
+            {% if can_submit_budget_to_ceo %}
+            <form method="POST" action="{% url 'misc_purchase_builder' %}?task_id={{ active_task.project_id }}">
+                {% csrf_token %}
+                <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                <input type="hidden" name="action" value="submit_budget_to_ceo">
+                <div class="field-block" style="margin-bottom:10px;">
+                    <label class="nav-label">From (GM)</label>
+                    <input type="text" name="gm_from_officer" class="form-input" value="General Manager — Accounting Officer">
+                </div>
+                <div class="field-block" style="margin-bottom:10px;">
+                    <label class="nav-label">Memo to CEO</label>
+                    <textarea name="gm_memo_body" class="form-input" rows="4" placeholder="Please review and confirm the ad-hoc provision budget for Task {{ active_task.project_id }}. MRO {{ mro_number|default:provisional_budget_ref }} — US$ {{ formulation_grand|floatformat:2 }} authorized ceiling."></textarea>
+                </div>
+                <button type="submit" class="btn-action btn-success" style="width:100%;">
+                    {% if budget_review_returned %}Resubmit memo to CEO{% else %}Send memo to CEO for budget confirmation{% endif %}
+                </button>
+            </form>
+            {% elif budget_review_status == 'With CEO — awaiting confirmation' %}
+            <p style="font-size:12px;color:#93c5fd;margin:0;">With CEO — awaiting review at <a href="{% url 'budget_approval' %}?task_id={{ active_task.project_id|clean_task_id }}" style="color:#fde68a;">Budget Authorization</a>.</p>
+            {% endif %}
+            {% if budget_review_thread %}
+            <details style="margin-top:14px;font-size:12px;">
+                <summary style="cursor:pointer;color:var(--muted);">Review thread ({{ budget_review_thread|length }})</summary>
+                <ul style="margin:8px 0 0;padding-left:18px;color:var(--muted);">
+                {% for ev in budget_review_thread %}
+                <li style="margin-bottom:6px;"><strong>{{ ev.get_action_display }}</strong> — {{ ev.created_at|date:"d M Y H:i" }}{% if ev.reason %}: {{ ev.reason|truncatechars:80 }}{% endif %}</li>
+                {% endfor %}
+                </ul>
+            </details>
+            {% endif %}
+        </div>
         {% endif %}
-
         {% endif %}
 
 {% endblock %}

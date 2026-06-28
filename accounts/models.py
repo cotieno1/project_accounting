@@ -1008,12 +1008,92 @@ class ProjectBudget(models.Model):
     )
     ceo_aie_reference = models.CharField(max_length=100, blank=True, default="")
 
+    REVIEW_PROVISION = "PROVISION"
+    REVIEW_WITH_CEO = "WITH_CEO"
+    REVIEW_RETURNED = "RETURNED"
+    REVIEW_APPROVED = "APPROVED"
+    REVIEW_RELEASED = "RELEASED"
+    REVIEW_STATUS_CHOICES = [
+        (REVIEW_PROVISION, "Provisional — not sent to CEO"),
+        (REVIEW_WITH_CEO, "With CEO — awaiting confirmation"),
+        (REVIEW_RETURNED, "Returned to GM for correction"),
+        (REVIEW_APPROVED, "CEO confirmed (AIE locked)"),
+        (REVIEW_RELEASED, "Funds released to GM"),
+    ]
+    review_status = models.CharField(
+        max_length=20,
+        choices=REVIEW_STATUS_CHOICES,
+        default=REVIEW_PROVISION,
+        blank=True,
+    )
+    last_return_reason = models.TextField(
+        blank=True,
+        default="",
+        help_text="Latest CEO reason when budget was returned to GM.",
+    )
+
     @property
     def is_locked(self):
         return self.is_ceo_approved
 
     def __str__(self):
         return f"{self.budget_label} - KES {self.total_authorized_budget}"
+
+
+class BudgetReviewEvent(models.Model):
+    """GM ↔ CEO budget confirmation thread — memos, returns, approvals."""
+
+    ACTION_GM_SUBMIT = "GM_SUBMIT"
+    ACTION_GM_RESUBMIT = "GM_RESUBMIT"
+    ACTION_CEO_RETURN = "CEO_RETURN"
+    ACTION_CEO_APPROVE = "CEO_APPROVE"
+    ACTION_CEO_RELEASE = "CEO_RELEASE"
+    ACTION_CHOICES = [
+        (ACTION_GM_SUBMIT, "GM submitted budget to CEO"),
+        (ACTION_GM_RESUBMIT, "GM resubmitted after CEO return"),
+        (ACTION_CEO_RETURN, "CEO returned budget to GM"),
+        (ACTION_CEO_APPROVE, "CEO approved and locked budget (AIE)"),
+        (ACTION_CEO_RELEASE, "CEO released funds to GM"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    budget = models.ForeignKey(
+        ProjectBudget, on_delete=models.CASCADE, related_name="review_events"
+    )
+    task = models.ForeignKey(
+        "ProjectTask", on_delete=models.PROTECT, related_name="budget_review_events"
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    memo_subject = models.CharField(max_length=200, blank=True, default="")
+    memo_body = models.TextField(blank=True, default="")
+    reason = models.TextField(blank=True, default="")
+    from_officer = models.CharField(max_length=200, blank=True, default="")
+    to_officer = models.CharField(max_length=200, blank=True, default="")
+    source_mpo = models.ForeignKey(
+        "MiscPurchaseOrder",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="budget_review_events",
+    )
+    source_mro = models.ForeignKey(
+        "MiscRequisitionOrder",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="budget_review_events",
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="budget_review_events",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.get_action_display()} — {self.task_id} @ {self.created_at:%Y-%m-%d}"
 
 #=================================================================
 

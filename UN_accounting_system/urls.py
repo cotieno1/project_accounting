@@ -133,6 +133,11 @@ urlpatterns = [
     ),
     path('fund-ledger/', views.fund_ledger_view, name='fund_ledger'),
     path('fund-ledger/print/', views.print_fund_ledger_view, name='print_fund_ledger'),
+    path(
+        'misc-budget-ceo-memo/print/',
+        views.print_gm_ceo_budget_memo_view,
+        name='print_gm_ceo_budget_memo',
+    ),
 
     # GM AIE — Accounting, Ops & Maintenance disbursement (Major + Ad-Hoc tasks)
     path('gm-disbursement/', views.gm_aie_disbursement_view, name='gm_aie_disbursement'),
