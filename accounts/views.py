@@ -7335,8 +7335,9 @@ def _gm_task_sidebar_capabilities(task, project_class, budget_summary):
 
 def _gm_budget_compliance_hold(task):
     """
-    Forensic hold: ad-hoc disbursements or CEO fund release without CEO AIE approval.
-    Blocks further GM desk transactions until CEO locks the provision budget.
+    GM desk hold for ad-hoc tasks until CEO AIE lock.
+    Triggers on provision budget, misc path activity, or any cash / fund release
+    without CEO approval (forensic slip-up cleanup).
     """
     if not task:
         return None
@@ -7344,8 +7345,10 @@ def _gm_budget_compliance_hold(task):
     if budget and budget.is_ceo_approved:
         return None
 
-    is_adhoc = bool(
-        (budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC)
+    project_class = _task_project_class(task)
+    is_adhoc = (
+        project_class["code"] == "ADHOC"
+        or (budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC)
         or _task_has_misc_po_path(task)
     )
     if not is_adhoc:
@@ -7364,9 +7367,19 @@ def _gm_budget_compliance_hold(task):
     payment_total = payment_qs.aggregate(t=Sum("amount"))["t"] or Decimal("0.00")
     released_total = fund_releases.aggregate(t=Sum("amount"))["t"] or Decimal("0.00")
     disbursed_total = officer_total + payment_total
+    provision_total = budget.total_authorized_budget if budget else Decimal("0.00")
 
-    # Hold when cash moved (PVs/payments) OR CEO released wallet without AIE lock.
-    if disbursed_total <= 0 and release_count == 0:
+    has_provision = bool(
+        budget
+        and (
+            provision_total > 0
+            or (budget.material_total_cost or 0) > 0
+        )
+    )
+    has_cash_activity = disbursed_total > 0 or release_count > 0
+    has_misc_path = _task_has_misc_po_path(task)
+
+    if not has_provision and not has_cash_activity and not has_misc_path:
         return None
 
     baseline_mro = _get_task_baseline_mro(task)
@@ -7380,34 +7393,51 @@ def _gm_budget_compliance_hold(task):
     from accounts.budget_review import budget_review_status_label, gm_can_send_ceo_budget_reminder
 
     pick_id = _bom_task_pick_id(task)
-    provision_total = budget.total_authorized_budget if budget else Decimal("0.00")
 
-    slip_lines = []
-    if disbursed_total > 0:
-        slip_lines.append(
+    slip_lines = [
+        (
             f"Already disbursed: US$ {disbursed_total:.2f} "
             f"(Officer PVs {officer_count} · US$ {officer_total:.2f}; "
             f"GM line payments {payment_count} · US$ {payment_total:.2f})"
-        )
-    if release_count > 0 and not (budget and budget.is_ceo_approved):
-        slip_lines.append(
-            f"CEO fund release on file without AIE lock: US$ {released_total:.2f} "
-            f"({release_count} release{'s' if release_count != 1 else ''}) — "
-            "budget was never CEO-approved."
-        )
+        ),
+        (
+            f"Officer PVs / GM payments breakdown: "
+            f"{officer_count} officer PV(s) · US$ {officer_total:.2f}; "
+            f"{payment_count} line payment(s) · US$ {payment_total:.2f}"
+        ),
+    ]
     if provision_total > 0:
-        slip_lines.append(f"Provisional budget ceiling: US$ {provision_total:.2f}")
+        slip_lines.append(
+            f"Provisional budget ceiling: US$ {provision_total:.2f} — pending CEO confirmation."
+        )
     elif mro_ref:
-        slip_lines.append(f"MRO / Misc RO baseline: {mro_ref} — provision budget not CEO-confirmed.")
+        slip_lines.append(
+            f"MRO / Misc RO {mro_ref} — provision budget not CEO-confirmed."
+        )
+    if release_count > 0:
+        slip_lines.append(
+            f"CEO fund release without AIE lock: US$ {released_total:.2f} "
+            f"({release_count} release{'s' if release_count != 1 else ''})."
+        )
+    if not budget:
+        slip_lines.append("No provision budget record — complete Misc Purchase MRO baseline first.")
+
+    if has_cash_activity:
+        detail = (
+            "Cash or CEO fund release happened before the CEO confirmed this ad-hoc "
+            "provision budget. All further GM transactions are blocked until the CEO "
+            "approves the budget at Budget Authorization."
+        )
+    else:
+        detail = (
+            "This ad-hoc task has a provision budget that is not CEO-confirmed. "
+            "The GM desk is on hold — send a reminder to the CEO before any payment."
+        )
 
     return {
         "active": True,
         "title": "Task on hold — CEO budget approval required",
-        "detail": (
-            "Cash or CEO fund release happened before the CEO confirmed this ad-hoc "
-            "provision budget. All further GM transactions are blocked until the CEO "
-            "approves the budget at Budget Authorization."
-        ),
+        "detail": detail,
         "disbursed_total": disbursed_total,
         "released_total": released_total,
         "release_count": release_count,

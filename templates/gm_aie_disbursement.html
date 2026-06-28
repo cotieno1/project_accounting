@@ -4,7 +4,7 @@
 {% block title %}Pioneer | GM AIE Disbursement{% endblock %}
 {% block body_class %}gm-desk{% if active_task and gm_budget_hold %} gm-desk--hold{% elif active_task and gm_desk_blocked %} gm-desk--no-funds{% endif %}{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}?v=hold2">
 {% endblock %}
 {% block sidebar %}
 {% if not no_tasks %}
@@ -111,9 +111,10 @@
 {% else %}
 
         {% if gm_budget_hold %}
-        <div class="gm-budget-hold-zone" role="alert">
+        <div class="gm-hold-backdrop" aria-hidden="true"></div>
+        <div class="gm-budget-hold-zone" role="alertdialog" aria-labelledby="gmHoldTitle">
             <div class="gm-budget-hold-banner">
-                <strong class="gm-budget-hold-title">{{ gm_budget_hold.title }}</strong>
+                <strong class="gm-budget-hold-title" id="gmHoldTitle">{{ gm_budget_hold.title }}</strong>
                 <p class="gm-budget-hold-detail">{{ gm_budget_hold.detail }}</p>
             </div>
             <div class="gm-compliance-slip-box">
@@ -121,11 +122,6 @@
                 <ul class="gm-compliance-slip-list">
                     {% for line in gm_budget_hold.slip_lines %}
                     <li>{{ line }}</li>
-                    {% empty %}
-                    <li>Already disbursed: {{ currency_symbol }} {{ gm_budget_hold.disbursed_total|floatformat:2 }}</li>
-                    <li>Officer PVs: {{ gm_budget_hold.officer_pv_count }} · {{ currency_symbol }} {{ gm_budget_hold.officer_pv_total|floatformat:2 }}</li>
-                    <li>GM line payments: {{ gm_budget_hold.task_payment_count }} · {{ currency_symbol }} {{ gm_budget_hold.task_payment_total|floatformat:2 }}</li>
-                    {% if gm_budget_hold.provision_total %}<li>Provisional budget ceiling: {{ currency_symbol }} {{ gm_budget_hold.provision_total|floatformat:2 }}</li>{% endif %}
                     {% endfor %}
                 </ul>
                 {% if gm_budget_hold.can_send_reminder %}

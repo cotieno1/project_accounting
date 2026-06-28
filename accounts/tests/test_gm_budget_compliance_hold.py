@@ -43,6 +43,12 @@ class GmBudgetComplianceHoldTests(TestCase):
             total_amount=Decimal("5000.00"),
         )
 
+    def test_hold_on_adhoc_provision_without_payments(self):
+        hold = _gm_budget_compliance_hold(self.task)
+        self.assertIsNotNone(hold)
+        self.assertTrue(hold["can_send_reminder"])
+        self.assertIn("Provisional budget ceiling", " ".join(hold["slip_lines"]))
+
     def test_hold_detects_officer_pv_without_ceo_approval(self):
         AdHocOfficerPaymentVoucher.objects.create(
             mpo=self.mpo,
@@ -118,7 +124,7 @@ class GmBudgetComplianceHoldTests(TestCase):
         response = self.client.get(url, {"task_id": "1"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "gm-desk--hold")
-        self.assertContains(response, "Task on hold")
+        self.assertContains(response, "gm-hold-backdrop")
         self.assertContains(response, "Send reminder to CEO")
         self.assertContains(response, "gm-workspace-tools is-blocked")
 

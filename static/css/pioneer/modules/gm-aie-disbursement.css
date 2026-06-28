@@ -272,9 +272,39 @@ font-size: 12px;
 }
 
 .gm-budget-hold-zone {
-    position: relative;
-    z-index: 30;
-    margin-bottom: 20px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1200;
+    width: min(520px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    margin: 0;
+}
+
+.gm-hold-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1190;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(2px);
+    pointer-events: auto;
+}
+
+.gm-desk--hold .sidebar,
+.gm-desk--hold .gm-workspace-tools,
+.gm-desk--hold .gm-sidebar-tools {
+    filter: grayscale(0.85);
+    opacity: 0.35;
+    pointer-events: none;
+    user-select: none;
+}
+
+.gm-desk--hold .gm-budget-hold-zone {
+    pointer-events: auto;
+    filter: none;
+    opacity: 1;
 }
 
 .gm-budget-hold-banner {
