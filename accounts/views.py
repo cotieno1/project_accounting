@@ -1561,34 +1561,59 @@ def _task_on_major_bom_lane(task):
 
 
 def _resolve_misc_purchase_task(request, *, include_post=False):
-    """Resolve active task for misc/MRO pages within the ad-hoc task list only."""
+    """Resolve active task for misc/MRO pages — supports clean and legacy task ids."""
     tasks = _misc_purchase_tasks()
-    requested = _task_id_from_request(request, include_post=include_post)
-    if requested:
-        task = tasks.filter(project_id=requested).first()
+    raw = (request.GET.get("task_id") or "").strip()
+    if not raw and include_post:
+        raw = (request.POST.get("task_id") or "").strip()
+    if raw:
+        task = _resolve_project_task(ProjectTask.objects.all(), raw)
         if not task:
-            if ProjectTask.objects.filter(project_id=requested).exists():
-                messages.error(
-                    request,
-                    "That task is not on the MRO path. "
-                    "Choose an MRO task from the list, or return to the main menu.",
-                )
             return tasks, None
-        request.session["active_task_id"] = task.project_id
-        return tasks, task
+        allowed, reason = _misc_channel_allowed(task)
+        if not allowed:
+            messages.error(
+                request,
+                reason
+                or "This task is not on the MRO path. Return to the main menu or use BOM Builder.",
+            )
+            return tasks, None
+        if _task_on_major_bom_lane(task) and not _task_has_misc_po_path(task):
+            messages.info(
+                request,
+                "This task is on the Major (BOM) path. Continue in BOM Builder unless you intend ad-hoc MRO.",
+            )
+        pick_id = _bom_task_pick_id(task)
+        request.session["active_task_id"] = pick_id
+        return _misc_purchase_task_list(task), task
+    task_id = _normalize_task_id(request.session.get("active_task_id"))
+    if task_id:
+        task = _resolve_project_task(ProjectTask.objects.all(), task_id)
+        if task and _misc_channel_allowed(task)[0]:
+            return _misc_purchase_task_list(task), task
     task = tasks.order_by("project_id").first()
     if task:
-        request.session["active_task_id"] = task.project_id
+        request.session["active_task_id"] = _bom_task_pick_id(task)
     return tasks, task
 
 
 def _task_has_misc_po_path(task):
+    """True once the task has committed to the ad-hoc MRO path (not a blank draft RO)."""
     if not task:
         return False
-    if MiscPurchaseOrder.objects.filter(task=task).exists():
-        return True
     if MiscRequisitionOrder.objects.filter(task=task).exists():
         return True
+    budget = _task_budget_record(task)
+    if budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
+        if (budget.material_total_cost or 0) > 0 or budget.is_ceo_approved:
+            return True
+    for mpo in MiscPurchaseOrder.objects.filter(task=task):
+        if mpo.funding_status != "PENDING":
+            return True
+        if not mpo.is_sourcing:
+            return True
+        if mpo.items.exists():
+            return True
     return False
 
 
@@ -4279,14 +4304,9 @@ def _rfq_channel_allowed(task):
             f"This task already uses {_budget_channel_label(ProjectBudget.BUDGET_ADHOC_MISC)}. "
             "A task may only have one budget channel."
         )
-    if MiscPurchaseOrder.objects.filter(task=task).exists():
+    if _task_has_misc_po_path(task):
         return False, (
-            "This task already has ad-hoc RO records. "
-            "Bid evaluation / project budget is not available on this task."
-        )
-    if MiscRequisitionOrder.objects.filter(task=task).exists():
-        return False, (
-            "This task already has ad-hoc requisition orders. "
+            "This task is on the Misc Purchase (MRO) path. "
             "Bid evaluation / project budget is not available on this task."
         )
     return True, ""
@@ -4572,17 +4592,18 @@ def _bid_evaluation_workspace(task):
     base["budget_progress"] = _bid_eval_budget_progress(task)
     ops_url = reverse("ops_dashboard") + f"?task_id={tid}"
 
-    # No man's land — not on Major (BOM/bidding) or Misc Purchase yet
+    # Uncommitted — neither Major nor committed Misc path yet
     if lane == "bom":
         base.update({
             "allowed": False,
             "stage": "uncommitted",
-            "headline": "This task is not on Major Procurement or Misc Purchase",
+            "headline": "Choose procurement path for this task",
             "body": (
-                f"Task {tid} is in no mans land — it has not started the BOM "
-                "(competitive bidding) path or the Misc Purchase (MRO) path. "
-                "Bid evaluation does not apply here. Choose one of the three "
-                "options below."
+                f"Task {tid} has not started Major (BOM → RO → RFQ → LPO) or "
+                "Ad-hoc Misc Purchase yet. Pick the path that matches what you are "
+                "doing — competitive bidding uses BOM Builder; one-off officer purchases "
+                "use Misc Requisition. You can open either screen to view status; "
+                "the path only locks once you save real BOM or MRO work."
             ),
             "ops_dashboard_url": ops_url,
             "show_prerequisites": False,
@@ -4663,11 +4684,21 @@ def _bid_evaluation_workspace(task):
         next_url = reverse("rfq_manager") + f"?task_id={tid}"
         next_label = "Prepare & dispatch RFQs"
 
+    headline = "This task has not reached the Bid Evaluation stage"
+    body = reason
+    if lane == "major":
+        headline = "Major procurement (BOM → RO → RFQ) in progress"
+        body = (
+            f"{reason} "
+            "This task is on the competitive bidding path — continue BOM Builder, "
+            "RO, and RFQ dispatch; ad-hoc Misc Purchase is a separate lane."
+        )
+
     base.update({
         "allowed": False,
         "stage": "not_ready",
-        "headline": "This task has not reached the Bid Evaluation stage",
-        "body": reason,
+        "headline": headline,
+        "body": body,
         "next_step_url": next_url,
         "next_step_label": next_label,
         "show_lane_choice": False,

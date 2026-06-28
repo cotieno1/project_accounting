@@ -10,6 +10,7 @@ from accounts.models import (
     BOMHeader,
     BOMTransaction,
     LPOTransaction,
+    MiscPurchaseOrder,
     Product,
     ProjectBuildCategory,
     ProjectTask,
@@ -18,7 +19,7 @@ from accounts.models import (
     RFQTransaction,
     SupplierAccount,
 )
-from accounts.views import _bid_evaluation_gate, _bid_evaluation_workspace
+from accounts.views import _bid_evaluation_gate, _bid_evaluation_workspace, _bom_screen_lane, _rfq_channel_allowed, _task_has_misc_po_path
 
 
 class BidEvaluationGateHelperTests(TestCase):
@@ -84,6 +85,17 @@ class BidEvaluationGateHelperTests(TestCase):
         self.assertFalse(ws["allowed"])
         self.assertFalse(ws["show_prerequisites"])
 
+    def test_empty_draft_mpo_does_not_lock_bom_path(self):
+        MiscPurchaseOrder.objects.create(
+            task=self.task,
+            funding_status="PENDING",
+            is_sourcing=True,
+        )
+        self.assertFalse(_task_has_misc_po_path(self.task))
+        self.assertEqual(_bom_screen_lane(self.task), "bom")
+        allowed, _reason = _rfq_channel_allowed(self.task)
+        self.assertTrue(allowed)
+
     def test_allows_when_prerequisites_met(self):
         self._seed_bom_ro_rfq()
         allowed, message, _ = _bid_evaluation_gate(self.task)
@@ -121,7 +133,7 @@ class BidEvaluationGateViewTests(TestCase):
     def test_uncommitted_task_shows_lane_choice(self):
         response = self.client.get(self.url, {"task_id": self.task.project_id})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "no mans land")
+        self.assertContains(response, "Choose procurement path")
         self.assertContains(response, "Create BOM")
         self.assertContains(response, "Create Misc Requisition Order")
         self.assertContains(response, "bid-eval-lane-choice")
@@ -130,6 +142,12 @@ class BidEvaluationGateViewTests(TestCase):
         self.assertNotContains(response, "Select Two Bidders")
         self.assertNotContains(response, "Procurement prerequisites")
         self.assertContains(response, "btn-budget-modal\" disabled")
+
+    def test_misc_purchase_link_from_bid_eval_loads(self):
+        misc_url = reverse("misc_purchase_builder") + f"?task_id={self.task.project_id}"
+        response = self.client.get(misc_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ad-Hoc Requisition Order")
 
     def test_malformed_bracket_url_redirects_clean(self):
         ProjectTask.objects.create(
