@@ -24,6 +24,7 @@
             <span class="status-pill status-hold">Task on hold — CEO approval</span>
         </div>
         <p class="sidebar-hint" style="margin-top:12px;">GM desk locked until the CEO confirms the ad-hoc provision budget (AIE).</p>
+        <a href="{{ gm_budget_hold.ceo_approval_url }}" class="btn-action btn-warning" style="width:100%;margin-top:12px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">Review and Approve Misc/Ad-hoc Budget</a>
         {% if can_view_fund_ledger %}
         <a href="{% url 'fund_ledger' %}?task_id={{ active_pick_id }}" class="btn-action btn-secondary" style="width:100%;margin-top:12px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">📒 Fund control ledger</a>
         {% endif %}
@@ -153,6 +154,10 @@
                 </ul>
             </div>
 
+            <a href="{{ gm_budget_hold.ceo_approval_url }}" class="btn-action btn-warning" style="width:100%;margin-top:16px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">
+                Review and Approve Misc/Ad-hoc Budget
+            </a>
+
             {% if gm_budget_hold.can_send_reminder %}
             <form method="POST" action="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}" class="gm-budget-hold-form">
                 {% csrf_token %}
@@ -166,7 +171,8 @@
                     Send reminder to CEO — approve budget
                 </button>
                 <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.45;">
-                    This is the only GM action while on hold. CEO must approve at
+                    This is the only GM action while on hold. CEO reviews at
+                    <strong>Review and Approve Misc/Ad-hoc Budget</strong> above, or
                     <a href="{{ gm_budget_hold.ceo_approval_url }}" style="color:#93c5fd;">Budget Authorization</a>.
                 </p>
             </form>

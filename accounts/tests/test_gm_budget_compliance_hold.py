@@ -126,6 +126,7 @@ class GmBudgetComplianceHoldTests(TestCase):
         self.assertContains(response, "gm-hold-panel")
         self.assertContains(response, "sidebar-back-link")
         self.assertContains(response, "← Ops Dashboard")
+        self.assertContains(response, "Review and Approve Misc/Ad-hoc Budget")
         self.assertContains(response, "Send reminder to CEO")
         self.assertNotContains(response, "gm-hold-backdrop")
         self.assertNotContains(response, "Post payment — Accounting")
