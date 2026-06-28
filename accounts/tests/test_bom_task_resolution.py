@@ -1,4 +1,4 @@
-﻿"""Regression tests for BOM builder task_id resolution and mobile workspace picker."""
+"""Regression tests for BOM builder task_id resolution and mobile workspace picker."""
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -189,20 +189,16 @@ class BudgetApprovalTaskIdTests(TestCase):
         self.assertContains(response, "1233_0900")
         self.assertNotContains(response, "['1233_0900']")
 
-    def test_open_budget_sidebar_disabled_without_provision(self):
+    def test_open_budget_sidebar_enabled_without_provision(self):
         ProjectTask.objects.create(project_id="133", description="Uncommitted task")
         url = reverse("budget_approval")
         response = self.client.get(url, {"task_id": "133"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Open budget &amp; actions")
-        self.assertContains(
-            response,
-            'disabled title="Complete Bid Evaluation or Ad-Hoc budget commit first."',
-        )
+        self.assertContains(response, "Budget Review and Approve")
+        self.assertContains(response, 'id="budgetReviewApproveBtn"')
+        self.assertContains(response, 'onclick="openBudgetModal()"')
         self.assertContains(response, "No provision budget")
-        self.assertContains(response, "No Budget to be Reviewed or Approved")
-        self.assertContains(response, 'id="budgetApprovalNoBudgetEsc"')
-        self.assertContains(response, f'href="{url}"')
+        self.assertNotContains(response, "No Budget to be Reviewed or Approved")
 
 
 class UnifiedApiCreateTaskTests(TestCase):

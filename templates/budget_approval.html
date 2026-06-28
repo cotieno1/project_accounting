@@ -42,7 +42,7 @@
 </div>
 
 <div class="sidebar-actions">
-    <button type="button" class="btn-action {% if budget_summary.has_budget %}btn-warning{% else %}btn-secondary{% endif %} btn-action--block"{% if budget_summary.has_budget %} onclick="openBudgetModal()"{% else %} disabled title="Complete Bid Evaluation or Ad-Hoc budget commit first."{% endif %}>Open budget &amp; actions</button>
+    <button type="button" class="btn-action btn-warning btn-action--block" onclick="openBudgetModal()">Budget Review and Approve</button>
     {% if can_gm_pay %}
     <a href="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}" class="btn-action btn-success btn-action--block">→ GM payment desk</a>
     {% else %}
@@ -75,11 +75,7 @@
             <h2 class="task-id-title">Task {{ active_pick_id }}</h2>
             <span class="task-badge {{ project_class.css }}">{{ project_class.label }}</span>
         </div>
-        {% if budget_summary.has_budget %}
-        <button type="button" class="btn-action" onclick="openBudgetModal()">Review &amp; approve</button>
-        {% else %}
-        <a href="{% url 'budget_approval' %}" id="budgetApprovalNoBudgetEsc" class="btn-action btn-action--no-budget" style="text-decoration:none;">No Budget to be Reviewed or Approved</a>
-        {% endif %}
+        <button type="button" id="budgetReviewApproveBtn" class="btn-action btn-warning" onclick="openBudgetModal()">Budget Review and Approve</button>
     </div>
     {% if fund_release %}
     <div class="fund-voucher-banner">
@@ -298,9 +294,9 @@
     });
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
-        const esc = document.getElementById('budgetApprovalNoBudgetEsc');
-        if (esc && esc.href) {
-            window.location.href = esc.href;
+        const modal = document.getElementById('budgetModal');
+        if (modal?.classList.contains('is-open')) {
+            closeBudgetModal();
         }
     });
 </script>
