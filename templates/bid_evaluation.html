@@ -55,7 +55,7 @@
         <button type="button" class="btn-action btn-budget-modal"{% if bid_eval_sidebar_tools_enabled %} onclick="openBudgetModal()"{% else %} disabled title="Available after bid evaluation starts (BOM, RO, and RFQs complete)."{% endif %}>Materials: Budget vs Actual &amp; Variance</button>
         <button type="button" class="btn-action btn-lpo-list"{% if bid_eval_sidebar_tools_enabled %} onclick="openLpoListingModal()"{% else %} disabled title="Available after bid evaluation starts (BOM, RO, and RFQs complete)."{% endif %}>LPO Listing ({{ budget_status.lpo_count }})</button>
         <button type="button" class="btn-action btn-grn-list"{% if bid_eval_sidebar_tools_enabled %} onclick="openGrnListingModal()"{% else %} disabled title="Available after bid evaluation starts (BOM, RO, and RFQs complete)."{% endif %}>GRN Listing ({{ grn_count }})</button>
-    </div>
+</div>
 
     <div class="sidebar-footer">
         {% if active_task %}
@@ -111,7 +111,7 @@
             </p>
             <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
                 <a href="{{ bid_eval_workspace.bom_url }}" class="btn-action btn-success" style="text-decoration:none;margin:0;">Create BOM</a>
-                <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action" style="text-decoration:none;margin:0;">Create Misc Requisition Order</a>
+                <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action" style="text-decoration:none;margin:0;">View Misc Requisition Order</a>
                 <a href="{{ bid_eval_workspace.ops_dashboard_url }}" class="btn-action" style="text-decoration:none;margin:0;background:#334155;">Abandon (Esc)</a>
                 <button type="button" class="btn-action" disabled
                     title="Complete BOM, RO, and RFQ dispatch on the major procurement path first."
@@ -122,7 +122,7 @@
         </div>
         {% elif bid_eval_workspace.stage == 'misc' %}
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
-            <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action btn-success" style="text-decoration:none;margin:0;">Create Misc Requisition Order</a>
+            <a href="{{ bid_eval_workspace.misc_url }}" class="btn-action btn-success" style="text-decoration:none;margin:0;">View Misc Requisition Order</a>
             <a href="{% url 'ops_dashboard' %}?task_id={{ active_pick_id }}" class="btn-action" style="text-decoration:none;margin:0;">Return to main menu</a>
         </div>
         {% elif bid_eval_workspace.stage == 'not_ready' %}
@@ -382,9 +382,9 @@
 					<!-- GRID STAYS SAME -->
 					
    
-                    <button type="button" onclick="openReviewModal()" class="btn-action btn-success">
+						<button type="button" onclick="openReviewModal()" class="btn-action btn-success">
                         Review Budget
-                    </button>
+						</button>	
 						
                 </div>
                 
@@ -399,13 +399,13 @@
         <div class="review-modal-header">
             <h3>📋 Treasury Pre-Authorization Memorandum</h3>
             <span class="review-modal-tag">STAGE: REVIEW (v1)</span>
-        </div>
+</div>
 
         <div class="review-summary-box">
             <div class="review-summary-row">
                 <span class="review-summary-label">Task Target ID:</span>
                 <span style="color: #f1f5f9; font-weight: bold;">{{ active_pick_id }}</span>
-            </div>
+        </div>
             <div class="review-summary-row">
                 <span class="review-summary-label">Locked Material Cost:</span>
                 <span id="modal_mat_cost" class="review-summary-value review-summary-value--success">{{ currency_symbol }} 0.00</span>
@@ -543,7 +543,7 @@
         <div class="cockpit-modal-header" style="flex-shrink: 0;">
             <h3>Goods Received Note (GRN)</h3>
             <span class="cockpit-modal-tag" id="grn-modal-lpo-tag">LPO</span>
-        </div>
+		</div>
         <form id="grnForm" method="POST" action="{% url 'bid_evaluation_terminal' %}?task_id={{ active_pick_id }}">
             {% csrf_token %}
             <input type="hidden" name="action" value="create_grn">
@@ -616,10 +616,10 @@
             <div class="grn-modal-footer">
                 <button type="button" onclick="closeGrnModal()" class="btn-action grn-modal-btn" style="flex:1;background:#334155;margin-top:0;">Back</button>
                 <button type="submit" class="btn-action grn-modal-btn" style="flex:1;background:var(--warning);color:#111;margin-top:0;font-weight:700;">Confirm GRN &amp; Print</button>
-            </div>
-        </form>
+				</div>
+			</form>
+        </div>
     </div>
-</div>
 
 <form id="cancelLpoForm" method="POST" action="{% url 'bid_evaluation_terminal' %}?task_id={{ active_pick_id }}">
     {% csrf_token %}
@@ -633,7 +633,7 @@
         <div class="cockpit-modal-header">
             <h3>GRN Listing</h3>
             <span class="cockpit-modal-tag">Task {{ active_pick_id }}</span>
-        </div>
+</div>
         <div id="grn-list-pane" style="flex: 1; overflow-y: auto; min-height: 200px;">
             <table class="lpo-list-table">
                 <thead>
