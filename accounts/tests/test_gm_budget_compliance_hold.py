@@ -98,7 +98,7 @@ class GmBudgetComplianceHoldTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Compliance slip — task 133")
-        self.assertContains(response, "gm-compliance-slip-box")
+        self.assertContains(response, "gm-hold-panel")
 
     def test_hold_cleared_after_ceo_approval(self):
         AdHocOfficerPaymentVoucher.objects.create(
@@ -112,7 +112,7 @@ class GmBudgetComplianceHoldTests(TestCase):
         self.budget.save(update_fields=["is_ceo_approved"])
         self.assertIsNone(_gm_budget_compliance_hold(self.task))
 
-    def test_gm_desk_grays_out_and_shows_reminder_form(self):
+    def test_gm_desk_hold_uses_standard_cockpit_layout(self):
         AdHocOfficerPaymentVoucher.objects.create(
             mpo=self.mpo,
             task=self.task,
@@ -123,10 +123,12 @@ class GmBudgetComplianceHoldTests(TestCase):
         url = reverse("gm_aie_disbursement")
         response = self.client.get(url, {"task_id": "1"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "gm-desk--hold")
-        self.assertContains(response, "gm-hold-backdrop")
+        self.assertContains(response, "gm-hold-panel")
+        self.assertContains(response, "sidebar-back-link")
+        self.assertContains(response, "← Ops Dashboard")
         self.assertContains(response, "Send reminder to CEO")
-        self.assertContains(response, "gm-workspace-tools is-blocked")
+        self.assertNotContains(response, "gm-hold-backdrop")
+        self.assertNotContains(response, "Post payment — Accounting")
 
     def test_reminder_post_blocked_while_on_hold_for_other_actions(self):
         AdHocOfficerPaymentVoucher.objects.create(

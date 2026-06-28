@@ -262,107 +262,67 @@ font-size: 12px;
 }
 
 .gm-desk--no-funds .gm-sidebar-tools.is-blocked,
-.gm-desk--no-funds .gm-workspace-tools.is-blocked,
-.gm-desk--hold .gm-sidebar-tools.is-blocked,
-.gm-desk--hold .gm-workspace-tools.is-blocked {
+.gm-desk--no-funds .gm-workspace-tools.is-blocked {
     opacity: 0.42;
     filter: grayscale(0.75);
     pointer-events: none;
     user-select: none;
 }
 
-.gm-budget-hold-zone {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1200;
-    width: min(520px, calc(100vw - 32px));
-    max-height: calc(100vh - 48px);
-    overflow-y: auto;
-    margin: 0;
+/* Hold — standard cockpit panel (same pattern as BOM / MRO / CEO screens) */
+.gm-desk .sidebar-status {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
 }
 
-.gm-hold-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1190;
-    background: rgba(15, 23, 42, 0.82);
-    backdrop-filter: blur(2px);
-    pointer-events: auto;
-}
-
-.gm-desk--hold .sidebar,
-.gm-desk--hold .gm-workspace-tools,
-.gm-desk--hold .gm-sidebar-tools {
-    filter: grayscale(0.85);
-    opacity: 0.35;
-    pointer-events: none;
-    user-select: none;
-}
-
-.gm-desk--hold .gm-budget-hold-zone {
-    pointer-events: auto;
-    filter: none;
-    opacity: 1;
-}
-
-.gm-budget-hold-banner {
-    margin-bottom: 14px;
-    padding: 20px 22px;
-    border-radius: 12px;
-    border: 3px solid #dc2626;
-    background: linear-gradient(135deg, rgba(127, 29, 29, 0.45), rgba(69, 10, 10, 0.35));
-    box-shadow: 0 8px 28px rgba(220, 38, 38, 0.28);
-}
-
-.gm-budget-hold-title {
-    display: block;
-    font-size: clamp(1rem, 2.5vw, 1.25rem);
-    font-weight: 800;
-    color: #fef2f2;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.gm-budget-hold-detail {
-    margin: 10px 0 0;
-    font-size: 14px;
-    line-height: 1.55;
-    color: #fecaca;
-}
-
-.gm-budget-hold-slip {
-    padding: 20px 22px;
-    border-radius: 12px;
-    border: 2px solid #f59e0b;
-    background: #0f172a;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-}
-
-.gm-compliance-slip-box {
-    padding: 0;
-    border: 2px solid #475569;
-    border-radius: 10px;
-    background: #0b1220;
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.15);
-}
-
-.gm-compliance-slip-header {
-    margin: 0;
-    padding: 14px 18px;
-    font-size: 13px;
+.gm-desk .status-pill.status-hold {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
+    text-transform: uppercase;
     color: #fde68a;
-    border-bottom: 1px solid #334155;
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(245, 158, 11, 0.18);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+.gm-desk .sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+.gm-desk .sidebar-back-link {
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.gm-desk .sidebar-back-link:hover {
+    color: var(--light);
+}
+
+.gm-hold-panel {
+    border: 2px solid rgba(245, 158, 11, 0.45);
+    background: rgba(15, 23, 42, 0.65);
+}
+
+.gm-compliance-slip-inner {
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #0b1220;
 }
 
 .gm-compliance-slip-list {
     margin: 0;
-    padding: 16px 18px 16px 34px;
+    padding: 0 0 0 18px;
     list-style: disc;
     font-size: 13px;
     line-height: 1.65;
@@ -375,77 +335,6 @@ font-size: 12px;
 
 .gm-compliance-slip-list li:last-child {
     margin-bottom: 0;
-}
-
-.gm-budget-hold-form {
-    padding: 0 18px 18px;
-    border-top: 1px dashed #334155;
-    margin-top: 0;
-}
-
-.gm-compliance-slip-note-label {
-    margin: 14px 0 6px !important;
-    display: block;
-}
-
-.gm-compliance-slip-cta {
-    width: 100%;
-    margin-top: 12px;
-}
-
-.gm-compliance-slip-footnote {
-    font-size: 11px;
-    color: var(--muted);
-    margin: 10px 0 0;
-    line-height: 1.45;
-}
-
-.gm-compliance-slip-footnote a {
-    color: #93c5fd;
-}
-
-.gm-compliance-slip-warning {
-    font-size: 12px;
-    color: var(--warning);
-    margin: 0;
-    padding: 14px 18px 18px;
-    border-top: 1px dashed #334155;
-}
-
-.gm-compliance-slip-warning a {
-    color: #fde68a;
-}
-
-.gm-budget-hold-slip-label {
-    margin: 0 0 12px;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #fde68a;
-    font-weight: 700;
-}
-
-.gm-budget-hold-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.gm-budget-hold-table th,
-.gm-budget-hold-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
-    vertical-align: top;
-}
-
-.gm-budget-hold-table th {
-    width: 42%;
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
 }
 
 .gm-budget-hold-form textarea {

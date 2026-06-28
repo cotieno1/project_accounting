@@ -2,9 +2,9 @@
 {% load static %}
 {% load pioneer_tags %}
 {% block title %}Pioneer | GM AIE Disbursement{% endblock %}
-{% block body_class %}gm-desk{% if active_task and gm_budget_hold %} gm-desk--hold{% elif active_task and gm_desk_blocked %} gm-desk--no-funds{% endif %}{% endblock %}
+{% block body_class %}gm-desk{% if active_task and gm_desk_blocked %} gm-desk--no-funds{% endif %}{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}?v=hold2">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}?v=hold3">
 {% endblock %}
 {% block sidebar %}
 {% if not no_tasks %}
@@ -18,7 +18,17 @@
         </select>
 
         {% if active_task %}
-        <div class="gm-sidebar-tools{% if gm_desk_blocked or gm_budget_hold %} is-blocked{% endif %}">
+        {% if gm_budget_hold %}
+        <div class="sidebar-status">
+            <span class="nav-label">Workflow status</span>
+            <span class="status-pill status-hold">Task on hold — CEO approval</span>
+        </div>
+        <p class="sidebar-hint" style="margin-top:12px;">GM desk locked until the CEO confirms the ad-hoc provision budget (AIE).</p>
+        {% if can_view_fund_ledger %}
+        <a href="{% url 'fund_ledger' %}?task_id={{ active_pick_id }}" class="btn-action btn-secondary" style="width:100%;margin-top:12px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">📒 Fund control ledger</a>
+        {% endif %}
+        {% else %}
+        <div class="gm-sidebar-tools{% if gm_desk_blocked %} is-blocked{% endif %}">
         <div class="sidebar-block">
             <button type="button" class="btn-action" onclick="togglePayList()" style="width:100%;background:#1e293b;">
                 💳 Payment List{% if payment_listing %} ({{ payment_listing|length }}){% endif %}
@@ -89,13 +99,18 @@
         {% if can_view_fund_ledger %}
         <a href="{% url 'fund_ledger' %}{% if active_pick_id %}?task_id={{ active_pick_id }}{% endif %}" class="btn-action btn-secondary" style="width:100%;margin-top:12px;text-decoration:none;text-align:center;display:block;box-sizing:border-box;">📒 Fund control ledger</a>
         {% endif %}
-        </div>
+        {% endif %}
         {% endif %}
         <div class="sidebar-footer">
             {% if active_task %}
-            <a href="/ops-dashboard/?task_id={{ active_pick_id }}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Ops Dashboard</a>
+            {% if gm_budget_hold %}
+            <a href="{{ gm_budget_hold.misc_purchase_url }}" class="sidebar-back-link">← Misc Purchase</a>
+            <a href="/ops-dashboard/?task_id={{ active_pick_id }}" class="sidebar-back-link">← Ops Dashboard</a>
             {% else %}
-            <a href="{% url 'ops_dashboard' %}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Ops Dashboard</a>
+            <a href="/ops-dashboard/?task_id={{ active_pick_id }}" class="sidebar-back-link">← Ops Dashboard</a>
+            {% endif %}
+            {% else %}
+            <a href="{% url 'ops_dashboard' %}" class="sidebar-back-link">← Ops Dashboard</a>
             {% endif %}
         </div>
 {% else %}
@@ -111,39 +126,58 @@
 {% else %}
 
         {% if gm_budget_hold %}
-        <div class="gm-hold-backdrop" aria-hidden="true"></div>
-        <div class="gm-budget-hold-zone" role="alertdialog" aria-labelledby="gmHoldTitle">
-            <div class="gm-budget-hold-banner">
-                <strong class="gm-budget-hold-title" id="gmHoldTitle">{{ gm_budget_hold.title }}</strong>
-                <p class="gm-budget-hold-detail">{{ gm_budget_hold.detail }}</p>
+        <div class="panel">
+            <div class="header-row">
+                <div class="header-left">
+                    <h1 class="page-title">GM AIE Disbursement</h1>
+                    <h2 class="task-id-title">Task {{ active_pick_id }}</h2>
+                    <span class="task-badge {{ project_class.css }}">{{ project_class.label }}</span>
+                </div>
             </div>
-            <div class="gm-compliance-slip-box">
-                <div class="gm-compliance-slip-header">Compliance slip — task {{ active_pick_id }}</div>
+            <p style="color:var(--muted);margin:8px 0 0;">{{ active_task.description|clean_task_description }}</p>
+            <p style="font-size:12px;color:var(--warning);margin-top:10px;">
+                <strong>Status:</strong> {{ gm_budget_hold.budget_review_status }}
+            </p>
+        </div>
+
+        <div class="panel gm-hold-panel">
+            <span class="nav-label" style="margin:0 0 8px;">Task on hold — CEO budget approval required</span>
+            <p style="margin:0 0 16px;font-size:13px;line-height:1.55;color:var(--text);">{{ gm_budget_hold.detail }}</p>
+
+            <div class="gm-compliance-slip-inner">
+                <p class="nav-label" style="margin:0 0 10px;">Compliance slip — task {{ active_pick_id }}</p>
                 <ul class="gm-compliance-slip-list">
                     {% for line in gm_budget_hold.slip_lines %}
                     <li>{{ line }}</li>
                     {% endfor %}
                 </ul>
-                {% if gm_budget_hold.can_send_reminder %}
-                <form method="POST" action="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}" class="gm-budget-hold-form">
-                    {% csrf_token %}
-                    <input type="hidden" name="task_id" value="{{ active_pick_id }}">
-                    <input type="hidden" name="action" value="send_ceo_budget_reminder">
-                    <label class="nav-label gm-compliance-slip-note-label">Additional note to CEO (optional)</label>
-                    <textarea name="reminder_notes" class="form-input" rows="3" placeholder="Describe the slip-up — e.g. Task {{ active_pick_id }} payments posted before CEO AIE approval."></textarea>
-                    <button type="submit" class="btn-action btn-success gm-compliance-slip-cta">
-                        Send reminder to CEO — approve budget
-                    </button>
-                    <p class="gm-compliance-slip-footnote">Only action available while on hold. Desk stays locked until CEO approves at <a href="{{ gm_budget_hold.ceo_approval_url }}">Budget Authorization</a>.</p>
-                </form>
-                {% else %}
-                <p class="gm-compliance-slip-warning">
-                    No provision budget on file —
-                    <a href="{{ gm_budget_hold.misc_purchase_url }}">complete Misc Purchase MRO baseline</a> first.
-                </p>
-                {% endif %}
             </div>
+
+            {% if gm_budget_hold.can_send_reminder %}
+            <form method="POST" action="{% url 'gm_aie_disbursement' %}?task_id={{ active_pick_id }}" class="gm-budget-hold-form">
+                {% csrf_token %}
+                <input type="hidden" name="task_id" value="{{ active_pick_id }}">
+                <input type="hidden" name="action" value="send_ceo_budget_reminder">
+                <div class="field-block" style="margin-top:16px;">
+                    <label class="nav-label">Additional note to CEO (optional)</label>
+                    <textarea name="reminder_notes" class="form-input" rows="3" placeholder="Describe the slip-up — e.g. Task {{ active_pick_id }} payments posted before CEO AIE approval."></textarea>
+                </div>
+                <button type="submit" class="btn-action btn-success" style="width:100%;margin-top:12px;">
+                    Send reminder to CEO — approve budget
+                </button>
+                <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.45;">
+                    This is the only GM action while on hold. CEO must approve at
+                    <a href="{{ gm_budget_hold.ceo_approval_url }}" style="color:#93c5fd;">Budget Authorization</a>.
+                </p>
+            </form>
+            {% else %}
+            <p style="font-size:12px;color:var(--warning);margin:16px 0 0;">
+                No provision budget on file —
+                <a href="{{ gm_budget_hold.misc_purchase_url }}" style="color:#fde68a;">complete Misc Purchase MRO baseline</a> first.
+            </p>
+            {% endif %}
         </div>
+
         {% elif gm_desk_blocked %}
         <div class="gm-funds-blocked-banner" role="alert">
             <strong class="gm-funds-blocked-title">This Task does not have Any budget approved therefore there No allocated Funds</strong>
@@ -156,7 +190,8 @@
         </div>
         {% endif %}
 
-        <div class="gm-workspace-tools{% if gm_desk_blocked or gm_budget_hold %} is-blocked{% endif %}">
+        {% if not gm_budget_hold %}
+        <div class="gm-workspace-tools{% if gm_desk_blocked %} is-blocked{% endif %}">
         <div class="panel">
             <div class="header-row">
                 <div class="header-left">
@@ -309,6 +344,7 @@
             </div>
         </div>
         </div>
+        {% endif %}
 {% endif %}
 {% endblock %}
 {% block modals %}
