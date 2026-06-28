@@ -165,7 +165,13 @@
         </p>
 
         {% if not budget_summary.has_budget %}
-        <p style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">No provision budget for this task. Complete Bid Evaluation or Ad-Hoc budget commit first.</p>
+        <p style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">
+            {% if project_class.code == 'ADHOC' %}
+            No ad-hoc provision baseline yet. On Misc Purchase, lock the Misc RO (MRO) — material total plus four budget lines (labour, maintenance, equipment may be zero).
+            {% else %}
+            No provision budget for this task. Complete Bid Evaluation (Major) or Ad-Hoc budget commit first.
+            {% endif %}
+        </p>
         {% else %}
         <div class="table-scroll">
         <table class="line-budget-table" style="margin-top:16px;">

@@ -5722,6 +5722,82 @@ def _get_task_baseline_mpo(task):
     )
 
 
+def _adhoc_material_total_from_mro_mpo(task):
+    """Material baseline from committed MRO or active Misc RO — no bid evaluation."""
+    if not task:
+        return Decimal("0.00")
+    mro = _get_task_baseline_mro(task)
+    if mro and (mro.total_amount or 0) > 0:
+        return mro.total_amount
+    mpo = _get_task_baseline_mpo(task)
+    if not mpo:
+        return Decimal("0.00")
+    if (mpo.total_amount or 0) > 0:
+        return mpo.total_amount
+    if mpo.items.exists():
+        return (
+            mpo.items.aggregate(t=Sum("total"))["t"] or Decimal("0.00")
+        )
+    return Decimal("0.00")
+
+
+def _adhoc_budget_ceiling(budget):
+    from accounts.budget_review import adhoc_budget_ceiling
+
+    return adhoc_budget_ceiling(budget)
+
+
+def _ensure_adhoc_provision_budget(task):
+    """
+    Ad-hoc Misc provision = MRO material total + four budget lines (others may be zero).
+    Sync or create ProjectBudget from MRO/MPO baseline — no bid evaluation required.
+    """
+    if not task or not _task_has_misc_po_path(task):
+        return _task_budget_record(task)
+
+    budget = _task_budget_record(task)
+    if budget and budget.budget_type == ProjectBudget.BUDGET_RFQ_LPO:
+        return budget
+
+    material = _adhoc_material_total_from_mro_mpo(task)
+    if material <= 0:
+        return budget
+
+    if budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
+        if budget.is_ceo_approved:
+            return budget
+        updates = []
+        if (budget.material_total_cost or 0) <= 0:
+            budget.material_total_cost = material
+            updates.append("material_total_cost")
+        ceiling = _adhoc_budget_ceiling(budget)
+        if ceiling <= 0:
+            budget.total_authorized_budget = (
+                (budget.material_total_cost or material)
+                + (budget.labour_burden or Decimal("0.00"))
+                + (budget.misc_reserve or Decimal("0.00"))
+                + (budget.equipment_reserve or Decimal("0.00"))
+            )
+            updates.append("total_authorized_budget")
+        if updates:
+            budget.save(update_fields=updates)
+        return budget
+
+    misc_ok, reason = _misc_channel_allowed(task)
+    if not misc_ok:
+        return budget
+
+    return _save_task_budget(
+        task,
+        ProjectBudget.BUDGET_ADHOC_MISC,
+        material,
+        Decimal("0.00"),
+        Decimal("0.00"),
+        material,
+        label=f"Ad-Hoc Budget — {task.project_id}",
+    )
+
+
 def _task_has_adhoc_baseline(task):
     return _get_task_baseline_mpo(task) is not None
 
@@ -7204,6 +7280,7 @@ def _disbursement_line_actual(task, line_key, *, major_status=None):
 
 
 def _task_disbursement_budget_summary(task):
+    _ensure_adhoc_provision_budget(task)
     budget = _task_budget_record(task)
     major_status = _build_task_budget_status(task) if task else None
     lines = []
@@ -7225,6 +7302,8 @@ def _task_disbursement_budget_summary(task):
     has_budget = budget is not None or bool(
         major_status and major_status.get("has_budget")
     ) or _task_has_major_procurement(task)
+    if not has_budget and task and _task_has_misc_po_path(task):
+        has_budget = _adhoc_material_total_from_mro_mpo(task) > 0
     return {
         "lines": lines,
         "total_budget": total_budget,
@@ -7817,6 +7896,7 @@ def budget_approval_view(request):
             "active_task": None,
         })
 
+    _ensure_adhoc_provision_budget(active_task)
     budget = _task_budget_record(active_task)
     project_class = _task_project_class(active_task)
     budget_summary = _task_disbursement_budget_summary(active_task)
@@ -7831,6 +7911,7 @@ def budget_approval_view(request):
             )
 
             with transaction.atomic():
+                _ensure_adhoc_provision_budget(active_task)
                 budget = _task_budget_record(active_task)
                 if "return_to_gm" in request.POST:
                     if not budget:

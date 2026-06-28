@@ -80,3 +80,31 @@ class BudgetReviewWorkflowTests(TestCase):
             BudgetReviewEvent.objects.filter(action=BudgetReviewEvent.ACTION_CEO_RETURN).count(),
             1,
         )
+
+    def test_ceo_desk_syncs_adhoc_budget_from_mro_without_project_budget(self):
+        from accounts.models import MiscPurchaseOrder, MiscRequisitionOrder
+
+        task = ProjectTask.objects.create(project_id="MRO-ONLY", description="MRO only task")
+        mpo = MiscPurchaseOrder.objects.create(
+            task=task,
+            funding_status="LOCKED",
+            mpo_number="MPO-MRO-1",
+            total_amount=Decimal("2500.00"),
+        )
+        MiscRequisitionOrder.objects.create(
+            task=task,
+            source_mpo=mpo,
+            mro_number="MRO-2026-001",
+            funding_status="LOCKED",
+            total_amount=Decimal("2500.00"),
+        )
+        self.assertFalse(ProjectBudget.objects.filter(task=task).exists())
+        self.client.login(username="ceo_review", password="test-pass-123")
+        response = self.client.get(reverse("budget_approval") + f"?task_id={task.project_id}")
+        self.assertEqual(response.status_code, 200)
+        budget = ProjectBudget.objects.get(task=task)
+        self.assertEqual(budget.budget_type, ProjectBudget.BUDGET_ADHOC_MISC)
+        self.assertEqual(budget.material_total_cost, Decimal("2500.00"))
+        self.assertTrue(response.context["budget_summary"]["has_budget"])
+        self.assertTrue(response.context["can_approve"])
+        self.assertNotContains(response, "Complete Bid Evaluation")

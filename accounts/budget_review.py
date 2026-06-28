@@ -1,5 +1,7 @@
 """GM ↔ CEO budget review workflow helpers."""
 
+from decimal import Decimal
+
 from accounts.models import BudgetReviewEvent, CEOFundRelease, ProjectBudget
 
 
@@ -65,6 +67,20 @@ def gm_can_submit_budget(budget):
     )
 
 
+def adhoc_budget_ceiling(budget):
+    if not budget:
+        return Decimal("0")
+    total = budget.total_authorized_budget or Decimal("0")
+    if total > 0:
+        return total
+    return (
+        (budget.material_total_cost or Decimal("0"))
+        + (budget.labour_burden or Decimal("0"))
+        + (budget.misc_reserve or Decimal("0"))
+        + (budget.equipment_reserve or Decimal("0"))
+    )
+
+
 def ceo_can_return_budget(budget):
     return bool(
         budget
@@ -79,7 +95,7 @@ def ceo_can_approve_budget(budget):
     if budget.review_status == ProjectBudget.REVIEW_RETURNED:
         return False
     if budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
-        if budget.total_authorized_budget <= 0:
+        if adhoc_budget_ceiling(budget) <= 0:
             return False
         return budget.review_status in (
             ProjectBudget.REVIEW_PROVISION,
