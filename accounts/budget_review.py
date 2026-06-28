@@ -1,4 +1,4 @@
-﻿"""GM ↔ CEO budget review workflow helpers."""
+"""GM ↔ CEO budget review workflow helpers."""
 
 from accounts.models import BudgetReviewEvent, CEOFundRelease, ProjectBudget
 
@@ -76,8 +76,15 @@ def ceo_can_return_budget(budget):
 def ceo_can_approve_budget(budget):
     if not budget or budget.is_ceo_approved:
         return False
+    if budget.review_status == ProjectBudget.REVIEW_RETURNED:
+        return False
     if budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC:
-        return budget.review_status == ProjectBudget.REVIEW_WITH_CEO
+        if budget.total_authorized_budget <= 0:
+            return False
+        return budget.review_status in (
+            ProjectBudget.REVIEW_PROVISION,
+            ProjectBudget.REVIEW_WITH_CEO,
+        )
     return budget.review_status in (
         ProjectBudget.REVIEW_PROVISION,
         ProjectBudget.REVIEW_WITH_CEO,

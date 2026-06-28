@@ -39,8 +39,27 @@ class BudgetReviewWorkflowTests(TestCase):
             review_status=ProjectBudget.REVIEW_PROVISION,
         )
 
-    def test_ceo_cannot_approve_before_gm_submits(self):
+    def test_ceo_can_approve_adhoc_provision_without_gm_memo(self):
+        self.assertTrue(ceo_can_approve_budget(self.budget))
+
+    def test_budget_approval_page_enables_approve_for_adhoc_provision(self):
+        self.client.login(username="ceo_review", password="test-pass-123")
+        response = self.client.get(
+            reverse("budget_approval") + f"?task_id={self.task.project_id}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["can_approve"])
+        self.assertNotContains(
+            response,
+            'name="approve_budget" class="btn-action btn-success" style="width:100%;" disabled',
+        )
+
+    def test_ceo_cannot_approve_returned_until_gm_resubmits(self):
+        self.budget.review_status = ProjectBudget.REVIEW_RETURNED
+        self.budget.save(update_fields=["review_status"])
         self.assertFalse(ceo_can_approve_budget(self.budget))
+
+    def test_ceo_can_approve_after_gm_submits_memo(self):
         self.budget.review_status = ProjectBudget.REVIEW_WITH_CEO
         self.budget.save(update_fields=["review_status"])
         self.assertTrue(ceo_can_approve_budget(self.budget))

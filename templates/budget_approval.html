@@ -231,7 +231,7 @@
                 <label class="nav-label">CEO AIE reference / memo no.</label>
                 <input type="text" name="ceo_aie_reference" class="form-input" placeholder="AIE-2026-…" value="{% if budget %}{{ budget.ceo_aie_reference }}{% endif %}" {% if budget and budget.is_ceo_approved %}readonly{% endif %}>
             </div>
-            <button type="submit" name="approve_budget" class="btn-action btn-success" style="width:100%;" {% if not can_approve %}disabled title="No provision budget or already approved"{% endif %}>
+            <button type="submit" name="approve_budget" class="btn-action btn-success" style="width:100%;" {% if not can_approve %}disabled title="{% if budget and budget.review_status == 'RETURNED' %}GM must resubmit after CEO return{% elif not budget_summary.has_budget %}No provision budget committed yet{% elif budget and budget.is_ceo_approved %}Already CEO-approved{% else %}Budget not ready for approval{% endif %}"{% endif %}>
                 Approve budget &amp; lock lines
             </button>
         </form>

@@ -7867,8 +7867,8 @@ def budget_approval_view(request):
                         )
                     if not ceo_can_approve_budget(budget):
                         raise ValueError(
-                            "Ad-hoc budgets must be submitted by GM before CEO can confirm. "
-                            "Check the GM→CEO memo on Misc Purchase."
+                            "Budget cannot be approved yet — provision must be committed, "
+                            "and returned budgets must be resubmitted by GM first."
                         )
                     if budget.total_authorized_budget <= 0:
                         raise ValueError("Provision budget total must be greater than zero.")
