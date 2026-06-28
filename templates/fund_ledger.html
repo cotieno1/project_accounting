@@ -1,4 +1,4 @@
-﻿{% extends "layouts/cockpit.html" %}
+{% extends "layouts/cockpit.html" %}
 {% load static %}
 {% load pioneer_tags %}
 {% block title %}Pioneer | Fund Control Ledger{% endblock %}
@@ -19,7 +19,7 @@
 {% block sidebar %}
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
 <small style="color: var(--muted); display: block; margin: 16px 0;">Fund control ledger — CEO &amp; GM</small>
-<label class="nav-label">Filter by task</label>
+<label class="nav-label">Filter by cost center (task)</label>
 <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='{% url 'fund_ledger' %}'};" class="form-input">
     <option value="">All tasks</option>
     {% for t in tasks %}
@@ -38,7 +38,7 @@
 {% block workspace %}
 <div class="fund-ledger">
     <h1>Fund Control Ledger</h1>
-    <p style="color:var(--muted);margin-top:4px;">CEO Disbursement → GM Operating wallet · supplier &amp; employee control accounts</p>
+    <p style="color:var(--muted);margin-top:4px;">CEO Disbursement → GM Operating wallet · task ID = cost center on every GL line</p>
     <p style="font-size:12px;color:var(--muted);">Generated {{ generated_at|date:"d M Y H:i" }}{% if active_task %} · Task {{ active_pick_id }}{% endif %}</p>
     <div class="toolbar">
         <a href="{% url 'print_fund_ledger' %}{% if active_pick_id %}?task_id={{ active_pick_id }}&print=1{% else %}?print=1{% endif %}" target="_blank" class="btn-action btn-success">Print / PDF</a>
@@ -91,25 +91,28 @@
         </tbody>
     </table>
     {% endif %}
-    <h2 style="font-size:16px;margin:24px 0 10px;">GL journal (latest {{ postings|length }})</h2>
+    <h2 style="font-size:16px;margin:24px 0 10px;">GL journal (latest {{ posting_rows|length }})</h2>
     <table class="ledger-table">
         <thead>
-            <tr><th>Date</th><th>Type</th><th>Task</th><th>Debit</th><th>Credit</th><th>Amount</th><th>Reference</th><th>Memo</th></tr>
+            <tr><th>Date</th><th>Type</th><th>Cost center (Task ID)</th><th>Project</th><th>Debit</th><th>Credit</th><th>Amount</th><th>Reference</th><th>Memo</th></tr>
         </thead>
         <tbody>
-        {% for p in postings %}
+        {% for row in posting_rows %}
+        {% with p=row.posting %}
         <tr>
             <td>{{ p.created_at|date:"d M Y H:i" }}</td>
             <td>{{ p.get_posting_type_display }}</td>
-            <td>{% if p.task %}{{ p.task.project_id|clean_task_id }}{% else %}—{% endif %}</td>
+            <td><strong>{% if row.cost_center_id %}{{ row.cost_center_id|clean_task_id }}{% else %}—{% endif %}</strong></td>
+            <td>{% if row.cost_center_label %}{{ row.cost_center_label|clean_task_description|truncatechars:40 }}{% else %}—{% endif %}</td>
             <td>{{ p.debit_gl.gl_account_id }}</td>
             <td>{{ p.credit_gl.gl_account_id }}</td>
             <td><strong>{{ currency_symbol }} {{ p.amount|floatformat:2 }}</strong></td>
             <td>{{ p.reference_type }}:{{ p.reference_id }}</td>
             <td>{{ p.memo|truncatechars:60 }}</td>
         </tr>
+        {% endwith %}
         {% empty %}
-        <tr><td colspan="8" style="color:var(--muted);">No GL postings yet.</td></tr>
+        <tr><td colspan="9" style="color:var(--muted);">No GL postings yet.</td></tr>
         {% endfor %}
         </tbody>
     </table>

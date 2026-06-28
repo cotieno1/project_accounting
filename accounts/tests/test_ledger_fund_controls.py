@@ -7,6 +7,7 @@ from django.test import TestCase
 
 from accounts.ledger import (
     assert_task_can_disburse,
+    build_fund_ledger_report,
     ensure_fund_control_accounts,
     fund_ceo_disbursement_account,
     gm_operating_gl_balance,
@@ -96,3 +97,10 @@ class LedgerFundControlTests(TestCase):
         )
         with self.assertRaises(ValueError):
             post_officer_advance_voucher(voucher, self.user)
+
+    def test_ledger_report_includes_cost_center_on_gl_lines(self):
+        report = build_fund_ledger_report(task=self.task)
+        self.assertTrue(report["posting_rows"])
+        for row in report["posting_rows"]:
+            self.assertEqual(row["cost_center_id"], "LEDGER-1")
+            self.assertIn("Ledger test", row["cost_center_label"])

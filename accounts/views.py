@@ -7601,6 +7601,7 @@ def _fund_ledger_context(request):
         "ceo_bank": report["ceo_bank"],
         "gm_bank": report["gm_bank"],
         "control_accounts": report["control_accounts"],
+        "posting_rows": report["posting_rows"],
         "postings": report["postings"],
         "task_wallets": report["task_wallets"],
         "generated_at": report["generated_at"],

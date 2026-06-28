@@ -414,6 +414,73 @@ def post_task_disbursement_payment(payment, user):
         user=user,
     )
 
+
+def resolve_posting_cost_center(posting):
+    """Resolve task / cost-center for a GL line (task id acts as cost center)."""
+    if posting.task_id:
+        task = posting.task
+        label = (task.description or task.project_id).strip()
+        return task, task.project_id, label
+
+    ref_type = (posting.reference_type or "").strip()
+    ref_id = (posting.reference_id or "").strip()
+
+    if ref_type == "ceo_fund_release" and ref_id:
+        release = (
+            CEOFundRelease.objects.filter(release_number=ref_id)
+            .select_related("task")
+            .first()
+        )
+        if release and release.task_id:
+            task = release.task
+            return task, task.project_id, (task.description or task.project_id).strip()
+
+    if ref_type == "officer_payment_voucher" and ref_id:
+        voucher = (
+            AdHocOfficerPaymentVoucher.objects.filter(voucher_no=ref_id)
+            .select_related("task")
+            .first()
+        )
+        if voucher and voucher.task_id:
+            task = voucher.task
+            return task, task.project_id, (task.description or task.project_id).strip()
+
+    if ref_type == "payment_order" and ref_id:
+        payment = (
+            PaymentOrder.objects.filter(pay_order_no=ref_id)
+            .select_related("grn__lpo__project_task")
+            .first()
+        )
+        if payment and payment.grn_id and payment.grn.lpo.project_task_id:
+            task = payment.grn.lpo.project_task
+            return task, task.project_id, (task.description or task.project_id).strip()
+
+    if ref_type == "task_disbursement_payment" and ref_id:
+        payment = (
+            TaskDisbursementPayment.objects.filter(payment_number=ref_id)
+            .select_related("task")
+            .first()
+        )
+        if payment and payment.task_id:
+            task = payment.task
+            return task, task.project_id, (task.description or task.project_id).strip()
+
+    if ref_type in ("ceo_funding", "ceo_top_up", "treasury"):
+        return None, "", "Corporate treasury (no task cost center)"
+
+    return None, "", ""
+
+
+def enrich_ledger_posting_row(posting):
+    task, cost_center_id, cost_center_label = resolve_posting_cost_center(posting)
+    return {
+        "posting": posting,
+        "task": task,
+        "cost_center_id": cost_center_id,
+        "cost_center_label": cost_center_label,
+    }
+
+
 def build_fund_ledger_report(*, task=None, posting_limit=150):
     """Snapshot of fund-control GL balances and journal for CEO / GM print."""
     from django.utils import timezone as tz
@@ -445,9 +512,15 @@ def build_fund_ledger_report(*, task=None, posting_limit=150):
     postings_qs = GLLedgerPosting.objects.select_related(
         "debit_gl", "credit_gl", "task", "posted_by"
     ).order_by("-created_at")
+    scan_limit = posting_limit * 4 if task else posting_limit
+    raw_postings = list(postings_qs[:scan_limit])
+    posting_rows = [enrich_ledger_posting_row(p) for p in raw_postings]
     if task:
-        postings_qs = postings_qs.filter(task=task)
-    postings = list(postings_qs[:posting_limit])
+        posting_rows = [
+            row for row in posting_rows if row["task"] and row["task"].pk == task.pk
+        ][:posting_limit]
+    else:
+        posting_rows = posting_rows[:posting_limit]
 
     task_wallets = []
     seen_tasks = set()
@@ -476,7 +549,8 @@ def build_fund_ledger_report(*, task=None, posting_limit=150):
         "ceo_bank": settings.ceo_disbursement_bank,
         "gm_bank": settings.gm_operating_bank,
         "control_accounts": control_accounts,
-        "postings": postings,
+        "posting_rows": posting_rows,
+        "postings": [row["posting"] for row in posting_rows],
         "task_wallets": task_wallets,
         "generated_at": tz.now(),
     }
