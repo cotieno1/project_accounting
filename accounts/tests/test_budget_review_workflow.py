@@ -108,3 +108,26 @@ class BudgetReviewWorkflowTests(TestCase):
         self.assertTrue(response.context["budget_summary"]["has_budget"])
         self.assertTrue(response.context["can_approve"])
         self.assertNotContains(response, "Complete Bid Evaluation")
+
+    def test_adhoc_fund_release_uses_dedicated_print_template(self):
+        from accounts.models import CEOFundRelease
+        from django.urls import reverse
+
+        self.budget.is_ceo_approved = True
+        self.budget.save(update_fields=["is_ceo_approved"])
+        release = CEOFundRelease.objects.create(
+            release_number="PV-DSB-2026-0099",
+            task=self.task,
+            budget=self.budget,
+            amount=Decimal("3000.00"),
+            bank_reference="BNK-ADHOC-001",
+            authorized_by=self.ceo,
+        )
+        self.client.login(username="ceo_review", password="test-pass-123")
+        response = self.client.get(
+            reverse("print_ceo_fund_release_voucher", kwargs={"release_id": release.id})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "ceo_adhoc_misc_fund_release_print.html")
+        self.assertContains(response, "Ad-Hoc Misc Budget")
+        self.assertContains(response, "no LPO or supplier procurement")

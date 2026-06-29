@@ -2900,6 +2900,19 @@ def print_memo_view(request, task_id):
     from types import SimpleNamespace
 
     active_task = get_object_or_404(ProjectTask, project_id=task_id)
+    budget = _task_budget_record(active_task)
+    if (
+        (budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC)
+        or (_task_has_misc_po_path(active_task) and not _task_has_major_procurement(active_task))
+    ):
+        messages.info(
+            request,
+            "Ad-hoc Misc tasks use Budget Authorization — not the major procurement memo (LPO / supplier).",
+        )
+        return redirect(
+            reverse("budget_approval") + f"?task_id={_bom_task_pick_id(active_task)}"
+        )
+
     build_items = BOMItem.objects.filter(header__task=active_task)
     if not build_items.exists():
         back = reverse("rfq_manager") + f"?task_id={task_id}"
@@ -7814,6 +7827,7 @@ def _next_fund_release_number():
 
 def _task_budget_provision_lines(task):
     """Authorized budget lines only (no actuals) for CEO fund-transfer voucher."""
+    _ensure_adhoc_provision_budget(task)
     budget = _task_budget_record(task)
     lines = []
     for _key, _field, label in DISBURSEMENT_BUDGET_LINES:
@@ -7831,8 +7845,14 @@ def _task_budget_provision_lines(task):
 
 def _build_ceo_fund_release_voucher_context(release):
     task = release.task
-    budget = release.budget
+    _ensure_adhoc_provision_budget(task)
+    budget = release.budget or _task_budget_record(task)
     provision = _task_budget_provision_lines(task)
+    baseline_mro = _get_task_baseline_mro(task)
+    baseline_mpo = _get_task_baseline_mpo(task)
+    is_adhoc = bool(
+        budget and budget.budget_type == ProjectBudget.BUDGET_ADHOC_MISC
+    ) or _task_project_class(task)["code"] == "ADHOC"
     ceo_name = ""
     if release.authorized_by:
         ceo_name = release.authorized_by.get_full_name() or release.authorized_by.get_username()
@@ -7851,7 +7871,16 @@ def _build_ceo_fund_release_voucher_context(release):
         "ceo_aie_reference": release.aie_memo_ref or provision["ceo_aie_reference"],
         "ceo_name": ceo_name,
         "back_url": f"/budget-approval/?task_id={_bom_task_pick_id(task)}",
+        "is_adhoc": is_adhoc,
+        "mro_number": baseline_mro.mro_number if baseline_mro else "",
+        "mpo_number": baseline_mpo.mpo_number if baseline_mpo else "",
     }
+
+
+def _ceo_fund_release_print_template(context):
+    if context.get("is_adhoc"):
+        return "ceo_adhoc_misc_fund_release_print.html"
+    return "ceo_fund_release_voucher_print.html"
 
 
 @login_required
@@ -7865,7 +7894,7 @@ def print_ceo_fund_release_voucher_view(request, release_id):
     )
     context = _build_ceo_fund_release_voucher_context(release)
     context["auto_print"] = request.GET.get("print") == "1"
-    return render(request, "ceo_fund_release_voucher_print.html", context)
+    return render(request, _ceo_fund_release_print_template(context), context)
 
 
 @login_required

@@ -147,8 +147,8 @@
     </table>
     </div>
     <div class="fund-release-actions">
-        <a href="{% url 'print_ceo_fund_release_voucher' fund_release.id %}" target="_blank" class="btn-action btn-secondary" style="text-decoration:none;text-align:center;">View payment voucher</a>
-        <a href="{% url 'print_ceo_fund_release_voucher' fund_release.id %}?print=1" target="_blank" class="btn-action btn-success" style="text-decoration:none;text-align:center;">Print voucher &amp; CEO memo</a>
+        <a href="{% url 'print_ceo_fund_release_voucher' fund_release.id %}" target="_blank" class="btn-action btn-secondary" style="text-decoration:none;text-align:center;">View {% if project_class.code == 'ADHOC' %}ad-hoc {% endif %}payment voucher</a>
+        <a href="{% url 'print_ceo_fund_release_voucher' fund_release.id %}?print=1" target="_blank" class="btn-action btn-success" style="text-decoration:none;text-align:center;">Print {% if project_class.code == 'ADHOC' %}ad-hoc {% endif %}voucher &amp; CEO memo</a>
     </div>
     <p style="font-size:11px;color:var(--muted);margin:12px 0 0;">Disbursement PV (PV-DSB series) is separate from procurement supplier vouchers (PV-). Includes one-page CEO memo and one-page fund-transfer voucher with budget schedule (no actuals).</p>
 </div>
