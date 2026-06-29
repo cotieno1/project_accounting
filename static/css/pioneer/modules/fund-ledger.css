@@ -1,0 +1,119 @@
+/* Fund control ledger - sidebar desk navigation (parade stack) */
+
+.fund-ledger .sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.fund-ledger .sidebar-actions .nav-label {
+    margin: 0 0 4px;
+}
+
+.fund-ledger .sidebar-actions .btn-action {
+    width: 100%;
+    margin: 0;
+    padding: 13px 16px;
+    box-sizing: border-box;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.25;
+    border-radius: var(--radius-sm);
+}
+
+.fund-ledger .sidebar-actions .btn-action--primary {
+    background: var(--success);
+    color: #fff;
+}
+
+.fund-ledger .sidebar-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fund-ledger .sidebar-back-link {
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.fund-ledger .sidebar-back-link:hover {
+    color: var(--light);
+}
+
+.fund-ledger .ledger-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0 24px;
+}
+
+.fund-ledger .ledger-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.fund-ledger .ledger-card h3 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.fund-ledger .ledger-card .bal {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.fund-ledger table.ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.fund-ledger table.ledger-table th,
+.fund-ledger table.ledger-table td {
+    border: 1px solid #e2e8f0;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+.fund-ledger table.ledger-table th {
+    background: #f8fafc;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #475569;
+}
+
+.fund-ledger .workspace-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 12px 0 20px;
+}
+
+.fund-ledger .workspace-toolbar .btn-action {
+    margin: 0;
+    padding: 11px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+}
