@@ -588,7 +588,7 @@ def build_fund_ledger_report(*, task=None, posting_limit=150, backfill=True):
     settings = ensure_fund_control_accounts()
     if backfill:
         backfill_ceo_fund_release_postings()
-    balances = sync_fund_control_gl_balances()
+    sync_fund_control_gl_balances()
     for gl in (settings.ceo_disbursement_gl, settings.gm_operating_gl):
         if gl:
             gl.refresh_from_db()
@@ -627,30 +627,22 @@ def build_fund_ledger_report(*, task=None, posting_limit=150, backfill=True):
 
     task_wallets = []
     seen_tasks = set()
-    wallet_qs = CEOFundRelease.objects.select_related("task").order_by("-released_at")
-    if task:
-        wallet_qs = wallet_qs.filter(task=task)
-    for release in wallet_qs:
+    for release in CEOFundRelease.objects.select_related("task").order_by("-released_at"):
         if not release.task_id or release.task_id in seen_tasks:
             continue
         seen_tasks.add(release.task_id)
         summary = task_fund_summary(release.task)
         task_wallets.append({"task": release.task, **summary})
 
-    active_task_summary = task_fund_summary(task) if task else None
-
     return {
         "settings": settings,
         "ceo_gl": settings.ceo_disbursement_gl,
         "gm_gl": settings.gm_operating_gl,
-        "ceo_gl_balance": balances["ceo"],
-        "gm_gl_balance": balances["gm"],
         "ceo_bank": settings.ceo_disbursement_bank,
         "gm_bank": settings.gm_operating_bank,
         "control_accounts": control_accounts,
         "posting_rows": posting_rows,
         "postings": [row["posting"] for row in posting_rows],
         "task_wallets": task_wallets,
-        "task_fund_summary": active_task_summary,
         "generated_at": tz.now(),
     }

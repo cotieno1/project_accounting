@@ -32,13 +32,13 @@ body { font-size: 8.5pt; }
 <div class="summary-grid">
 <div class="summary-box">
 <div class="label">CEO Disbursement Account</div>
-<div class="amt">US$ {{ ceo_gl_balance|floatformat:2 }}</div>
-<small>{% if ceo_gl %}{{ ceo_gl.gl_account_id }}{% endif %}{% if ceo_bank %} · {{ ceo_bank.account_number }}{% endif %}{% if task_fund_summary %} · Task {{ active_pick_id }} released {{ task_fund_summary.released|floatformat:2 }}{% endif %}</small>
+<div class="amt">US$ {% if ceo_gl %}{{ ceo_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+<small>{% if ceo_gl %}{{ ceo_gl.gl_account_id }}{% endif %}{% if ceo_bank %} · {{ ceo_bank.account_number }}{% endif %}</small>
 </div>
 <div class="summary-box">
 <div class="label">GM Operating / Expense Account</div>
-<div class="amt">US$ {{ gm_gl_balance|floatformat:2 }}</div>
-<small>{% if gm_gl %}{{ gm_gl.gl_account_id }}{% endif %}{% if gm_bank %} · {{ gm_bank.account_number }}{% endif %}{% if task_fund_summary %} · Task {{ active_pick_id }} available {{ task_fund_summary.wallet|floatformat:2 }}{% endif %}</small>
+<div class="amt">US$ {% if gm_gl %}{{ gm_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+<small>{% if gm_gl %}{{ gm_gl.gl_account_id }}{% endif %}{% if gm_bank %} · {{ gm_bank.account_number }}{% endif %}</small>
 </div>
 </div>
 {% if task_wallets %}

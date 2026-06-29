@@ -121,8 +121,8 @@ class LedgerFundControlTests(TestCase):
         release.refresh_from_db()
         self.assertIsNotNone(release.ledger_posting_id)
         report = build_fund_ledger_report(task=self.task, backfill=False)
-        self.assertEqual(report["gm_gl_balance"], Decimal("7000.00"))
-        self.assertEqual(report["task_fund_summary"]["wallet"], Decimal("7000.00"))
+        self.assertEqual(report["gm_gl"].amount, Decimal("7000.00"))
+        self.assertEqual(task_gm_wallet_balance(self.task), Decimal("7000.00"))
 
     def test_sync_gl_balances_from_journal(self):
         sync_fund_control_gl_balances()

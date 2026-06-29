@@ -37,20 +37,14 @@
     <div class="ledger-summary">
         <div class="ledger-card">
             <h3>CEO Disbursement GL</h3>
-            <div class="bal">{{ currency_symbol }} {{ ceo_gl_balance|floatformat:2 }}</div>
+            <div class="bal">{{ currency_symbol }} {% if ceo_gl %}{{ ceo_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
             <small>{% if ceo_gl %}{{ ceo_gl.gl_account_id }} — {{ ceo_gl.description }}{% endif %}</small>
-            {% if task_fund_summary %}
-            <br><small>Task {{ active_pick_id }}: released {{ currency_symbol }} {{ task_fund_summary.released|floatformat:2 }}</small>
-            {% endif %}
             {% if ceo_bank %}<br><small>Bank: {{ ceo_bank.description }} ({{ ceo_bank.account_number }})</small>{% endif %}
         </div>
         <div class="ledger-card">
             <h3>GM Operating GL</h3>
-            <div class="bal">{{ currency_symbol }} {{ gm_gl_balance|floatformat:2 }}</div>
+            <div class="bal">{{ currency_symbol }} {% if gm_gl %}{{ gm_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
             <small>{% if gm_gl %}{{ gm_gl.gl_account_id }} — {{ gm_gl.description }}{% endif %}</small>
-            {% if task_fund_summary %}
-            <br><small>Task {{ active_pick_id }}: available {{ currency_symbol }} {{ task_fund_summary.wallet|floatformat:2 }} · spent {{ currency_symbol }} {{ task_fund_summary.spent|floatformat:2 }}</small>
-            {% endif %}
             {% if gm_bank %}<br><small>Bank: {{ gm_bank.description }} ({{ gm_bank.account_number }})</small>{% endif %}
         </div>
     </div>
