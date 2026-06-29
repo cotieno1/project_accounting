@@ -1,5 +1,38 @@
 /* Fund control ledger - sidebar desk navigation (parade stack) */
 
+.fund-ledger .ledger-page-header {
+    margin-bottom: 4px;
+}
+
+.fund-ledger .ledger-page-header h1 {
+    margin: 0 0 6px;
+    font-size: clamp(1.25rem, 4vw, 1.75rem);
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.fund-ledger .ledger-lead,
+.fund-ledger .ledger-meta {
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.45;
+}
+
+.fund-ledger .ledger-lead {
+    margin-top: 4px;
+    font-size: 13px;
+}
+
+.fund-ledger .ledger-meta {
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.fund-ledger .section-title {
+    font-size: 16px;
+    margin: 20px 0 10px;
+}
+
 .fund-ledger .sidebar-actions {
     display: flex;
     flex-direction: column;
@@ -27,6 +60,7 @@
     text-transform: uppercase;
     line-height: 1.25;
     border-radius: var(--radius-sm);
+    min-height: 44px;
 }
 
 .fund-ledger .sidebar-actions .btn-action--primary {
@@ -47,6 +81,10 @@
     color: var(--muted);
     font-size: 12px;
     text-decoration: none;
+    padding: 8px 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
 }
 
 .fund-ledger .sidebar-back-link:hover {
@@ -65,6 +103,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 14px;
+    min-width: 0;
 }
 
 .fund-ledger .ledger-card h3 {
@@ -76,15 +115,39 @@
 }
 
 .fund-ledger .ledger-card .bal {
-    font-size: 22px;
+    font-size: clamp(1.25rem, 5vw, 22px);
     font-weight: 700;
     color: #1e3a8a;
+    word-break: break-word;
+    line-height: 1.2;
+}
+
+.fund-ledger .ledger-card small {
+    display: block;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.fund-ledger .table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 8px;
 }
 
 .fund-ledger table.ledger-table {
     width: 100%;
+    min-width: 520px;
     border-collapse: collapse;
     font-size: 13px;
+}
+
+.fund-ledger table.ledger-table--journal {
+    min-width: 880px;
 }
 
 .fund-ledger table.ledger-table th,
@@ -92,6 +155,7 @@
     border: 1px solid #e2e8f0;
     padding: 8px 10px;
     text-align: left;
+    vertical-align: top;
 }
 
 .fund-ledger table.ledger-table th {
@@ -99,6 +163,17 @@
     font-size: 11px;
     text-transform: uppercase;
     color: #475569;
+    white-space: nowrap;
+}
+
+.fund-ledger table.ledger-table td {
+    word-break: break-word;
+}
+
+.fund-ledger table.ledger-table .num {
+    white-space: nowrap;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .fund-ledger .workspace-toolbar {
@@ -116,4 +191,116 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-decoration: none;
+    min-height: 44px;
+    box-sizing: border-box;
+}
+
+body.fund-ledger .sidebar .form-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    body.fund-ledger {
+        overflow-x: hidden;
+    }
+
+    body.fund-ledger .cockpit-shell {
+        overflow-x: hidden;
+    }
+
+    body.fund-ledger .sidebar {
+        max-width: min(85vw, 320px);
+        padding: 24px 16px;
+        padding-top: 56px;
+    }
+
+    body.fund-ledger .main-content {
+        width: 100%;
+        min-width: 0;
+    }
+
+    body.fund-ledger .workspace-scroller {
+        padding: 16px;
+        padding-top: 56px;
+        gap: 16px;
+    }
+
+    body.fund-ledger .fund-ledger {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .fund-ledger .ledger-summary {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin: 12px 0 20px;
+    }
+
+    .fund-ledger .ledger-card {
+        padding: 16px;
+    }
+
+    .fund-ledger .section-title {
+        font-size: 15px;
+        margin: 16px 0 8px;
+    }
+
+    .fund-ledger .workspace-toolbar {
+        flex-direction: column;
+        margin: 8px 0 16px;
+    }
+
+    .fund-ledger .workspace-toolbar .btn-action {
+        width: 100%;
+        text-align: center;
+    }
+
+    body.fund-ledger .sidebar .form-input {
+        font-size: 16px;
+        padding: 12px;
+        min-height: 44px;
+    }
+
+    .fund-ledger .sidebar-actions .btn-action {
+        font-size: 11px;
+        padding: 14px 12px;
+    }
+
+    .fund-ledger table.ledger-table {
+        font-size: 12px;
+    }
+
+    .fund-ledger table.ledger-table th,
+    .fund-ledger table.ledger-table td {
+        padding: 10px 8px;
+    }
+
+    .fund-ledger .table-scroll::after {
+        content: "Swipe for more columns";
+        display: block;
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+        padding: 6px 0 2px;
+        letter-spacing: 0.03em;
+    }
+
+    .fund-ledger .table-scroll--journal::after {
+        content: "Swipe horizontally for full journal";
+    }
+}
+
+@media (max-width: 480px) {
+    .fund-ledger .ledger-card .bal {
+        font-size: 1.15rem;
+    }
+
+    .fund-ledger table.ledger-table {
+        min-width: 480px;
+    }
+
+    .fund-ledger table.ledger-table--journal {
+        min-width: 720px;
+    }
 }
