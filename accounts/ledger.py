@@ -205,6 +205,106 @@ def gm_operating_gl_balance():
     return _money(gl.amount)
 
 
+def ceo_disbursement_gl_balance():
+    settings = ensure_fund_control_accounts()
+    gl = settings.ceo_disbursement_gl
+    if not gl:
+        return Decimal("0.00")
+    gl.refresh_from_db()
+    return _money(gl.amount)
+
+
+def gl_balance_from_postings(gl):
+    """Recompute GL balance from journal debits minus credits."""
+    if not gl:
+        return Decimal("0.00")
+    debited = (
+        GLLedgerPosting.objects.filter(debit_gl=gl).aggregate(t=Sum("amount"))["t"]
+        or Decimal("0.00")
+    )
+    credited = (
+        GLLedgerPosting.objects.filter(credit_gl=gl).aggregate(t=Sum("amount"))["t"]
+        or Decimal("0.00")
+    )
+    return _money(debited - credited)
+
+
+def sync_gl_account_balance(gl):
+    """Align stored GL amount with the journal (idempotent)."""
+    if not gl:
+        return Decimal("0.00")
+    balance = gl_balance_from_postings(gl)
+    if _money(gl.amount) != balance:
+        GLAccount.objects.filter(pk=gl.pk).update(amount=balance)
+        gl.refresh_from_db()
+    return balance
+
+
+def sync_fund_control_gl_balances():
+    """Refresh CEO / GM control GL balances from posted journal lines."""
+    settings = ensure_fund_control_accounts()
+    ceo_bal = sync_gl_account_balance(settings.ceo_disbursement_gl)
+    gm_bal = sync_gl_account_balance(settings.gm_operating_gl)
+    return {"ceo": ceo_bal, "gm": gm_bal}
+
+
+def _resolve_ledger_user(preferred=None):
+    if preferred and getattr(preferred, "is_authenticated", False):
+        return preferred
+    from django.contrib.auth import get_user_model
+
+    return get_user_model().objects.filter(is_superuser=True).order_by("id").first()
+
+
+def backfill_ceo_fund_release_postings(user=None):
+    """Post GL entries for CEO fund releases recorded before ledger wiring."""
+    settings = ensure_fund_control_accounts()
+    ceo_gl = settings.ceo_disbursement_gl
+    if not ceo_gl:
+        return 0
+    posted = 0
+    pending = CEOFundRelease.objects.filter(ledger_posting__isnull=True).select_related(
+        "task", "authorized_by"
+    )
+    for release in pending:
+        actor = _resolve_ledger_user(release.authorized_by or user)
+        if not actor:
+            continue
+        amount = _money(release.amount)
+        ceo_gl.refresh_from_db()
+        if ceo_gl.amount < amount:
+            fund_ceo_disbursement_account(
+                max(amount, Decimal("1000000.00")),
+                actor,
+                memo=f"Treasury funding for backfill {release.release_number}",
+            )
+            ceo_gl.refresh_from_db()
+        try:
+            post_ceo_fund_release(release, actor)
+            posted += 1
+        except ValueError:
+            continue
+    sync_fund_control_gl_balances()
+    return posted
+
+
+def task_fund_summary(task):
+    """CEO-released / spent / wallet for one cost center."""
+    if not task:
+        return None
+    released = (
+        CEOFundRelease.objects.filter(task=task).aggregate(t=Sum("amount"))["t"]
+        or Decimal("0.00")
+    )
+    released = _money(released)
+    wallet = task_gm_wallet_balance(task)
+    return {
+        "released": released,
+        "wallet": wallet,
+        "spent": _money(released - wallet),
+    }
+
+
 def _ceo_gate_allows(task):
     budget = ProjectBudget.objects.filter(task=task).first()
     approved = bool(budget and budget.is_ceo_approved)
@@ -481,11 +581,14 @@ def enrich_ledger_posting_row(posting):
     }
 
 
-def build_fund_ledger_report(*, task=None, posting_limit=150):
+def build_fund_ledger_report(*, task=None, posting_limit=150, backfill=True):
     """Snapshot of fund-control GL balances and journal for CEO / GM print."""
     from django.utils import timezone as tz
 
     settings = ensure_fund_control_accounts()
+    if backfill:
+        backfill_ceo_fund_release_postings()
+    balances = sync_fund_control_gl_balances()
     for gl in (settings.ceo_disbursement_gl, settings.gm_operating_gl):
         if gl:
             gl.refresh_from_db()
@@ -524,33 +627,30 @@ def build_fund_ledger_report(*, task=None, posting_limit=150):
 
     task_wallets = []
     seen_tasks = set()
-    for release in CEOFundRelease.objects.select_related("task").order_by("-released_at"):
+    wallet_qs = CEOFundRelease.objects.select_related("task").order_by("-released_at")
+    if task:
+        wallet_qs = wallet_qs.filter(task=task)
+    for release in wallet_qs:
         if not release.task_id or release.task_id in seen_tasks:
             continue
         seen_tasks.add(release.task_id)
-        released = (
-            CEOFundRelease.objects.filter(task=release.task).aggregate(t=Sum("amount"))["t"]
-            or Decimal("0.00")
-        )
-        wallet = task_gm_wallet_balance(release.task)
-        task_wallets.append(
-            {
-                "task": release.task,
-                "released": _money(released),
-                "wallet": wallet,
-                "spent": _money(released - wallet),
-            }
-        )
+        summary = task_fund_summary(release.task)
+        task_wallets.append({"task": release.task, **summary})
+
+    active_task_summary = task_fund_summary(task) if task else None
 
     return {
         "settings": settings,
         "ceo_gl": settings.ceo_disbursement_gl,
         "gm_gl": settings.gm_operating_gl,
+        "ceo_gl_balance": balances["ceo"],
+        "gm_gl_balance": balances["gm"],
         "ceo_bank": settings.ceo_disbursement_bank,
         "gm_bank": settings.gm_operating_bank,
         "control_accounts": control_accounts,
         "posting_rows": posting_rows,
         "postings": [row["posting"] for row in posting_rows],
         "task_wallets": task_wallets,
+        "task_fund_summary": active_task_summary,
         "generated_at": tz.now(),
     }

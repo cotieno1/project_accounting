@@ -1,4 +1,4 @@
-﻿"""GL fund-control tests — GM cannot pay without CEO-released wallet balance."""
+"""GL fund-control tests — GM cannot pay without CEO-released wallet balance."""
 
 from decimal import Decimal
 
@@ -7,12 +7,14 @@ from django.test import TestCase
 
 from accounts.ledger import (
     assert_task_can_disburse,
+    backfill_ceo_fund_release_postings,
     build_fund_ledger_report,
     ensure_fund_control_accounts,
     fund_ceo_disbursement_account,
     gm_operating_gl_balance,
     post_ceo_fund_release,
     post_officer_advance_voucher,
+    sync_fund_control_gl_balances,
     task_gm_wallet_balance,
 )
 from accounts.models import (
@@ -104,3 +106,24 @@ class LedgerFundControlTests(TestCase):
         for row in report["posting_rows"]:
             self.assertEqual(row["cost_center_id"], "LEDGER-1")
             self.assertIn("Ledger test", row["cost_center_label"])
+
+    def test_backfill_posts_release_when_ledger_missing(self):
+        release = CEOFundRelease.objects.create(
+            release_number="PV-DSB-BACKFILL-001",
+            task=self.task,
+            budget=self.budget,
+            amount=Decimal("2000.00"),
+            authorized_by=self.user,
+        )
+        self.assertIsNone(release.ledger_posting_id)
+        posted = backfill_ceo_fund_release_postings(self.user)
+        self.assertEqual(posted, 1)
+        release.refresh_from_db()
+        self.assertIsNotNone(release.ledger_posting_id)
+        report = build_fund_ledger_report(task=self.task, backfill=False)
+        self.assertEqual(report["gm_gl_balance"], Decimal("7000.00"))
+        self.assertEqual(report["task_fund_summary"]["wallet"], Decimal("7000.00"))
+
+    def test_sync_gl_balances_from_journal(self):
+        sync_fund_control_gl_balances()
+        self.assertEqual(gm_operating_gl_balance(), Decimal("5000.00"))

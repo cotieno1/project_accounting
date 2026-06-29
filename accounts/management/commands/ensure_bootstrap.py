@@ -56,11 +56,14 @@ class Command(BaseCommand):
             User = get_user_model()
             admin = User.objects.filter(is_superuser=True).order_by("id").first()
             if admin:
-                fund_ceo_disbursement_account(
-                    Decimal("1000000.00"),
-                    admin,
-                    memo="Bootstrap treasury funding of CEO disbursement account",
-                )
+                from accounts.ledger import ceo_disbursement_gl_balance
+
+                if ceo_disbursement_gl_balance() <= Decimal("0.00"):
+                    fund_ceo_disbursement_account(
+                        Decimal("1000000.00"),
+                        admin,
+                        memo="Bootstrap treasury funding of CEO disbursement account",
+                    )
             self.stdout.write(self.style.SUCCESS("Ledger control accounts OK."))
         except Exception as exc:
             self.stdout.write(self.style.WARNING(f"Ledger bootstrap skipped: {exc}"))
