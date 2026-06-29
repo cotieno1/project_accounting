@@ -37,13 +37,13 @@
     <div class="ledger-summary">
         <div class="ledger-card">
             <h3>CEO Disbursement GL</h3>
-            <div class="bal">{{ currency_symbol }} {% if ceo_gl %}{{ ceo_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+            <div class="bal">{% if ceo_gl %}{{ ceo_gl.amount|fmt_money }}{% else %}{{ 0|fmt_money }}{% endif %}</div>
             <small>{% if ceo_gl %}{{ ceo_gl.gl_account_id }} — {{ ceo_gl.description }}{% endif %}</small>
             {% if ceo_bank %}<br><small>Bank: {{ ceo_bank.description }} ({{ ceo_bank.account_number }})</small>{% endif %}
         </div>
         <div class="ledger-card">
             <h3>GM Operating GL</h3>
-            <div class="bal">{{ currency_symbol }} {% if gm_gl %}{{ gm_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+            <div class="bal">{% if gm_gl %}{{ gm_gl.amount|fmt_money }}{% else %}{{ 0|fmt_money }}{% endif %}</div>
             <small>{% if gm_gl %}{{ gm_gl.gl_account_id }} — {{ gm_gl.description }}{% endif %}</small>
             {% if gm_bank %}<br><small>Bank: {{ gm_bank.description }} ({{ gm_bank.account_number }})</small>{% endif %}
         </div>
@@ -56,9 +56,9 @@
         {% for row in task_wallets %}
         <tr>
             <td>{{ row.task.project_id|clean_task_id }} — {{ row.task.description|clean_task_description|truncatechars:40 }}</td>
-            <td>{{ currency_symbol }} {{ row.released|floatformat:2 }}</td>
-            <td>{{ currency_symbol }} {{ row.spent|floatformat:2 }}</td>
-            <td><strong>{{ currency_symbol }} {{ row.wallet|floatformat:2 }}</strong></td>
+            <td>{{ row.released|fmt_money }}</td>
+            <td>{{ row.spent|fmt_money }}</td>
+            <td><strong>{{ row.wallet|fmt_money }}</strong></td>
         </tr>
         {% endfor %}
         </tbody>
@@ -75,7 +75,7 @@
             <td>{{ row.gl.gl_account_id }}</td>
             <td>{{ row.role_label }}</td>
             <td>{{ row.gl.description }}</td>
-            <td>{{ currency_symbol }} {{ row.balance|floatformat:2 }}</td>
+            <td>{{ row.balance|fmt_money }}</td>
         </tr>
         {% endif %}
         {% endfor %}
@@ -97,7 +97,7 @@
             <td>{% if row.cost_center_label %}{{ row.cost_center_label|clean_task_description|truncatechars:40 }}{% else %}—{% endif %}</td>
             <td>{{ p.debit_gl.gl_account_id }}</td>
             <td>{{ p.credit_gl.gl_account_id }}</td>
-            <td><strong>{{ currency_symbol }} {{ p.amount|floatformat:2 }}</strong></td>
+            <td><strong>{{ p.amount|fmt_money }}</strong></td>
             <td>{{ p.reference_type }}:{{ p.reference_id }}</td>
             <td>{{ p.memo|truncatechars:60 }}</td>
         </tr>

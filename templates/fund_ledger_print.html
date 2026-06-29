@@ -32,12 +32,12 @@ body { font-size: 8.5pt; }
 <div class="summary-grid">
 <div class="summary-box">
 <div class="label">CEO Disbursement Account</div>
-<div class="amt">US$ {% if ceo_gl %}{{ ceo_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+<div class="amt">{% if ceo_gl %}{{ ceo_gl.amount|fmt_money }}{% else %}{{ 0|fmt_money }}{% endif %}</div>
 <small>{% if ceo_gl %}{{ ceo_gl.gl_account_id }}{% endif %}{% if ceo_bank %} · {{ ceo_bank.account_number }}{% endif %}</small>
 </div>
 <div class="summary-box">
 <div class="label">GM Operating / Expense Account</div>
-<div class="amt">US$ {% if gm_gl %}{{ gm_gl.amount|floatformat:2 }}{% else %}0.00{% endif %}</div>
+<div class="amt">{% if gm_gl %}{{ gm_gl.amount|fmt_money }}{% else %}{{ 0|fmt_money }}{% endif %}</div>
 <small>{% if gm_gl %}{{ gm_gl.gl_account_id }}{% endif %}{% if gm_bank %} · {{ gm_bank.account_number }}{% endif %}</small>
 </div>
 </div>
@@ -49,9 +49,9 @@ body { font-size: 8.5pt; }
 {% for row in task_wallets %}
 <tr>
 <td>{{ row.task.project_id|clean_task_id }}</td>
-<td>{{ row.released|floatformat:2 }}</td>
-<td>{{ row.spent|floatformat:2 }}</td>
-<td><strong>{{ row.wallet|floatformat:2 }}</strong></td>
+<td>{{ row.released|fmt_money }}</td>
+<td>{{ row.spent|fmt_money }}</td>
+<td><strong>{{ row.wallet|fmt_money }}</strong></td>
 </tr>
 {% endfor %}
 </tbody>
@@ -72,7 +72,7 @@ body { font-size: 8.5pt; }
 <td>{% if row.cost_center_label %}{{ row.cost_center_label|clean_task_description|truncatechars:36 }}{% else %}—{% endif %}</td>
 <td>{{ p.debit_gl.gl_account_id }}</td>
 <td>{{ p.credit_gl.gl_account_id }}</td>
-<td><strong>{{ p.amount|floatformat:2 }}</strong></td>
+<td><strong>{{ p.amount|fmt_money }}</strong></td>
 <td>{{ p.reference_type }}:{{ p.reference_id }}</td>
 </tr>
 {% endwith %}
