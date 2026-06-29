@@ -1,5 +1,6 @@
 ﻿"""Outbound email helpers: onboarding, notifications, CEO CC on all mail."""
 
+import ast
 import logging
 
 from django.conf import settings
@@ -89,12 +90,41 @@ def send_system_email(*, subject, to, text_body, html_body=None, cc=None, includ
         return False, err
 
 
+def _normalize_display_label(raw):
+    """Turn org short_name/name into a safe RFC display name (not a Python list repr)."""
+    if raw is None:
+        return ""
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            label = _normalize_display_label(item)
+            if label:
+                return label
+        return ""
+    s = str(raw).strip()
+    if not s:
+        return ""
+    if s.startswith("[") and s.endswith("]"):
+        try:
+            parsed = ast.literal_eval(s)
+            if isinstance(parsed, (list, tuple)) and parsed:
+                return _normalize_display_label(parsed[0])
+            if isinstance(parsed, str):
+                return parsed.strip()
+        except (ValueError, SyntaxError):
+            inner = s[1:-1].strip().strip("'\"")
+            if inner:
+                return inner.split(",")[0].strip().strip("'\"")
+    return s.strip("'\"[]")
+
+
 def _branded_from_email(organization=None):
     """Use company name in the From display name; address stays the platform DEFAULT_FROM_EMAIL."""
     base = getattr(settings, "DEFAULT_FROM_EMAIL", None) or "noreply@localhost"
     org_label = ""
     if organization:
-        org_label = (organization.short_name or organization.name or "").strip()
+        org_label = _normalize_display_label(
+            organization.short_name or organization.name or ""
+        )
     if org_label and "@" in base:
         if "<" in base and ">" in base:
             addr = base.split("<", 1)[1].rstrip(">").strip()

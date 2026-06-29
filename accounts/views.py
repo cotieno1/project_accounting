@@ -662,6 +662,8 @@ def _user_onboarding_api_fields(ua):
 
 
 def _serialize_master_row(entity_type, obj):
+    from .emails import _normalize_display_label
+
     row = {"_pk": _entity_pk_value(obj)}
     if entity_type == "user":
         row.update({
@@ -673,7 +675,9 @@ def _serialize_master_row(entity_type, obj):
             "email": obj.email,
             "phone": obj.phone,
             "organization": (
-                obj.organization.short_name if obj.organization else "—"
+                _normalize_display_label(obj.organization.short_name)
+                if obj.organization
+                else "—"
             ),
             "role": obj.access_level.description if obj.access_level else "—",
             **_user_onboarding_api_fields(obj),
@@ -771,8 +775,11 @@ def _validate_organization_payload(data):
     cleaned = dict(data)
     cleaned["org_code"] = org_code
     cleaned["name"] = name
-    if cleaned.get("short_name"):
-        cleaned["short_name"] = cleaned["short_name"].strip()
+    short_name = (cleaned.get("short_name") or "").strip()
+    if short_name:
+        if short_name.startswith("[") and short_name.endswith("]"):
+            short_name = _clean_bracketed_text(short_name, max_len=80)
+        cleaned["short_name"] = short_name
     return cleaned, None
 
 
@@ -1127,7 +1134,7 @@ def create_user(request):
     password_confirm = request.POST.get("password_confirm", "")
     cat_id = request.POST.get("access_level_id")
     category = UserCategory.objects.filter(id=cat_id).first() if cat_id else None
-    org_code = (request.POST.get("organization_id") or "").strip()
+    org_code = _normalize_org_code(request.POST.get("organization_id") or "")
     organization = (
         Organization.objects.filter(org_code=org_code).first() if org_code else None
     )

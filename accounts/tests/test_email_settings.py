@@ -1,7 +1,9 @@
-from django.test import SimpleTestCase
+from types import SimpleNamespace
+
+from django.test import SimpleTestCase, override_settings
 
 from accounts.email_config import resolve_email_backend
-
+from accounts.emails import _branded_from_email, _normalize_display_label
 
 class EmailBackendResolverTests(SimpleTestCase):
     def test_smtp_preferred_when_configured_even_with_resend_key(self):
@@ -33,3 +35,31 @@ class EmailBackendResolverTests(SimpleTestCase):
             debug=False,
         )
         self.assertEqual(backend, "accounts.email_backends.UnconfiguredEmailBackend")
+
+
+class EmailDisplayLabelTests(SimpleTestCase):
+    def test_normalize_bracketed_list_string(self):
+        self.assertEqual(_normalize_display_label("['Pioneer']"), "Pioneer")
+
+    def test_normalize_plain_name(self):
+        self.assertEqual(_normalize_display_label("Pioneer"), "Pioneer")
+
+    def test_normalize_list_value(self):
+        self.assertEqual(_normalize_display_label(["Pioneer"]), "Pioneer")
+
+
+@override_settings(DEFAULT_FROM_EMAIL="Project Accounting <otieno.charles@gmail.com>")
+class BrandedFromEmailTests(SimpleTestCase):
+    def test_bracketed_short_name_produces_valid_from(self):
+        org = SimpleNamespace(short_name="['Pioneer']", name="Pioneer Contactors Co Ltd")
+        self.assertEqual(
+            _branded_from_email(org),
+            "Pioneer <otieno.charles@gmail.com>",
+        )
+
+    def test_plain_short_name(self):
+        org = SimpleNamespace(short_name="Pioneer", name="Pioneer Contactors Co Ltd")
+        self.assertEqual(
+            _branded_from_email(org),
+            "Pioneer <otieno.charles@gmail.com>",
+        )
