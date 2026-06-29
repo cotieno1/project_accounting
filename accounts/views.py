@@ -232,9 +232,10 @@ def health_email(request):
     payload = {
         "email_configured": configured,
         "email_backend": getattr(settings, "EMAIL_BACKEND", ""),
+        "email_provider": getattr(settings, "EMAIL_PROVIDER", "") or ("smtp" if smtp else ("resend" if key else "")),
         "resend_key_set": bool(key),
-        "resend_key_length": len(key),
         "smtp_configured": smtp,
+        "smtp_user": getattr(settings, "EMAIL_HOST_USER", ""),
         "default_from_email": getattr(settings, "DEFAULT_FROM_EMAIL", ""),
         "service": os.environ.get("RAILWAY_SERVICE_NAME", ""),
     }

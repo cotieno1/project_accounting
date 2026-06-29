@@ -234,32 +234,40 @@ if not SITE_BASE_URL and _railway_domain:
     SITE_BASE_URL = f'https://{_railway_domain}'
 
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '').strip()
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com' if os.environ.get('EMAIL_HOST_USER') else 'localhost')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '').strip()
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '').strip()
 EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', default=True)
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@projectaccounting.local')
-SYSTEM_ADMIN_EMAIL = os.environ.get('SYSTEM_ADMIN_EMAIL', '').strip()
+EMAIL_PROVIDER = os.environ.get('EMAIL_PROVIDER', '').strip().lower()
+
+if os.environ.get('DEFAULT_FROM_EMAIL', '').strip():
+    DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', '').strip()
+elif EMAIL_HOST_USER:
+    DEFAULT_FROM_EMAIL = f'Project Accounting <{EMAIL_HOST_USER}>'
+else:
+    DEFAULT_FROM_EMAIL = 'noreply@projectaccounting.local'
+
+SYSTEM_ADMIN_EMAIL = os.environ.get('SYSTEM_ADMIN_EMAIL', '').strip() or EMAIL_HOST_USER
 
 _smtp_configured = bool(EMAIL_HOST_USER and EMAIL_HOST_PASSWORD)
 EMAIL_CONFIGURED = bool(RESEND_API_KEY or _smtp_configured)
-if os.environ.get('EMAIL_BACKEND'):
-    EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
-elif RESEND_API_KEY:
-    EMAIL_BACKEND = 'accounts.email_backends.ResendEmailBackend'
-elif _smtp_configured:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-elif DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
-    EMAIL_BACKEND = 'accounts.email_backends.UnconfiguredEmailBackend'
 
-if _on_railway and not RESEND_API_KEY and not _smtp_configured and not DEBUG:
+from accounts.email_config import resolve_email_backend
+
+EMAIL_BACKEND = resolve_email_backend(
+    email_backend_override=os.environ.get("EMAIL_BACKEND", ""),
+    email_provider=EMAIL_PROVIDER,
+    resend_api_key=RESEND_API_KEY,
+    smtp_configured=_smtp_configured,
+    debug=DEBUG,
+)
+
+if _on_railway and not EMAIL_CONFIGURED and not DEBUG:
     import logging
     logging.getLogger(__name__).warning(
-        'Email not configured on Railway — set RESEND_API_KEY or EMAIL_HOST_USER/EMAIL_HOST_PASSWORD '
-        'and DEFAULT_FROM_EMAIL so onboarding invites can be sent.'
+        'Email not configured on Railway — set Gmail SMTP (EMAIL_HOST_USER + '
+        'EMAIL_HOST_PASSWORD app password) or RESEND_API_KEY for onboarding invites.'
     )
 
 if not DEBUG:

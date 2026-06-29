@@ -25,15 +25,24 @@ def _friendly_email_error(exc):
     ):
         if not getattr(settings, "EMAIL_CONFIGURED", False):
             return (
-                "Platform email is not configured. In Railway → your web service → Variables, "
-                "set RESEND_API_KEY (one key for all companies) or SMTP settings. "
-                "This is not per-company — Pioneer and every other tenant share the same mail provider."
+                "Platform email is not configured. In Railway → Variables, set Gmail SMTP: "
+                "EMAIL_HOST_USER=your@gmail.com, EMAIL_HOST_PASSWORD=16-char app password, "
+                "EMAIL_HOST=smtp.gmail.com, EMAIL_PORT=587, EMAIL_USE_TLS=True."
             )
         host = getattr(settings, "EMAIL_HOST", "localhost")
         port = getattr(settings, "EMAIL_PORT", 587)
         return (
             f"Could not connect to mail server {host}:{port}. "
-            "Check EMAIL_HOST and EMAIL_PORT, or use RESEND_API_KEY instead of SMTP."
+            "Check EMAIL_HOST and EMAIL_PORT."
+        )
+    if "535" in err or "534" in err or "authentication failed" in lowered or "username and password" in lowered:
+        return (
+            "Gmail rejected the login. Use a Google App Password (not your normal Gmail password): "
+            "Google Account → Security → 2-Step Verification → App passwords."
+        )
+    if "daily user sending limit" in lowered or "limit exceeded" in lowered:
+        return (
+            "Gmail sending limit reached for today. Try again later or use a Google Workspace account."
         )
     return err
 
@@ -125,7 +134,7 @@ def send_onboarding_email(user_account, *, request=None, invited_by=None, record
     subject = f"{org_name} — set your password"
     text_body = render_to_string("emails/onboarding_set_password.txt", context)
     html_body = render_to_string("emails/onboarding_set_password.html", context)
-    reply_to = (org.email if org and org.email else None)
+    reply_to = (org.email if org and org.email else None) or getattr(settings, "EMAIL_HOST_USER", "") or getattr(settings, "SYSTEM_ADMIN_EMAIL", "")
     ok, err = send_system_email(
         subject=subject,
         to=[user_account.email],

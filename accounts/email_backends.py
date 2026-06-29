@@ -76,9 +76,9 @@ class UnconfiguredEmailBackend(BaseEmailBackend):
         if not email_messages:
             return 0
         msg = (
-            "Email is not configured on this server. In Railway Variables, set "
-            "RESEND_API_KEY (recommended) or EMAIL_HOST_USER + EMAIL_HOST_PASSWORD "
-            "+ EMAIL_HOST (e.g. smtp.gmail.com). Also set DEFAULT_FROM_EMAIL."
+            "Email is not configured on this server. In Railway Variables, set Gmail SMTP: "
+            "EMAIL_HOST_USER, EMAIL_HOST_PASSWORD (Google App Password), EMAIL_HOST=smtp.gmail.com, "
+            "EMAIL_PORT=587, EMAIL_USE_TLS=True, DEFAULT_FROM_EMAIL."
         )
         if not self.fail_silently:
             raise OSError(msg)
