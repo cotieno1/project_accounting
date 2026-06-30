@@ -1286,7 +1286,41 @@ html.command-center-root {
         align-items: stretch;
     }
 
-    .command-center .master-btn-success,
+    .command-center .master-panel-header {
+        padding: 14px 16px;
+        gap: 10px;
+    }
+
+    .command-center .master-panel-header h2 {
+        font-size: 1.05rem;
+    }
+
+    .command-center .master-panel-header p {
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .command-center .master-toolbar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 10px 16px;
+        gap: 8px;
+    }
+
+    .command-center .master-search {
+        flex: 1 1 100%;
+        padding: 10px 12px;
+        font-size: 16px;
+        min-height: 44px;
+    }
+
+    .command-center .master-btn-success {
+        flex: 1 1 auto;
+        width: auto;
+        padding: 10px 14px;
+        font-size: 13px;
+        min-height: 44px;
+    }
     .command-center .master-form-actions .master-btn {
         width: 100%;
         margin-left: 0;
