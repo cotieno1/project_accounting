@@ -5,7 +5,7 @@
 {% block title %}Pioneer | Requisition Order Builder{% endblock %}
 {% block body_class %}ro-builder{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/ro-builder.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/ro-builder.css' %}?v=4">
 {% endblock %}
 
 {% block sidebar %}
@@ -32,7 +32,20 @@
     {% if ro %}
     <div class="sidebar-block ro-sidebar-actions">
         <span class="nav-label">Workflow Actions</span>
-        {% include "includes/ro_workflow_actions.html" %}
+        <div class="ro-action-list">
+            <div class="ro-action-item">
+                <form method="POST" action="{% url 'fetch_bom_to_ro' ro.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-action btn-secondary btn-block">Fetch Technical BOM</button>
+                </form>
+            </div>
+            <div class="ro-action-item">
+                <button type="button" onclick="openRoModal()" class="btn-action btn-block">Add Manual Item</button>
+            </div>
+            <div class="ro-action-item">
+                <a href="{% url 'print_ro_view' ro.id %}" target="_blank" rel="noopener" class="btn-action btn-success btn-block">Print Final RO</a>
+            </div>
+        </div>
     </div>
     {% endif %}
 
@@ -59,7 +72,20 @@
     {% if ro %}
     <div class="panel ro-workspace-actions">
         <span class="nav-label">Workflow actions</span>
-        {% include "includes/ro_workflow_actions.html" %}
+        <div class="ro-action-list">
+            <div class="ro-action-item">
+                <form method="POST" action="{% url 'fetch_bom_to_ro' ro.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-action btn-secondary btn-block">Fetch Technical BOM</button>
+                </form>
+            </div>
+            <div class="ro-action-item">
+                <button type="button" onclick="openRoModal()" class="btn-action btn-block">Add Manual Item</button>
+            </div>
+            <div class="ro-action-item">
+                <a href="{% url 'print_ro_view' ro.id %}" target="_blank" rel="noopener" class="btn-action btn-success btn-block">Print Final RO</a>
+            </div>
+        </div>
     </div>
     {% endif %}
 
