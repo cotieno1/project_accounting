@@ -28,6 +28,20 @@
         transform: translateX(-105%);
         transition: transform 0.25s ease;
         box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
+        padding-top: 12px;
+    }
+
+    /* Brand block clears the fixed hamburger toggle (top-left) */
+    .sidebar > :first-child:not(.sidebar-block) {
+        padding-left: 48px;
+        padding-top: 4px;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    .cockpit-shell.sidebar-open .sidebar-toggle {
+        background: var(--surface-deep);
+        border-color: var(--border);
     }
 
     .cockpit-shell.sidebar-open .sidebar {
