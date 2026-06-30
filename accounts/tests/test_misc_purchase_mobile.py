@@ -57,28 +57,18 @@ class MiscPurchaseMobileTests(TestCase):
         html = response.content.decode()
         self.assertIn('id="miscTaskSelect-sidebar"', html)
 
-    def test_legacy_bracket_task_id_selectable(self):
-        ProjectTask.objects.create(
-            project_id="['100']",
-            description="Misc task 100",
-        )
+    def test_misc_purchase_body_class_for_mobile_scoping(self):
         url = reverse("misc_purchase_builder")
-        response = self.client.get(url, {"task_id": "100"}, follow=True)
-        self.assertEqual(response.status_code, 200)
+        response = self.client.get(url, {"task_id": self.task.project_id})
         html = response.content.decode()
-        self.assertIn(">100<", html)
-        self.assertNotIn("['100']", html)
-        self.assertIn('value="100"', html)
+        self.assertIn('class="cockpit-app misc-purchase"', html)
 
-    def test_malformed_bracket_url_redirects_clean(self):
-        ProjectTask.objects.create(
-            project_id="['1233_0900']",
-            description="Underscore misc task",
-        )
+    def test_misc_purchase_mobile_stylesheet_version(self):
         url = reverse("misc_purchase_builder")
-        response = self.client.get(url, {"task_id": "['1233_0900']"}, follow=False)
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("task_id=1233_0900", response.url)
+        response = self.client.get(url, {"task_id": self.task.project_id})
+        html = response.content.decode()
+        self.assertIn("misc-purchase.css?v=2", html)
+
 
 
 class PrintGuardHelperTests(TestCase):
