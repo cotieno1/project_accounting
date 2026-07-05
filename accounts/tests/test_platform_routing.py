@@ -78,8 +78,10 @@ class PlatformRoutingTests(TestCase):
         self.assertContains(response, "Building contractor tenants")
         self.assertContains(response, "PIONEER")
 
-    def test_tenant_dashboard_shows_portal_name(self):
+    def test_tenant_dashboard_shows_pioneer_command_center(self):
         self.client.login(username="pioneer1", password="test-pass-123")
         response = self.client.get(reverse("dashboard"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Pioneer Portal")
+        self.assertContains(response, "Command Center")
+        self.assertContains(response, "Executive Overview")
+        self.assertContains(response, "System &amp; Accounts Setup")
