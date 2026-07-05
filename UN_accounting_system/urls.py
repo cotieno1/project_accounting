@@ -67,6 +67,8 @@ urlpatterns = [
     # 2. Requisition Order (THE NEW BRIDGE)
     path('ro-builder/', views.ro_builder, name='ro_builder'),
     path('ro-fetch/<int:ro_id>/', views.fetch_bom_to_ro, name='fetch_bom_to_ro'),
+    path('ro-print-draft/<int:ro_id>/', views.print_ro_draft_view, name='print_ro_draft_view'),
+    path('ro-confirm/<int:ro_id>/', views.confirm_ro, name='confirm_ro'),
     path('ro-print/<int:ro_id>/', views.print_ro_view, name='print_ro_view'),
     
     # 3. RFQ Operations

@@ -7,14 +7,14 @@
 </head>
 <body class="pioneer-doc-print">
 <div class="screen-toolbar no-print">
-<button type="button" onclick="window.print()">Print Requisition Order</button>
+<button type="button" onclick="window.print()">Print Requisition Order{% if is_reprint %} Copy{% endif %}</button>
 </div>
 <div class="lpo-paper"><div class="doc">
 <div class="brand-bar"></div>
 {% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Requisition Order" %}
 <table class="meta-table">
 <tr><th>Document</th><th>RO Number</th><th>Date</th></tr>
-<tr><td>Requisition Order</td><td class="lpo-no">{{ ro.ro_no }}</td><td>{% now "d M Y" %}</td></tr>
+<tr><td>Requisition Order</td><td class="lpo-no">{{ ro.ro_no }}</td><td>{{ ro.confirmed_at|date:"d M Y" }}</td></tr>
 </table>
 <table class="parties">
 <tr><th>To</th><th>From</th></tr>
@@ -29,7 +29,7 @@
 <td style="width:10%"></td>
 <td><div class="line">General Manager</div><div class="hint">Authorization</div></td>
 </tr></table>
-<p class="footer-note">RO — {{ ro.ro_no }} — {% now "Y-m-d" %}</p>
+<p class="footer-note">RO — {{ ro.ro_no }} — {{ ro.confirmed_at|date:"Y-m-d" }}{% if is_reprint %} — COPY{% endif %}</p>
 </div></div>
 <script>window.addEventListener('load',function(){setTimeout(function(){window.print()},400)});</script>
 </body></html>

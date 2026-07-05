@@ -423,25 +423,35 @@ class Product(models.Model):
         
 # =====================================
 class RequisitionOrder(models.Model):
-    ro_no = models.CharField(max_length=50, unique=True)
+    ro_no = models.CharField(max_length=50, unique=True, null=True, blank=True)
     task = models.ForeignKey(ProjectTask, on_delete=models.CASCADE, related_name="ros")
     created_by = models.ForeignKey(UserAccount, on_delete=models.SET_NULL, null=True)
 
     date_raised = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
     technical_requirement_note = models.TextField(blank=True, null=True)
 
     status = models.CharField(
         max_length=20,
         choices=[
             ("DRAFT", "Draft"),
+            ("CONFIRMED", "Confirmed"),
             ("SUBMITTED", "Submitted"),
             ("SIGNED", "Signed"),
         ],
         default="DRAFT"
     )
 
+    @property
+    def is_editable(self):
+        return self.status == "DRAFT" and not self.confirmed_at
+
+    @property
+    def is_confirmed(self):
+        return bool(self.confirmed_at) or self.status in ("CONFIRMED", "SUBMITTED", "SIGNED")
+
     def __str__(self):
-        return self.ro_no
+        return self.ro_no or f"Draft RO #{self.pk}"
 
     class Meta:
         indexes = [
@@ -464,7 +474,8 @@ class RequisitionOrderItem(models.Model):
     tech_spec_summary = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.ro.ro_no} - Item {self.id}"
+        ro_ref = self.ro.ro_no or f"Draft RO #{self.ro_id}"
+        return f"{ro_ref} - Item {self.id}"
         
 # ===============================
 # 11. BOM & REQUISITION (Transaction)

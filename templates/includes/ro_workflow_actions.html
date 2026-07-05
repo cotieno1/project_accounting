@@ -1,0 +1,49 @@
+{% comment %}
+Shared RO workflow buttons — include with ro, ro_is_editable, ro_has_items.
+{% endcomment %}
+<div class="ro-action-list">
+    {% if ro_is_editable %}
+    <div class="ro-action-item">
+        <form method="POST" action="{% url 'fetch_bom_to_ro' ro.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-action btn-secondary btn-block">Fetch Technical BOM</button>
+        </form>
+    </div>
+    <div class="ro-action-item">
+        <button type="button" onclick="openRoModal()" class="btn-action btn-block">Add Manual Item</button>
+    </div>
+    <div class="ro-action-item">
+        {% if ro_has_items %}
+        <a href="{% url 'print_ro_draft_view' ro.id %}" target="_blank" rel="noopener" class="btn-action btn-block">Print Draft RO</a>
+        {% else %}
+        <span class="btn-action btn-block is-disabled" aria-disabled="true" title="Add line items first">Print Draft RO</span>
+        {% endif %}
+    </div>
+    <div class="ro-action-item">
+        {% if ro_has_items %}
+        <button type="button" onclick="openRoConfirmModal()" class="btn-action btn-danger btn-block">Confirm RO &amp; Print Final</button>
+        {% else %}
+        <span class="btn-action btn-danger btn-block is-disabled" aria-disabled="true" title="Add line items first">Confirm RO &amp; Print Final</span>
+        {% endif %}
+    </div>
+    <div class="ro-action-item">
+        <span class="btn-action btn-success btn-block is-disabled" aria-disabled="true" title="Confirm the RO first to issue the final document">Print Final RO (Copy)</span>
+    </div>
+    {% else %}
+    <div class="ro-action-item">
+        <span class="btn-action btn-secondary btn-block is-disabled" aria-disabled="true">Fetch Technical BOM</span>
+    </div>
+    <div class="ro-action-item">
+        <span class="btn-action btn-block is-disabled" aria-disabled="true">Add Manual Item</span>
+    </div>
+    <div class="ro-action-item">
+        <span class="btn-action btn-block is-disabled" aria-disabled="true" title="Draft printing disabled after confirmation">Print Draft RO</span>
+    </div>
+    <div class="ro-action-item">
+        <span class="btn-action btn-danger btn-block is-disabled" aria-disabled="true" title="Already confirmed — cannot confirm again">Confirm RO &amp; Print Final</span>
+    </div>
+    <div class="ro-action-item">
+        <a href="{% url 'print_ro_view' ro.id %}" target="_blank" rel="noopener" class="btn-action btn-success btn-block">Print Final RO (Copy)</a>
+    </div>
+    {% endif %}
+</div>

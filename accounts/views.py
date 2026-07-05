@@ -1357,14 +1357,33 @@ def supplier_lookup(request):
 # 📝 REQUISITION ORDER (RO) & STRATEGIC BOM ENGINES
 # =======================================================================
 def generate_ro_no():
-    last = RequisitionOrder.objects.all().order_by('id').last()
+    last = (
+        RequisitionOrder.objects.exclude(ro_no__isnull=True)
+        .exclude(ro_no="")
+        .order_by("id")
+        .last()
+    )
     if not last or not last.ro_no:
         return "RO No. 001"
-    match = re.search(r'(\d+)', last.ro_no)
+    match = re.search(r"(\d+)", last.ro_no)
     if match:
         next_num = int(match.group(1)) + 1
         return f"RO No. {str(next_num).zfill(3)}"
     return "RO No. 001"
+
+
+def _ro_redirect(active_task):
+    return redirect(f"/ro-builder/?task_id={active_task.project_id}")
+
+
+def _assert_ro_editable(ro):
+    if not ro.is_editable:
+        ref = (ro.ro_no or "").strip() or "This requisition"
+        raise ValueError(
+            f"{ref} is confirmed and locked — line items cannot be changed. "
+            "Print final copies only."
+        )
+
 
 @login_required
 def ro_builder(request):
@@ -1379,6 +1398,8 @@ def ro_builder(request):
             "ro": None,
             "ro_no": "",
             "ro_items": [],
+            "ro_is_editable": False,
+            "ro_has_items": False,
             "setup_message": (
                 "Select a project task above to open or create its requisition order."
                 if tasks.exists()
@@ -1386,47 +1407,154 @@ def ro_builder(request):
             ),
         })
 
-    ro = RequisitionOrder.objects.filter(task=active_task, status="DRAFT").first()
+    ro = RequisitionOrder.objects.filter(task=active_task).order_by("-id").first()
     if not ro:
         ro = RequisitionOrder.objects.create(
             task=active_task,
-            ro_no=generate_ro_no(),
-            status="DRAFT"
+            status="DRAFT",
         )
 
-    if request.method == "POST" and "add_item" in request.POST:
-        RequisitionOrderItem.objects.create(
-            ro=ro,
-            quantity=request.POST.get("qty"),
-            uom=request.POST.get("uom", "Pcs"),
-            tech_spec_summary=request.POST.get("description")
-        )
-        return redirect(f"/ro-builder/?task_id={active_task.project_id}")
+    if request.method == "POST":
+        try:
+            if "add_item" in request.POST:
+                _assert_ro_editable(ro)
+                RequisitionOrderItem.objects.create(
+                    ro=ro,
+                    quantity=request.POST.get("qty"),
+                    uom=request.POST.get("uom", "Pcs"),
+                    tech_spec_summary=request.POST.get("description"),
+                )
+                messages.success(request, "Line item added to draft requisition.")
+            elif "update_item" in request.POST:
+                _assert_ro_editable(ro)
+                item = get_object_or_404(
+                    RequisitionOrderItem, id=request.POST.get("item_id"), ro=ro
+                )
+                item.tech_spec_summary = (request.POST.get("description") or "").strip()
+                item.uom = (request.POST.get("uom") or "Pcs").strip()
+                item.quantity = request.POST.get("qty") or item.quantity
+                item.save()
+                messages.success(request, "Line item updated.")
+            elif "delete_item" in request.POST:
+                _assert_ro_editable(ro)
+                item = get_object_or_404(
+                    RequisitionOrderItem, id=request.POST.get("item_id"), ro=ro
+                )
+                item.delete()
+                messages.success(request, "Line item removed from draft requisition.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return _ro_redirect(active_task)
 
+    ro_items = ro.items.all().order_by("id")
     return render(request, "RO_builder.html", {
         "tasks": tasks,
         "active_task": active_task,
         "ro": ro,
-        "ro_no": ro.ro_no,
-        "ro_items": ro.items.all().order_by("id"),
+        "ro_no": ro.ro_no or "",
+        "ro_items": ro_items,
+        "ro_is_editable": ro.is_editable,
+        "ro_has_items": ro_items.exists(),
     })
+
 
 @login_required
 def fetch_bom_to_ro(request, ro_id):
     ro = get_object_or_404(RequisitionOrder, id=ro_id)
+    try:
+        _assert_ro_editable(ro)
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
+
     bom = BOMHeader.objects.filter(task=ro.task).first()
-    
+
     if bom:
         for item in bom.items.all():
             RequisitionOrderItem.objects.get_or_create(
                 ro=ro,
                 tech_spec_summary=item.description,
                 defaults={
-                    'quantity': item.qty,
-                    'uom': item.uom
-                }
+                    "quantity": item.qty,
+                    "uom": item.uom,
+                },
             )
+        messages.success(request, "Technical BOM lines imported into draft requisition.")
+    else:
+        messages.warning(request, "No BOM found for this task.")
     return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
+
+
+@login_required
+def confirm_ro(request, ro_id):
+    if request.method != "POST":
+        return HttpResponseForbidden()
+
+    from django.db import transaction
+
+    with transaction.atomic():
+        ro = get_object_or_404(
+            RequisitionOrder.objects.select_for_update(),
+            id=ro_id,
+        )
+        if not ro.is_editable:
+            messages.error(
+                request,
+                "This requisition was already confirmed. "
+                "You can only print final copies — no further edits are allowed.",
+            )
+            return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
+
+        if not ro.items.exists():
+            messages.error(
+                request,
+                "Add at least one line item before confirming the requisition.",
+            )
+            return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
+
+        if not ro.ro_no:
+            ro.ro_no = generate_ro_no()
+        ro.confirmed_at = timezone.now()
+        ro.status = "CONFIRMED"
+        ro.save()
+
+    messages.success(
+        request,
+        f"{ro.ro_no} confirmed and locked. This action cannot be undone — "
+        "only final RO copies can be printed now.",
+    )
+    return redirect("print_ro_view", ro_id=ro.id)
+
+
+@login_required
+def print_ro_draft_view(request, ro_id):
+    ro = get_object_or_404(RequisitionOrder, id=ro_id)
+    if not ro.is_editable:
+        messages.error(
+            request,
+            "Draft printing is disabled after confirmation. Use Print Final RO for copies.",
+        )
+        return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
+    if not ro.items.exists():
+        messages.error(request, "Add line items before printing a draft requisition.")
+        return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
+    ctx = branding_template_context(request)
+    ctx.update({"ro": ro, "items": ro.items.all()})
+    return render(request, "ro_print_draft_template.html", ctx)
+
+
+@login_required
+def print_ro_view(request, ro_id):
+    ro = get_object_or_404(RequisitionOrder, id=ro_id)
+    if not ro.is_confirmed:
+        messages.error(
+            request,
+            "Confirm the requisition first to assign an RO number and issue the final document.",
+        )
+        return redirect(f"/ro-builder/?task_id={ro.task.project_id}")
+    ctx = branding_template_context(request)
+    ctx.update({"ro": ro, "items": ro.items.all(), "is_reprint": True})
+    return render(request, "ro_print_template.html", ctx)
 
 
 def _mpo_ro_locked(mpo):
@@ -1728,7 +1856,9 @@ def _bom_task_sidebar_hint(task):
         return "Major · RFQ"
     if RequisitionOrderItem.objects.filter(ro__task=task).exists():
         ro = RequisitionOrder.objects.filter(task=task).order_by("-date_raised").first()
-        return f"Major · RO {ro.ro_no}" if ro else "Major · RO"
+        if ro and ro.ro_no:
+            return f"Major · RO {ro.ro_no}"
+        return "Major · RO"
     bom = BOMHeader.objects.filter(task=task).first()
     if bom and bom.status != BOMHeader.STATUS_DRAFT:
         return f"BOM · {bom.get_status_display()}"
@@ -2966,16 +3096,6 @@ def print_memo_view(request, task_id):
             "grand_total": grand_total,
         },
     )
-@login_required
-def print_ro_view(request, ro_id):
-    ro = get_object_or_404(RequisitionOrder, id=ro_id)
-    if not ro.items.exists():
-        return _redirect_empty_print(
-            request,
-            "Cannot print RO: this requisition has no line items.",
-            reverse("ops_dashboard") + f"?task_id={ro.task.project_id}",
-        )
-    return render(request, "ro_print_template.html", {"ro": ro, "items": ro.items.all()})
 
 @login_required
 def print_lpo_view(request, lpo_id):

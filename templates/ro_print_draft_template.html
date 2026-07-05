@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Draft RO — {{ ro.task.project_id }}</title>
+{% include "includes/lpo_document_styles.html" %}
+<style>
+.draft-banner {
+    background: #fef3c7;
+    color: #92400e;
+    border: 2px dashed #d97706;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.draft-watermark {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.08;
+    font-size: 72px;
+    font-weight: 800;
+    color: #b45309;
+    transform: rotate(-28deg);
+}
+.doc { position: relative; z-index: 1; }
+</style>
+</head>
+<body class="pioneer-doc-print">
+<div class="draft-watermark">DRAFT — NOT OFFICIAL</div>
+<div class="screen-toolbar no-print">
+<button type="button" onclick="window.print()">Print Draft Requisition Order</button>
+</div>
+<div class="lpo-paper"><div class="doc">
+<div class="brand-bar"></div>
+{% include "includes/pioneer_letterhead_block.html" with doc_subtitle="Requisition Order (Draft)" %}
+<div class="draft-banner">
+    Draft only — unofficial — subject to change. Confirm the RO to assign an official number and lock the document.
+</div>
+<table class="meta-table">
+<tr><th>Document</th><th>RO Number</th><th>Date</th></tr>
+<tr><td>Draft Requisition Order</td><td class="lpo-no">Pending confirmation</td><td>{% now "d M Y" %}</td></tr>
+</table>
+<table class="parties">
+<tr><th>To</th><th>From</th></tr>
+<tr><td><div class="party-name">General Manager</div></td><td><div class="party-name">Senior Site Engineer</div><div class="muted">{{ org_short_name|default:org_name }}</div></td></tr>
+</table>
+<table class="lines">
+<thead><tr><th>Description</th><th class="num">Qty</th><th class="center">Unit</th></tr></thead>
+<tbody>{% for item in ro.items.all %}<tr{% if forloop.counter|divisibleby:2 %} class="zebra"{% endif %}><td>{{ item.tech_spec_summary }}</td><td class="num">{{ item.quantity }}</td><td class="center">{{ item.uom }}</td></tr>{% endfor %}</tbody>
+</table>
+<table class="signatures"><tr>
+<td><div class="line">Senior Site Engineer</div><div class="hint">{{ org_short_name|default:org_name }}</div></td>
+<td style="width:10%"></td>
+<td><div class="line">General Manager</div><div class="hint">Authorization (on final RO only)</div></td>
+</tr></table>
+<p class="footer-note">DRAFT RO — {% now "Y-m-d H:i" %} — Not for procurement use</p>
+</div></div>
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},400)});</script>
+</body></html>
