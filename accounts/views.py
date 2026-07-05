@@ -23,7 +23,7 @@ from django.db import IntegrityError, transaction
 from collections import defaultdict
 
 # SINGLE UNIFIED IMPORT BLOCK - All models imported exactly once
-from .roles import can_manage_users
+from .roles import can_manage_users, can_manage_tenants
 from .tenant import get_active_organization, branding_template_context
 from .currency import fmt_money
 from .models import (
@@ -197,7 +197,9 @@ class CustomLoginView(LoginView):
                 return reverse("password_change_required")
         except Exception:
             pass
-        return super().get_success_url()
+        if _is_platform_main_admin(self.request.user):
+            return reverse("platform_admin")
+        return reverse("dashboard")
 
 def has_module_access(user, module_code):
     from .roles import user_can, USER_ADMIN, get_role_code
@@ -213,9 +215,100 @@ def has_module_access(user, module_code):
 # =======================================================================
 # 🏠 NAVIGATION CORE
 # =======================================================================
+def _is_platform_main_admin(user):
+    """Global BuildWatch platform admin (not a tenant staff login)."""
+    from .roles import USER_ADMIN, get_role_code
+
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    return get_role_code(user) == USER_ADMIN
+
+
+def _user_tenant_organization(user):
+    from .roles import get_user_account
+
+    ua = get_user_account(user)
+    return ua.organization if ua and ua.organization_id else None
+
+
+def _build_dashboard_context(request, *, mode):
+    """Shared context for platform admin vs tenant contractor portal."""
+    user = request.user
+    try:
+        user_account = user.useraccount
+        role = user_account.access_level.description if user_account.access_level else "User"
+        modules = user_account.access_level.modules.all() if user_account.access_level else []
+    except Exception:
+        user_account = None
+        role = "User"
+        modules = []
+
+    active_org = get_active_organization(request)
+    if mode == "tenant" and user_account and user_account.organization_id:
+        active_org = user_account.organization
+
+    contractor_label = active_org.get_contractor_type_display() if active_org else "Building contractor"
+    pending_regs = (
+        UserAccount.objects.filter(registration_pending_review=True)
+        .select_related("organization")
+        .order_by("-id")[:40]
+    )
+    building_tenants = Organization.objects.filter(
+        contractor_type=Organization.CONTRACTOR_BUILDING
+    ).order_by("org_code")
+    consultant_tenants = Organization.objects.filter(
+        contractor_type=Organization.CONTRACTOR_CONSULTANT
+    ).order_by("org_code")
+
+    portal_name = "Contractor Portal"
+    if mode == "tenant" and active_org:
+        portal_name = f"{active_org.short_name or active_org.name} Portal"
+
+    return {
+        "username": user.username,
+        "role": role,
+        "modules": modules,
+        "dashboard_mode": mode,
+        "portal_name": portal_name,
+        "contractor_label": contractor_label,
+        "is_platform_main_admin": mode == "platform",
+        "is_tenant_portal": mode == "tenant",
+        "pending_registrations": pending_regs,
+        "building_tenants": building_tenants,
+        "consultant_tenants": consultant_tenants,
+        "categories": UserCategory.objects.all(),
+        "analysis_categories": GLAnalysisCategory.objects.all(),
+        "role_options": [
+            {"id": c.id, "description": c.description}
+            for c in UserCategory.objects.all()
+        ],
+        "analysis_options": [
+            {"category_id": c.category_id, "description": c.description}
+            for c in GLAnalysisCategory.objects.all()
+        ],
+        "recon_progress": 84,
+        "organization_options": [
+            {
+                "org_code": o.org_code,
+                "name": o.name,
+                "short_name": o.short_name,
+            }
+            for o in Organization.objects.all().order_by("org_code")
+        ],
+        "can_switch_organization": _is_platform_main_admin(user),
+        "can_manage_tenants": can_manage_tenants(user),
+        "active_org_code": active_org.org_code if active_org else "",
+        "can_manage_users": user.is_superuser or can_manage_users(user),
+    }
+
+
 def home(request):
     """BuildWatch public landing — multi-tenant entry for building contractors and consultants."""
     if request.user.is_authenticated:
+        if _is_platform_main_admin(request.user):
+            return redirect("platform_admin")
         return redirect("dashboard")
 
     active_orgs = Organization.objects.filter(
@@ -323,7 +416,7 @@ def password_change_required(request):
 @login_required
 def resend_onboarding_email(request):
     from .emails import send_onboarding_email
-    from .roles import can_manage_users
+    from .roles import can_manage_users, can_manage_tenants
 
     if request.method != "POST":
         return HttpResponseForbidden("Method not allowed")
@@ -348,56 +441,42 @@ def android_rollout_plan_doc(request):
     return render(request, 'docs_android_rollout.html')
 
 @login_required
-def dashboard(request):
-    user = request.user
+def platform_admin(request):
+    """Global Main Admin — create, list, amend building contractors and approve registrations."""
+    if not _is_platform_main_admin(request.user):
+        messages.info(request, "Redirected to your organisation portal.")
+        return redirect("dashboard")
     try:
-        user_account = user.useraccount
-        role = user_account.access_level.description
-        modules = user_account.access_level.modules.all()
-    except Exception:
-        role = "Project Director"
-        modules = []
-
-    try:
-        active_org = get_active_organization(request)
-        contractor_label = "Building contractor"
-        if active_org:
-            contractor_label = active_org.get_contractor_type_display()
-        context = {
-            'username': user.username,
-            'role': role,
-            'modules': modules,
-            'contractor_label': contractor_label,
-            'is_buildwatch_dashboard': True,
-            'categories': UserCategory.objects.all(),
-            'analysis_categories': GLAnalysisCategory.objects.all(),
-            'role_options': [
-                {"id": c.id, "description": c.description}
-                for c in UserCategory.objects.all()
-            ],
-            'analysis_options': [
-                {"category_id": c.category_id, "description": c.description}
-                for c in GLAnalysisCategory.objects.all()
-            ],
-            'recon_progress': 84,
-            'organization_options': [
-                {
-                    "org_code": o.org_code,
-                    "name": o.name,
-                    "short_name": o.short_name,
-                }
-                for o in Organization.objects.all().order_by("org_code")
-            ],
-            'can_switch_organization': request.user.is_superuser,
-            'active_org_code': active_org.org_code if active_org else "",
-            'can_manage_users': request.user.is_superuser or can_manage_users(request.user),
-        }
-        return render(request, 'dashboard.html', context)
+        context = _build_dashboard_context(request, mode="platform")
+        return render(request, "dashboard.html", context)
     except Exception:
         return render(
             request,
-            'dashboard_unavailable.html',
-            {'username': user.username},
+            "dashboard_unavailable.html",
+            {"username": request.user.username},
+            status=503,
+        )
+
+
+@login_required
+def dashboard(request):
+    """Tenant contractor portal — Pioneer staff and other subscriber organisations."""
+    if _is_platform_main_admin(request.user):
+        return redirect("platform_admin")
+    user = request.user
+    if not _user_tenant_organization(user):
+        messages.warning(
+            request,
+            "Your account is not linked to a subscriber organisation. Contact the platform administrator.",
+        )
+    try:
+        context = _build_dashboard_context(request, mode="tenant")
+        return render(request, "dashboard.html", context)
+    except Exception:
+        return render(
+            request,
+            "dashboard_unavailable.html",
+            {"username": user.username},
             status=503,
         )
 
@@ -408,7 +487,7 @@ def switch_active_organization(request):
     """Platform admin: preview another client company on the shared service."""
     if request.method != "POST":
         return HttpResponseForbidden("Method not allowed")
-    if not request.user.is_superuser:
+    if not request.user.is_superuser and not can_manage_tenants(request.user):
         return JsonResponse(
             {"status": "error", "message": "Only platform administrators can switch companies."},
             status=403,
@@ -861,6 +940,11 @@ def unified_api_create(request, entity_type):
         return create_user(request)
 
     if entity_type == "app_settings":
+        if not _is_platform_main_admin(request.user):
+            return JsonResponse(
+                {"status": "error", "message": "Only platform Main Admin can change software setup."},
+                status=403,
+            )
         try:
             app = AppSettings.get()
             app.app_name = request.POST.get("app_name", app.app_name).strip()
@@ -893,6 +977,11 @@ def unified_api_create(request, entity_type):
     mode = request.POST.get("mode", "create")
     original_id = (request.POST.get("original_id") or "").strip()
     if entity_type == "organization":
+        if not _is_platform_main_admin(request.user):
+            return JsonResponse(
+                {"status": "error", "message": "Only platform Main Admin can manage building contractors."},
+                status=403,
+            )
         if not (request.POST.get("name") or "").strip():
             return JsonResponse(
                 {"status": "error", "message": "Company name is required."},
@@ -950,6 +1039,11 @@ def get_entity_list(request, entity_type):
         return JsonResponse({"status": "error", "message": "Invalid entity"}, status=400)
 
     meta = MASTER_ENTITY_META.get(entity_type, {"title": entity_type.title(), "columns": []})
+    if entity_type in ("organization", "app_settings") and not _is_platform_main_admin(request.user):
+        return JsonResponse(
+            {"status": "error", "message": "Only platform Main Admin can access this registry."},
+            status=403,
+        )
     if entity_type == "app_settings":
         data = [_serialize_master_row(entity_type, AppSettings.get())]
         return JsonResponse({
@@ -1143,7 +1237,7 @@ def _send_user_onboarding_invite(ua, request, invited_by):
 @login_required
 def create_user(request):
     from .emails import send_onboarding_email
-    from .roles import can_manage_users
+    from .roles import can_manage_users, can_manage_tenants
 
     if request.method != "POST":
         return HttpResponseForbidden("Method not allowed")
@@ -1637,13 +1731,13 @@ def buildwatch_register_pending(request):
 @login_required
 def approve_buildwatch_registration(request):
     """User Admin approves a pending self-service registration and sends onboarding email."""
-    from .roles import can_manage_users, get_user_account
+    from .roles import can_manage_users, can_manage_tenants, get_user_account
 
     if request.method != "POST":
         return HttpResponseForbidden("Method not allowed")
-    if not can_manage_users(request.user):
+    if not can_manage_tenants(request.user):
         return JsonResponse(
-            {"status": "error", "message": "Only User Admin can approve registrations."},
+            {"status": "error", "message": "Only platform Main Admin can approve registrations."},
             status=403,
         )
 

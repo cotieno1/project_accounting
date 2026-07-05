@@ -1360,3 +1360,75 @@ html.command-center-root {
         transform: none;
     }
 }
+
+/* BuildWatch platform admin — building contractor tenants */
+.command-center .platform-panel {
+    background: var(--surface-elevated, #fff);
+    border: 1px solid var(--border-subtle, #e2e8f0);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+
+.command-center .platform-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.command-center .platform-panel-head h3 {
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+}
+
+.command-center .platform-panel-head p {
+    margin: 0;
+    color: var(--text-muted, #64748b);
+    font-size: 0.9rem;
+    max-width: 52ch;
+}
+
+.command-center .platform-panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.command-center .platform-tenant-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.command-center .platform-tenant-table th,
+.command-center .platform-tenant-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.command-center .platform-tenant-table th {
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.command-center .platform-tenant-table tr.tenant-row--featured {
+    background: rgba(59, 130, 246, 0.06);
+}
+
+.command-center .platform-pending {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.command-center .platform-pending h4 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+}
