@@ -225,10 +225,36 @@ html.command-center-root {
     min-width: 0;
 }
 
+/* Header action controls — one sizing source for setup + logout */
+.command-center {
+    --header-control-height: 40px;
+    --header-control-padding-x: 16px;
+    --header-control-radius: var(--radius-sm, 6px);
+}
+
+.command-center .header-control-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: var(--header-control-height);
+    height: var(--header-control-height);
+    padding: 0 var(--header-control-padding-x);
+    border-radius: var(--header-control-radius);
+    font-size: var(--font-sm);
+    font-weight: 800;
+    font-family: inherit;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
 .command-center .user-info {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
     gap: 2px;
     font-size: var(--font-sm);
     color: var(--text);
@@ -256,14 +282,6 @@ html.command-center-root {
     background: rgba(239, 68, 68, 0.12);
     border: 1px solid rgba(239, 68, 68, 0.45);
     color: #fecaca;
-    font-size: var(--font-sm);
-    font-weight: 800;
-    padding: 10px 16px;
-    border-radius: var(--radius-sm, 6px);
-    cursor: pointer;
-    font-family: inherit;
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-    white-space: nowrap;
 }
 
 .command-center .logout-btn:hover {
@@ -552,15 +570,7 @@ html.command-center-root {
     background: linear-gradient(180deg, var(--surface-gradient-start) 0%, var(--surface-gradient-end) 100%);
     border: 1px solid var(--border);
     color: var(--text-strong);
-    padding: 12px 18px;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    font-size: var(--font-sm);
     letter-spacing: 0.01em;
-    white-space: normal;
-    text-align: left;
-    max-width: 100%;
 }
 
 .command-center .setup-btn:hover {
@@ -1157,14 +1167,16 @@ html.command-center-root {
         border-radius: 10px;
         background: rgba(15, 23, 42, 0.65);
         border: 1px solid rgba(51, 65, 85, 0.55);
+        align-items: center;
+        text-align: center;
     }
 
-    .command-center .setup-btn {
+    .command-center {
+        --header-control-height: 44px;
+    }
+
+    .command-center .header-control-btn {
         width: 100%;
-        text-align: center;
-        padding: 12px 14px;
-        font-size: 13px;
-        border-radius: 10px;
     }
 
     .command-center .setup-dropdown {
@@ -1173,14 +1185,6 @@ html.command-center-root {
         max-height: 50vh;
         margin-top: 8px;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    }
-
-    .command-center .logout-btn {
-        width: 100%;
-        font-size: 14px;
-        padding: 12px 14px;
-        min-height: 44px;
-        border-radius: 10px;
     }
 
     .command-center .header-meta {
