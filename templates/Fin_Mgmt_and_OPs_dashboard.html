@@ -3,7 +3,7 @@
 {% block title %}Pioneer | Financial Ops & Supply Chain{% endblock %}
 {% block body_class %}ops-dashboard{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/fin-mgmt-ops-dashboard.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/fin-mgmt-ops-dashboard.css' %}?v=3">
 {% endblock %}
 {% block sidebar %}
     <div class="sidebar-brand ops-brand">
@@ -196,6 +196,7 @@
     var storageKey = 'ops-dashboard-nav-open';
     var defaultOpen = 'field';
     var sections = document.querySelectorAll('.ops-dashboard .nav-section--collapsible');
+    var isMobileNav = window.matchMedia('(max-width: 768px)').matches;
 
     function readOpenId() {
         try {
@@ -231,7 +232,17 @@
         writeOpenId(id);
     }
 
-    openOnly(readOpenId());
+    function openAll() {
+        sections.forEach(function (section) {
+            setOpen(section, true);
+        });
+    }
+
+    if (window.matchMedia('(max-width: 768px)').matches) {
+        openAll();
+    } else {
+        openOnly(readOpenId());
+    }
 
     sections.forEach(function (section) {
         var id = section.getAttribute('data-ops-nav');

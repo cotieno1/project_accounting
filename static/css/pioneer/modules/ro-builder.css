@@ -184,16 +184,11 @@ body.ro-builder .ro-modal-field label {
     }
 
     body.ro-builder .sidebar .ro-sidebar-actions {
-        display: none;
+        display: block;
     }
 
     body.ro-builder .ro-workspace-actions {
-        display: block;
-        margin-bottom: 0;
-    }
-
-    body.ro-builder .ro-workspace-actions .nav-label {
-        margin-bottom: 12px;
+        display: none;
     }
 
     body.ro-builder .ro-action-list {
