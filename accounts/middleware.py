@@ -3,9 +3,12 @@ from django.urls import reverse
 
 
 class MustChangePasswordMiddleware:
+    """Redirect authenticated users who must complete onboarding password setup."""
+
     EXEMPT_PREFIXES = (
         "/logout/",
         "/login/",
+        "/register/",
         "/accounts/set-password/",
         "/accounts/resend-onboarding/",
         "/health/",
@@ -20,7 +23,8 @@ class MustChangePasswordMiddleware:
             path = request.path
             if not any(path.startswith(p) for p in self.EXEMPT_PREFIXES):
                 try:
-                    if request.user.useraccount.must_change_password:
+                    ua = request.user.useraccount
+                    if ua.must_change_password:
                         return redirect(reverse("password_change_required"))
                 except Exception:
                     pass

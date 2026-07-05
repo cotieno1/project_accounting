@@ -163,6 +163,35 @@ class UserAccount(models.Model):
         default="",
         help_text="Last onboarding email failure message, if any.",
     )
+    org_terms_accepted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the user accepted platform and subscriber terms of service.",
+    )
+    professional_reg_no = models.CharField(
+        max_length=80,
+        blank=True,
+        default="",
+        help_text="Professional / contractor licence number (NCA, EBK, etc.).",
+    )
+    licence_body = models.CharField(
+        max_length=40,
+        blank=True,
+        default="",
+        help_text="Licensing body code from registration (NCA, EBK, IQSK, etc.).",
+    )
+    licence_expiry = models.DateField(null=True, blank=True)
+    licence_class = models.CharField(max_length=40, blank=True, default="")
+    buildwatch_role = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text="Primary BuildWatch role selected at registration (QS, ENGINEER, CONTRACTOR, …).",
+    )
+    registration_pending_review = models.BooleanField(
+        default=False,
+        help_text="True until User Admin approves a self-service registration.",
+    )
     control_gl_account = models.ForeignKey(
         "GLAccount",
         on_delete=models.SET_NULL,
@@ -228,6 +257,23 @@ class AppSettings(models.Model):
 
 class Organization(models.Model):
     """Client company on the Project Accounting platform (Pioneer, Company B, etc.)."""
+
+    CONTRACTOR_BUILDING = "BUILDING"
+    CONTRACTOR_ROADS = "ROADS"
+    CONTRACTOR_CONSULTANT = "CONSULTANT"
+    CONTRACTOR_TYPE_CHOICES = [
+        (CONTRACTOR_BUILDING, "Building contractor"),
+        (CONTRACTOR_ROADS, "Roads contractor"),
+        (CONTRACTOR_CONSULTANT, "Consultant"),
+    ]
+
+    STATUS_PENDING = "PENDING"
+    STATUS_ACTIVE = "ACTIVE"
+    REGISTRATION_STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending confirmation"),
+        (STATUS_ACTIVE, "Active"),
+    ]
+
     org_code = models.CharField(max_length=30, primary_key=True)
     name = models.CharField(
         max_length=200,
@@ -250,10 +296,40 @@ class Organization(models.Model):
     document_tagline = models.CharField(
         max_length=200, blank=True, default="Operations Command"
     )
+    contractor_type = models.CharField(
+        max_length=20,
+        choices=CONTRACTOR_TYPE_CHOICES,
+        default=CONTRACTOR_BUILDING,
+        help_text="Primary contractor category for onboarding and document defaults.",
+    )
+    organization_type = models.CharField(
+        max_length=30,
+        blank=True,
+        default="",
+        help_text="BuildWatch registration org type (CONTRACTOR, CONSULTANT, GOV_COUNTY, etc.).",
+    )
+    registration_status = models.CharField(
+        max_length=20,
+        choices=REGISTRATION_STATUS_CHOICES,
+        default=STATUS_ACTIVE,
+        help_text="Pending until platform admin approves a new subscriber registration.",
+    )
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    terms_accepted_by = models.ForeignKey(
+        "UserAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="confirmed_organizations",
+    )
     is_default = models.BooleanField(
         default=False,
         help_text="Platform fallback when a user has no company assigned.",
     )
+
+    @property
+    def is_registration_pending(self):
+        return self.registration_status == self.STATUS_PENDING
 
     class Meta:
         ordering = ["org_code"]

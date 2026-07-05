@@ -19,7 +19,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.forms.models import model_to_dict
 from django.db.models import Sum, F, Count, Q
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from collections import defaultdict
 
 # SINGLE UNIFIED IMPORT BLOCK - All models imported exactly once
@@ -621,6 +621,9 @@ MASTER_ENTITY_META = {
         "columns": [
             ("org_code", "Code"),
             ("name", "Company Name"),
+            ("short_name", "Short Name"),
+            ("contractor_type", "Contractor Type"),
+            ("registration_status", "Registration"),
             ("contact_address", "Contact Address"),
             ("phone", "Phone"),
             ("email", "Email"),
@@ -741,6 +744,8 @@ def _serialize_master_row(entity_type, obj):
             "org_code": obj.org_code,
             "name": obj.name,
             "short_name": obj.short_name,
+            "contractor_type": obj.get_contractor_type_display(),
+            "registration_status": obj.get_registration_status_display(),
             "contact_address": addr,
             "phone": obj.phone or "—",
             "email": obj.email or "—",
@@ -1352,6 +1357,313 @@ def supplier_lookup(request):
         return JsonResponse(results, safe=False)
         
     return JsonResponse([], safe=False)
+
+
+# =======================================================================
+# BUILDWATCH — BUILDING CONTRACTOR ONBOARDING (self-service registration)
+# =======================================================================
+
+BUILDWATCH_ROLE_TO_CATEGORY = {
+    "QS": "SENIOR_SITE_MANAGER",
+    "ENGINEER": "SENIOR_SITE_MANAGER",
+    "INSPECTOR": "SENIOR_SITE_MANAGER",
+    "CLIENT": "GENERAL_MANAGER",
+    "CONTRACTOR": "SENIOR_SITE_MANAGER",
+    "FINANCE": "GENERAL_MANAGER",
+}
+
+ORG_TYPE_TO_CONTRACTOR = {
+    "CONTRACTOR": Organization.CONTRACTOR_BUILDING,
+    "CONSULTANT": Organization.CONTRACTOR_CONSULTANT,
+    "GOV_NATIONAL": Organization.CONTRACTOR_ROADS,
+    "GOV_COUNTY": Organization.CONTRACTOR_ROADS,
+    "PARASTATAL": Organization.CONTRACTOR_ROADS,
+    "DEVELOPER": Organization.CONTRACTOR_BUILDING,
+    "FINANCIER": Organization.CONTRACTOR_BUILDING,
+    "NGO": Organization.CONTRACTOR_BUILDING,
+    "OTHER": Organization.CONTRACTOR_BUILDING,
+}
+
+
+def _buildwatch_org_code(org_short):
+    code = re.sub(r"[^A-Z0-9]", "", (org_short or "").upper())[:30]
+    return code or "ORG"
+
+
+def _buildwatch_unique_org_code(base_code):
+    org_code = base_code
+    suffix = 1
+    while Organization.objects.filter(org_code=org_code).exists():
+        org_code = f"{base_code[:27]}{suffix}"
+        suffix += 1
+    return org_code
+
+
+def _buildwatch_contractor_type(org_type):
+    return ORG_TYPE_TO_CONTRACTOR.get(org_type, Organization.CONTRACTOR_BUILDING)
+
+
+def _buildwatch_access_level(buildwatch_role):
+    from .roles import SENIOR_SITE_MANAGER
+
+    code = BUILDWATCH_ROLE_TO_CATEGORY.get(buildwatch_role, SENIOR_SITE_MANAGER)
+    return UserCategory.objects.filter(code=code).first()
+
+
+def _buildwatch_register_context(request, post=None):
+    from .models import AppSettings
+
+    app = AppSettings.get()
+    pioneer = Organization.objects.filter(org_code="PIONEER").first()
+    post_data = dict(post or {})
+    return {
+        "post": post_data,
+        "prefill_json": json.dumps(post_data),
+        "app_name": app.app_name,
+        "app_short_name": app.app_short_name,
+        "pioneer_org": pioneer,
+    }
+
+
+@transaction.atomic
+def buildwatch_register(request):
+    """
+    Self-service registration for building contractors (Pioneer and peers).
+    Creates a pending Organization + UserAccount, or joins an active org (e.g. Pioneer).
+    """
+    if request.method == "GET":
+        ctx = _buildwatch_register_context(request)
+        prefill = (request.GET.get("org") or "").strip().upper()
+        if prefill == "PIONEER" and ctx.get("pioneer_org"):
+            po = ctx["pioneer_org"]
+            ctx["post"] = {
+                "org_name": po.name,
+                "org_short": po.short_name,
+                "org_type": "CONTRACTOR",
+                "org_country": "KE",
+            }
+        return render(request, "buildwatch_register.html", ctx)
+
+    p = request.POST
+    org_name = (p.get("org_name") or "").strip()
+    org_short = (p.get("org_short") or "").strip()
+    org_type = (p.get("org_type") or "").strip()
+    org_country = (p.get("org_country") or "KE").strip()
+    org_county = (p.get("org_county") or "").strip()
+    org_pin = (p.get("org_pin") or "").strip()
+    org_phone = (p.get("org_phone") or "").strip()
+    org_address = (p.get("org_address") or "").strip()
+
+    user_first = (p.get("user_first") or "").strip()
+    user_last = (p.get("user_last") or "").strip()
+    user_email = (p.get("user_email") or "").strip().lower()
+    user_phone = (p.get("user_phone") or "").strip()
+    user_designation = (p.get("user_designation") or "").strip()
+    buildwatch_role = (p.get("buildwatch_role") or "").strip()
+
+    licence_body = (p.get("licence_body") or "").strip()
+    licence_no = (p.get("licence_no") or "").strip()
+    licence_expiry_raw = (p.get("licence_expiry") or "").strip()
+    licence_class = (p.get("licence_class") or "").strip()
+    staff_no = (p.get("staff_no") or "").strip()
+    tos_agreed = p.get("tos_agreed", "0")
+
+    licence_expiry = None
+    if licence_expiry_raw:
+        try:
+            licence_expiry = date.fromisoformat(licence_expiry_raw)
+        except ValueError:
+            pass
+
+    errors = []
+    if not org_name:
+        errors.append("Organisation name is required.")
+    if not org_short:
+        errors.append("Short name is required.")
+    if not org_type:
+        errors.append("Organisation type is required.")
+    if not user_first:
+        errors.append("First name is required.")
+    if not user_last:
+        errors.append("Last name is required.")
+    if not user_email or "@" not in user_email:
+        errors.append("A valid email address is required.")
+    if not user_phone:
+        errors.append("Mobile number is required.")
+    if not buildwatch_role:
+        errors.append("Please select your role.")
+    if not licence_body:
+        errors.append("Please select your licensing body.")
+    if tos_agreed != "1":
+        errors.append("You must agree to the Terms of Use.")
+    if UserAccount.objects.filter(email__iexact=user_email).exists():
+        errors.append("An account with this email is already registered.")
+
+    if errors:
+        for msg in errors:
+            messages.error(request, msg)
+        return render(request, "buildwatch_register.html", _buildwatch_register_context(request, p))
+
+    base_code = _buildwatch_org_code(org_short)
+    existing_org = Organization.objects.filter(org_code=base_code).first()
+    org_created = False
+    auto_activate_user = False
+
+    if existing_org:
+        if existing_org.is_registration_pending:
+            messages.error(
+                request,
+                f"{existing_org.short_name} registration is already pending review. "
+                "Contact your platform administrator.",
+            )
+            return render(request, "buildwatch_register.html", _buildwatch_register_context(request, p))
+        org = existing_org
+        auto_activate_user = org.registration_status == Organization.STATUS_ACTIVE
+    else:
+        org_code = _buildwatch_unique_org_code(base_code)
+        org = Organization.objects.create(
+            org_code=org_code,
+            name=org_name,
+            short_name=org_short,
+            contact_address=f"{org_county}, {org_country}" if org_county else org_country,
+            registered_address=org_address,
+            phone=org_phone,
+            email=user_email,
+            tax_pin=org_pin,
+            document_tagline=f"{org_type} — {org_county or org_country}",
+            contractor_type=_buildwatch_contractor_type(org_type),
+            organization_type=org_type,
+            registration_status=Organization.STATUS_PENDING,
+            is_default=False,
+        )
+        org_created = True
+
+    if not staff_no:
+        staff_no = f"BW-{UserAccount.objects.count() + 1:05d}"
+    while UserAccount.objects.filter(staff_no=staff_no).exists():
+        staff_no = f"BW-{UserAccount.objects.count() + 1:05d}"
+
+    now = timezone.now()
+    account = UserAccount.objects.create(
+        user=None,
+        staff_no=staff_no,
+        first_name=user_first,
+        last_name=user_last,
+        designation=user_designation or buildwatch_role,
+        contact_address=org_county or org_country,
+        phone=user_phone,
+        email=user_email,
+        access_level=_buildwatch_access_level(buildwatch_role),
+        organization=org,
+        must_change_password=True,
+        org_terms_accepted_at=now,
+        professional_reg_no=licence_no,
+        licence_body=licence_body,
+        licence_expiry=licence_expiry,
+        licence_class=licence_class,
+        buildwatch_role=buildwatch_role,
+        registration_pending_review=not auto_activate_user,
+    )
+
+    invite_sent = False
+    invite_error = ""
+    if auto_activate_user:
+        try:
+            _send_user_onboarding_invite(account, request, invited_by=None)
+            invite_sent = True
+        except ValueError as exc:
+            invite_error = str(exc)
+
+    request.session["bw_reg_name"] = f"{user_first} {user_last}"
+    request.session["bw_reg_email"] = user_email
+    request.session["bw_reg_org"] = org.name
+    request.session["bw_reg_role"] = buildwatch_role
+    request.session["bw_reg_staff_no"] = staff_no
+    request.session["bw_reg_auto_activated"] = auto_activate_user and invite_sent
+    request.session["bw_reg_org_created"] = org_created
+    request.session["bw_reg_invite_error"] = invite_error
+
+    return redirect("buildwatch-register-pending")
+
+
+def buildwatch_register_pending(request):
+    """Post-registration page — pending review or activation email sent."""
+    context = {
+        "name": request.session.get("bw_reg_name", "Applicant"),
+        "email": request.session.get("bw_reg_email", ""),
+        "org": request.session.get("bw_reg_org", ""),
+        "role": request.session.get("bw_reg_role", ""),
+        "staff_no": request.session.get("bw_reg_staff_no", ""),
+        "auto_activated": request.session.get("bw_reg_auto_activated", False),
+        "org_created": request.session.get("bw_reg_org_created", False),
+        "invite_error": request.session.get("bw_reg_invite_error", ""),
+    }
+    return render(request, "buildwatch_register_pending.html", context)
+
+
+@login_required
+def approve_buildwatch_registration(request):
+    """User Admin approves a pending self-service registration and sends onboarding email."""
+    from .roles import can_manage_users, get_user_account
+
+    if request.method != "POST":
+        return HttpResponseForbidden("Method not allowed")
+    if not can_manage_users(request.user):
+        return JsonResponse(
+            {"status": "error", "message": "Only User Admin can approve registrations."},
+            status=403,
+        )
+
+    ref = (request.POST.get("email") or request.POST.get("staff_no") or "").strip()
+    if not ref:
+        return JsonResponse(
+            {"status": "error", "message": "Provide email or staff number."},
+            status=400,
+        )
+
+    ua = (
+        UserAccount.objects.select_related("organization")
+        .filter(registration_pending_review=True)
+        .filter(Q(email__iexact=ref) | Q(staff_no__iexact=ref))
+        .first()
+    )
+    if not ua:
+        return JsonResponse(
+            {"status": "error", "message": "No pending registration found for that reference."},
+            status=404,
+        )
+
+    org = ua.organization
+    if not org:
+        return JsonResponse(
+            {"status": "error", "message": "Registration has no linked organisation."},
+            status=400,
+        )
+
+    now = timezone.now()
+    admin_ua = get_user_account(request.user)
+    if org.is_registration_pending:
+        org.registration_status = Organization.STATUS_ACTIVE
+        org.terms_accepted_at = now
+        if admin_ua:
+            org.terms_accepted_by = admin_ua
+        org.save()
+
+    ua.registration_pending_review = False
+    ua.save(update_fields=["registration_pending_review"])
+
+    try:
+        _send_user_onboarding_invite(ua, request, invited_by=request.user)
+    except ValueError as exc:
+        return JsonResponse({"status": "error", "message": str(exc)}, status=400)
+
+    return JsonResponse({
+        "status": "success",
+        "message": f"Registration approved. Onboarding email sent to {ua.email}.",
+        "organization": org.org_code,
+        "staff_no": ua.staff_no,
+    })
+
 
 # =======================================================================
 # 📝 REQUISITION ORDER (RO) & STRATEGIC BOM ENGINES

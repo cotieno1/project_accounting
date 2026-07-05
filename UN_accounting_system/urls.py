@@ -38,6 +38,9 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    path('register/', views.buildwatch_register, name='buildwatch-register'),
+    path('register/pending/', views.buildwatch_register_pending, name='buildwatch-register-pending'),
+    path('api/approve-registration/', views.approve_buildwatch_registration, name='approve_buildwatch_registration'),
     path(
         'accounts/set-password/<uidb64>/<token>/',
         views.set_password_onboarding,

@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildWatch — Registration Received</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1B3A5C;--teal:#1A7A6E;--blue:#2E6DA4;
+  --ink:#0F1F33;--mid:#8096AE;--rule:#D4DDE8;
+  --cloud:#F7F9FC;--mist:#EEF3F8;--white:#FFFFFF;
+}
+html,body{min-height:100vh;font-family:'DM Sans',sans-serif;background:var(--cloud);color:var(--ink);-webkit-font-smoothing:antialiased;display:grid;place-content:center;padding:32px 20px}
+.card{background:var(--white);border:1px solid var(--rule);border-radius:16px;padding:48px 40px;max-width:520px;width:100%;text-align:center;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--navy),var(--teal))}
+
+/* Animated check */
+.check-wrap{width:72px;height:72px;border-radius:50%;background:#E5F2F0;margin:0 auto 28px;display:grid;place-content:center;animation:pop .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.check-wrap svg{width:36px;height:36px;stroke:var(--teal);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;fill:none;stroke-dasharray:60;stroke-dashoffset:60;animation:draw .5s .3s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+.badge{display:inline-block;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);background:#E5F2F0;padding:4px 12px;border-radius:20px;margin-bottom:16px}
+
+h1{font-size:1.6rem;font-weight:600;color:var(--navy);letter-spacing:-.03em;margin-bottom:12px}
+
+.sub{font-size:.92rem;color:var(--mid);line-height:1.6;margin-bottom:28px}
+
+/* Detail strip */
+.detail-strip{background:var(--mist);border:1px solid var(--rule);border-radius:10px;padding:20px;margin-bottom:28px;text-align:left}
+.detail-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--rule);font-size:.82rem;gap:12px}
+.detail-row:last-child{border-bottom:none}
+.detail-key{color:var(--mid);font-weight:500;flex-shrink:0}
+.detail-val{color:var(--navy);font-weight:600;text-align:right}
+
+/* Steps */
+.next-steps{text-align:left;margin-bottom:28px}
+.next-steps h2{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);margin-bottom:14px}
+.step-item{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:white;font-size:.72rem;font-weight:600;display:grid;place-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:.82rem;color:var(--ink);line-height:1.5}
+.step-text strong{color:var(--navy)}
+
+.divider{height:1px;background:var(--rule);margin:20px 0}
+
+.footer-note{font-size:.75rem;color:var(--mid);line-height:1.6}
+.footer-note a{color:var(--blue)}
+
+/* Branding */
+.bw-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px}
+.bw-mark{width:36px;height:36px;background:var(--teal);border-radius:8px;display:grid;place-content:center}
+.bw-mark svg{width:18px;height:18px;stroke:white;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.bw-name{font-size:1rem;font-weight:600;color:var(--navy);letter-spacing:-.02em}
+
+@media(max-width:480px){.card{padding:32px 20px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="bw-logo">
+    <div class="bw-mark">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div class="bw-name">BuildWatch</div>
+  </div>
+
+  <div class="check-wrap">
+    <svg viewBox="0 0 48 48"><polyline points="10,26 20,36 38,16"/></svg>
+  </div>
+
+  <div class="badge">{% if auto_activated %}Activation email sent{% else %}Registration received{% endif %}</div>
+
+  <h1>{% if auto_activated %}Check your inbox,<br>{% else %}You're in the queue,<br>{% endif %}{{ name|default:"Applicant" }}</h1>
+
+  <p class="sub">
+    {% if auto_activated %}
+    Your account is linked to <strong>{{ org }}</strong>. We sent an activation email to <strong>{{ email }}</strong> — use the link to set your password and sign in.
+    {% elif invite_error %}
+    Your registration was saved for <strong>{{ org }}</strong>, but we could not send the activation email automatically. Contact your platform administrator with reference <strong>{{ staff_no }}</strong>.
+    {% else %}
+    Your registration has been received and is pending review. You'll receive an activation email at <strong>{{ email }}</strong> once a platform administrator approves your organisation.
+    {% endif %}
+  </p>
+
+  <div class="detail-strip">
+    <div class="detail-row">
+      <span class="detail-key">Organisation</span>
+      <span class="detail-val">{{ org }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">Role</span>
+      <span class="detail-val">
+        {% if role == 'QS' %}Quantity Surveyor
+        {% elif role == 'ENGINEER' %}Consulting Engineer
+        {% elif role == 'INSPECTOR' %}Site Inspector / Clerk of Works
+        {% elif role == 'CLIENT' %}Client Representative
+        {% elif role == 'CONTRACTOR' %}Contractor
+        {% elif role == 'FINANCE' %}Finance / Accounts
+        {% else %}{{ role }}{% endif %}
+      </span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">Reference</span>
+      <span class="detail-val">{{ staff_no }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">Email sent to</span>
+      <span class="detail-val">{{ email }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">Status</span>
+      <span class="detail-val" style="color:var(--teal)">{% if auto_activated %}Activation email sent{% else %}Pending review{% endif %}</span>
+    </div>
+  </div>
+
+  <div class="next-steps">
+    <h2>What happens next</h2>
+    <div class="step-item">
+      <div class="step-num">1</div>
+      <div class="step-text"><strong>Account review</strong> — the BuildWatch team verifies your professional registration number against the licensing body's register. This takes up to one working day.</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">2</div>
+      <div class="step-text"><strong>Activation email</strong> — once approved, you'll receive an email with a link to set your password and activate your account.</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>First project</strong> — after activation, your organisation administrator assigns you to your first project. Every action you take is recorded against your professional registration number.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p class="footer-note">
+    Didn't receive the email? Check your spam folder or contact your platform administrator.<br>
+    Registration reference: <strong>{{ staff_no|default:email }}</strong> — keep this for your records.<br>
+    <a href="/login/">Return to sign in</a>
+  </p>
+</div>
+
+</body>
+</html>

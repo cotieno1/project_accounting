@@ -33,6 +33,7 @@
                         <div class="setup-item"><div><strong>Software Setup</strong><small>{{ app_name }} product branding</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openSingleton('app_settings')">Configure</button></div></div>
                         <div class="setup-item"><div><strong>Subscriber Organizations</strong><small>Register each SaaS tenant on the platform (Pioneer, B, C…)</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('organization')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('organization')">List</button></div></div>
                         <div class="setup-item"><div><strong>User Accounts</strong><small>Staff login &amp; roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('user')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('user')">List</button></div></div>
+                        <div class="setup-item"><div><strong>Approve registration</strong><small>Self-service BuildWatch / contractor signup</small></div><div class="setup-item-actions"><input type="text" id="approveRegRef" placeholder="Email or staff no" style="max-width:160px;margin-right:8px;"><button type="button" class="setup-link setup-link-primary" onclick="approveRegistration()">Approve</button></div></div>
                         <div class="setup-item"><div><strong>User Categories</strong><small>Access roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('role')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('role')">List</button></div></div>
                         <div class="setup-item"><div><strong>Bank Accounts</strong><small>Treasury sources</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('bank')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('bank')">List</button></div></div>
                         <div class="setup-item"><div><strong>Supplier Accounts</strong><small>Vendor master</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('supplier')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('supplier')">List</button></div></div>
@@ -296,6 +297,19 @@ const MasterRegistry = (function () {
     let rows = [], cols = [], roles = [], analysis = [], organizations = [];
     var canManageUsers = true;
     function csrf() { const e = document.querySelector("[name=csrfmiddlewaretoken]"); return e ? e.value : ""; }
+    function approveRegistration() {
+        var ref = (document.getElementById("approveRegRef") || {}).value || "";
+        ref = ref.trim();
+        if (!ref) { alert("Enter the applicant email or staff number."); return; }
+        var fd = new FormData();
+        fd.append("email", ref);
+        fetch("/api/approve-registration/", { method: "POST", body: fd, headers: { "X-CSRFToken": csrf() } })
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+                alert(data.message || (data.status === "success" ? "Approved." : "Could not approve."));
+            })
+            .catch(function(){ alert("Approval request failed."); });
+    }
     function toast(m, t) { const b = document.getElementById("masterToast"); b.textContent = m; b.className = "master-toast master-toast-" + (t||"success") + " master-toast-show"; clearTimeout(b._t); b._t = setTimeout(function(){b.classList.remove("master-toast-show");}, 3500); }
     function esc(s) { return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
     function loadOpts() {

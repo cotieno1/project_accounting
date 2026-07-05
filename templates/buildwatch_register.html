@@ -1,0 +1,1519 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildWatch — Register Your Organisation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:    #1B3A5C;
+  --blue:    #2E6DA4;
+  --teal:    #1A7A6E;
+  --amber:   #C07A00;
+  --green:   #1E7A3E;
+  --red:     #B03030;
+  --ink:     #0F1F33;
+  --mist:    #EEF3F8;
+  --cloud:   #F7F9FC;
+  --rule:    #D4DDE8;
+  --mid:     #8096AE;
+  --white:   #FFFFFF;
+
+  --step-done:    var(--teal);
+  --step-active:  var(--navy);
+  --step-idle:    var(--rule);
+
+  --font-body:    'DM Sans', sans-serif;
+  --font-mono:    'DM Mono', monospace;
+
+  --radius:   6px;
+  --radius-lg:12px;
+  --shadow:   0 2px 12px rgba(27,58,92,.10);
+  --shadow-lg:0 8px 32px rgba(27,58,92,.14);
+}
+
+html, body {
+  min-height: 100vh;
+  font-family: var(--font-body);
+  background: var(--cloud);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout Shell ─────────────────────────────────────────────────────────── */
+.bw-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+}
+
+@media (max-width: 900px) {
+  .bw-shell { grid-template-columns: 1fr; }
+}
+
+/* ── Left Panel ───────────────────────────────────────────────────────────── */
+.bw-panel {
+  background: var(--navy);
+  color: var(--white);
+  padding: 48px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
+}
+
+@media (max-width: 900px) {
+  .bw-panel {
+    position: static;
+    min-height: auto;
+    padding: 32px 24px 24px;
+    gap: 28px;
+  }
+}
+
+.bw-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bw-logo__mark {
+  width: 40px;
+  height: 40px;
+  background: var(--teal);
+  border-radius: var(--radius);
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+}
+
+.bw-logo__mark svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: white;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bw-logo__name {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  color: white;
+}
+
+.bw-logo__tag {
+  font-size: .7rem;
+  font-family: var(--font-mono);
+  color: rgba(255,255,255,.45);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+/* ── Progress Steps (left panel) ─────────────────────────────────────────── */
+.bw-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+@media (max-width: 900px) {
+  .bw-steps {
+    flex-direction: row;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+}
+
+.bw-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 32px;
+}
+
+@media (max-width: 900px) {
+  .bw-step {
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 0;
+    padding-right: 24px;
+    min-width: 90px;
+    gap: 8px;
+  }
+}
+
+.bw-step:last-child { padding-bottom: 0; }
+
+/* Vertical connector line */
+.bw-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  width: 2px;
+  height: calc(100% - 40px);
+  background: rgba(255,255,255,.15);
+}
+
+@media (max-width: 900px) {
+  .bw-step:not(:last-child)::after {
+    left: calc(100% - 12px);
+    top: 19px;
+    width: calc(100% - 40px);
+    height: 2px;
+  }
+}
+
+.bw-step--done:not(:last-child)::after,
+.bw-step--active:not(:last-child)::after {
+  background: var(--teal);
+}
+
+.bw-step__dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.2);
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: .85rem;
+  color: rgba(255,255,255,.4);
+  background: transparent;
+  transition: all .25s;
+  position: relative;
+  z-index: 1;
+}
+
+.bw-step--done .bw-step__dot {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: white;
+}
+
+.bw-step--active .bw-step__dot {
+  background: white;
+  border-color: white;
+  color: var(--navy);
+}
+
+.bw-step__info { padding-top: 8px; }
+
+@media (max-width: 900px) {
+  .bw-step__info { padding-top: 0; text-align: center; }
+}
+
+.bw-step__label {
+  font-size: .8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.bw-step--done .bw-step__label,
+.bw-step--active .bw-step__label { color: white; }
+
+.bw-step__desc {
+  font-size: .78rem;
+  color: rgba(255,255,255,.35);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) { .bw-step__desc { display: none; } }
+
+.bw-step--active .bw-step__desc { color: rgba(255,255,255,.6); }
+
+/* ── Panel Footer ─────────────────────────────────────────────────────────── */
+.bw-panel__footer {
+  margin-top: auto;
+  font-size: .75rem;
+  color: rgba(255,255,255,.3);
+  line-height: 1.6;
+}
+
+.bw-panel__footer a { color: rgba(255,255,255,.5); }
+
+@media (max-width: 900px) { .bw-panel__footer { display: none; } }
+
+/* ── Right: Form Area ─────────────────────────────────────────────────────── */
+.bw-main {
+  padding: 60px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 700px;
+}
+
+@media (max-width: 900px) { .bw-main { padding: 32px 20px; } }
+
+/* Step header */
+.bw-form-header { margin-bottom: 36px; }
+
+.bw-form-header__eyebrow {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 8px;
+}
+
+.bw-form-header__title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--navy);
+  letter-spacing: -.03em;
+  line-height: 1.2;
+}
+
+.bw-form-header__sub {
+  margin-top: 10px;
+  font-size: .92rem;
+  color: var(--mid);
+  line-height: 1.55;
+}
+
+/* Form steps visibility */
+.bw-step-form { display: none; }
+.bw-step-form.active { display: block; }
+
+/* ── Field Groups ─────────────────────────────────────────────────────────── */
+.bw-field { margin-bottom: 22px; }
+
+.bw-label {
+  display: block;
+  font-size: .83rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 6px;
+  letter-spacing: -.01em;
+}
+
+.bw-label .bw-req {
+  color: var(--teal);
+  margin-left: 2px;
+}
+
+.bw-hint {
+  font-size: .75rem;
+  color: var(--mid);
+  margin-bottom: 6px;
+  font-weight: 400;
+}
+
+.bw-input,
+.bw-select,
+.bw-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: .92rem;
+  color: var(--ink);
+  background: white;
+  transition: border-color .18s, box-shadow .18s;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.bw-input:focus,
+.bw-select:focus,
+.bw-textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(46,109,164,.12);
+}
+
+.bw-input.error,
+.bw-select.error { border-color: var(--red); }
+
+.bw-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238096AE' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.bw-textarea { resize: vertical; min-height: 90px; }
+
+.bw-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) { .bw-field-row { grid-template-columns: 1fr; } }
+
+.bw-error-msg {
+  font-size: .75rem;
+  color: var(--red);
+  margin-top: 4px;
+  display: none;
+}
+
+.bw-error-msg.visible { display: block; }
+
+/* ── Role Cards ───────────────────────────────────────────────────────────── */
+.bw-role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+@media (max-width: 560px) { .bw-role-grid { grid-template-columns: 1fr; } }
+
+.bw-role-card {
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px;
+  cursor: pointer;
+  transition: border-color .18s, background .18s, box-shadow .18s;
+  position: relative;
+}
+
+.bw-role-card:hover {
+  border-color: var(--blue);
+  background: var(--mist);
+}
+
+.bw-role-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bw-role-card.selected {
+  border-color: var(--navy);
+  background: #EEF3F8;
+  box-shadow: 0 0 0 3px rgba(27,58,92,.08);
+}
+
+.bw-role-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: grid;
+  place-content: center;
+  margin-bottom: 12px;
+}
+
+.bw-role-card__icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bw-role-card__name {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+
+.bw-role-card__desc {
+  font-size: .75rem;
+  color: var(--mid);
+  line-height: 1.45;
+}
+
+.bw-role-card .bw-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--rule);
+  display: grid;
+  place-content: center;
+  transition: all .18s;
+}
+
+.bw-role-card.selected .bw-check {
+  background: var(--navy);
+  border-color: var(--navy);
+}
+
+.bw-role-card.selected .bw-check::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+}
+
+/* ── Licence conditional fields ───────────────────────────────────────────── */
+.bw-conditional { display: none; }
+.bw-conditional.visible { display: block; }
+
+/* ── Terms of Service ─────────────────────────────────────────────────────── */
+.bw-tos-scroll {
+  height: 240px;
+  overflow-y: auto;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 20px 20px;
+  background: var(--cloud);
+  font-size: .83rem;
+  line-height: 1.7;
+  color: var(--ink);
+  margin-bottom: 20px;
+  scroll-behavior: smooth;
+}
+
+.bw-tos-scroll h3 {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin: 16px 0 6px;
+}
+
+.bw-tos-scroll h3:first-child { margin-top: 0; }
+
+.bw-tos-scroll p { margin-bottom: 10px; color: var(--mid); }
+
+/* Custom checkbox */
+.bw-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  margin-bottom: 28px;
+}
+
+.bw-checkbox-row input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bw-checkbox-box {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 2px solid var(--rule);
+  border-radius: 4px;
+  background: white;
+  display: grid;
+  place-content: center;
+  transition: all .18s;
+  margin-top: 1px;
+}
+
+.bw-checkbox-row input:checked ~ .bw-checkbox-box {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.bw-checkbox-row input:checked ~ .bw-checkbox-box::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpolyline points='1.5,6 4.5,9 10.5,3' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.bw-checkbox-label {
+  font-size: .85rem;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.bw-checkbox-label a { color: var(--blue); text-decoration: none; }
+.bw-checkbox-label a:hover { text-decoration: underline; }
+
+/* Summary card (step 4 review) */
+.bw-summary {
+  background: var(--mist);
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.bw-summary__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: .85rem;
+  gap: 12px;
+}
+
+.bw-summary__row:last-child { border-bottom: none; }
+
+.bw-summary__key {
+  color: var(--mid);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.bw-summary__val {
+  color: var(--navy);
+  font-weight: 600;
+  text-align: right;
+}
+
+.bw-summary__edit {
+  font-size: .75rem;
+  color: var(--blue);
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.bw-btn-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  gap: 12px;
+}
+
+.bw-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: .92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  border: none;
+  outline: none;
+  text-decoration: none;
+}
+
+.bw-btn--primary {
+  background: var(--navy);
+  color: white;
+  box-shadow: 0 2px 8px rgba(27,58,92,.18);
+}
+
+.bw-btn--primary:hover {
+  background: #0F2740;
+  box-shadow: 0 4px 16px rgba(27,58,92,.28);
+  transform: translateY(-1px);
+}
+
+.bw-btn--primary:disabled {
+  background: var(--rule);
+  color: var(--mid);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bw-btn--ghost {
+  background: transparent;
+  color: var(--mid);
+  border: 1.5px solid var(--rule);
+}
+
+.bw-btn--ghost:hover {
+  color: var(--navy);
+  border-color: var(--navy);
+}
+
+.bw-btn--success {
+  background: var(--teal);
+  color: white;
+  box-shadow: 0 2px 8px rgba(26,122,110,.22);
+}
+
+.bw-btn--success:hover {
+  background: #155f55;
+  box-shadow: 0 4px 16px rgba(26,122,110,.32);
+  transform: translateY(-1px);
+}
+
+.bw-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Licence warning badge ────────────────────────────────────────────────── */
+.bw-alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: #FEF9EC;
+  border: 1.5px solid #E8C84A;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: .8rem;
+  color: #7A5800;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.bw-alert svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  stroke: #C07A00;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  margin-top: 1px;
+}
+
+/* ── Divider ──────────────────────────────────────────────────────────────── */
+.bw-divider {
+  height: 1px;
+  background: var(--rule);
+  margin: 28px 0;
+}
+
+/* ── Mobile nav (top bar) ─────────────────────────────────────────────────── */
+.bw-topbar {
+  display: none;
+  background: var(--navy);
+  padding: 14px 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (max-width: 900px) { .bw-topbar { display: flex; } }
+
+.bw-topbar__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.bw-topbar__step {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: rgba(255,255,255,.5);
+  letter-spacing: .06em;
+}
+
+/* ── Responsive tweaks ───────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .bw-main { padding: 24px 16px; }
+  .bw-form-header__title { font-size: 1.35rem; }
+  .bw-role-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+{# ── Mobile top bar ─────────────────────────────────────────────────────── #}
+<div class="bw-topbar">
+  <div class="bw-topbar__logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    BuildWatch
+  </div>
+  <div class="bw-topbar__step" id="mobile-step-label">Step 1 of 4</div>
+</div>
+
+<div class="bw-shell">
+
+  {# ── Left Panel ───────────────────────────────────────────────────────── #}
+  <aside class="bw-panel">
+    <div class="bw-logo">
+      <div class="bw-logo__mark">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div>
+        <div class="bw-logo__name">BuildWatch</div>
+        <div class="bw-logo__tag">Infrastructure Integrity</div>
+      </div>
+    </div>
+
+    {# Progress Steps #}
+    <nav class="bw-steps" aria-label="Registration steps">
+
+      <div class="bw-step bw-step--active" data-step="1" id="nav-step-1">
+        <div class="bw-step__dot">1</div>
+        <div class="bw-step__info">
+          <div class="bw-step__label">Organisation</div>
+          <div class="bw-step__desc">Legal name, type and location of your organisation</div>
+        </div>
+      </div>
+
+      <div class="bw-step" data-step="2" id="nav-step-2">
+        <div class="bw-step__dot">2</div>
+        <div class="bw-step__info">
+          <div class="bw-step__label">Your Role</div>
+          <div class="bw-step__desc">How you participate in infrastructure projects</div>
+        </div>
+      </div>
+
+      <div class="bw-step" data-step="3" id="nav-step-3">
+        <div class="bw-step__dot">3</div>
+        <div class="bw-step__info">
+          <div class="bw-step__label">Professional Registration</div>
+          <div class="bw-step__desc">Licence number, body and expiry for the audit ledger</div>
+        </div>
+      </div>
+
+      <div class="bw-step" data-step="4" id="nav-step-4">
+        <div class="bw-step__dot">4</div>
+        <div class="bw-step__info">
+          <div class="bw-step__label">Confirm</div>
+          <div class="bw-step__desc">Review, agree to terms and submit</div>
+        </div>
+      </div>
+
+    </nav>
+
+    <div class="bw-panel__footer">
+      <p>Every action on BuildWatch is recorded against your professional registration number. Ensure all details are accurate before submitting.</p>
+      <br>
+      <p>Need help? <a href="mailto:support@buildwatch.co.ke">support@buildwatch.co.ke</a></p>
+    </div>
+  </aside>
+
+  {# ── Right: Form ──────────────────────────────────────────────────────── #}
+  <main class="bw-main">
+
+    {% if messages %}
+    <div style="max-width:720px;margin:0 auto 16px;padding:12px 16px;border-radius:8px;background:#FEE2E2;color:#991B1B;">
+      {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    {# ── STEP 1: Organisation ─────────────────────────────────────────── #}
+    <div class="bw-step-form active" id="step-1">
+      <div class="bw-form-header">
+        <div class="bw-form-header__eyebrow">Step 1 of 4 — Organisation</div>
+        <h1 class="bw-form-header__title">Tell us about your organisation</h1>
+        <p class="bw-form-header__sub">
+          This becomes your organisation profile on BuildWatch. It will appear on all project records, inspection reports and payment certificates you are associated with.
+        </p>
+      </div>
+
+      <form id="form-step-1" novalidate>
+        {% csrf_token %}
+
+        <div class="bw-field">
+          <label class="bw-label" for="org_name">Legal organisation name <span class="bw-req">*</span></label>
+          <div class="bw-hint">As registered — e.g. Pioneer Contractors Co. Ltd, Isiolo County Government, Ministry of Roads</div>
+          <input class="bw-input" type="text" id="org_name" name="org_name" placeholder="Full legal name" autocomplete="organization" required>
+          <div class="bw-error-msg" id="err-org_name">Organisation name is required.</div>
+        </div>
+
+        <div class="bw-field">
+          <label class="bw-label" for="org_short">Short name / trading name <span class="bw-req">*</span></label>
+          <input class="bw-input" type="text" id="org_short" name="org_short" placeholder="e.g. Pioneer, Isiolo CG" required>
+          <div class="bw-error-msg" id="err-org_short">Short name is required.</div>
+        </div>
+
+        <div class="bw-field">
+          <label class="bw-label" for="org_type">Organisation type <span class="bw-req">*</span></label>
+          <select class="bw-select" id="org_type" name="org_type" required>
+            <option value="" disabled selected>Select type…</option>
+            <option value="GOV_NATIONAL">National Government — Ministry / Department / Agency</option>
+            <option value="GOV_COUNTY">County Government</option>
+            <option value="PARASTATAL">State Corporation / Parastatal</option>
+            <option value="CONTRACTOR">Contractor (Civil, Electrical, Mechanical…)</option>
+            <option value="CONSULTANT">Consulting Engineer / Architect / QS</option>
+            <option value="DEVELOPER">Private Developer / PPP Consortium</option>
+            <option value="FINANCIER">Development Bank / Financier / DFI</option>
+            <option value="NGO">NGO / International Organisation</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <div class="bw-error-msg" id="err-org_type">Please select an organisation type.</div>
+        </div>
+
+        <div class="bw-field-row">
+          <div class="bw-field">
+            <label class="bw-label" for="org_country">Country <span class="bw-req">*</span></label>
+            <select class="bw-select" id="org_country" name="org_country" required>
+              <option value="" disabled selected>Select…</option>
+              <option value="KE" selected>Kenya</option>
+              <option value="UG">Uganda</option>
+              <option value="TZ">Tanzania</option>
+              <option value="RW">Rwanda</option>
+              <option value="ET">Ethiopia</option>
+              <option value="NG">Nigeria</option>
+              <option value="GH">Ghana</option>
+              <option value="ZA">South Africa</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="org_county">County / Region</label>
+            <input class="bw-input" type="text" id="org_county" name="org_county" placeholder="e.g. Isiolo, Nairobi">
+          </div>
+        </div>
+
+        <div class="bw-field-row">
+          <div class="bw-field">
+            <label class="bw-label" for="org_pin">Tax PIN / Registration No.</label>
+            <input class="bw-input" type="text" id="org_pin" name="org_pin" placeholder="e.g. P051234567X">
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="org_phone">Organisation phone</label>
+            <input class="bw-input" type="tel" id="org_phone" name="org_phone" placeholder="+254 …">
+          </div>
+        </div>
+
+        <div class="bw-field">
+          <label class="bw-label" for="org_address">Registered / postal address</label>
+          <textarea class="bw-textarea" id="org_address" name="org_address" placeholder="P.O. Box, street, city"></textarea>
+        </div>
+
+        <div class="bw-btn-row">
+          <span></span>
+          <button type="button" class="bw-btn bw-btn--primary" onclick="nextStep(1)">
+            Continue
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {# ── STEP 2: Role ─────────────────────────────────────────────────── #}
+    <div class="bw-step-form" id="step-2">
+      <div class="bw-form-header">
+        <div class="bw-form-header__eyebrow">Step 2 of 4 — Your Role</div>
+        <h1 class="bw-form-header__title">How do you participate in projects?</h1>
+        <p class="bw-form-header__sub">
+          Your role determines what you can see and do on BuildWatch. Choose the role that best describes your primary function. You can be assigned to multiple projects in different capacities later.
+        </p>
+      </div>
+
+      <div class="bw-field">
+        <div class="bw-role-grid" id="role-grid">
+
+          <label class="bw-role-card" data-role="QS">
+            <input type="radio" name="buildwatch_role" value="QS">
+            <div class="bw-check"></div>
+            <div class="bw-role-card__icon" style="background:#EBF3FB;">
+              <svg viewBox="0 0 24 24" stroke="#2E6DA4" fill="none">
+                <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="13" y2="14"/>
+              </svg>
+            </div>
+            <div class="bw-role-card__name">Quantity Surveyor</div>
+            <div class="bw-role-card__desc">Prepares BOQ, evaluates bids, raises payment certificates, manages final account</div>
+          </label>
+
+          <label class="bw-role-card" data-role="ENGINEER">
+            <input type="radio" name="buildwatch_role" value="ENGINEER">
+            <div class="bw-check"></div>
+            <div class="bw-role-card__icon" style="background:#E5F2F0;">
+              <svg viewBox="0 0 24 24" stroke="#1A7A6E" fill="none">
+                <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              </svg>
+            </div>
+            <div class="bw-role-card__name">Consulting Engineer</div>
+            <div class="bw-role-card__desc">Designs, specifies, supervises, signs off inspections and milestone checklists</div>
+          </label>
+
+          <label class="bw-role-card" data-role="INSPECTOR">
+            <input type="radio" name="buildwatch_role" value="INSPECTOR">
+            <div class="bw-check"></div>
+            <div class="bw-role-card__icon" style="background:#FDF6E3;">
+              <svg viewBox="0 0 24 24" stroke="#B8860B" fill="none">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+            <div class="bw-role-card__name">Site Inspector / CoW</div>
+            <div class="bw-role-card__desc">Conducts on-site inspections, records quantities, raises compliance flags</div>
+          </label>
+
+          <label class="bw-role-card" data-role="CLIENT">
+            <input type="radio" name="buildwatch_role" value="CLIENT">
+            <div class="bw-check"></div>
+            <div class="bw-role-card__icon" style="background:#E5EBF2;">
+              <svg viewBox="0 0 24 24" stroke="#1B3A5C" fill="none">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div class="bw-role-card__name">Client Representative</div>
+            <div class="bw-role-card__desc">Approves variations above contingency, monitors dashboard, authorises payments</div>
+          </label>
+
+          <label class="bw-role-card" data-role="CONTRACTOR">
+            <input type="radio" name="buildwatch_role" value="CONTRACTOR">
+            <div class="bw-check"></div>
+            <div class="bw-role-card__icon" style="background:#E8F4EC;">
+              <svg viewBox="0 0 24 24" stroke="#1E7A3E" fill="none">
+                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+              </svg>
+            </div>
+            <div class="bw-role-card__name">Contractor</div>
+            <div class="bw-role-card__desc">Views programme and milestone requirements, tracks certified payments</div>
+          </label>
+
+          <label class="bw-role-card" data-role="FINANCE">
+            <input type="radio" name="buildwatch_role" value="FINANCE">
+            <div class="bw-check"></div>
+            <div class="bw-role-card__icon" style="background:#FCEAEA;">
+              <svg viewBox="0 0 24 24" stroke="#A0282A" fill="none">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <div class="bw-role-card__name">Finance / Accounts</div>
+            <div class="bw-role-card__desc">Processes approved certificates, manages retention, exports to accounts system</div>
+          </label>
+
+        </div>
+        <div class="bw-error-msg" id="err-role" style="margin-top:8px;">Please select your role to continue.</div>
+      </div>
+
+      <div class="bw-divider"></div>
+
+      <div class="bw-field">
+        <label class="bw-label" for="user_first">Your first name <span class="bw-req">*</span></label>
+        <input class="bw-input" type="text" id="user_first" name="user_first" placeholder="First name" autocomplete="given-name" required>
+        <div class="bw-error-msg" id="err-user_first">First name is required.</div>
+      </div>
+
+      <div class="bw-field">
+        <label class="bw-label" for="user_last">Your last name <span class="bw-req">*</span></label>
+        <input class="bw-input" type="text" id="user_last" name="user_last" placeholder="Last name" autocomplete="family-name" required>
+        <div class="bw-error-msg" id="err-user_last">Last name is required.</div>
+      </div>
+
+      <div class="bw-field-row">
+        <div class="bw-field">
+          <label class="bw-label" for="user_email">Work email <span class="bw-req">*</span></label>
+          <input class="bw-input" type="email" id="user_email" name="user_email" placeholder="you@organisation.go.ke" autocomplete="email" required>
+          <div class="bw-error-msg" id="err-user_email">A valid email address is required.</div>
+        </div>
+        <div class="bw-field">
+          <label class="bw-label" for="user_phone">Mobile number <span class="bw-req">*</span></label>
+          <input class="bw-input" type="tel" id="user_phone" name="user_phone" placeholder="+254 7XX XXX XXX" required>
+          <div class="bw-error-msg" id="err-user_phone">Mobile number is required for alerts.</div>
+        </div>
+      </div>
+
+      <div class="bw-field">
+        <label class="bw-label" for="user_designation">Designation / job title <span class="bw-req">*</span></label>
+        <input class="bw-input" type="text" id="user_designation" name="user_designation" placeholder="e.g. Senior Electrical Engineer, County Director of Roads" required>
+        <div class="bw-error-msg" id="err-user_designation">Designation is required.</div>
+      </div>
+
+      <div class="bw-btn-row">
+        <button type="button" class="bw-btn bw-btn--ghost" onclick="prevStep(2)">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <button type="button" class="bw-btn bw-btn--primary" onclick="nextStep(2)">
+          Continue
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    {# ── STEP 3: Professional Registration ────────────────────────────── #}
+    <div class="bw-step-form" id="step-3">
+      <div class="bw-form-header">
+        <div class="bw-form-header__eyebrow">Step 3 of 4 — Professional Registration</div>
+        <h1 class="bw-form-header__title">Your professional licence</h1>
+        <p class="bw-form-header__sub">
+          Every inspection, certification and approval on BuildWatch is recorded against your professional registration number. This creates the accountability ledger — the immutable record of who approved what, and when.
+        </p>
+      </div>
+
+      <div class="bw-alert">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Your registration details are verified against the licensing body's public register. Inaccurate details will delay your account activation and may be referred to the relevant body.</span>
+      </div>
+
+      <div class="bw-field">
+        <label class="bw-label" for="licence_body">Licensing / registration body <span class="bw-req">*</span></label>
+        <select class="bw-select" id="licence_body" name="licence_body" required onchange="toggleLicenceFields()">
+          <option value="" disabled selected>Select body…</option>
+          <option value="EBK">Engineers Board of Kenya (EBK)</option>
+          <option value="EPRA">Energy & Petroleum Regulatory Authority (EPRA)</option>
+          <option value="NCA">National Construction Authority (NCA)</option>
+          <option value="BORAQS">Board of Registration of Architects & Quantity Surveyors (BORAQS)</option>
+          <option value="IEK">Institution of Engineers of Kenya (IEK)</option>
+          <option value="KRB">Kenya Roads Board (KRB)</option>
+          <option value="NEMA">National Environment Management Authority (NEMA)</option>
+          <option value="CAK">Communication Authority of Kenya (CAK)</option>
+          <option value="OTHER">Other professional body</option>
+          <option value="NONE">Not applicable to my role</option>
+        </select>
+        <div class="bw-error-msg" id="err-licence_body">Please select your licensing body.</div>
+      </div>
+
+      <div class="bw-conditional" id="cond-licence-fields">
+        <div class="bw-field-row">
+          <div class="bw-field">
+            <label class="bw-label" for="licence_no">Registration / licence number <span class="bw-req">*</span></label>
+            <input class="bw-input" type="text" id="licence_no" name="licence_no" placeholder="e.g. EBK/P/12345, NCA-001234">
+            <div class="bw-error-msg" id="err-licence_no">Registration number is required.</div>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="licence_expiry">Licence expiry date <span class="bw-req">*</span></label>
+            <input class="bw-input" type="date" id="licence_expiry" name="licence_expiry">
+            <div class="bw-error-msg" id="err-licence_expiry">Expiry date is required. Expired licences cannot be activated.</div>
+          </div>
+        </div>
+
+        <div class="bw-field">
+          <label class="bw-label" for="licence_class">Licence class / grade</label>
+          <div class="bw-hint">e.g. NCA Grade 6, EPRA Class B, EBK Registered Engineer</div>
+          <input class="bw-input" type="text" id="licence_class" name="licence_class" placeholder="e.g. Class B, Grade 6, Registered">
+        </div>
+
+        <div class="bw-field">
+          <label class="bw-label" for="nca_contractor_type">NCA contractor type</label>
+          <div class="bw-hint">For NCA-registered contractors only</div>
+          <select class="bw-select" id="nca_contractor_type" name="nca_contractor_type">
+            <option value="" selected>Not applicable</option>
+            <option value="CIVIL">Civil Engineering Works</option>
+            <option value="ELECTRICAL">Electrical Installation Works</option>
+            <option value="MECHANICAL">Mechanical Engineering Works</option>
+            <option value="BUILDING">Building Works</option>
+            <option value="ROADS">Roads & Bridges</option>
+            <option value="SPECIALIST">Specialist Works (CCTV, Structured Cabling, Solar)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bw-conditional" id="cond-none-msg" style="display:none;">
+        <div class="bw-field">
+          <label class="bw-label" for="no_licence_reason">Reason no professional registration is required</label>
+          <textarea class="bw-textarea" id="no_licence_reason" name="no_licence_reason" placeholder="e.g. Finance / administrative role — not a regulated profession"></textarea>
+        </div>
+      </div>
+
+      <div class="bw-field">
+        <label class="bw-label" for="staff_no">Staff / employee number</label>
+        <div class="bw-hint">Internal reference for your organisation. Used on payment vouchers and disbursement records.</div>
+        <input class="bw-input" type="text" id="staff_no" name="staff_no" placeholder="e.g. EMP-00142, SNR-012">
+      </div>
+
+      <div class="bw-btn-row">
+        <button type="button" class="bw-btn bw-btn--ghost" onclick="prevStep(3)">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <button type="button" class="bw-btn bw-btn--primary" onclick="nextStep(3)">
+          Review & Confirm
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    {# ── STEP 4: Confirm ──────────────────────────────────────────────── #}
+    <div class="bw-step-form" id="step-4">
+      <div class="bw-form-header">
+        <div class="bw-form-header__eyebrow">Step 4 of 4 — Confirm</div>
+        <h1 class="bw-form-header__title">Review and submit</h1>
+        <p class="bw-form-header__sub">
+          Check your details below. Once you submit, your registration is sent for review. You will receive an activation email within one working day.
+        </p>
+      </div>
+
+      {# Summary card — populated by JS #}
+      <div class="bw-summary" id="summary-card">
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Organisation</span>
+          <span class="bw-summary__val" id="s-org_name">—</span>
+          <span class="bw-summary__edit" onclick="goStep(1)">Edit</span>
+        </div>
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Type</span>
+          <span class="bw-summary__val" id="s-org_type">—</span>
+        </div>
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Country / County</span>
+          <span class="bw-summary__val" id="s-location">—</span>
+        </div>
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Name</span>
+          <span class="bw-summary__val" id="s-name">—</span>
+          <span class="bw-summary__edit" onclick="goStep(2)">Edit</span>
+        </div>
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Role</span>
+          <span class="bw-summary__val" id="s-role">—</span>
+        </div>
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Email</span>
+          <span class="bw-summary__val" id="s-email">—</span>
+        </div>
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Licence body</span>
+          <span class="bw-summary__val" id="s-body">—</span>
+          <span class="bw-summary__edit" onclick="goStep(3)">Edit</span>
+        </div>
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Licence / reg. no.</span>
+          <span class="bw-summary__val" id="s-licno">—</span>
+        </div>
+        <div class="bw-summary__row">
+          <span class="bw-summary__key">Expiry</span>
+          <span class="bw-summary__val" id="s-expiry">—</span>
+        </div>
+      </div>
+
+      {# Terms of Service #}
+      <div class="bw-tos-scroll" id="tos-box">
+        <h3>BuildWatch Platform — Terms of Use</h3>
+        <p>By registering on BuildWatch, you agree to the following terms governing your use of the infrastructure integrity platform operated under this service.</p>
+
+        <h3>1. Accuracy of Information</h3>
+        <p>You confirm that all information provided during registration — including your organisation details, professional registration number, licensing body and expiry date — is accurate and current. Providing false or misleading information constitutes a breach of these terms and may be reported to the relevant regulatory body.</p>
+
+        <h3>2. Professional Accountability</h3>
+        <p>Every action you take on BuildWatch — including site inspections, compliance flag resolutions, payment certificate approvals and variation sign-offs — is recorded in the immutable audit ledger against your professional registration number and timestamp. You accept personal professional responsibility for all actions performed under your account.</p>
+
+        <h3>3. Inspection and Certification Standards</h3>
+        <p>You agree to conduct all site inspections and quality assessments in accordance with the applicable standards referenced in the project (NCA, KEBS, KRB, BS, ASTM or equivalent). You will not approve work that does not meet the specified standard. You understand that approving substandard work may constitute professional misconduct.</p>
+
+        <h3>4. Payment Gate Compliance</h3>
+        <p>Where your role involves the approval of payment certificates, you confirm that no certificate will be raised or approved unless the three-gate compliance lock is satisfied: the programme gate, the inspection gate and the compliance gate. You will not attempt to circumvent this mechanism.</p>
+
+        <h3>5. Data Use and Confidentiality</h3>
+        <p>Project data, pricing information and personnel records on BuildWatch are confidential to the parties assigned to that project. You agree not to share, export or reproduce any project data outside of authorised channels. Anonymised aggregate data may be used by BuildWatch for platform improvement and national infrastructure analytics.</p>
+
+        <h3>6. Licence Validity</h3>
+        <p>You are responsible for maintaining a current, valid professional licence for the duration of your participation on projects. BuildWatch will notify you 60 days before your recorded expiry date. Expired licences will result in your account being suspended from inspection and certification functions until renewed.</p>
+
+        <h3>7. Governing Law</h3>
+        <p>These terms are governed by the laws of Kenya. Any disputes arising from use of this platform shall be subject to the jurisdiction of the courts of Kenya.</p>
+
+        <h3>8. Amendments</h3>
+        <p>BuildWatch reserves the right to amend these terms with 30 days' notice. Continued use of the platform after the notice period constitutes acceptance of the amended terms.</p>
+      </div>
+
+      <label class="bw-checkbox-row" for="tos-agree">
+        <input type="checkbox" id="tos-agree" name="tos_agreed" required onchange="toggleSubmit()">
+        <div class="bw-checkbox-box"></div>
+        <span class="bw-checkbox-label">
+          I have read and agree to the <a href="#tos-box">BuildWatch Terms of Use</a>. I confirm that all information I have provided is accurate and that I accept personal professional accountability for all actions I take on this platform.
+        </span>
+      </label>
+
+      <div class="bw-btn-row">
+        <button type="button" class="bw-btn bw-btn--ghost" onclick="prevStep(4)">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <button type="submit" class="bw-btn bw-btn--success" id="submit-btn" form="final-form" disabled>
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Submit Registration
+        </button>
+      </div>
+
+      {# Hidden final form that Django processes #}
+      <form id="final-form" method="POST" action="{% url 'buildwatch-register' %}" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" name="org_name"           id="hid-org_name">
+        <input type="hidden" name="org_short"          id="hid-org_short">
+        <input type="hidden" name="org_type"           id="hid-org_type">
+        <input type="hidden" name="org_country"        id="hid-org_country">
+        <input type="hidden" name="org_county"         id="hid-org_county">
+        <input type="hidden" name="org_pin"            id="hid-org_pin">
+        <input type="hidden" name="org_phone"          id="hid-org_phone">
+        <input type="hidden" name="org_address"        id="hid-org_address">
+        <input type="hidden" name="buildwatch_role"    id="hid-role">
+        <input type="hidden" name="user_first"         id="hid-user_first">
+        <input type="hidden" name="user_last"          id="hid-user_last">
+        <input type="hidden" name="user_email"         id="hid-user_email">
+        <input type="hidden" name="user_phone"         id="hid-user_phone">
+        <input type="hidden" name="user_designation"   id="hid-user_designation">
+        <input type="hidden" name="licence_body"       id="hid-licence_body">
+        <input type="hidden" name="licence_no"         id="hid-licence_no">
+        <input type="hidden" name="licence_expiry"     id="hid-licence_expiry">
+        <input type="hidden" name="licence_class"      id="hid-licence_class">
+        <input type="hidden" name="nca_contractor_type" id="hid-nca_contractor_type">
+        <input type="hidden" name="staff_no"           id="hid-staff_no">
+        <input type="hidden" name="no_licence_reason"  id="hid-no_licence_reason">
+        <input type="hidden" name="tos_agreed"         value="1">
+      </form>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let currentStep = 1;
+const totalSteps = 4;
+
+const ROLE_LABELS = {
+  QS:         'Quantity Surveyor',
+  ENGINEER:   'Consulting Engineer',
+  INSPECTOR:  'Site Inspector / Clerk of Works',
+  CLIENT:     'Client Representative',
+  CONTRACTOR: 'Contractor',
+  FINANCE:    'Finance / Accounts',
+};
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function goStep(n) {
+  document.getElementById(`step-${currentStep}`).classList.remove('active');
+  updateNav(currentStep, n > currentStep ? 'done' : 'idle');
+  currentStep = n;
+  document.getElementById(`step-${currentStep}`).classList.add('active');
+  updateNav(currentStep, 'active');
+  document.getElementById('mobile-step-label').textContent = `Step ${currentStep} of ${totalSteps}`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateNav(step, state) {
+  const el = document.getElementById(`nav-step-${step}`);
+  el.classList.remove('bw-step--done', 'bw-step--active');
+  if (state === 'done')   el.classList.add('bw-step--done');
+  if (state === 'active') el.classList.add('bw-step--active');
+}
+
+function nextStep(from) {
+  if (!validateStep(from)) return;
+  if (from === 3) populateSummary();
+  goStep(from + 1);
+}
+
+function prevStep(from) {
+  goStep(from - 1);
+}
+
+// ── Validation ───────────────────────────────────────────────────────────────
+function showErr(id, show) {
+  const el = document.getElementById(`err-${id}`);
+  const inp = document.getElementById(id);
+  if (!el) return;
+  if (show) {
+    el.classList.add('visible');
+    if (inp) inp.classList.add('error');
+  } else {
+    el.classList.remove('visible');
+    if (inp) inp.classList.remove('error');
+  }
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function validateStep(step) {
+  let ok = true;
+
+  if (step === 1) {
+    ['org_name', 'org_short', 'org_type'].forEach(f => {
+      const empty = !val(f);
+      showErr(f, empty);
+      if (empty) ok = false;
+    });
+  }
+
+  if (step === 2) {
+    const roleSelected = document.querySelector('input[name="buildwatch_role"]:checked');
+    const roleErr = document.getElementById('err-role');
+    if (!roleSelected) {
+      roleErr.classList.add('visible');
+      ok = false;
+    } else {
+      roleErr.classList.remove('visible');
+    }
+    ['user_first', 'user_last', 'user_designation'].forEach(f => {
+      const empty = !val(f);
+      showErr(f, empty);
+      if (empty) ok = false;
+    });
+    const email = val('user_email');
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    showErr('user_email', !emailOk);
+    if (!emailOk) ok = false;
+
+    const phone = val('user_phone');
+    showErr('user_phone', !phone);
+    if (!phone) ok = false;
+  }
+
+  if (step === 3) {
+    const body = val('licence_body');
+    showErr('licence_body', !body);
+    if (!body) ok = false;
+
+    if (body && body !== 'NONE') {
+      const licNo = val('licence_no');
+      showErr('licence_no', !licNo);
+      if (!licNo) ok = false;
+
+      const expiry = val('licence_expiry');
+      const expiryOk = expiry && new Date(expiry) > new Date();
+      showErr('licence_expiry', !expiryOk);
+      if (!expiryOk) ok = false;
+    }
+  }
+
+  return ok;
+}
+
+// ── Role card selection ───────────────────────────────────────────────────────
+document.querySelectorAll('.bw-role-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.bw-role-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    card.querySelector('input[type="radio"]').checked = true;
+    document.getElementById('err-role').classList.remove('visible');
+  });
+});
+
+// ── Licence body conditional fields ──────────────────────────────────────────
+function toggleLicenceFields() {
+  const body = val('licence_body');
+  const condFields = document.getElementById('cond-licence-fields');
+  const condNone   = document.getElementById('cond-none-msg');
+  if (body === 'NONE') {
+    condFields.classList.remove('visible');
+    condNone.style.display = 'block';
+  } else if (body) {
+    condFields.classList.add('visible');
+    condNone.style.display = 'none';
+  }
+}
+
+// ── Populate summary on step 4 ────────────────────────────────────────────────
+function populateSummary() {
+  const orgTypeMap = {
+    GOV_NATIONAL: 'National Government MDA',
+    GOV_COUNTY:   'County Government',
+    PARASTATAL:   'State Corporation / Parastatal',
+    CONTRACTOR:   'Contractor',
+    CONSULTANT:   'Consulting Engineer / Architect / QS',
+    DEVELOPER:    'Private Developer / PPP',
+    FINANCIER:    'Development Bank / DFI',
+    NGO:          'NGO / International Organisation',
+    OTHER:        'Other',
+  };
+
+  setText('s-org_name', val('org_name') || '—');
+  setText('s-org_type', orgTypeMap[val('org_type')] || val('org_type') || '—');
+
+  const country = val('org_country') || '';
+  const county  = val('org_county')  || '';
+  setText('s-location', [country, county].filter(Boolean).join(' / ') || '—');
+
+  const first = val('user_first');
+  const last  = val('user_last');
+  setText('s-name', [first, last].filter(Boolean).join(' ') || '—');
+
+  const roleEl = document.querySelector('input[name="buildwatch_role"]:checked');
+  setText('s-role', roleEl ? (ROLE_LABELS[roleEl.value] || roleEl.value) : '—');
+  setText('s-email',  val('user_email')  || '—');
+  setText('s-body',   val('licence_body')|| '—');
+  setText('s-licno',  val('licence_no')  || '—');
+  const exp = val('licence_expiry');
+  setText('s-expiry', exp ? new Date(exp).toLocaleDateString('en-KE', {day:'numeric',month:'short',year:'numeric'}) : '—');
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+// ── Enable submit when ToS agreed ─────────────────────────────────────────────
+function toggleSubmit() {
+  const agreed = document.getElementById('tos-agree').checked;
+  document.getElementById('submit-btn').disabled = !agreed;
+}
+
+// ── On final submit: copy all values to hidden form ──────────────────────────
+document.getElementById('final-form').addEventListener('submit', () => {
+  const fields = [
+    'org_name','org_short','org_type','org_country','org_county',
+    'org_pin','org_phone','org_address',
+    'user_first','user_last','user_email','user_phone','user_designation',
+    'licence_body','licence_no','licence_expiry','licence_class',
+    'nca_contractor_type','staff_no','no_licence_reason',
+  ];
+  fields.forEach(f => {
+    const src = document.getElementById(f);
+    const dst = document.getElementById(`hid-${f}`);
+    if (src && dst) dst.value = src.value;
+  });
+  const roleEl = document.querySelector('input[name="buildwatch_role"]:checked');
+  if (roleEl) document.getElementById('hid-role').value = roleEl.value;
+});
+
+// Trigger hidden form submit from visible button
+document.getElementById('submit-btn').addEventListener('click', function(e) {
+  e.preventDefault();
+  // Copy fields then submit
+  const fields = [
+    'org_name','org_short','org_type','org_country','org_county',
+    'org_pin','org_phone','org_address',
+    'user_first','user_last','user_email','user_phone','user_designation',
+    'licence_body','licence_no','licence_expiry','licence_class',
+    'nca_contractor_type','staff_no','no_licence_reason',
+  ];
+  fields.forEach(f => {
+    const src = document.getElementById(f);
+    const dst = document.getElementById(`hid-${f}`);
+    if (src && dst) dst.value = src.value;
+  });
+  const roleEl = document.querySelector('input[name="buildwatch_role"]:checked');
+  if (roleEl) document.getElementById('hid-role').value = roleEl.value;
+  document.getElementById('final-form').submit();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var prefill = {{ prefill_json|default:"{}"|safe }};
+    Object.keys(prefill || {}).forEach(function(key) {
+      var el = document.getElementById(key) || document.querySelector('[name="' + key + '"]');
+      if (!el || !prefill[key]) return;
+      if (el.type === 'radio') return;
+      el.value = prefill[key];
+    });
+    if (prefill && prefill.org_type) {
+      var sel = document.getElementById('org_type');
+      if (sel) sel.value = prefill.org_type;
+    }
+  } catch (e) {}
+});
+</script>
+
+</body>
+</html>
