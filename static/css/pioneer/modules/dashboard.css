@@ -95,14 +95,53 @@ html.command-center-root {
     white-space: nowrap;
 }
 
+.command-center .header-brand-lockup {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    margin: 0;
+    min-width: 0;
+}
+
 .command-center .header-title-sep {
     color: var(--text-muted);
-    font-size: clamp(1.1rem, 3vw, 1.35rem);
-    font-weight: 700;
+    font-size: var(--font-xs);
+    font-weight: 600;
     line-height: 1;
 }
 
-.command-center .header-actions-row {
+.command-center .header-page-name {
+    margin: 0;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.command-center .header-title-row h2 {
+    margin: 0;
+    font-size: var(--font-sm);
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.command-center .header h2 {
+    margin: 0;
+    font-size: var(--font-sm);
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -158,26 +197,7 @@ html.command-center-root {
     color: var(--text-muted);
 }
 
-.command-center .header-title-row h2 {
-    margin: 0;
-    font-size: clamp(1.35rem, 4vw, 1.75rem);
-    font-weight: 800;
-    color: var(--text-strong);
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-    white-space: nowrap;
-}
-
-.command-center .header h2 {
-    margin: 0;
-    font-size: clamp(1.35rem, 4vw, 1.75rem);
-    font-weight: 800;
-    color: var(--text-strong);
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-}
-
-.command-center .header-client {
+.command-center .header-actions-row {
     display: block;
     margin-top: 2px;
     font-size: clamp(1rem, 3.2vw, 1.125rem);
@@ -1084,7 +1104,15 @@ html.command-center-root {
     }
 
     .command-center .header-title-sep {
-        font-size: 0.95rem;
+        font-size: 9px;
+    }
+
+    .command-center .header-page-name {
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
     }
 
     .command-center .header-title-row h2 {
