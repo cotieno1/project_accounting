@@ -1086,7 +1086,7 @@ html.command-center-root {
     .command-center .header-product {
         font-size: 0.8125rem;
         letter-spacing: 0.06em;
-        color: var(--text-strong);
+        color: var(--primary);
         white-space: normal;
         line-height: 1.25;
     }
