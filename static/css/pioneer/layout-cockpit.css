@@ -71,6 +71,25 @@
     padding-top: 20px;
 }
 
+.sidebar-brand {
+    margin-bottom: 24px;
+    flex-shrink: 0;
+}
+
+.sidebar-brand h2 {
+    color: var(--primary);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.sidebar-brand small {
+    color: var(--muted);
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
 .workspace-back-bar {
     margin: -4px 0 8px;
 }

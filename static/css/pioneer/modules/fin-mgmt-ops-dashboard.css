@@ -3,8 +3,12 @@ body.ops-dashboard { --text-muted: var(--muted); }
 
 .ops-dashboard .ops-brand {
     margin-bottom: 40px;
-    border-left: 3px solid var(--primary);
-    padding-left: 15px;
+}
+@media (min-width: 769px) {
+    .ops-dashboard .ops-brand {
+        border-left: 3px solid var(--primary);
+        padding-left: 15px;
+    }
 }
 .ops-dashboard .ops-brand h2 {
     color: var(--primary);

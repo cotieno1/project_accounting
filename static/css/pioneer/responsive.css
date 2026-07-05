@@ -28,15 +28,17 @@
         transform: translateX(-105%);
         transition: transform 0.25s ease;
         box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
-        padding-top: 12px;
+        padding: 12px 16px 16px;
+        max-width: min(85vw, 320px);
     }
 
-    /* Brand block clears the fixed hamburger toggle (top-left) */
-    .sidebar > :first-child:not(.sidebar-block) {
+    /* Brand block clears the fixed hamburger toggle (top-left) on every cockpit page */
+    .cockpit-app .sidebar .sidebar-brand {
         padding-left: 48px;
         padding-top: 4px;
         min-height: 44px;
         box-sizing: border-box;
+        margin-bottom: 20px;
     }
 
     .cockpit-shell.sidebar-open .sidebar-toggle {

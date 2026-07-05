@@ -113,8 +113,6 @@ font-size: 12px;
 
     .gm-desk .sidebar {
         max-width: min(85vw, 320px);
-        padding: 24px 16px;
-        padding-top: 56px;
     }
 
     .gm-desk .main-content {

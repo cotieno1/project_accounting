@@ -181,16 +181,6 @@ body.ro-builder .ro-modal-field label {
 
     body.ro-builder .sidebar {
         max-width: min(85vw, 320px);
-        padding: 16px;
-        padding-top: 12px;
-    }
-
-    body.ro-builder .ro-sidebar-brand {
-        padding-left: 48px;
-        padding-top: 4px;
-        margin-bottom: 20px !important;
-        min-height: 44px;
-        box-sizing: border-box;
     }
 
     body.ro-builder .sidebar .ro-sidebar-actions {

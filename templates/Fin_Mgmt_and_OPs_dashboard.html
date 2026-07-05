@@ -3,10 +3,10 @@
 {% block title %}Pioneer | Financial Ops & Supply Chain{% endblock %}
 {% block body_class %}ops-dashboard{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/fin-mgmt-ops-dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/fin-mgmt-ops-dashboard.css' %}?v=2">
 {% endblock %}
 {% block sidebar %}
-    <div class="ops-brand">
+    <div class="sidebar-brand ops-brand">
         <h2>PIONEER</h2>
         <small>Somalia Ops Command</small>
     </div>
@@ -19,7 +19,7 @@
 
     <div class="nav-section nav-section--collapsible is-open" data-ops-nav="field">
         <button type="button" class="nav-section-toggle" aria-expanded="true" aria-controls="opsNavField">
-            <span class="nav-label">I. FIELD DEFINITION</span>
+        <span class="nav-label">I. FIELD DEFINITION</span>
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavField">
@@ -41,7 +41,7 @@
 
     <div class="nav-section nav-section--collapsible" data-ops-nav="exco">
         <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavExco">
-            <span class="nav-label">III. EXCO COMMITMENT</span>
+        <span class="nav-label">III. EXCO COMMITMENT</span>
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavExco">
@@ -51,7 +51,7 @@
 
     <div class="nav-section nav-section--collapsible" data-ops-nav="disbursement">
         <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavDisbursement">
-            <span class="nav-label">IV. DISBURSEMENT</span>
+        <span class="nav-label">IV. DISBURSEMENT</span>
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavDisbursement">
@@ -64,7 +64,7 @@
 
     <div class="nav-section nav-section--collapsible" data-ops-nav="fulfillment">
         <button type="button" class="nav-section-toggle" aria-expanded="false" aria-controls="opsNavFulfillment">
-            <span class="nav-label">V. FULFILLMENT</span>
+        <span class="nav-label">V. FULFILLMENT</span>
             <span class="nav-section-chevron" aria-hidden="true"></span>
         </button>
         <div class="nav-section-body" id="opsNavFulfillment">
@@ -74,7 +74,7 @@
 
     <div class="sidebar-footer">
         <a href="{% url 'dashboard' %}" class="sidebar-back-link">← Main Dashboard</a>
-    </div>
+</div>
 {% endblock %}
 {% block workspace %}
     <nav class="workspace-back-bar" aria-label="Back navigation">
@@ -111,13 +111,13 @@
             <span class="trend">On Budget</span>
         </div>
     </div>
-
+     
     <div class="panel ops-activity-panel">
         <div class="panel-header panel-header--compact">
             <div>
                 <h3>Cross-Task Activity Summary</h3>
                 <p class="ops-activity-lead">Major (BOM) and Ad-Hoc (Misc) lanes — latest actions across all tasks</p>
-            </div>
+    </div>
         </div>
         <div class="table-scroll ops-activity-scroll">
         <table class="ops-activity-table">
@@ -166,26 +166,26 @@
     <div class="ops-modal-panel">
         <h2 class="ops-modal-title">🏗️ Submit BOM for {{ task_panel.bom_display }}</h2>
         <p class="ops-modal-intro">
-            <strong>Active Task:</strong> {{ active_task.project_id }} - {{ active_task.description }}
-        </p>
-        <form method="POST">
-            {% csrf_token %}
-            <input type="hidden" name="project_id" value="{{ active_task.project_id }}">
+        <strong>Active Task:</strong> {{ active_task.project_id }} - {{ active_task.description }}
+    </p>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="project_id" value="{{ active_task.project_id }}">
             <div class="bom-form-grid">
                 <select name="pillar_id" class="form-input">
-                    <option value="1">Pillar 1: Labour</option>
-                    <option value="2">Pillar 2: Material</option>
-                    <option value="5">Pillar 5: Transport</option>
-                </select>
+                <option value="1">Pillar 1: Labour</option>
+                <option value="2">Pillar 2: Material</option>
+                <option value="5">Pillar 5: Transport</option>
+            </select>
                 <input type="text" name="description" placeholder="Description (e.g. Mazuri Cement)" required class="form-input">
                 <input type="number" name="qty" placeholder="Quantity" required class="form-input" step="1">
                 <input type="text" name="uom" placeholder="UOM (e.g. 50kg Bag)" required class="form-input">
-            </div>
+        </div>
             <div class="bom-form-actions">
-                <button type="submit" name="add_item" class="btn-action">Stitch to BOM</button>
+            <button type="submit" name="add_item" class="btn-action">Stitch to BOM</button>
                 <button type="button" onclick="closeOpsModal()" class="btn-action btn-danger">Cancel</button>
-            </div>
-        </form>
+        </div>
+    </form>
     </div>
 </div>
 {% endif %}
@@ -211,7 +211,7 @@
         try {
             if (id) {
                 localStorage.setItem(storageKey, id);
-            } else {
+        } else {
                 localStorage.removeItem(storageKey);
             }
         } catch (e) {}
@@ -257,6 +257,6 @@ function openOpsModal(type) {
 function closeOpsModal() {
     var el = document.getElementById('bomModal');
     if (el) el.style.display = 'none';
-}
+    }
 </script>
 {% endblock %}

@@ -8,8 +8,10 @@
 {% endblock %}
 {% block sidebar %}
 {% if not no_tasks %}
+<div class="sidebar-brand">
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
         <small style="color: var(--muted); display: block; margin: 16px 0;">GM Accounting Officer - Operations and Maintenance</small>
+</div>
         <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};" class="form-input">
             <option value="">-- Select project task --</option>
             {% for t in tasks %}
@@ -115,8 +117,10 @@
             {% endif %}
         </div>
 {% else %}
+<div class="sidebar-brand">
 <h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
 <p style="color: var(--muted); font-size: 14px;">No project tasks in the system.</p>
+</div>
 {% endif %}
 {% endblock %}
 {% block workspace %}
