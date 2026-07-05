@@ -71,12 +71,12 @@
     </div>
 
     <div class="sidebar-footer">
-        <a href="{% url 'dashboard' %}" class="sidebar-back-link">← Main Dashboard</a>
+        <a href="{% if main_dashboard_url %}{{ main_dashboard_url }}{% else %}{% url 'dashboard' %}{% endif %}" class="sidebar-back-link">← Main Dashboard</a>
 </div>
 {% endblock %}
 {% block workspace %}
     <nav class="workspace-back-bar" aria-label="Back navigation">
-        <a href="{% url 'dashboard' %}" class="workspace-back-link">← Main Dashboard</a>
+        <a href="{% if main_dashboard_url %}{{ main_dashboard_url }}{% else %}{% url 'dashboard' %}{% endif %}" class="workspace-back-link">← Main Dashboard</a>
     </nav>
 
     <div class="ops-header">

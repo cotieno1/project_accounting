@@ -101,7 +101,10 @@
 	   <div class="nav-tabs">
         {% if is_platform_main_admin %}
 		<div class="tab active" onclick="showSection('platform-tenants')">Building Contractors</div>
-		<div class="tab" onclick="showSection('overview')">Platform Overview</div>
+		<div class="tab" onclick="showSection('overview')">Executive Overview</div>
+		<div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
+		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
+        <a href="{% url 'ops_dashboard' %}" class="tab">Financial Ops Dashboard</a>
         {% else %}
 		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
 		<div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
@@ -169,16 +172,8 @@
     </div>
     {% endif %}
 
-    <!-- OVERVIEW SECTION -->
+    <!-- OVERVIEW SECTION — original Command Center (tenant + platform Executive Overview tab) -->
     <div id="overview" class="section"{% if is_platform_main_admin %} style="display:none"{% endif %}>
-        {% if is_platform_main_admin %}
-        <div class="kpi-grid">
-            <div class="kpi-card"><small>Building contractors</small><h2>{{ building_tenants|length }}</h2></div>
-            <div class="kpi-card"><small>Consultant tenants</small><h2>{{ consultant_tenants|length }}</h2></div>
-            <div class="kpi-card"><small>Pending registrations</small><h2>{{ pending_registrations|length }}</h2></div>
-            <div class="kpi-card"><small>Active organisations</small><h2>{{ tenant_count }}</h2></div>
-        </div>
-        {% else %}
         <div class="kpi-grid">
             <div class="kpi-card">
                 <small>Cost Performance (CPI)</small>
@@ -214,11 +209,9 @@
                     <tr><td>Emergency Permit</td><td>$1,200.00</td></tr>
                     <tr><td>Staff Lunch</td><td>$85.00</td></tr>
                 </table>
-    </div>
-</div>
-        {% endif %}
+            </div>
+        </div>
 
-    {% if is_tenant_portal %}
     <div class="table">
         <h3>System Activity</h3>
         <div class="table-scroll">
@@ -247,7 +240,7 @@
         </div>
         {% endfor %}
     </div>
-    {% endif %}
+    </div>
 
 </div>
 

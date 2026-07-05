@@ -594,6 +594,8 @@ def _ops_cross_task_activity_feed():
 
 @login_required
 def fin_mgmt_ops_view(request):
+    from django.urls import reverse
+
     tasks = ProjectTask.objects.order_by("project_id")
     active_task = _task_from_request(request, tasks)
     task_panel = _ops_task_panel_context(active_task)
@@ -606,6 +608,11 @@ def fin_mgmt_ops_view(request):
         'activity_feed': _ops_cross_task_activity_feed(),
         'bom_no': task_panel["bom_display"],
         'mtd_actuals': "89,200.00",
+        'main_dashboard_url': (
+            reverse("platform_admin")
+            if _is_platform_main_admin(request.user)
+            else reverse("dashboard")
+        ),
     }
     return render(request, 'Fin_Mgmt_and_OPs_dashboard.html', context)
 
