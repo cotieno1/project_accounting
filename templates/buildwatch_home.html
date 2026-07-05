@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildWatch — Building Contractors and Consultants Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1B3A5C;--teal:#1A7A6E;--blue:#2E6DA4;--ink:#0F1F33;--mist:#EEF3F8;--cloud:#F7F9FC;--rule:#D4DDE8;--mid:#8096AE;--white:#fff}
+html,body{font-family:'DM Sans',sans-serif;background:var(--cloud);color:var(--ink);-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+.bw-nav{display:flex;align-items:center;justify-content:space-between;padding:18px clamp(20px,4vw,48px);background:var(--white);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:10}
+.bw-brand{display:flex;align-items:center;gap:12px;font-weight:700;color:var(--navy);font-size:1.15rem}
+.bw-mark{width:36px;height:36px;background:var(--teal);border-radius:8px;display:grid;place-content:center}
+.bw-mark svg{width:18px;height:18px;stroke:#fff;stroke-width:2.5;fill:none}
+.bw-nav-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-block;padding:10px 18px;border-radius:8px;font-weight:600;font-size:.9rem;border:1px solid transparent;cursor:pointer;text-decoration:none}
+.btn-ghost{background:transparent;border-color:var(--rule);color:var(--navy)}
+.btn-primary{background:var(--teal);color:#fff}.btn-primary:hover{filter:brightness(1.05);text-decoration:none}
+.btn-secondary{background:var(--navy);color:#fff}.btn-secondary:hover{text-decoration:none}
+.hero{padding:clamp(48px,10vw,96px) clamp(20px,4vw,48px);background:linear-gradient(135deg,var(--navy),#243f5f);color:#fff}
+.hero-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
+.hero-eyebrow{font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:14px}
+.hero h1{font-size:clamp(2rem,5vw,3rem);line-height:1.08;letter-spacing:-.03em;margin-bottom:16px}
+.hero p{font-size:1.05rem;line-height:1.6;color:rgba(255,255,255,.78);max-width:36rem;margin-bottom:24px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px}
+.hero-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:24px}
+.hero-card h3{font-size:1rem;margin-bottom:8px}
+.hero-card p{font-size:.88rem;color:rgba(255,255,255,.7);margin:0}
+.section{padding:clamp(40px,8vw,72px) clamp(20px,4vw,48px)}
+.section-head{max-width:1100px;margin:0 auto 28px}
+.section-head h2{font-size:1.5rem;color:var(--navy);margin-bottom:8px}
+.section-head p{color:var(--mid);max-width:40rem;line-height:1.55}
+.cards{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media(max-width:768px){.cards{grid-template-columns:1fr}}
+.card{background:var(--white);border:1px solid var(--rule);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:14px}
+.card-tag{font-family:'DM Mono',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);background:#E5F2F0;display:inline-block;padding:4px 10px;border-radius:20px;width:fit-content}
+.card h3{font-size:1.25rem;color:var(--navy)}
+.card p{color:var(--mid);line-height:1.55;font-size:.92rem;flex:1}
+.card-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.tenants{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px}
+.tenant-pill{background:var(--white);border:1px solid var(--rule);border-radius:999px;padding:8px 14px;font-size:.82rem;color:var(--navy);font-weight:600}
+.tenant-pill--featured{border-color:var(--teal);background:#E5F2F0}
+.flow{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media(max-width:900px){.flow{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.flow{grid-template-columns:1fr}}
+.step{background:var(--white);border:1px solid var(--rule);border-radius:12px;padding:18px}
+.step-num{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--teal);margin-bottom:8px}
+.step strong{display:block;color:var(--navy);margin-bottom:6px;font-size:.92rem}
+.step span{font-size:.82rem;color:var(--mid);line-height:1.45}
+footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:var(--mid);font-size:.82rem;text-align:center}
+</style>
+</head>
+<body>
+<nav class="bw-nav">
+  <div class="bw-brand">
+    <div class="bw-mark"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    BuildWatch
+  </div>
+  <div class="bw-nav-actions">
+    <a class="btn btn-ghost" href="{% url 'login' %}">Sign in</a>
+    <a class="btn btn-primary" href="{% url 'buildwatch-register' %}?type=CONTRACTOR">Register organisation</a>
+  </div>
+</nav>
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-eyebrow">Multi-tenant building contractors and consultants</div>
+      <h1>The main entry for contractor operations. Pioneer included.</h1>
+      <p>BuildWatch is the platform home for building contractors, consultants, and client teams. Register your organisation, onboard staff, then open your contractor dashboard for BOM, requisitions, procurement, and financial ops under your company tenant.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'login' %}">Sign in to dashboard</a>
+        <a class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.35)" href="{% url 'buildwatch-register' %}?org=PIONEER">Join Pioneer Contractors</a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <h3>Start here, then your contractor dashboard</h3>
+      <p>After sign-in, your tenant dashboard is the command center for Pioneer or any registered organisation. From there you reach Ops Dashboard, BOM Builder, RO Builder, and the full procurement workflow.</p>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-head">
+    <h2>Onboard your organisation</h2>
+    <p>Choose the path that matches your organisation. Existing tenants like Pioneer Contractors can add staff without creating a duplicate company record.</p>
+  </div>
+  <div class="cards">
+    <article class="card">
+      <span class="card-tag">Building contractor</span>
+      <h3>Register as a building contractor</h3>
+      <p>For firms like Pioneer Contractors: civil, building, MEP, and general construction. Full procurement workflow including BOM, RO, RFQ, LPO, GRN, and GM payments.</p>
+      <div class="card-actions">
+        <a class="btn btn-primary" href="{% url 'buildwatch-register' %}?type=CONTRACTOR">New contractor organisation</a>
+        {% if pioneer_org %}<a class="btn btn-ghost" href="{% url 'buildwatch-register' %}?org=PIONEER">Join {{ pioneer_org.short_name }}</a>{% endif %}
+      </div>
+    </article>
+    <article class="card">
+      <span class="card-tag">Consultant</span>
+      <h3>Register as a consultant</h3>
+      <p>For consulting engineers, architects, quantity surveyors, and client representatives. Same tenant model with role-based access to project financial workflows.</p>
+      <div class="card-actions">
+        <a class="btn btn-secondary" href="{% url 'buildwatch-register' %}?type=CONSULTANT">New consultant organisation</a>
+      </div>
+    </article>
+  </div>
+</section>
+<section class="section" style="background:var(--mist);padding-top:32px;padding-bottom:32px;">
+  <div class="section-head">
+    <h2>How onboarding closes the loop</h2>
+    <p>Public registration, admin approval for new orgs, set-password email, then contractor dashboard.</p>
+  </div>
+  <div class="flow">
+    <div class="step"><div class="step-num">01</div><strong>BuildWatch home</strong><span>Register or join an active tenant such as Pioneer.</span></div>
+    <div class="step"><div class="step-num">02</div><strong>Review and approve</strong><span>Platform admin approves new contractors. Existing tenants auto-send activation email.</span></div>
+    <div class="step"><div class="step-num">03</div><strong>Set password</strong><span>Staff complete onboarding via the secure email link.</span></div>
+    <div class="step"><div class="step-num">04</div><strong>Contractor dashboard</strong><span>Sign in to your tenant dashboard and open cockpit lanes.</span></div>
+  </div>
+</section>
+{% if building_contractors or consultant_orgs %}
+<section class="section">
+  <div class="section-head">
+    <h2>Active organisations on the platform{% if tenant_count %} ({{ tenant_count }}){% endif %}</h2>
+    <p>Each organisation is a tenant with its own branding on documents and user roster.</p>
+  </div>
+  <div class="tenants">
+    {% for org in building_contractors %}
+    <span class="tenant-pill{% if org.org_code == 'PIONEER' %} tenant-pill--featured{% endif %}">{{ org.short_name }} · Building</span>
+    {% endfor %}
+    {% for org in consultant_orgs %}
+    <span class="tenant-pill">{{ org.short_name }} · Consultant</span>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+<footer>&copy; {% now "Y" %} Charles Otieno · BuildWatch multi-tenant contractor platform · {{ app_name }}</footer>
+</body>
+</html>

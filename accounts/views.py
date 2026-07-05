@@ -214,7 +214,28 @@ def has_module_access(user, module_code):
 # 🏠 NAVIGATION CORE
 # =======================================================================
 def home(request):
-    return render(request, 'home.html')
+    """BuildWatch public landing — multi-tenant entry for building contractors and consultants."""
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    active_orgs = Organization.objects.filter(
+        registration_status=Organization.STATUS_ACTIVE
+    ).order_by("org_code")
+    pioneer = active_orgs.filter(org_code="PIONEER").first()
+    return render(
+        request,
+        "buildwatch_home.html",
+        {
+            "building_contractors": active_orgs.filter(
+                contractor_type=Organization.CONTRACTOR_BUILDING
+            ),
+            "consultant_orgs": active_orgs.filter(
+                contractor_type=Organization.CONTRACTOR_CONSULTANT
+            ),
+            "pioneer_org": pioneer,
+            "tenant_count": active_orgs.count(),
+        },
+    )
 
 
 def health(request):
@@ -339,10 +360,15 @@ def dashboard(request):
 
     try:
         active_org = get_active_organization(request)
+        contractor_label = "Building contractor"
+        if active_org:
+            contractor_label = active_org.get_contractor_type_display()
         context = {
             'username': user.username,
             'role': role,
             'modules': modules,
+            'contractor_label': contractor_label,
+            'is_buildwatch_dashboard': True,
             'categories': UserCategory.objects.all(),
             'analysis_categories': GLAnalysisCategory.objects.all(),
             'role_options': [
@@ -1434,14 +1460,21 @@ def buildwatch_register(request):
     if request.method == "GET":
         ctx = _buildwatch_register_context(request)
         prefill = (request.GET.get("org") or "").strip().upper()
+        reg_type = (request.GET.get("type") or "").strip().upper()
+        post = {"org_country": "KE"}
         if prefill == "PIONEER" and ctx.get("pioneer_org"):
             po = ctx["pioneer_org"]
-            ctx["post"] = {
+            post.update({
                 "org_name": po.name,
                 "org_short": po.short_name,
                 "org_type": "CONTRACTOR",
-                "org_country": "KE",
-            }
+            })
+        elif reg_type == "CONSULTANT":
+            post["org_type"] = "CONSULTANT"
+        elif reg_type in ("BUILDING", "CONTRACTOR"):
+            post["org_type"] = "CONTRACTOR"
+        if post.get("org_type"):
+            ctx["post"] = post
         return render(request, "buildwatch_register.html", ctx)
 
     p = request.POST

@@ -2,7 +2,7 @@
 <html lang="en" class="command-center-root">
 <head>
 <meta charset="UTF-8">
-<title>{{ app_short_name }} Command Center</title>
+<title>{% if org_short_name %}{{ org_short_name }} · {% endif %}BuildWatch Contractor Dashboard</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -18,9 +18,9 @@
 <div class="header" id="commandHeader">
     <div class="header-top">
         <div class="header-title-row">
-            <span class="header-product">{{ app_short_name }} <span class="header-saas-tag">SaaS</span></span>
+            <span class="header-product">BuildWatch <span class="header-saas-tag">Multi-tenant</span></span>
             <span class="header-title-sep" aria-hidden="true">·</span>
-            <h2>Command Center</h2>
+            <h2>{% if org_short_name %}{{ org_short_name }}{% else %}Contractor{% endif %} Dashboard</h2>
         </div>
         <button type="button" class="header-mobile-toggle" id="mobileHeaderToggle" aria-expanded="false" aria-controls="headerActionsPanel" aria-label="Open account and settings">
             <span class="header-avatar" aria-hidden="true">{{ username.0|upper }}</span>
@@ -61,7 +61,7 @@
         {% if org_name %}
         <strong class="header-client">{{ org_name }}</strong>
         {% endif %}
-        <small class="header-platform-note">Multi-tenant cloud platform{% if tenant_count > 1 %} · {{ tenant_count }} organizations{% endif %}</small>
+        <small class="header-platform-note">Building contractor operations{% if contractor_label %} · {{ contractor_label }}{% endif %}{% if tenant_count > 1 %} · {{ tenant_count }} organisations on platform{% endif %}</small>
         {% if can_switch_organization and organization_options %}
         <div class="org-switcher">
             <label for="orgSwitcher">Platform admin — switch organization:</label>
@@ -80,7 +80,7 @@
 	<div class="container">
 
 	   <div class="nav-tabs">
-		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+		<div class="tab active" onclick="showSection('overview')">Contractor Overview</div>
 		<div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
 		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
         <a href="{% url 'ops_dashboard' %}" class="tab">Financial Ops Dashboard</a>
@@ -162,7 +162,7 @@
     <p class="command-footer-licence">
         &copy; {% now "Y" %}
         {% if app_vendor_name %}{{ app_vendor_name }}{% else %}Charles Otieno{% endif %}.
-        {{ app_name }} is a multi-tenant cloud SaaS platform.
+        {{ app_name }} is a BuildWatch multi-tenant platform for building contractors and consultants.
     </p>
 </footer>
 

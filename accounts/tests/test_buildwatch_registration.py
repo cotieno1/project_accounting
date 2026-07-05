@@ -52,6 +52,12 @@ class BuildWatchRegistrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pioneer")
 
+    def test_buildwatch_home_landing(self):
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "BuildWatch")
+        self.assertContains(response, "building contractor")
+
     def test_new_org_registration_is_pending(self):
         response = self.client.post(
             reverse("buildwatch-register"),
