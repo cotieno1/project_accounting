@@ -181,14 +181,21 @@ body.ro-builder .ro-modal-field label {
 
     body.ro-builder .sidebar {
         max-width: min(85vw, 320px);
+        padding: 16px;
+        padding-top: 12px;
     }
 
     body.ro-builder .sidebar .ro-sidebar-actions {
-        display: block;
+        display: none;
     }
 
     body.ro-builder .ro-workspace-actions {
-        display: none;
+        display: block;
+        margin-bottom: 0;
+    }
+
+    body.ro-builder .ro-workspace-actions .nav-label {
+        margin-bottom: 12px;
     }
 
     body.ro-builder .ro-action-list {
@@ -202,7 +209,6 @@ body.ro-builder .ro-modal-field label {
 
     body.ro-builder .workspace-scroller {
         padding: 16px;
-        padding-top: 56px;
         gap: 16px;
     }
 

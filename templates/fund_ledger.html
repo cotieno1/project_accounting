@@ -4,12 +4,13 @@
 {% block title %}Pioneer | Fund Control Ledger{% endblock %}
 {% block body_class %}fund-ledger{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/fund-ledger.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/fund-ledger.css' %}?v=2">
 {% endblock %}
+{% block cockpit_mobile_subtitle %}Fund control ledger — CEO &amp; GM{% endblock %}
 {% block sidebar %}
-<div class="sidebar-brand">
-<h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
-<small style="color: var(--muted); display: block; margin: 16px 0;">Fund control ledger — CEO &amp; GM</small>
+<div class="cockpit-sidebar-brand">
+<h2>PIONEER</h2>
+<small>Fund control ledger — CEO &amp; GM</small>
 </div>
 <label class="nav-label">Filter by cost center (task)</label>
 <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='{% url 'fund_ledger' %}'};" class="form-input">

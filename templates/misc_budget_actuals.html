@@ -6,10 +6,11 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-budget-actuals.css' %}">
 {% endblock %}
+{% block cockpit_mobile_subtitle %}Misc budget vs actuals{% endblock %}
 {% block sidebar %}
-<div class="sidebar-brand">
-<h2 style="color: var(--primary); margin: 0;">PIONEER</h2>
-<small style="color: var(--muted); display: block; margin: 16px 0;">{% if active_task %}Purchase Audit · {{ active_task.project_id }}{% else %}Select a project task{% endif %}</small>
+<div class="cockpit-sidebar-brand">
+<h2>PIONEER</h2>
+<small>{% if active_task %}Purchase Audit · {{ active_task.project_id }}{% else %}Select a project task{% endif %}</small>
 </div>
 <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
     <option value="">-- Select project task --</option>

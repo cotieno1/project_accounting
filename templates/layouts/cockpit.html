@@ -3,12 +3,18 @@
 
 {% block body %}
 <div class="cockpit-shell" id="cockpitShell">
-    <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Open navigation menu" aria-expanded="false">&#9776;</button>
     <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
     <aside class="sidebar" id="cockpitSidebar">
         {% block sidebar %}{% endblock %}
     </aside>
     <div class="main-content">
+        <header class="cockpit-mobile-header" aria-label="Application navigation">
+            <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Open navigation menu" aria-expanded="false">&#9776;</button>
+            <div class="cockpit-mobile-brand">
+                <span class="cockpit-mobile-title">{% block cockpit_mobile_title %}{{ org_short_name|default:"PIONEER" }}{% endblock %}</span>
+                <span class="cockpit-mobile-subtitle">{% block cockpit_mobile_subtitle %}{{ org_tagline|default:"Operations Command" }}{% endblock %}</span>
+            </div>
+        </header>
         <div class="workspace-scroller">
             {% include "includes/flash_messages.html" %}
             {% block workspace %}{% endblock %}

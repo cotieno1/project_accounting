@@ -211,6 +211,7 @@ body.fund-ledger .sidebar .form-input {
 
     body.fund-ledger .sidebar {
         max-width: min(85vw, 320px);
+        padding: 24px 16px;
     }
 
     body.fund-ledger .main-content {
@@ -220,7 +221,6 @@ body.fund-ledger .sidebar .form-input {
 
     body.fund-ledger .workspace-scroller {
         padding: 16px;
-        padding-top: 56px;
         gap: 16px;
     }
 
