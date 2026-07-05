@@ -5,12 +5,9 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-purchase.css' %}">
 {% endblock %}
-{% block cockpit_mobile_subtitle %}Somalia Ops Command{% endblock %}
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Ad-Hoc Requisition" process="Misc Purchase (MRO)" only %}{% endblock %}
 {% block sidebar %}
-<div class="cockpit-sidebar-brand">
-<h2>PIONEER</h2>
-        <small>Somalia Ops Command</small>
-</div>
+{% include "includes/cockpit_sidebar_brand.html" with lane="Ad-Hoc Requisition" process="Misc Purchase (MRO)" only %}
         {% include "includes/misc_task_picker.html" with picker_id="sidebar" picker_wrap_class="misc-sidebar-task-picker" show_label=False tasks=tasks active_task=active_task only %}
         
         <div class="sidebar-block">

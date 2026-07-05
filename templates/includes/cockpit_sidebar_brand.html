@@ -1,0 +1,4 @@
+<div class="cockpit-sidebar-brand{% if brand_class %} {{ brand_class }}{% endif %}">
+    <h2{% if title_class %} class="{{ title_class }}"{% endif %}>{{ brand_title|default:"PIONEER" }}</h2>
+    <small>{% include "includes/cockpit_lane_subtitle.html" with lane=lane process=process only %}</small>
+</div>

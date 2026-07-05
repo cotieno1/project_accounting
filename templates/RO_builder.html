@@ -8,12 +8,9 @@
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/ro-builder.css' %}?v=4">
 {% endblock %}
 
-{% block cockpit_mobile_subtitle %}Ops Command | Requisitions{% endblock %}
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Requisition" process="Ordinary Requisition Process" only %}{% endblock %}
 {% block sidebar %}
-    <div class="cockpit-sidebar-brand ro-sidebar-brand">
-        <h2>PIONEER</h2>
-        <small>Ops Command | Requisitions</small>
-    </div>
+    {% include "includes/cockpit_sidebar_brand.html" with lane="Requisition" process="Ordinary Requisition Process" brand_class="ro-sidebar-brand" only %}
 
     <div class="sidebar-block ro-sidebar-task-picker">
         <span class="nav-label">Active Project Task</span>

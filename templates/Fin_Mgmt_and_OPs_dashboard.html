@@ -5,12 +5,9 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/fin-mgmt-ops-dashboard.css' %}?v=2">
 {% endblock %}
-{% block cockpit_mobile_subtitle %}Financial Ops &amp; Supply Chain{% endblock %}
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Main Menu" process="Financial Ops & Supply Chain" only %}{% endblock %}
 {% block sidebar %}
-    <div class="cockpit-sidebar-brand ops-brand">
-        <h2>PIONEER</h2>
-        <small>Somalia Ops Command</small>
-    </div>
+    {% include "includes/cockpit_sidebar_brand.html" with lane="Main Menu" process="Financial Ops & Supply Chain" brand_class="ops-brand" only %}
 
     <div class="nav-section nav-section--adhoc">
         <span class="nav-label">⚡ AD-HOC PROCUREMENT</span>

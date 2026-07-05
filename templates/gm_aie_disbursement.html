@@ -6,13 +6,10 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/gm-aie-disbursement.css' %}?v=hold3">
 {% endblock %}
-{% block cockpit_mobile_subtitle %}GM Accounting Officer — Operations and Maintenance{% endblock %}
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="GM AIE Disbursement" process="Disbursement Desk" only %}{% endblock %}
 {% block sidebar %}
 {% if not no_tasks %}
-<div class="cockpit-sidebar-brand">
-<h2>PIONEER</h2>
-        <small>GM Accounting Officer - Operations and Maintenance</small>
-</div>
+{% include "includes/cockpit_sidebar_brand.html" with lane="GM AIE Disbursement" process="Disbursement Desk" only %}
         <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'};" class="form-input">
             <option value="">-- Select project task --</option>
             {% for t in tasks %}
@@ -118,10 +115,8 @@
             {% endif %}
         </div>
 {% else %}
-<div class="cockpit-sidebar-brand">
-<h2>PIONEER</h2>
+{% include "includes/cockpit_sidebar_brand.html" with lane="GM AIE Disbursement" process="Disbursement Desk" only %}
 <p style="color: var(--muted); font-size: 14px; margin: 8px 0 0;">No project tasks in the system.</p>
-</div>
 {% endif %}
 {% endblock %}
 {% block workspace %}

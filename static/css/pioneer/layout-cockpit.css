@@ -43,6 +43,7 @@
     color: var(--muted);
     font-size: 11px;
     line-height: 1.35;
+    white-space: normal;
 }
 
 .cockpit-sidebar-brand {
@@ -59,6 +60,8 @@
     display: block;
     margin-top: 6px;
     font-size: 12px;
+    line-height: 1.4;
+    white-space: normal;
 }
 
 .sidebar-backdrop {

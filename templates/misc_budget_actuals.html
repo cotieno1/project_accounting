@@ -6,12 +6,9 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-budget-actuals.css' %}">
 {% endblock %}
-{% block cockpit_mobile_subtitle %}Misc budget vs actuals{% endblock %}
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Purchase Audit" process="Ad-Hoc Budget vs Actuals" only %}{% endblock %}
 {% block sidebar %}
-<div class="cockpit-sidebar-brand">
-<h2>PIONEER</h2>
-<small>{% if active_task %}Purchase Audit · {{ active_task.project_id }}{% else %}Select a project task{% endif %}</small>
-</div>
+{% include "includes/cockpit_sidebar_brand.html" with lane="Purchase Audit" process="Ad-Hoc Budget vs Actuals" only %}
 <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};" class="form-input">
     <option value="">-- Select project task --</option>
     {% for t in tasks %}

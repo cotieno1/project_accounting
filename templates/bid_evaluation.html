@@ -7,11 +7,9 @@
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/bid-evaluation.css' %}">
 {% endblock %}
 {% block cockpit_mobile_title %}PIONEER EVAL{% endblock %}
-{% block cockpit_mobile_subtitle %}Bid evaluation terminal{% endblock %}
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Bid Evaluation" process="Major Procurement" only %}{% endblock %}
 {% block sidebar %}
-    <div class="cockpit-sidebar-brand">
-    <h2 class="bid-eval-brand">PIONEER EVAL</h2>
-    </div>
+    {% include "includes/cockpit_sidebar_brand.html" with lane="Bid Evaluation" process="Major Procurement" brand_title="PIONEER EVAL" title_class="bid-eval-brand" only %}
     <span class="nav-label">I. Task Selection Panel</span>
     <div class="task-select-wrap">
         <select onchange="if(this.value){window.location.href='?task_id='+this.value}else{window.location.href='?'};">

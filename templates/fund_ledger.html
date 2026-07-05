@@ -6,12 +6,9 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/fund-ledger.css' %}?v=2">
 {% endblock %}
-{% block cockpit_mobile_subtitle %}Fund control ledger — CEO &amp; GM{% endblock %}
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Fund Control Ledger" process="CEO & GM Wallets" only %}{% endblock %}
 {% block sidebar %}
-<div class="cockpit-sidebar-brand">
-<h2>PIONEER</h2>
-<small>Fund control ledger — CEO &amp; GM</small>
-</div>
+{% include "includes/cockpit_sidebar_brand.html" with lane="Fund Control Ledger" process="CEO & GM Wallets" only %}
 <label class="nav-label">Filter by cost center (task)</label>
 <select onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='{% url 'fund_ledger' %}'};" class="form-input">
     <option value="">All tasks</option>
