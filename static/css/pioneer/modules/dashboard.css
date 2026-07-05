@@ -225,11 +225,20 @@ html.command-center-root {
     min-width: 0;
 }
 
-/* Header action controls — one sizing source for setup + logout */
+/* Header action controls — one sizing source for setup + logout + session */
 .command-center {
     --header-control-height: 40px;
     --header-control-padding-x: 16px;
     --header-control-radius: var(--radius-sm, 6px);
+    --header-control-surface-bg: linear-gradient(180deg, var(--surface-gradient-start) 0%, var(--surface-gradient-end) 100%);
+    --header-control-surface-border: var(--border);
+}
+
+.command-center .header-control-surface {
+    background: var(--header-control-surface-bg);
+    border: 1px solid var(--header-control-surface-border);
+    border-radius: var(--header-control-radius);
+    box-sizing: border-box;
 }
 
 .command-center .header-control-btn {
@@ -254,24 +263,30 @@ html.command-center-root {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    gap: 2px;
+    gap: 0;
+    min-height: var(--header-control-height);
+    height: var(--header-control-height);
+    padding: 0 var(--header-control-padding-x);
     font-size: var(--font-sm);
-    color: var(--text);
-    line-height: 1.3;
+    color: var(--text-strong);
+    line-height: 1.15;
     min-width: 0;
 }
 
 .command-center .user-info strong {
-    font-size: 1.05rem;
+    font-size: var(--font-sm);
     color: var(--text-strong);
     font-weight: 800;
+    line-height: 1.1;
 }
 
 .command-center .user-role {
     color: var(--text-muted);
     font-size: var(--font-xs);
     font-weight: 600;
+    line-height: 1.1;
 }
 
 .command-center .logout-form {
@@ -567,8 +582,6 @@ html.command-center-root {
 }
 
 .command-center .setup-btn {
-    background: linear-gradient(180deg, var(--surface-gradient-start) 0%, var(--surface-gradient-end) 100%);
-    border: 1px solid var(--border);
     color: var(--text-strong);
     letter-spacing: 0.01em;
 }
@@ -1163,10 +1176,6 @@ html.command-center-root {
     }
 
     .command-center .user-info {
-        padding: 10px 12px;
-        border-radius: 10px;
-        background: rgba(15, 23, 42, 0.65);
-        border: 1px solid rgba(51, 65, 85, 0.55);
         align-items: center;
         text-align: center;
     }

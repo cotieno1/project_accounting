@@ -28,7 +28,7 @@
         <div class="header-actions-row" id="headerActionsPanel">
             <div class="header-tools">
                 <div class="setup-wrap">
-                    <button type="button" class="header-control-btn setup-btn" id="setupMenuBtn" onclick="MasterRegistry.toggleSetupMenu()">{% if is_platform_main_admin %}Platform Setup{% else %}System &amp; Accounts Setup{% endif %}</button>
+                    <button type="button" class="header-control-btn header-control-surface setup-btn" id="setupMenuBtn" onclick="MasterRegistry.toggleSetupMenu()">{% if is_platform_main_admin %}Platform Setup{% else %}System &amp; Accounts Setup{% endif %}</button>
                     <div id="setupDropdown" class="setup-dropdown">
                         {% if is_platform_main_admin %}
                         <div class="setup-item"><div><strong>Software Setup</strong><small>{{ app_name }} product branding</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openSingleton('app_settings')">Configure</button></div></div>
@@ -59,7 +59,7 @@
                 </div>
             </div>
             <div class="header-session">
-                <div class="user-info">
+                <div class="user-info header-control-surface">
                     <strong>{{ username }}</strong>
                     <span class="user-role">{{ role }}</span>
                 </div>
