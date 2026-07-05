@@ -2,7 +2,7 @@
 <html lang="en" class="command-center-root">
 <head>
 <meta charset="UTF-8">
-<title>{% if is_platform_main_admin %}BuildWatch Platform Admin{% else %}{{ app_short_name }} Command Center{% endif %}</title>
+<title>{{ app_short_name }} Command Center</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -19,9 +19,9 @@
     <div class="header-top">
         <div class="header-title-row">
             {% if is_platform_main_admin %}
-            <span class="header-product">BuildWatch <span class="header-saas-tag">Main Admin</span></span>
+            <span class="header-product">{{ app_short_name }} <span class="header-saas-tag">SaaS</span></span>
             <span class="header-title-sep" aria-hidden="true">·</span>
-            <h2>Building Contractors</h2>
+            <h2>Command Center</h2>
             {% else %}
             <span class="header-product">{{ app_short_name }} <span class="header-saas-tag">SaaS</span></span>
             <span class="header-title-sep" aria-hidden="true">·</span>
@@ -80,7 +80,7 @@
         {% if org_name %}
         <strong class="header-client">{{ org_name }}</strong>
         {% endif %}
-        <small class="header-platform-note">{% if is_platform_main_admin %}Global platform — manage building contractor tenants{% else %}Multi-tenant cloud platform{% endif %}{% if tenant_count > 1 %} · {{ tenant_count }} organizations{% endif %}</small>
+        <small class="header-platform-note">Multi-tenant cloud platform{% if tenant_count > 1 %} · {{ tenant_count }} organizations{% endif %}</small>
         {% if can_switch_organization and organization_options %}
         <div class="org-switcher">
             <label for="orgSwitcher">Platform admin — switch organization:</label>
@@ -100,8 +100,8 @@
 
 	   <div class="nav-tabs">
         {% if is_platform_main_admin %}
-		<div class="tab active" onclick="showSection('platform-tenants')">Building Contractors</div>
-		<div class="tab" onclick="showSection('overview')">Executive Overview</div>
+		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+		<div class="tab" onclick="showSection('platform-tenants')">Building Contractors</div>
 		<div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
 		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
         <a href="{% url 'ops_dashboard' %}" class="tab">Financial Ops Dashboard</a>
@@ -114,7 +114,7 @@
 	</div>
 
     {% if is_platform_main_admin %}
-    <div id="platform-tenants" class="section">
+    <div id="platform-tenants" class="section" style="display:none">
         <div class="platform-panel">
             <div class="platform-panel-head">
                 <div>
@@ -173,7 +173,7 @@
     {% endif %}
 
     <!-- OVERVIEW SECTION — original Command Center (tenant + platform Executive Overview tab) -->
-    <div id="overview" class="section"{% if is_platform_main_admin %} style="display:none"{% endif %}>
+    <div id="overview" class="section">
         <div class="kpi-grid">
             <div class="kpi-card">
                 <small>Cost Performance (CPI)</small>

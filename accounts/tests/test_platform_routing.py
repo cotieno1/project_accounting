@@ -71,19 +71,20 @@ class PlatformRoutingTests(TestCase):
         response = self.client.get(reverse("platform_admin"))
         self.assertRedirects(response, reverse("dashboard"))
 
-    def test_platform_admin_shows_building_contractors(self):
+    def test_platform_admin_defaults_to_executive_overview(self):
         self.client.login(username="mainadmin", password="test-pass-123")
         response = self.client.get(reverse("platform_admin"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Command Center")
+        self.assertContains(response, "Cost Performance (CPI)")
+        self.assertContains(response, "showSection('overview')")
         self.assertContains(response, "Building contractor tenants")
-        self.assertContains(response, "PIONEER")
 
-    def test_platform_admin_has_executive_overview_and_ops_link(self):
+    def test_platform_admin_shows_building_contractors_tab(self):
         self.client.login(username="mainadmin", password="test-pass-123")
         response = self.client.get(reverse("platform_admin"))
-        self.assertContains(response, "Executive Overview")
-        self.assertContains(response, "Cost Performance (CPI)")
-        self.assertContains(response, reverse("ops_dashboard"))
+        self.assertContains(response, "Building Contractors")
+        self.assertContains(response, "PIONEER")
 
     def test_tenant_dashboard_shows_pioneer_command_center(self):
         self.client.login(username="pioneer1", password="test-pass-123")
