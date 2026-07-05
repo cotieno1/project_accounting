@@ -115,33 +115,13 @@ html.command-center-root {
     margin: 0;
     font-size: var(--font-xs);
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-muted);
     line-height: 1.2;
-    white-space: nowrap;
 }
 
-.command-center .header-title-row h2 {
-    margin: 0;
-    font-size: var(--font-sm);
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    line-height: 1.2;
-    white-space: nowrap;
-}
-
-.command-center .header h2 {
-    margin: 0;
-    font-size: var(--font-sm);
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    line-height: 1.2;
-}
+.command-center .header-actions-row {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -197,7 +177,7 @@ html.command-center-root {
     color: var(--text-muted);
 }
 
-.command-center .header-actions-row {
+.command-center .header-client {
     display: block;
     margin-top: 2px;
     font-size: clamp(1rem, 3.2vw, 1.125rem);
@@ -1089,30 +1069,49 @@ html.command-center-root {
     .command-center .header-title-row {
         flex: 1 1 auto;
         min-width: 0;
-        align-items: center;
-        gap: 4px 8px;
+        align-items: flex-start;
     }
 
-    .command-center .header-product {
-        font-size: 9px;
-        letter-spacing: 0.1em;
-    }
-
-    .command-center .header-saas-tag {
-        font-size: 8px;
-        padding: 1px 6px;
+    .command-center .header-brand-lockup {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        width: 100%;
     }
 
     .command-center .header-title-sep {
-        font-size: 9px;
+        display: none;
+    }
+
+    .command-center .header-product {
+        font-size: 0.8125rem;
+        letter-spacing: 0.06em;
+        color: var(--text-strong);
+        white-space: normal;
+        line-height: 1.25;
+    }
+
+    .command-center .header-saas-tag {
+        font-size: 0.625rem;
+        padding: 2px 7px;
     }
 
     .command-center .header-page-name {
-        font-size: 9px;
-        letter-spacing: 0.1em;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
+        font-size: 0.6875rem;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+
+    .command-center .header-client {
+        font-size: 0.9375rem;
+    }
+
+    .command-center .header-platform-note {
+        font-size: 0.75rem;
+        line-height: 1.4;
     }
 
     .command-center .header-title-row h2 {
