@@ -83,16 +83,17 @@ html.command-center-root {
 
 .command-center .header-product {
     margin: 0;
-    font-size: var(--font-xs);
+    font-size: var(--header-brand-size);
     font-weight: 800;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--primary);
+    color: var(--header-brand-color);
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
     white-space: nowrap;
+    line-height: 1.2;
 }
 
 .command-center .header-title-sep {
@@ -139,14 +140,14 @@ html.command-center-root {
 
 .command-center .header-saas-tag {
     display: inline-block;
-    padding: 2px 8px;
+    padding: 3px 9px;
     border-radius: 999px;
-    font-size: 10px;
+    font-size: var(--header-brand-tag-size);
     font-weight: 800;
-    letter-spacing: 0.12em;
-    color: #bfdbfe;
-    background: rgba(37, 99, 235, 0.2);
-    border: 1px solid rgba(96, 165, 250, 0.35);
+    letter-spacing: 0.1em;
+    color: #dbeafe;
+    background: rgba(37, 99, 235, 0.28);
+    border: 1px solid rgba(96, 165, 250, 0.45);
 }
 
 .command-center .header-tenant-label {
@@ -232,6 +233,9 @@ html.command-center-root {
     --header-control-radius: var(--radius-sm, 6px);
     --header-control-surface-bg: linear-gradient(180deg, var(--surface-gradient-start) 0%, var(--surface-gradient-end) 100%);
     --header-control-surface-border: var(--border);
+    --header-brand-size: clamp(0.9375rem, 1.15vw, 1.0625rem);
+    --header-brand-tag-size: clamp(0.6875rem, 0.95vw, 0.8125rem);
+    --header-brand-color: #93c5fd;
 }
 
 .command-center .header-control-surface {
@@ -1097,13 +1101,16 @@ html.command-center-root {
     }
 
     .command-center .header-product {
-        font-size: 9px;
-        letter-spacing: 0.1em;
+        font-size: clamp(0.875rem, 3.4vw, 1rem);
+        letter-spacing: 0.08em;
+        color: var(--header-brand-color);
+        white-space: normal;
+        line-height: 1.25;
     }
 
     .command-center .header-saas-tag {
-        font-size: 8px;
-        padding: 1px 6px;
+        font-size: clamp(0.6875rem, 2.8vw, 0.8125rem);
+        padding: 2px 8px;
     }
 
     .command-center .header-title-sep {
