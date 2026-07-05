@@ -40,10 +40,10 @@ a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .card-tag{font-family:'DM Mono',monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);background:#E5F2F0;display:inline-block;padding:4px 10px;border-radius:20px;width:fit-content}
 .card h3{font-size:1.25rem;color:var(--navy)}
 .card p{color:var(--mid);line-height:1.55;font-size:.92rem;flex:1}
-.card-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.card-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;align-items:center}
+.reg-select{flex:1 1 200px;min-width:0;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);font:inherit;font-size:.9rem;color:var(--navy);background:var(--white)}
 .tenants{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px}
 .tenant-pill{background:var(--white);border:1px solid var(--rule);border-radius:999px;padding:8px 14px;font-size:.82rem;color:var(--navy);font-weight:600}
-.tenant-pill--featured{border-color:var(--teal);background:#E5F2F0}
 .flow{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 @media(max-width:900px){.flow{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.flow{grid-template-columns:1fr}}
@@ -61,49 +61,61 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
     BuildWatch
   </div>
   <div class="bw-nav-actions">
-    <a class="btn btn-ghost" href="{% url 'login' %}">Sign in</a>
-    <a class="btn btn-primary" href="{% url 'buildwatch-register' %}?type=CONTRACTOR">Register organisation</a>
+    <a class="btn btn-primary" href="{% url 'login' %}">Sign in</a>
   </div>
 </nav>
 <section class="hero">
   <div class="hero-grid">
     <div>
-      <div class="hero-eyebrow">Multi-tenant building contractors and consultants</div>
-      <h1>The main entry for contractor operations. Pioneer included.</h1>
-      <p>BuildWatch is the platform home for building contractors, consultants, and client teams. Register your organisation, onboard staff, then open your contractor dashboard for BOM, requisitions, procurement, and financial ops under your company tenant.</p>
+      <div class="hero-eyebrow">Contractors and consultants platform</div>
+      <h1>Register your organisation. Run procurement and financial ops.</h1>
+      <p>BuildWatch is the public entry for building contractors, roads and infrastructure firms, airports, and professional consultants — quantity surveyors, architects, structural engineers, and more. Onboard your company, approve staff, then open your tenant command center.</p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="{% url 'login' %}">Sign in to dashboard</a>
-        <a class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.35)" href="{% url 'buildwatch-register' %}?org=PIONEER">Join Pioneer Contractors</a>
+        <a class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.35)" href="#register">Register below</a>
       </div>
     </div>
     <div class="hero-card">
-      <h3>Start here, then your contractor dashboard</h3>
-      <p>After sign-in, your tenant dashboard is the command center for Pioneer or any registered organisation. From there you reach Ops Dashboard, BOM Builder, RO Builder, and the full procurement workflow.</p>
+      <h3>Start here, then your command center</h3>
+      <p>Choose your contractor or consultant category below. After approval you sign in to your organisation dashboard — Ops Dashboard, BOM Builder, RO Builder, and the full procurement workflow.</p>
     </div>
   </div>
 </section>
-<section class="section">
+<section class="section" id="register">
   <div class="section-head">
     <h2>Onboard your organisation</h2>
-    <p>Choose the path that matches your organisation. Existing tenants like Pioneer Contractors can add staff without creating a duplicate company record.</p>
+    <p>Select the category that matches your firm, then complete the registration form. Platform admin approves new contractors and consultants before dashboard access is granted.</p>
   </div>
   <div class="cards">
     <article class="card">
-      <span class="card-tag">Building contractor</span>
-      <h3>Register as a building contractor</h3>
-      <p>For firms like Pioneer Contractors: civil, building, MEP, and general construction. Full procurement workflow including BOM, RO, RFQ, LPO, GRN, and GM payments.</p>
-      <div class="card-actions">
-        <a class="btn btn-primary" href="{% url 'buildwatch-register' %}?type=CONTRACTOR">New contractor organisation</a>
-        {% if pioneer_org %}<a class="btn btn-ghost" href="{% url 'buildwatch-register' %}?org=PIONEER">Join {{ pioneer_org.short_name }}</a>{% endif %}
-      </div>
+      <span class="card-tag">Contractor</span>
+      <h3>Register as a contractor</h3>
+      <p>Building, roads, airports, bridges, MEP, and general civil contractors. Full procurement workflow including BOM, RO, RFQ, LPO, GRN, and GM payments.</p>
+      <form class="card-actions" method="get" action="{% url 'buildwatch-register' %}">
+        <input type="hidden" name="track" value="contractor">
+        <select class="reg-select" name="category" required aria-label="Contractor category">
+          <option value="" disabled selected>Select contractor category…</option>
+          {% for code, label in contractor_categories %}
+          <option value="{{ code }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Continue registration</button>
+      </form>
     </article>
     <article class="card">
       <span class="card-tag">Consultant</span>
       <h3>Register as a consultant</h3>
-      <p>For consulting engineers, architects, quantity surveyors, and client representatives. Same tenant model with role-based access to project financial workflows.</p>
-      <div class="card-actions">
-        <a class="btn btn-secondary" href="{% url 'buildwatch-register' %}?type=CONSULTANT">New consultant organisation</a>
-      </div>
+      <p>Quantity surveyors, architects, structural and civil engineers, MEP consultants, and project managers. Role-based access to project financial workflows.</p>
+      <form class="card-actions" method="get" action="{% url 'buildwatch-register' %}">
+        <input type="hidden" name="track" value="consultant">
+        <select class="reg-select" name="discipline" required aria-label="Consultant discipline">
+          <option value="" disabled selected>Select consultant discipline…</option>
+          {% for code, label in consultant_disciplines %}
+          <option value="{{ code }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-secondary">Continue registration</button>
+      </form>
     </article>
   </div>
 </section>
@@ -113,13 +125,13 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
     <p>Public registration, admin approval for new orgs, set-password email, then contractor dashboard.</p>
   </div>
   <div class="flow">
-    <div class="step"><div class="step-num">01</div><strong>BuildWatch home</strong><span>Register or join an active tenant such as Pioneer.</span></div>
-    <div class="step"><div class="step-num">02</div><strong>Review and approve</strong><span>Platform admin approves new contractors. Existing tenants auto-send activation email.</span></div>
+    <div class="step"><div class="step-num">01</div><strong>BuildWatch home</strong><span>Choose contractor or consultant category and register your organisation.</span></div>
+    <div class="step"><div class="step-num">02</div><strong>Review and approve</strong><span>Platform admin approves new organisations before dashboard access.</span></div>
     <div class="step"><div class="step-num">03</div><strong>Set password</strong><span>Staff complete onboarding via the secure email link.</span></div>
-    <div class="step"><div class="step-num">04</div><strong>Contractor dashboard</strong><span>Sign in to your tenant dashboard and open cockpit lanes.</span></div>
+    <div class="step"><div class="step-num">04</div><strong>Command center</strong><span>Sign in to your tenant dashboard and open cockpit lanes.</span></div>
   </div>
 </section>
-{% if building_contractors or consultant_orgs %}
+{% if building_contractors or consultant_orgs or roads_contractors %}
 <section class="section">
   <div class="section-head">
     <h2>Active organisations on the platform{% if tenant_count %} ({{ tenant_count }}){% endif %}</h2>
@@ -127,7 +139,10 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
   </div>
   <div class="tenants">
     {% for org in building_contractors %}
-    <span class="tenant-pill{% if org.org_code == 'PIONEER' %} tenant-pill--featured{% endif %}">{{ org.short_name }} · Building</span>
+    <span class="tenant-pill">{{ org.short_name }} · Building</span>
+    {% endfor %}
+    {% for org in roads_contractors %}
+    <span class="tenant-pill">{{ org.short_name }} · Roads</span>
     {% endfor %}
     {% for org in consultant_orgs %}
     <span class="tenant-pill">{{ org.short_name }} · Consultant</span>

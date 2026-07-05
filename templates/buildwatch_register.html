@@ -866,6 +866,28 @@ html, body {
           <div class="bw-error-msg" id="err-org_type">Please select an organisation type.</div>
         </div>
 
+        <div class="bw-field" id="field-contractor-category" style="display:none">
+          <label class="bw-label" for="contractor_category">Contractor category <span class="bw-req">*</span></label>
+          <select class="bw-select" id="contractor_category" name="contractor_category">
+            <option value="" disabled selected>Select category…</option>
+            {% for code, label in contractor_categories %}
+            <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div class="bw-error-msg" id="err-contractor_category">Please select your contractor category.</div>
+        </div>
+
+        <div class="bw-field" id="field-consultant-discipline" style="display:none">
+          <label class="bw-label" for="consultant_discipline">Consultant discipline <span class="bw-req">*</span></label>
+          <select class="bw-select" id="consultant_discipline" name="consultant_discipline">
+            <option value="" disabled selected>Select discipline…</option>
+            {% for code, label in consultant_disciplines %}
+            <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div class="bw-error-msg" id="err-consultant_discipline">Please select your consultant discipline.</div>
+        </div>
+
         <div class="bw-field-row">
           <div class="bw-field">
             <label class="bw-label" for="org_country">Country <span class="bw-req">*</span></label>
@@ -1249,6 +1271,8 @@ html, body {
         <input type="hidden" name="org_name"           id="hid-org_name">
         <input type="hidden" name="org_short"          id="hid-org_short">
         <input type="hidden" name="org_type"           id="hid-org_type">
+        <input type="hidden" name="contractor_category" id="hid-contractor_category">
+        <input type="hidden" name="consultant_discipline" id="hid-consultant_discipline">
         <input type="hidden" name="org_country"        id="hid-org_country">
         <input type="hidden" name="org_county"         id="hid-org_county">
         <input type="hidden" name="org_pin"            id="hid-org_pin">
@@ -1344,6 +1368,17 @@ function validateStep(step) {
       showErr(f, empty);
       if (empty) ok = false;
     });
+    const orgType = val('org_type');
+    if (orgType === 'CONTRACTOR') {
+      const empty = !val('contractor_category');
+      showErr('contractor_category', empty);
+      if (empty) ok = false;
+    }
+    if (orgType === 'CONSULTANT') {
+      const empty = !val('consultant_discipline');
+      showErr('consultant_discipline', empty);
+      if (empty) ok = false;
+    }
   }
 
   if (step === 2) {
@@ -1400,6 +1435,20 @@ document.querySelectorAll('.bw-role-card').forEach(card => {
   });
 });
 
+function toggleOrgCategoryFields() {
+  const orgType = val('org_type');
+  const contractorField = document.getElementById('field-contractor-category');
+  const consultantField = document.getElementById('field-consultant-discipline');
+  const contractorSelect = document.getElementById('contractor_category');
+  const consultantSelect = document.getElementById('consultant_discipline');
+  if (contractorField) contractorField.style.display = orgType === 'CONTRACTOR' ? '' : 'none';
+  if (consultantField) consultantField.style.display = orgType === 'CONSULTANT' ? '' : 'none';
+  if (contractorSelect) contractorSelect.required = orgType === 'CONTRACTOR';
+  if (consultantSelect) consultantSelect.required = orgType === 'CONSULTANT';
+}
+
+document.getElementById('org_type').addEventListener('change', toggleOrgCategoryFields);
+
 // ── Licence body conditional fields ──────────────────────────────────────────
 function toggleLicenceFields() {
   const body = val('licence_body');
@@ -1429,7 +1478,18 @@ function populateSummary() {
   };
 
   setText('s-org_name', val('org_name') || '—');
-  setText('s-org_type', orgTypeMap[val('org_type')] || val('org_type') || '—');
+  let typeLabel = orgTypeMap[val('org_type')] || val('org_type') || '—';
+  const cat = val('contractor_category');
+  const disc = val('consultant_discipline');
+  if (cat) {
+    const catEl = document.querySelector('#contractor_category option[value="' + cat + '"]');
+    typeLabel += ' · ' + (catEl ? catEl.textContent : cat);
+  }
+  if (disc) {
+    const discEl = document.querySelector('#consultant_discipline option[value="' + disc + '"]');
+    typeLabel += ' · ' + (discEl ? discEl.textContent : disc);
+  }
+  setText('s-org_type', typeLabel);
 
   const country = val('org_country') || '';
   const county  = val('org_county')  || '';
@@ -1462,7 +1522,7 @@ function toggleSubmit() {
 // ── On final submit: copy all values to hidden form ──────────────────────────
 document.getElementById('final-form').addEventListener('submit', () => {
   const fields = [
-    'org_name','org_short','org_type','org_country','org_county',
+    'org_name','org_short','org_type','contractor_category','consultant_discipline','org_country','org_county',
     'org_pin','org_phone','org_address',
     'user_first','user_last','user_email','user_phone','user_designation',
     'licence_body','licence_no','licence_expiry','licence_class',
@@ -1482,7 +1542,7 @@ document.getElementById('submit-btn').addEventListener('click', function(e) {
   e.preventDefault();
   // Copy fields then submit
   const fields = [
-    'org_name','org_short','org_type','org_country','org_county',
+    'org_name','org_short','org_type','contractor_category','consultant_discipline','org_country','org_county',
     'org_pin','org_phone','org_address',
     'user_first','user_last','user_email','user_phone','user_designation',
     'licence_body','licence_no','licence_expiry','licence_class',
@@ -1511,6 +1571,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var sel = document.getElementById('org_type');
       if (sel) sel.value = prefill.org_type;
     }
+    toggleOrgCategoryFields();
   } catch (e) {}
 });
 </script>

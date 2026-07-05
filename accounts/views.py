@@ -314,7 +314,6 @@ def home(request):
     active_orgs = Organization.objects.filter(
         registration_status=Organization.STATUS_ACTIVE
     ).order_by("org_code")
-    pioneer = active_orgs.filter(org_code="PIONEER").first()
     return render(
         request,
         "buildwatch_home.html",
@@ -325,7 +324,11 @@ def home(request):
             "consultant_orgs": active_orgs.filter(
                 contractor_type=Organization.CONTRACTOR_CONSULTANT
             ),
-            "pioneer_org": pioneer,
+            "roads_contractors": active_orgs.filter(
+                contractor_type=Organization.CONTRACTOR_ROADS
+            ),
+            "contractor_categories": BUILDWATCH_CONTRACTOR_CATEGORIES,
+            "consultant_disciplines": BUILDWATCH_CONSULTANT_DISCIPLINES,
             "tenant_count": active_orgs.count(),
         },
     )
@@ -1511,6 +1514,24 @@ ORG_TYPE_TO_CONTRACTOR = {
     "OTHER": Organization.CONTRACTOR_BUILDING,
 }
 
+BUILDWATCH_CONTRACTOR_CATEGORIES = [
+    ("BUILDING", "Building construction"),
+    ("ROADS", "Roads & highways"),
+    ("AIRPORT", "Airports & aviation"),
+    ("BRIDGE", "Bridges & civil structures"),
+    ("MEP", "MEP & building services"),
+    ("GENERAL", "General civil contractor"),
+]
+
+BUILDWATCH_CONSULTANT_DISCIPLINES = [
+    ("QS", "Quantity surveyor (QS)"),
+    ("ARCHITECT", "Architect"),
+    ("STRUCTURAL", "Structural engineer"),
+    ("CIVIL", "Civil engineer"),
+    ("MEP", "MEP consultant"),
+    ("PM", "Project / contract manager"),
+]
+
 
 def _buildwatch_org_code(org_short):
     code = re.sub(r"[^A-Z0-9]", "", (org_short or "").upper())[:30]
@@ -1528,6 +1549,16 @@ def _buildwatch_unique_org_code(base_code):
 
 def _buildwatch_contractor_type(org_type):
     return ORG_TYPE_TO_CONTRACTOR.get(org_type, Organization.CONTRACTOR_BUILDING)
+
+
+def _buildwatch_contractor_type_from_registration(org_type, contractor_category, consultant_discipline):
+    if org_type == "CONSULTANT" or consultant_discipline:
+        return Organization.CONTRACTOR_CONSULTANT
+    if contractor_category == "ROADS":
+        return Organization.CONTRACTOR_ROADS
+    if contractor_category:
+        return Organization.CONTRACTOR_BUILDING
+    return _buildwatch_contractor_type(org_type)
 
 
 def _buildwatch_access_level(buildwatch_role):
@@ -1549,6 +1580,8 @@ def _buildwatch_register_context(request, post=None):
         "app_name": app.app_name,
         "app_short_name": app.app_short_name,
         "pioneer_org": pioneer,
+        "contractor_categories": BUILDWATCH_CONTRACTOR_CATEGORIES,
+        "consultant_disciplines": BUILDWATCH_CONSULTANT_DISCIPLINES,
     }
 
 
@@ -1562,6 +1595,9 @@ def buildwatch_register(request):
         ctx = _buildwatch_register_context(request)
         prefill = (request.GET.get("org") or "").strip().upper()
         reg_type = (request.GET.get("type") or "").strip().upper()
+        track = (request.GET.get("track") or "").strip().upper()
+        category = (request.GET.get("category") or "").strip().upper()
+        discipline = (request.GET.get("discipline") or "").strip().upper()
         post = {"org_country": "KE"}
         if prefill == "PIONEER" and ctx.get("pioneer_org"):
             po = ctx["pioneer_org"]
@@ -1569,19 +1605,29 @@ def buildwatch_register(request):
                 "org_name": po.name,
                 "org_short": po.short_name,
                 "org_type": "CONTRACTOR",
+                "contractor_category": "BUILDING",
             })
-        elif reg_type == "CONSULTANT":
+        elif track == "CONTRACTOR" or category:
+            post["org_type"] = "CONTRACTOR"
+            if category:
+                post["contractor_category"] = category
+        elif track == "CONSULTANT" or discipline or reg_type == "CONSULTANT":
             post["org_type"] = "CONSULTANT"
+            if discipline:
+                post["consultant_discipline"] = discipline
         elif reg_type in ("BUILDING", "CONTRACTOR"):
             post["org_type"] = "CONTRACTOR"
         if post.get("org_type"):
             ctx["post"] = post
+            ctx["prefill_json"] = json.dumps(post)
         return render(request, "buildwatch_register.html", ctx)
 
     p = request.POST
     org_name = (p.get("org_name") or "").strip()
     org_short = (p.get("org_short") or "").strip()
     org_type = (p.get("org_type") or "").strip()
+    contractor_category = (p.get("contractor_category") or "").strip().upper()
+    consultant_discipline = (p.get("consultant_discipline") or "").strip().upper()
     org_country = (p.get("org_country") or "KE").strip()
     org_county = (p.get("org_county") or "").strip()
     org_pin = (p.get("org_pin") or "").strip()
@@ -1616,6 +1662,10 @@ def buildwatch_register(request):
         errors.append("Short name is required.")
     if not org_type:
         errors.append("Organisation type is required.")
+    if org_type == "CONTRACTOR" and not contractor_category:
+        errors.append("Please select your contractor category.")
+    if org_type == "CONSULTANT" and not consultant_discipline:
+        errors.append("Please select your consultant discipline.")
     if not user_first:
         errors.append("First name is required.")
     if not user_last:
@@ -1665,8 +1715,10 @@ def buildwatch_register(request):
             email=user_email,
             tax_pin=org_pin,
             document_tagline=f"{org_type} — {org_county or org_country}",
-            contractor_type=_buildwatch_contractor_type(org_type),
-            organization_type=org_type,
+            contractor_type=_buildwatch_contractor_type_from_registration(
+                org_type, contractor_category, consultant_discipline
+            ),
+            organization_type=contractor_category or consultant_discipline or org_type,
             registration_status=Organization.STATUS_PENDING,
             is_default=False,
         )

@@ -27,6 +27,7 @@ class BuildWatchRegistrationTests(TestCase):
             "org_name": "New Roads Contractor Ltd",
             "org_short": "RoadsCo",
             "org_type": "CONTRACTOR",
+            "contractor_category": "ROADS",
             "org_country": "KE",
             "org_county": "Nairobi",
             "org_pin": "P051234567X",
@@ -56,7 +57,17 @@ class BuildWatchRegistrationTests(TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "BuildWatch")
-        self.assertContains(response, "building contractor")
+        self.assertContains(response, "Select contractor category")
+        self.assertContains(response, "Select consultant discipline")
+        self.assertNotContains(response, "Join Pioneer")
+
+    def test_register_get_prefill_contractor_category(self):
+        response = self.client.get(
+            reverse("buildwatch-register") + "?track=contractor&category=AIRPORT"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CONTRACTOR")
+        self.assertContains(response, "AIRPORT")
 
     def test_new_org_registration_is_pending(self):
         response = self.client.post(
@@ -75,6 +86,7 @@ class BuildWatchRegistrationTests(TestCase):
             self._registration_payload(
                 org_name="Pioneer Contractors Co Ltd",
                 org_short="Pioneer",
+                contractor_category="BUILDING",
                 user_email="pioneer.new@example.com",
             ),
         )
