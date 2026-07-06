@@ -1515,12 +1515,10 @@ ORG_TYPE_TO_CONTRACTOR = {
 }
 
 BUILDWATCH_CONTRACTOR_CATEGORIES = [
-    ("BUILDING", "Building construction"),
-    ("ROADS", "Roads & highways"),
-    ("AIRPORT", "Airports & aviation"),
-    ("BRIDGE", "Bridges & civil structures"),
-    ("MEP", "MEP & building services"),
-    ("GENERAL", "General civil contractor"),
+    ("BUILDING", "Building contractors"),
+    ("ROADS", "Roads / civil infrastructure contractors"),
+    ("SPECIALIST", "Specialist contractors"),
+    ("GENERAL", "General civil contractors"),
 ]
 
 BUILDWATCH_CONSULTANT_DISCIPLINES = [

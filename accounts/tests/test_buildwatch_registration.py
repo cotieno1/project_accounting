@@ -62,15 +62,17 @@ class BuildWatchRegistrationTests(TestCase):
         self.assertContains(response, "Not starting from scratch")
         self.assertContains(response, "Three-gate compliance lock")
         self.assertContains(response, "national dashboard")
+        self.assertContains(response, "Building contractors")
+        self.assertContains(response, "General civil contractors")
         self.assertNotContains(response, "Join Pioneer")
 
     def test_register_get_prefill_contractor_category(self):
         response = self.client.get(
-            reverse("buildwatch-register") + "?track=contractor&category=AIRPORT"
+            reverse("buildwatch-register") + "?track=contractor&category=SPECIALIST"
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "CONTRACTOR")
-        self.assertContains(response, "AIRPORT")
+        self.assertContains(response, "SPECIALIST")
 
     def test_new_org_registration_is_pending(self):
         response = self.client.post(
