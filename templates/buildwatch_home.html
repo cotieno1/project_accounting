@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BuildWatch — Building Contractors and Consultants Platform</title>
+<title>BuildWatch — Global Infrastructure Integrity Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--navy:#1B3A5C;--teal:#1A7A6E;--blue:#2E6DA4;--ink:#0F1F33;--mist:#EEF3F8;--cloud:#F7F9FC;--rule:#D4DDE8;--mid:#8096AE;--white:#fff}
+:root{--navy:#1B3A5C;--teal:#1A7A6E;--blue:#2E6DA4;--ink:#0F1F33;--mist:#EEF3F8;--cloud:#F7F9FC;--rule:#D4DDE8;--mid:#8096AE;--white:#fff;--live:#0d9488;--next:#b45309}
 html,body{font-family:'DM Sans',sans-serif;background:var(--cloud);color:var(--ink);-webkit-font-smoothing:antialiased}
 a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .bw-nav{display:flex;align-items:center;justify-content:space-between;padding:18px clamp(20px,4vw,48px);background:var(--white);border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:10}
@@ -21,19 +21,46 @@ a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .btn-primary{background:var(--teal);color:#fff}.btn-primary:hover{filter:brightness(1.05);text-decoration:none}
 .btn-secondary{background:var(--navy);color:#fff}.btn-secondary:hover{text-decoration:none}
 .hero{padding:clamp(48px,10vw,96px) clamp(20px,4vw,48px);background:linear-gradient(135deg,var(--navy),#243f5f);color:#fff}
-.hero-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center}
+.hero-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}
 @media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
 .hero-eyebrow{font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:14px}
 .hero h1{font-size:clamp(2rem,5vw,3rem);line-height:1.08;letter-spacing:-.03em;margin-bottom:16px}
-.hero p{font-size:1.05rem;line-height:1.6;color:rgba(255,255,255,.78);max-width:36rem;margin-bottom:24px}
+.hero p{font-size:1.05rem;line-height:1.6;color:rgba(255,255,255,.78);max-width:38rem;margin-bottom:20px}
+.hero-note{font-size:.9rem;line-height:1.55;color:rgba(255,255,255,.62);max-width:38rem;margin-bottom:24px;padding-left:14px;border-left:3px solid var(--teal)}
 .hero-actions{display:flex;flex-wrap:wrap;gap:12px}
 .hero-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:24px}
 .hero-card h3{font-size:1rem;margin-bottom:8px}
-.hero-card p{font-size:.88rem;color:rgba(255,255,255,.7);margin:0}
+.hero-card p{font-size:.88rem;color:rgba(255,255,255,.7);margin:0;line-height:1.5}
+.hero-card ul{margin:12px 0 0;padding-left:18px;font-size:.84rem;color:rgba(255,255,255,.65);line-height:1.5}
 .section{padding:clamp(40px,8vw,72px) clamp(20px,4vw,48px)}
 .section-head{max-width:1100px;margin:0 auto 28px}
 .section-head h2{font-size:1.5rem;color:var(--navy);margin-bottom:8px}
-.section-head p{color:var(--mid);max-width:40rem;line-height:1.55}
+.section-head p{color:var(--mid);max-width:46rem;line-height:1.55}
+.layer-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media(max-width:768px){.layer-grid{grid-template-columns:1fr}}
+.layer-card{background:var(--white);border:1px solid var(--rule);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:12px}
+.layer-badge{font-family:'DM Mono',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:20px;width:fit-content;font-weight:600}
+.layer-badge--live{color:#0f766e;background:#ccfbf1}
+.layer-badge--next{color:#9a3412;background:#ffedd5}
+.layer-card h3{font-size:1.2rem;color:var(--navy)}
+.layer-card p{color:var(--mid);line-height:1.55;font-size:.92rem}
+.cap-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin-top:4px}
+@media(max-width:520px){.cap-list{grid-template-columns:1fr}}
+.cap-item{font-size:.84rem;color:var(--ink);padding:8px 10px;background:var(--cloud);border-radius:8px;border:1px solid var(--rule)}
+.cap-item strong{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mid);margin-bottom:2px;font-weight:600}
+.gate-strip{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(max-width:768px){.gate-strip{grid-template-columns:1fr}}
+.gate{background:var(--white);border:1px solid var(--rule);border-radius:14px;padding:20px;position:relative}
+.gate-num{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--teal);margin-bottom:8px}
+.gate h3{font-size:1rem;color:var(--navy);margin-bottom:8px}
+.gate p{font-size:.84rem;color:var(--mid);line-height:1.5}
+.gate-arrow{display:none}
+@media(min-width:769px){
+  .gate-strip .gate:not(:last-child)::after{content:"→";position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:var(--mid);font-size:1.1rem;z-index:1}
+}
+.stage-flow{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px}
+.stage-pill{background:var(--white);border:1px solid var(--rule);border-radius:999px;padding:10px 16px;font-size:.82rem;color:var(--navy);font-weight:600;line-height:1.3}
+.stage-pill span{display:block;font-size:.7rem;font-weight:500;color:var(--mid);margin-top:2px}
 .cards{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
 @media(max-width:768px){.cards{grid-template-columns:1fr}}
 .card{background:var(--white);border:1px solid var(--rule);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:14px}
@@ -64,33 +91,112 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
     <a class="btn btn-primary" href="{% url 'login' %}">Sign in</a>
   </div>
 </nav>
+
 <section class="hero">
   <div class="hero-grid">
     <div>
-      <div class="hero-eyebrow">Contractors and consultants platform</div>
-      <h1>Register your organisation. Run procurement and financial ops.</h1>
-      <p>BuildWatch is the public entry for building contractors, roads and infrastructure firms, airports, and professional consultants — quantity surveyors, architects, structural engineers, and more. Onboard your company, approve staff, then open your tenant command center.</p>
+      <div class="hero-eyebrow">BuildWatch global · A to Z infrastructure integrity</div>
+      <h1>From site inspection to final account — one accountable platform.</h1>
+      <p>BuildWatch is the global home for building contractors, roads and infrastructure firms, airports, bridges, MEP specialists, and professional consultants. Register your organisation, run your tenant command center, and build on a platform designed for procurement, financial control, and construction compliance.</p>
+      <p class="hero-note"><strong>Not starting from scratch.</strong> The financial and procurement backbone is already live — BOM, RO, RFQ, LPO, GRN, budget control, and GM payments. BuildWatch is adding the construction-specific layer on top: inspections, compliance gates, standards, and national visibility.</p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="{% url 'login' %}">Sign in to dashboard</a>
-        <a class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.35)" href="#register">Register below</a>
+        <a class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.35)" href="#register">Register organisation</a>
       </div>
     </div>
     <div class="hero-card">
-      <h3>Start here, then your command center</h3>
-      <p>Choose your contractor or consultant category below. After approval you sign in to your organisation dashboard — Ops Dashboard, BOM Builder, RO Builder, and the full procurement workflow.</p>
+      <h3>Two layers, one platform</h3>
+      <p>Every tenant keeps their own branding, users, and audit trail. Platform admin governs onboarding and the national view.</p>
+      <ul>
+        <li><strong>Live today</strong> — procurement &amp; financial ops command center</li>
+        <li><strong>Rolling out</strong> — site inspections, certificates, compliance gates</li>
+        <li><strong>Roadmap</strong> — standards library, quality engine, national dashboard</li>
+      </ul>
     </div>
   </div>
 </section>
-<section class="section" id="register">
+
+<section class="section">
+  <div class="section-head">
+    <h2>Platform A to Z — what BuildWatch covers</h2>
+    <p>BuildWatch spans the full project lifecycle: mobilisation and onboarding, execution on site, certification and payments, through to close-out and national reporting. The backbone is operational; the construction integrity layer complements it.</p>
+  </div>
+  <div class="layer-grid">
+    <article class="layer-card">
+      <span class="layer-badge layer-badge--live">Live · financial &amp; procurement backbone</span>
+      <h3>Command center &amp; cockpit lanes</h3>
+      <p>Multi-tenant SaaS with per-organisation dashboards. Pioneer and peer contractors run the same proven workflow today.</p>
+      <div class="cap-list">
+        <div class="cap-item"><strong>Procurement</strong>BOM → RO → RFQ → LPO → GRN</div>
+        <div class="cap-item"><strong>Financial ops</strong>Budget, AIE, CEO release, GM desk</div>
+        <div class="cap-item"><strong>Ad-hoc path</strong>MRO, misc purchase, officer PVs</div>
+        <div class="cap-item"><strong>Governance</strong>Role-based access, org onboarding, audit events</div>
+      </div>
+    </article>
+    <article class="layer-card">
+      <span class="layer-badge layer-badge--next">Building · construction integrity layer</span>
+      <h3>Inspections, gates &amp; accountability</h3>
+      <p>Proactive quality and compliance — recorded against professional licence numbers with an immutable audit ledger (as committed at registration).</p>
+      <div class="cap-list">
+        <div class="cap-item"><strong>Site inspections</strong>Hold-points, checklists, photos, NCRs</div>
+        <div class="cap-item"><strong>Compliance gates</strong>Programme → inspection → payment lock</div>
+        <div class="cap-item"><strong>Certificates</strong>IPC, variations, practical completion, final account</div>
+        <div class="cap-item"><strong>Standards library</strong>NCA, KEBS, KRB, BS, ASTM templates</div>
+        <div class="cap-item"><strong>Quality engine</strong>Licence expiry alerts, proactive flags</div>
+        <div class="cap-item"><strong>National dashboard</strong>Platform-wide compliance &amp; analytics</div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="section" style="background:var(--mist);padding-top:36px;padding-bottom:36px;">
+  <div class="section-head">
+    <h2>Three-gate compliance lock</h2>
+    <p>No payment certificate is approved unless all three gates are satisfied. This connects site reality to money — the same discipline already used for CEO budget and fund-release gates in financial ops.</p>
+  </div>
+  <div class="gate-strip">
+    <div class="gate">
+      <div class="gate-num">Gate 1</div>
+      <h3>Programme gate</h3>
+      <p>Drawings, method statements, material submittals, and permits in place before work proceeds on programme.</p>
+    </div>
+    <div class="gate">
+      <div class="gate-num">Gate 2</div>
+      <h3>Inspection gate</h3>
+      <p>Independent site inspection, hold-point sign-off, test results, and closed non-conformances before valuation.</p>
+    </div>
+    <div class="gate">
+      <div class="gate-num">Gate 3</div>
+      <h3>Compliance gate</h3>
+      <p>Valid professional licence, certificate chain, retention rules, and financial authorisation before payment runs.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Project lifecycle stages</h2>
+    <p>Every inspection and certificate is tied to a project task — creating the audit trail from mobilisation through to final account.</p>
+  </div>
+  <div class="stage-flow">
+    <div class="stage-pill">01 Mobilisation<span>Site setup, HSE, ITP registered</span></div>
+    <div class="stage-pill">02 Pre-start<span>Submittals, pre-start inspection</span></div>
+    <div class="stage-pill">03 Execution<span>Hold-points, NCRs, site records</span></div>
+    <div class="stage-pill">04 Certification<span>IPC, milestones, PC certificate</span></div>
+    <div class="stage-pill">05 Close-out<span>Defects, final account, archive</span></div>
+  </div>
+</section>
+
+<section class="section" id="register" style="background:var(--mist);padding-top:36px;">
   <div class="section-head">
     <h2>Onboard your organisation</h2>
-    <p>Select the category that matches your firm, then complete the registration form. Platform admin approves new contractors and consultants before dashboard access is granted.</p>
+    <p>Select the category that matches your firm, then complete registration. Platform admin approves new contractors and consultants before dashboard access. Your licence details feed the accountability ledger from day one.</p>
   </div>
   <div class="cards">
     <article class="card">
       <span class="card-tag">Contractor</span>
       <h3>Register as a contractor</h3>
-      <p>Building, roads, airports, bridges, MEP, and general civil contractors. Full procurement workflow including BOM, RO, RFQ, LPO, GRN, and GM payments.</p>
+      <p>Building, roads, airports, bridges, MEP, and general civil contractors. Full procurement workflow today — inspection and certification lanes as the integrity layer rolls out.</p>
       <form class="card-actions" method="get" action="{% url 'buildwatch-register' %}">
         <input type="hidden" name="track" value="contractor">
         <select class="reg-select" name="category" required aria-label="Contractor category">
@@ -105,7 +211,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
     <article class="card">
       <span class="card-tag">Consultant</span>
       <h3>Register as a consultant</h3>
-      <p>Quantity surveyors, architects, structural and civil engineers, MEP consultants, and project managers. Role-based access to project financial workflows.</p>
+      <p>Quantity surveyors, architects, structural and civil engineers, MEP consultants, and project managers. Sign off inspections, checklists, and payment certificates under your registration number.</p>
       <form class="card-actions" method="get" action="{% url 'buildwatch-register' %}">
         <input type="hidden" name="track" value="consultant">
         <select class="reg-select" name="discipline" required aria-label="Consultant discipline">
@@ -119,23 +225,25 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
     </article>
   </div>
 </section>
-<section class="section" style="background:var(--mist);padding-top:32px;padding-bottom:32px;">
+
+<section class="section" style="padding-top:32px;padding-bottom:32px;">
   <div class="section-head">
     <h2>How onboarding closes the loop</h2>
-    <p>Public registration, admin approval for new orgs, set-password email, then contractor dashboard.</p>
+    <p>Public registration, admin approval, secure set-password email, then your tenant command center — procurement live now; compliance lanes added as you work.</p>
   </div>
   <div class="flow">
     <div class="step"><div class="step-num">01</div><strong>BuildWatch home</strong><span>Choose contractor or consultant category and register your organisation.</span></div>
     <div class="step"><div class="step-num">02</div><strong>Review and approve</strong><span>Platform admin approves new organisations before dashboard access.</span></div>
     <div class="step"><div class="step-num">03</div><strong>Set password</strong><span>Staff complete onboarding via the secure email link.</span></div>
-    <div class="step"><div class="step-num">04</div><strong>Command center</strong><span>Sign in to your tenant dashboard and open cockpit lanes.</span></div>
+    <div class="step"><div class="step-num">04</div><strong>Command center</strong><span>Ops dashboard, procurement lanes, and compliance records on one platform.</span></div>
   </div>
 </section>
+
 {% if building_contractors or consultant_orgs or roads_contractors %}
 <section class="section">
   <div class="section-head">
     <h2>Active organisations on the platform{% if tenant_count %} ({{ tenant_count }}){% endif %}</h2>
-    <p>Each organisation is a tenant with its own branding on documents and user roster.</p>
+    <p>Each organisation is a tenant with its own branding on documents, user roster, and audit trail.</p>
   </div>
   <div class="tenants">
     {% for org in building_contractors %}
@@ -150,6 +258,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
   </div>
 </section>
 {% endif %}
-<footer>&copy; {% now "Y" %} Charles Otieno · BuildWatch multi-tenant contractor platform · {{ app_name }}</footer>
+
+<footer>&copy; {% now "Y" %} Charles Otieno · BuildWatch global infrastructure integrity platform · {{ app_name }}</footer>
 </body>
 </html>

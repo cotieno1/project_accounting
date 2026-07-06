@@ -59,6 +59,9 @@ class BuildWatchRegistrationTests(TestCase):
         self.assertContains(response, "BuildWatch")
         self.assertContains(response, "Select contractor category")
         self.assertContains(response, "Select consultant discipline")
+        self.assertContains(response, "Not starting from scratch")
+        self.assertContains(response, "Three-gate compliance lock")
+        self.assertContains(response, "national dashboard")
         self.assertNotContains(response, "Join Pioneer")
 
     def test_register_get_prefill_contractor_category(self):
