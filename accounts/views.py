@@ -77,19 +77,47 @@ def _organization_display_short_name(org):
     if org is None:
         return ""
     label = _clean_bracketed_text(org.short_name or org.name, max_len=80)
-    return label or org.org_code
+    return label or _normalize_org_code(getattr(org, "org_code", "")) or ""
+
+
+def _organization_display_name(org):
+    if org is None:
+        return ""
+    label = _clean_bracketed_text(org.name or org.short_name, max_len=200)
+    return label or _organization_display_short_name(org)
+
+
+def _organization_canonical_key(org):
+    code_key = _normalize_org_code(getattr(org, "org_code", ""))
+    if code_key:
+        return code_key.casefold()
+    return _organization_display_short_name(org).casefold() or (org.org_code or "").casefold()
+
+
+def _organization_canonical_rank(org):
+    code = org.org_code or ""
+    norm = _normalize_org_code(code)
+    clean_code = code == norm and "[" not in code and "]" not in code
+    clean_name = "[" not in (org.name or "") and "[" not in (org.short_name or "")
+    return (0 if clean_code else 1, 0 if clean_name else 1, len(code), code)
+
+
+def _organizations_canonical_list(queryset):
+    """One row per canonical tenant code; prefer clean PIONEER over ['PIONEER']."""
+    buckets = {}
+    for org in queryset.order_by("org_code"):
+        key = _organization_canonical_key(org)
+        if not key:
+            continue
+        if key not in buckets or _organization_canonical_rank(org) < _organization_canonical_rank(
+            buckets[key]
+        ):
+            buckets[key] = org
+    return sorted(buckets.values(), key=lambda o: o.org_code)
 
 
 def _organizations_for_public_home(queryset):
-    """One home-page pill per trading name; prefer canonical lowest org_code."""
-    buckets = {}
-    for org in queryset.order_by("org_code"):
-        key = _organization_display_short_name(org).casefold()
-        if not key:
-            continue
-        if key not in buckets or org.org_code < buckets[key].org_code:
-            buckets[key] = org
-    return sorted(buckets.values(), key=lambda o: o.org_code)
+    return _organizations_canonical_list(queryset)
 
 
 def _resolve_project_task(qs, raw):
@@ -275,12 +303,12 @@ def _build_dashboard_context(request, *, mode):
         .select_related("organization")
         .order_by("-id")[:40]
     )
-    building_tenants = Organization.objects.filter(
-        contractor_type=Organization.CONTRACTOR_BUILDING
-    ).order_by("org_code")
-    consultant_tenants = Organization.objects.filter(
-        contractor_type=Organization.CONTRACTOR_CONSULTANT
-    ).order_by("org_code")
+    building_tenants = _organizations_canonical_list(
+        Organization.objects.filter(contractor_type=Organization.CONTRACTOR_BUILDING)
+    )
+    consultant_tenants = _organizations_canonical_list(
+        Organization.objects.filter(contractor_type=Organization.CONTRACTOR_CONSULTANT)
+    )
 
     portal_name = "Contractor Portal"
     if mode == "tenant" and active_org:
@@ -312,11 +340,12 @@ def _build_dashboard_context(request, *, mode):
         "organization_options": [
             {
                 "org_code": o.org_code,
-                "name": o.name,
-                "short_name": o.short_name,
+                "name": _organization_display_name(o),
+                "short_name": _organization_display_short_name(o),
             }
-            for o in Organization.objects.all().order_by("org_code")
+            for o in _organizations_canonical_list(Organization.objects.all())
         ],
+        "tenant_count": len(_organizations_canonical_list(Organization.objects.all())),
         "can_switch_organization": _is_platform_main_admin(user),
         "can_manage_tenants": can_manage_tenants(user),
         "active_org_code": active_org.org_code if active_org else "",
@@ -882,9 +911,9 @@ def _serialize_master_row(entity_type, obj):
         if len(addr) > 60:
             addr = addr[:57] + "..."
         row.update({
-            "org_code": obj.org_code,
-            "name": obj.name,
-            "short_name": obj.short_name,
+            "org_code": _normalize_org_code(obj.org_code) or obj.org_code,
+            "name": _organization_display_name(obj),
+            "short_name": _organization_display_short_name(obj),
             "contractor_type": obj.get_contractor_type_display(),
             "registration_status": obj.get_registration_status_display(),
             "contact_address": addr,
@@ -897,19 +926,14 @@ def _serialize_master_row(entity_type, obj):
 
 def _normalize_org_code(raw):
     """Strip accidental JSON/list wrappers from master-registry input."""
-    code = (raw or "").strip()
-    if code.startswith("[") and code.endswith("]"):
-        inner = code[1:-1].strip().strip("'\"")
-        if inner:
-            code = inner
-    return code.strip("[]'\" ").upper()
+    code = _clean_bracketed_text(raw, max_len=30).upper()
+    code = re.sub(r"[^A-Z0-9_-]", "", code)
+    return code[:30]
 
 
 def _validate_organization_payload(data):
     org_code = _normalize_org_code(data.get("org_code"))
-    name = (data.get("name") or "").strip()
-    if name.startswith("[") and name.endswith("]"):
-        name = name[1:-1].strip().strip("'\"")
+    name = _clean_bracketed_text((data.get("name") or "").strip(), max_len=200)
     if not org_code:
         return None, "Organization code is required (e.g. PIONEER)."
     if not re.match(r"^[A-Z0-9][A-Z0-9_-]{0,28}$", org_code):
@@ -1098,7 +1122,11 @@ def get_entity_list(request, entity_type):
     else:
         qs = model.objects.all().order_by(model._meta.pk.name)
 
-    data = [_serialize_master_row(entity_type, obj) for obj in qs]
+    if entity_type == "organization":
+        objs = _organizations_canonical_list(qs)
+        data = [_serialize_master_row(entity_type, obj) for obj in objs]
+    else:
+        data = [_serialize_master_row(entity_type, obj) for obj in qs]
     return JsonResponse({
         "status": "success",
         "entity": entity_type,

@@ -10,6 +10,22 @@ def org_display_short_name(org):
     return _organization_display_short_name(org)
 
 
+@register.filter(name="org_display_name")
+def org_display_name(org):
+    from accounts.views import _organization_display_name
+
+    return _organization_display_name(org)
+
+
+@register.filter(name="org_display_code")
+def org_display_code(org):
+    from accounts.views import _normalize_org_code
+
+    if org is None:
+        return ""
+    return _normalize_org_code(getattr(org, "org_code", "")) or str(org.org_code or "")
+
+
 @register.filter(name="clean_task_id")
 def clean_task_id(value):
     from accounts.views import _normalize_task_id

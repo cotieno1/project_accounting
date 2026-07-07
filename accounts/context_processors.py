@@ -32,7 +32,9 @@ def branding(request):
         org_count = 0
         try:
             from .models import Organization
-            org_count = Organization.objects.count()
+            from .views import _organizations_canonical_list
+
+            org_count = len(_organizations_canonical_list(Organization.objects.all()))
         except Exception:
             pass
         return {

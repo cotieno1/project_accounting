@@ -8,6 +8,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 {% load static %}
+{% load pioneer_tags %}
 <link rel="stylesheet" href="{% static 'css/pioneer/tokens.css' %}">
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/dashboard.css' %}">
 </head>
@@ -128,9 +129,9 @@
                     </thead>
                     <tbody>
                         {% for org in building_tenants %}
-                        <tr{% if org.org_code == 'PIONEER' %} class="tenant-row--featured"{% endif %}>
-                            <td>{{ org.org_code }}</td>
-                            <td><strong>{{ org.name }}</strong><br><small>{{ org.short_name }}</small></td>
+                        <tr{% if org.org_code == 'PIONEER' or org|org_display_code == 'PIONEER' %} class="tenant-row--featured"{% endif %}>
+                            <td>{{ org|org_display_code }}</td>
+                            <td><strong>{{ org|org_display_name }}</strong><br><small>{{ org|org_display_short_name }}</small></td>
                             <td>{{ org.get_contractor_type_display }}</td>
                             <td>{{ org.get_registration_status_display }}</td>
                             <td><button type="button" class="setup-link" onclick="MasterRegistry.editRecord('organization','{{ org.org_code }}')">Amend</button></td>
@@ -153,7 +154,7 @@
                             <td>{{ ua.staff_no }}</td>
                             <td>{{ ua.first_name }} {{ ua.last_name }}</td>
                             <td>{{ ua.email }}</td>
-                            <td>{% if ua.organization %}{{ ua.organization.short_name }}{% else %}—{% endif %}</td>
+                            <td>{% if ua.organization %}{{ ua.organization|org_display_short_name }}{% else %}—{% endif %}</td>
                             <td><button type="button" class="setup-link setup-link-primary" onclick="document.getElementById('approveRegRef').value='{{ ua.email }}'; approveRegistration();">Approve</button></td>
                         </tr>
                         {% endfor %}

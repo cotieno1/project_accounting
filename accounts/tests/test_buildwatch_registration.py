@@ -72,8 +72,8 @@ class BuildWatchRegistrationTests(TestCase):
 
     def test_home_dedupes_duplicate_pioneer_display(self):
         Organization.objects.create(
-            org_code="PIONEER2",
-            name="Pioneer Duplicate Ltd",
+            org_code="['PIONEER']",
+            name="['Pioneer Construction Co Ltd']",
             short_name="['Pioneer']",
             contractor_type=Organization.CONTRACTOR_BUILDING,
             registration_status=Organization.STATUS_ACTIVE,

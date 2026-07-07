@@ -86,6 +86,23 @@ class PlatformRoutingTests(TestCase):
         self.assertContains(response, "Building Contractors")
         self.assertContains(response, "PIONEER")
 
+    def test_platform_admin_hides_bracketed_pioneer_duplicate(self):
+        Organization.objects.create(
+            org_code="['PIONEER']",
+            name="['Pioneer Construction Co Ltd']",
+            short_name="['Pioneer']",
+            contractor_type=Organization.CONTRACTOR_BUILDING,
+            registration_status=Organization.STATUS_ACTIVE,
+        )
+        self.client.login(username="mainadmin", password="test-pass-123")
+        response = self.client.get(reverse("platform_admin"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "PIONEER")
+        self.assertContains(response, "Pioneer Contactors Co Ltd")
+        self.assertNotContains(response, "['PIONEER']")
+        self.assertNotContains(response, "['Pioneer']")
+        self.assertEqual(response.content.decode().count("Pioneer Contactors Co Ltd"), 1)
+
     def test_tenant_dashboard_shows_pioneer_command_center(self):
         self.client.login(username="pioneer1", password="test-pass-123")
         response = self.client.get(reverse("dashboard"))
