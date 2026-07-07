@@ -1,6 +1,13 @@
-﻿from django import template
+from django import template
 
 register = template.Library()
+
+
+@register.filter(name="org_display_short_name")
+def org_display_short_name(org):
+    from accounts.views import _organization_display_short_name
+
+    return _organization_display_short_name(org)
 
 
 @register.filter(name="clean_task_id")

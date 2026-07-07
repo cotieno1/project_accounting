@@ -64,7 +64,25 @@ class BuildWatchRegistrationTests(TestCase):
         self.assertContains(response, "national dashboard")
         self.assertContains(response, "Building contractors")
         self.assertContains(response, "General civil contractors")
+        self.assertContains(response, "civil infrastructure firms")
+        self.assertNotContains(response, "airports")
+        self.assertNotContains(response, "bridges")
         self.assertNotContains(response, "Join Pioneer")
+        self.assertNotContains(response, "['Pioneer']")
+
+    def test_home_dedupes_duplicate_pioneer_display(self):
+        Organization.objects.create(
+            org_code="PIONEER2",
+            name="Pioneer Duplicate Ltd",
+            short_name="['Pioneer']",
+            contractor_type=Organization.CONTRACTOR_BUILDING,
+            registration_status=Organization.STATUS_ACTIVE,
+        )
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pioneer · Building")
+        self.assertNotContains(response, "['Pioneer']")
+        self.assertEqual(response.content.decode().count("Pioneer · Building"), 1)
 
     def test_register_get_prefill_contractor_category(self):
         response = self.client.get(

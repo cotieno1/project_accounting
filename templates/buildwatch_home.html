@@ -6,6 +6,7 @@
 <title>BuildWatch — Global Infrastructure Integrity Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+{% load pioneer_tags %}
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--navy:#1B3A5C;--teal:#1A7A6E;--blue:#2E6DA4;--ink:#0F1F33;--mist:#EEF3F8;--cloud:#F7F9FC;--rule:#D4DDE8;--mid:#8096AE;--white:#fff;--live:#0d9488;--next:#b45309}
@@ -247,13 +248,13 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
   </div>
   <div class="tenants">
     {% for org in building_contractors %}
-    <span class="tenant-pill">{{ org.short_name }} · Building</span>
+    <span class="tenant-pill">{{ org|org_display_short_name }} · Building</span>
     {% endfor %}
     {% for org in roads_contractors %}
-    <span class="tenant-pill">{{ org.short_name }} · Roads</span>
+    <span class="tenant-pill">{{ org|org_display_short_name }} · Roads</span>
     {% endfor %}
     {% for org in consultant_orgs %}
-    <span class="tenant-pill">{{ org.short_name }} · Consultant</span>
+    <span class="tenant-pill">{{ org|org_display_short_name }} · Consultant</span>
     {% endfor %}
   </div>
 </section>

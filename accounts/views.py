@@ -72,6 +72,26 @@ def _normalize_task_description(raw):
     return _clean_bracketed_text(raw, max_len=200)
 
 
+def _organization_display_short_name(org):
+    """Public-facing org label — never show Python list repr like \"['Pioneer']\"."""
+    if org is None:
+        return ""
+    label = _clean_bracketed_text(org.short_name or org.name, max_len=80)
+    return label or org.org_code
+
+
+def _organizations_for_public_home(queryset):
+    """One home-page pill per trading name; prefer canonical lowest org_code."""
+    buckets = {}
+    for org in queryset.order_by("org_code"):
+        key = _organization_display_short_name(org).casefold()
+        if not key:
+            continue
+        if key not in buckets or org.org_code < buckets[key].org_code:
+            buckets[key] = org
+    return sorted(buckets.values(), key=lambda o: o.org_code)
+
+
 def _resolve_project_task(qs, raw):
     """Find task by clean id or legacy bracket-wrapped project_id in the database."""
     if raw is None:
@@ -314,22 +334,28 @@ def home(request):
     active_orgs = Organization.objects.filter(
         registration_status=Organization.STATUS_ACTIVE
     ).order_by("org_code")
+    building_contractors = _organizations_for_public_home(
+        active_orgs.filter(contractor_type=Organization.CONTRACTOR_BUILDING)
+    )
+    consultant_orgs = _organizations_for_public_home(
+        active_orgs.filter(contractor_type=Organization.CONTRACTOR_CONSULTANT)
+    )
+    roads_contractors = _organizations_for_public_home(
+        active_orgs.filter(contractor_type=Organization.CONTRACTOR_ROADS)
+    )
+    tenant_count = (
+        len(building_contractors) + len(consultant_orgs) + len(roads_contractors)
+    )
     return render(
         request,
         "buildwatch_home.html",
         {
-            "building_contractors": active_orgs.filter(
-                contractor_type=Organization.CONTRACTOR_BUILDING
-            ),
-            "consultant_orgs": active_orgs.filter(
-                contractor_type=Organization.CONTRACTOR_CONSULTANT
-            ),
-            "roads_contractors": active_orgs.filter(
-                contractor_type=Organization.CONTRACTOR_ROADS
-            ),
+            "building_contractors": building_contractors,
+            "consultant_orgs": consultant_orgs,
+            "roads_contractors": roads_contractors,
             "contractor_categories": BUILDWATCH_CONTRACTOR_CATEGORIES,
             "consultant_disciplines": BUILDWATCH_CONSULTANT_DISCIPLINES,
-            "tenant_count": active_orgs.count(),
+            "tenant_count": tenant_count,
         },
     )
 
@@ -1622,7 +1648,7 @@ def buildwatch_register(request):
 
     p = request.POST
     org_name = (p.get("org_name") or "").strip()
-    org_short = (p.get("org_short") or "").strip()
+    org_short = _clean_bracketed_text((p.get("org_short") or "").strip(), max_len=80)
     org_type = (p.get("org_type") or "").strip()
     contractor_category = (p.get("contractor_category") or "").strip().upper()
     consultant_discipline = (p.get("consultant_discipline") or "").strip().upper()
