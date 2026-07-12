@@ -49,10 +49,10 @@ class Command(BaseCommand):
                 keep_refs.add(ref)
                 TenderBoqLine.objects.update_or_create(
                     package=pkg,
-                    bill_ref=ref,
+                    bill_ref=ref[:20],
                     defaults={
-                        "description": line["description"],
-                        "unit": line["unit"],
+                        "description": (line.get("description") or "")[:255],
+                        "unit": (line.get("unit") or "No")[:30],
                         "quantity": Decimal(str(line["quantity"])),
                         "sort_order": line["sort_order"],
                     },
