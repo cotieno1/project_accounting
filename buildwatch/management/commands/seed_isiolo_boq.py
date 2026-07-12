@@ -1,14 +1,14 @@
-from decimal import Decimal
+﻿from decimal import Decimal
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
 from buildwatch.models import TenderBoqLine, TenderBoqPackage, TenderListing, WorkspaceBillPrice
 
-# Prefer packaged JSON next to this command, else scripts/
+# Prefer JSON shipped next to this command (Railway), else local scripts/
 _CANDIDATES = [
-    Path(__file__).resolve().parents[3] / "scripts" / "isiolo_boq_lines.json",
     Path(__file__).resolve().parent / "isiolo_boq_lines.json",
+    Path(__file__).resolve().parents[3] / "scripts" / "isiolo_boq_lines.json",
 ]
 
 
