@@ -3,231 +3,119 @@
 {% block title %}Self-Assessment — {{ listing.event.ref }}{% endblock %}
 
 {% block bw_content %}
-<div style="max-width:900px;margin:0 auto;padding:32px 24px;">
+<div class="bw-wrap">
 
-  <!-- Breadcrumb -->
-  <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:20px;">
-    <a href="{% url 'tender-list' %}" style="color:var(--bw-blue);text-decoration:none;">Tenders</a>
+  <div class="bw-ref" style="margin-bottom:18px;">
+    <a href="{% url 'tender-list' %}">Tenders</a>
     &nbsp;/&nbsp;
-    <a href="{% url 'tender-detail' listing.pk %}" style="color:var(--bw-blue);text-decoration:none;">{{ listing.event.ref }}</a>
+    <a href="{% url 'tender-detail' listing.pk %}">{{ listing.event.ref }}</a>
     &nbsp;/&nbsp;
-    <a href="{% url 'bid-workspace' listing.pk %}" style="color:var(--bw-blue);text-decoration:none;">Workspace</a>
-    &nbsp;/&nbsp; Self-Assessment
+    Self-Assessment
   </div>
 
-  <!-- Header -->
-  <div style="margin-bottom:24px;">
-    <h1 style="font-size:1.4rem;font-weight:700;color:var(--bw-navy);
-      letter-spacing:-.02em;margin-bottom:8px;">
-      Mandatory Requirements — Self-Assessment
-    </h1>
-    <p style="font-size:.85rem;color:var(--bw-dgrey);max-width:680px;line-height:1.55;">
-      Check your compliance against every mandatory requirement before submitting.
-      BuildWatch runs this same checklist independently after you submit —
-      your self-assessment sits beside the evaluator's assessment for transparency.
-      Fix all failures before submitting.
+  <header style="margin-bottom:22px;">
+    <div class="bw-kicker">Mandatory requirements</div>
+    <h1 class="bw-title">Certificate uploads</h1>
+    <p class="bw-lead">
+      Upload certificates against each requirement. Progress is informational —
+      the BOQ workspace stays available in parallel.
     </p>
-  </div>
-
-  <!-- Overall status -->
-  {% if workspace.self_assessment_passed %}
-    <div class="bw-alert bw-alert--success" style="margin-bottom:24px;">
-      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-      <div>
-        <strong>All requirements satisfied.</strong>
-        Your self-assessment is complete. You can now proceed to submit your bid.
-        <a href="{% url 'bid-workspace' listing.pk %}"
-           style="color:var(--bw-green);margin-left:8px;">
-          Go to Workspace →
-        </a>
-      </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+      <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
+      <a href="{% url 'bid-workspace' listing.pk %}" class="bw-btn bw-btn--teal">Open BOQ Workspace</a>
     </div>
-  {% else %}
-    {% with fails=checks|length %}
-      <div class="bw-alert bw-alert--warning" style="margin-bottom:24px;">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <div>
-          Self-assessment incomplete. Review each requirement below,
-          upload supporting documents and mark your compliance status.
-        </div>
-      </div>
-    {% endwith %}
+  </header>
+
+  {% if workspace.self_assessment_passed %}
+  <div class="bw-alert bw-alert--success">
+    <div>
+      <strong>All requirements satisfied.</strong>
+      You can continue in the BOQ workspace.
+    </div>
+  </div>
+  {% elif mr_total %}
+  <div class="bw-alert bw-alert--info">
+    <div>
+      {{ mr_done_count }} of {{ mr_total }} certificates uploaded
+      ({{ mr_progress_pct }}%). Incomplete items do not lock the BOQ.
+    </div>
+  </div>
   {% endif %}
 
-  <!-- Self-assessment form -->
-  <form method="POST" action="{% url 'bid-self-assess' listing.pk %}"
-        enctype="multipart/form-data">
-    {% csrf_token %}
-
-    {% for check in checks %}
-    <div class="bw-card" style="margin-bottom:12px;
-      border-left:4px solid
-        {% if check.self_result == 'PASS' %}var(--bw-green)
-        {% elif check.self_result == 'FAIL' %}var(--bw-red)
-        {% else %}var(--bw-mgrey){% endif %};">
-      <div style="padding:18px 20px;">
-
-        <!-- MR header row -->
-        <div style="display:flex;align-items:flex-start;
-          justify-content:space-between;gap:16px;margin-bottom:14px;">
-          <div style="flex:1;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-              <span style="font-family:monospace;font-size:.72rem;
-                background:var(--bw-lgrey);padding:2px 8px;border-radius:4px;
-                color:var(--bw-navy);font-weight:600;">
-                {{ check.mr_ref }}
-              </span>
-              {% if check.self_result == 'PASS' %}
-                <span class="bw-pill bw-pill--green">✓ Pass</span>
-              {% elif check.self_result == 'FAIL' %}
-                <span class="bw-pill bw-pill--red">✗ Fail</span>
-              {% else %}
-                <span class="bw-pill bw-pill--amber">Pending</span>
-              {% endif %}
-              {% if check.document_uploaded %}
-                <span class="bw-pill bw-pill--blue">📎 Doc uploaded</span>
-              {% endif %}
-            </div>
-            <div style="font-size:.88rem;font-weight:600;color:var(--bw-navy);">
-              {{ check.description }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Result selector -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;
-            border:1.5px solid var(--bw-mgrey);border-radius:var(--bw-radius);
-            cursor:pointer;transition:border-color .15s;"
-            id="label-pass-{{ check.mr_ref }}"
-            onclick="selectResult('{{ check.mr_ref }}','PASS')">
-            <input type="radio" name="result_{{ check.mr_ref }}"
-                   value="PASS" id="r-pass-{{ check.mr_ref }}"
-                   {% if check.self_result == 'PASS' %}checked{% endif %}
-                   style="display:none;">
-            <div style="width:18px;height:18px;border-radius:50%;
-              border:2px solid var(--bw-mgrey);display:grid;place-content:center;
-              flex-shrink:0;" id="dot-pass-{{ check.mr_ref }}">
-            </div>
-            <div>
-              <div style="font-size:.82rem;font-weight:600;color:var(--bw-green);">
-                ✓ Pass
-              </div>
-              <div style="font-size:.72rem;color:var(--bw-dgrey);">
-                Document available and valid
-              </div>
-            </div>
-          </label>
-
-          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;
-            border:1.5px solid var(--bw-mgrey);border-radius:var(--bw-radius);
-            cursor:pointer;transition:border-color .15s;"
-            id="label-fail-{{ check.mr_ref }}"
-            onclick="selectResult('{{ check.mr_ref }}','FAIL')">
-            <input type="radio" name="result_{{ check.mr_ref }}"
-                   value="FAIL" id="r-fail-{{ check.mr_ref }}"
-                   {% if check.self_result == 'FAIL' %}checked{% endif %}
-                   style="display:none;">
-            <div style="width:18px;height:18px;border-radius:50%;
-              border:2px solid var(--bw-mgrey);display:grid;place-content:center;
-              flex-shrink:0;" id="dot-fail-{{ check.mr_ref }}">
-            </div>
-            <div>
-              <div style="font-size:.82rem;font-weight:600;color:var(--bw-red);">
-                ✗ Fail
-              </div>
-              <div style="font-size:.72rem;color:var(--bw-dgrey);">
-                Document missing or expired
-              </div>
-            </div>
-          </label>
-        </div>
-
-        <!-- Document upload -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div>
-            <label class="bw-label" style="font-size:.75rem;">
-              Upload document
-              {% if check.document_uploaded %}
-                <span style="color:var(--bw-green);font-weight:400;">
-                  (uploaded ✓)
-                </span>
-              {% endif %}
-            </label>
-            <input type="file" name="doc_{{ check.mr_ref }}"
-                   accept=".pdf,.jpg,.jpeg,.png"
-                   class="bw-input" style="padding:6px 10px;font-size:.78rem;">
-          </div>
-          <div>
-            <label class="bw-label" style="font-size:.75rem;">
-              Notes <span style="font-weight:400;color:var(--bw-dgrey);">
-                (e.g. partnering with licensed sub)
-              </span>
-            </label>
-            <input type="text" name="notes_{{ check.mr_ref }}"
-                   value="{{ check.notes }}"
-                   class="bw-input" style="font-size:.78rem;"
-                   placeholder="Optional explanation…">
-          </div>
-        </div>
-
+  {% if mr_total %}
+  <div class="bw-card" style="margin-bottom:16px;">
+    <div class="bw-card-body">
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--bw-mid);margin-bottom:6px;">
+        <span>Certificate progress</span>
+        <span>{{ mr_progress_pct }}%</span>
+      </div>
+      <div style="height:8px;background:var(--bw-mist);border-radius:999px;overflow:hidden;">
+        <div style="height:100%;width:{{ mr_progress_pct }}%;background:var(--bw-teal);border-radius:999px;"></div>
       </div>
     </div>
-    {% empty %}
-      <div class="bw-card" style="text-align:center;padding:40px;">
-        <div style="color:var(--bw-dgrey);font-size:.88rem;">
-          No mandatory requirements loaded yet.
-          Run <code>python manage.py seed_buildwatch</code> to populate the library.
-        </div>
-      </div>
-    {% endfor %}
+  </div>
+  {% endif %}
 
-    {% if checks %}
-      <div style="display:flex;justify-content:space-between;
-        align-items:center;margin-top:24px;flex-wrap:wrap;gap:12px;">
-        <a href="{% url 'bid-workspace' listing.pk %}"
-           class="bw-btn bw-btn--ghost">
-          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-          Back to Workspace
-        </a>
-        <button type="submit" class="bw-btn bw-btn--primary">
-          Save Self-Assessment
-          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        </button>
+  <div class="bw-card">
+    <div class="bw-card-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span>Requirements</span>
+      {% if mr_total %}
+      <span style="font-size:.75rem;font-weight:600;color:var(--bw-navy);">
+        {{ mr_done_count }} / {{ mr_total }} uploaded
+      </span>
+      {% endif %}
+    </div>
+    <div class="bw-card-body">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for row in mr_rows %}
+        <div style="border:1px solid var(--bw-rule);border-radius:8px;padding:12px 14px;
+          background:{% if row.check and row.check.document_uploaded %}#f0fdf9{% else %}var(--bw-white){% endif %};">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="flex:1;min-width:200px;">
+              <div style="font-family:var(--bw-mono);font-size:.72rem;color:var(--bw-mid);margin-bottom:2px;">
+                MR{{ row.index }} · {{ row.req.code }}
+              </div>
+              <div style="font-size:.86rem;font-weight:600;color:var(--bw-navy);">
+                {{ row.req.description }}
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:flex-start;">
+              {% if row.check and row.check.document_uploaded %}
+                <span class="bw-pill bw-pill--blue">Uploaded</span>
+                {% if row.check.document %}
+                  <a href="{{ row.check.document.url }}" target="_blank" rel="noopener"
+                     class="bw-btn bw-btn--ghost bw-btn--sm">View</a>
+                {% endif %}
+              {% else %}
+                <span class="bw-pill bw-pill--amber">Needed</span>
+              {% endif %}
+            </div>
+          </div>
+          <form method="POST" action="{% url 'bid-self-assess' listing.pk %}"
+                enctype="multipart/form-data"
+                style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            {% csrf_token %}
+            <input type="hidden" name="mr_code" value="{{ row.req.code }}">
+            <input type="file" name="document"
+                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                   required
+                   class="bw-input"
+                   style="flex:1 1 220px;min-width:200px;padding:8px 10px;font-size:.8rem;">
+            <button type="submit"
+                    class="bw-btn bw-btn--teal"
+                    style="flex:0 0 auto;min-width:110px;justify-content:center;">
+              Save
+            </button>
+          </form>
+        </div>
+        {% empty %}
+        <div style="font-size:.86rem;color:var(--bw-mid);">
+          No mandatory requirements loaded yet for this tender.
+        </div>
+        {% endfor %}
       </div>
-    {% endif %}
-  </form>
+    </div>
+  </div>
 
 </div>
-
-<script>
-function selectResult(ref, result) {
-  ['PASS','FAIL'].forEach(r => {
-    const dot = document.getElementById('dot-' + r.toLowerCase() + '-' + ref);
-    const label = document.getElementById('label-' + r.toLowerCase() + '-' + ref);
-    const radio = document.getElementById('r-' + r.toLowerCase() + '-' + ref);
-    if (r === result) {
-      dot.style.background = r === 'PASS' ? 'var(--bw-green)' : 'var(--bw-red)';
-      dot.style.borderColor = r === 'PASS' ? 'var(--bw-green)' : 'var(--bw-red)';
-      label.style.borderColor = r === 'PASS' ? 'var(--bw-green)' : 'var(--bw-red)';
-      label.style.background = r === 'PASS' ? '#F0FAF3' : '#FEF0F0';
-      radio.checked = true;
-    } else {
-      dot.style.background = '';
-      dot.style.borderColor = 'var(--bw-mgrey)';
-      label.style.borderColor = 'var(--bw-mgrey)';
-      label.style.background = '';
-    }
-  });
-}
-
-// Initialise styles for pre-checked items
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('input[type=radio]:checked').forEach(r => {
-    const parts = r.name.replace('result_','').split('_');
-    const ref = r.name.replace('result_','');
-    selectResult(ref, r.value);
-  });
-});
-</script>
 {% endblock %}

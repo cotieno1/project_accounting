@@ -712,6 +712,19 @@ def bid_self_assess(request, listing_id):
     _sync_self_assessment_checks(workspace, requirements)
 
     if request.method == 'POST':
+        mr_code = (request.POST.get('mr_code') or '').strip()
+        if mr_code:
+            req = next((r for r in requirements if r.code == mr_code), None)
+            if req is None:
+                messages.error(request, 'Unknown mandatory requirement.')
+            else:
+                try:
+                    check = _save_single_mr_upload(request, workspace, req)
+                    messages.success(request, f'{check.mr_ref} certificate saved.')
+                except ValueError as exc:
+                    messages.error(request, str(exc))
+            return redirect('bid-self-assess', listing_id=listing_id)
+
         all_checks = _save_self_assessment_uploads(
             request, workspace, requirements
         )
@@ -732,11 +745,27 @@ def bid_self_assess(request, listing_id):
             return redirect('tender-detail', listing_id=listing_id)
         return redirect('bid-self-assess', listing_id=listing_id)
 
-    checks = workspace.self_checks.order_by('mr_ref')
+    checks_qs = workspace.self_checks.filter(
+        mr_ref__in=[r.code for r in requirements]
+    )
+    checks_map = {c.mr_ref: c for c in checks_qs}
+    mr_rows = []
+    for i, req in enumerate(requirements, 1):
+        mr_rows.append({
+            'index': i,
+            'req': req,
+            'check': checks_map.get(req.code),
+        })
+    mr_done, mr_total = _mr_progress(workspace, requirements)
+
     ctx = {
         'listing': listing,
         'workspace': workspace,
-        'checks': checks,
+        'checks': checks_qs.order_by('mr_ref'),
+        'mr_rows': mr_rows,
+        'mr_done_count': mr_done,
+        'mr_total': mr_total,
+        'mr_progress_pct': int((mr_done * 100) / mr_total) if mr_total else 0,
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_self_assess.html', ctx)
