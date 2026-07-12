@@ -37,3 +37,15 @@ def pdf_inline_response(pdf_bytes, filename):
     response["Content-Disposition"] = f'inline; filename="{safe}.pdf"'
     response["Cache-Control"] = "private, max-age=300"
     return response
+
+
+def pdf_attachment_response(pdf_bytes, filename):
+    """Force browser download (more reliable than inline for large bid packs)."""
+    from django.http import HttpResponse
+
+    safe = _safe_filename(filename)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{safe}.pdf"'
+    response["Cache-Control"] = "no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response

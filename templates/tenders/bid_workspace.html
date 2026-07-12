@@ -281,7 +281,8 @@
             4) Submit selected categories
           </div>
           <a href="{% url 'bid-draft-pdf' listing.pk %}" class="bw-btn bw-btn--ghost"
-             style="width:100%;justify-content:center;margin-bottom:10px;">
+             style="width:100%;justify-content:center;margin-bottom:10px;"
+             target="_blank" rel="noopener" download>
             Download draft bid PDF
           </a>
           {% if workspace.self_assessment_passed and workspace.pricing_complete and selected_codes %}
@@ -306,7 +307,8 @@
       {% elif workspace.status == 'SUBMITTED' %}
       <div class="bw-alert bw-alert--success">Bid submitted {{ workspace.submitted_at|date:"d M Y" }}.</div>
       <a href="{% url 'bid-draft-pdf' listing.pk %}" class="bw-btn bw-btn--ghost"
-         style="width:100%;justify-content:center;margin-top:10px;">
+         style="width:100%;justify-content:center;margin-top:10px;"
+         target="_blank" rel="noopener" download>
         Download submitted bid PDF
       </a>
       {% endif %}

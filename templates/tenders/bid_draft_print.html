@@ -9,12 +9,12 @@
     h1 { font-size: 16pt; margin: 0 0 4pt; color: #0b1f33; }
     h2 { font-size: 12pt; margin: 16pt 0 6pt; color: #0b1f33; border-bottom: 1px solid #c5ced9; padding-bottom: 3pt; }
     .muted { color: #5a6a7a; font-size: 9pt; }
-    .kicker { text-transform: uppercase; letter-spacing: 0.06em; font-size: 8pt; color: #5a6a7a; margin-bottom: 2pt; }
+    .kicker { text-transform: uppercase; letter-spacing: 0.5pt; font-size: 8pt; color: #5a6a7a; margin-bottom: 2pt; }
     .banner { background: #fff4e5; border: 1px solid #e0a86a; padding: 6pt 8pt; margin: 8pt 0 12pt; font-size: 9pt; }
     .banner-final { background: #e8f7f1; border: 1px solid #2a9d7a; }
     table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; }
     th, td { border: 1px solid #c5ced9; padding: 4pt 5pt; vertical-align: top; }
-    th { background: #eef2f6; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; }
+    th { background: #eef2f6; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.4pt; text-align: left; }
     td.num, th.num { text-align: right; }
     td.ctr, th.ctr { text-align: center; }
     .mono { font-family: Courier, monospace; font-size: 9pt; }
@@ -37,7 +37,7 @@
   <h2>1. Parties and tender</h2>
   <table>
     <tr><th width="28%">Tender ref</th><td class="mono">{{ listing.event.ref }}</td></tr>
-    <tr><th>Employer / project</th><td>{{ listing.event.project }}</td></tr>
+    <tr><th>Employer / project</th><td>{{ listing.event.project|default:listing.event.description }}</td></tr>
     <tr><th>Bidder organisation</th><td>{{ org.name|default:org.short_name }}</td></tr>
     <tr><th>Prepared by</th><td>{{ prepared_by_name }}</td></tr>
     <tr><th>Currency</th><td>{{ listing.currency }}</td></tr>
@@ -59,7 +59,7 @@
       <td class="mono">{{ c.mr_ref }}</td>
       <td>{{ c.description }}</td>
       <td class="ctr">{{ c.self_result }}</td>
-      <td class="muted">{% if c.document %}{{ c.document.name|cut:"bids/self_assess/" }}{% elif c.document_uploaded %}Uploaded{% else %}—{% endif %}</td>
+      <td class="muted">{% if c.document %}Yes{% elif c.document_uploaded %}Uploaded{% else %}—{% endif %}</td>
       <td class="muted">{% if c.expiry_date %}{{ c.expiry_date|date:"d M Y" }}{% endif %}{% if c.notes %} {{ c.notes }}{% endif %}</td>
     </tr>
     {% empty %}

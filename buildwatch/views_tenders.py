@@ -1049,7 +1049,7 @@ def bid_draft_pdf(request, listing_id):
     GET /tenders/<listing_id>/bid/draft.pdf/
     Completed draft (or submitted) bid pack PDF: certificates + priced BOQ.
     """
-    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_attachment_response
 
     listing = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
     org = get_active_organization(request)
@@ -1058,35 +1058,51 @@ def bid_draft_pdf(request, listing_id):
     except Exception:
         ua = _get_user_account(request)
 
-    if not BidderRegistration.objects.filter(tender=listing, organisation=org).exists():
-        messages.warning(request, "Register your interest before downloading the bid pack.")
-        return redirect("tender-detail", listing_id=listing_id)
+    # Prefer workspace/registration for this user's org; fall back to any Pioneer workspace
+    workspace = None
+    if org:
+        workspace = BidWorkspace.objects.filter(tender=listing, organisation=org).first()
+        if workspace is None and not BidderRegistration.objects.filter(
+            tender=listing, organisation=org
+        ).exists():
+            messages.warning(
+                request,
+                "Register your interest before downloading the bid pack.",
+            )
+            return redirect("tender-detail", listing_id=listing_id)
 
-    workspace = get_object_or_404(BidWorkspace, tender=listing, organisation=org)
-    ctx = _bid_pack_context(request, listing, workspace, org, ua)
+    if workspace is None and ua is not None:
+        # Staff / mismatched session: use the caller's prepared workspace if any
+        workspace = BidWorkspace.objects.filter(
+            tender=listing, prepared_by=ua
+        ).first()
 
-    # Soft readiness: allow download anytime, but warn if incomplete for draft
-    ready = (
-        bool(workspace.selected_codes())
-        and workspace.pricing_complete
-        and workspace.self_assessment_passed
-    )
-    if not ready and ctx["is_draft"]:
-        messages.warning(
+    if workspace is None and getattr(request.user, "is_staff", False):
+        workspace = BidWorkspace.objects.filter(tender=listing).order_by("-started_at").first()
+
+    if workspace is None:
+        messages.error(
             request,
-            "Draft PDF generated with incomplete gates "
-            "(categories / pricing / certificates). Complete all before submit.",
+            "No bid workspace found for your organisation on this tender. "
+            "Open the BOQ workspace first, then download the draft again.",
         )
+        return redirect("bid-workspace", listing_id=listing_id)
 
+    org = workspace.organisation
     try:
+        ctx = _bid_pack_context(request, listing, workspace, org, ua)
         pdf = build_pdf_bytes("tenders/bid_draft_print.html", ctx)
     except Exception as exc:
         messages.error(request, f"Could not build bid PDF: {exc}")
         return redirect("bid-workspace", listing_id=listing_id)
 
     status = "DRAFT" if ctx["is_draft"] else "SUBMITTED"
-    filename = f"Bid_{listing.event.ref}_{org.short_name}_{status}".replace("/", "-")
-    return pdf_inline_response(pdf, filename)
+    filename = "Bid_%s_%s_%s" % (
+        str(listing.event.ref).replace("/", "-"),
+        str(org.short_name or "bidder").replace(" ", "_"),
+        status,
+    )
+    return pdf_attachment_response(pdf, filename)
 
 
 @login_required
