@@ -3,123 +3,44 @@
 {% block title %}Projects — BuildWatch{% endblock %}
 
 {% block bw_content %}
-<div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
-
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;
-    gap:16px;margin-bottom:28px;flex-wrap:wrap;">
+<div class="bw-wrap">
+  <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
     <div>
-      <div style="font-size:.7rem;font-family:monospace;letter-spacing:.09em;
-        text-transform:uppercase;color:var(--bw-teal);margin-bottom:6px;">
-        Infrastructure Projects
-      </div>
-      <h1 style="font-size:1.6rem;font-weight:700;color:var(--bw-navy);
-        letter-spacing:-.03em;">Your Projects</h1>
+      <div class="bw-kicker">Infrastructure</div>
+      <h1 class="bw-title">Projects</h1>
+      <p class="bw-lead">Registered BuildWatch projects linked to Pioneer tasks.</p>
     </div>
-    <div style="display:flex;gap:8px;">
-      <a href="{% url 'isiolo-stadium-pilot' %}"
-         class="bw-btn bw-btn--ghost bw-btn--sm">
-        🏟 Isiolo Pilot
-      </a>
-      <a href="{% url 'infra-project-create' %}"
-         class="bw-btn bw-btn--primary">
-        + Register Project
-      </a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a href="{% url 'isiolo-stadium-pilot' %}" class="bw-btn bw-btn--ghost bw-btn--sm">Isiolo pilot</a>
+      <a href="{% url 'infra-project-create' %}" class="bw-btn bw-btn--primary bw-btn--sm">Register project</a>
     </div>
-  </div>
+  </header>
 
   {% if projects %}
+  <div class="bw-panel">
     {% for project in projects %}
-    <div class="bw-card" style="margin-bottom:14px;">
-      <div style="padding:20px;display:flex;align-items:center;
-        justify-content:space-between;gap:16px;flex-wrap:wrap;">
-
-        <div style="flex:1;">
-          <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-            <span class="bw-badge bw-badge--{{ project.sector|lower }}">
-              {{ project.get_sector_display }}
-            </span>
-            <span class="bw-badge bw-badge--{{ project.project_type|lower }}">
-              {{ project.get_project_type_display }}
-            </span>
-            {% if project.is_active %}
-              <span class="bw-badge bw-badge--open">Active</span>
-            {% else %}
-              <span class="bw-badge bw-badge--closed">Inactive</span>
-            {% endif %}
-          </div>
-
-          <div style="font-family:monospace;font-size:.72rem;
-            color:var(--bw-dgrey);margin-bottom:3px;">
-            {{ project.task.project_id }}
-          </div>
-          <div style="font-size:1rem;font-weight:600;color:var(--bw-navy);
-            margin-bottom:4px;">
-            {{ project.task.description }}
-          </div>
-          <div style="font-size:.78rem;color:var(--bw-dgrey);
-            display:flex;gap:16px;flex-wrap:wrap;">
-            {% if project.county %}
-              <span>📍 {{ project.county }}{% if project.country %}, {{ project.country.name }}{% endif %}</span>
-            {% endif %}
-            {% if project.contract_value %}
-              <span>💰 {{ project.owner_org.currency_symbol|default:"KES" }}
-                {{ project.contract_value|floatformat:0 }}</span>
-            {% endif %}
-            {% if project.start_date %}
-              <span>📅 {{ project.start_date|date:"M Y" }}
-                {% if project.end_date %}— {{ project.end_date|date:"M Y" }}{% endif %}
-              </span>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Risk score -->
-        <div style="text-align:center;flex-shrink:0;">
-          <div style="width:56px;height:56px;border-radius:50%;
-            background:{% if project.risk_score >= 70 %}var(--bw-green){% elif project.risk_score >= 50 %}var(--bw-amber){% else %}var(--bw-red){% endif %};
-            display:grid;place-content:center;margin:0 auto 4px;">
-            <span style="color:white;font-weight:700;font-size:.9rem;">
-              {{ project.risk_score|floatformat:0 }}
-            </span>
-          </div>
-          <div style="font-size:.68rem;color:var(--bw-dgrey);
-            text-transform:uppercase;letter-spacing:.04em;">
-            Risk Score
-          </div>
-        </div>
-
-        <a href="{% url 'infra-project-dashboard' project.pk %}"
-           class="bw-btn bw-btn--primary bw-btn--sm">
-          Dashboard
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </a>
+    <a class="bw-list-item" href="{% url 'infra-project-dashboard' project.pk %}">
+      <div class="bw-ref">{{ project.task.project_id }}</div>
+      <h3>{{ project.task.description }}</h3>
+      <div class="bw-meta">
+        <span>{{ project.get_sector_display }}</span>
+        {% if project.county %}<span>{{ project.county }}</span>{% endif %}
+        {% if project.is_active %}<span class="bw-tag bw-tag--ok">Active</span>{% endif %}
       </div>
-    </div>
+    </a>
     {% endfor %}
-
+  </div>
   {% else %}
-    <div class="bw-card" style="text-align:center;padding:60px 24px;">
-      <div style="font-size:2rem;margin-bottom:12px;">🏗</div>
-      <div style="font-weight:600;color:var(--bw-navy);margin-bottom:8px;">
-        No projects registered yet
-      </div>
-      <div style="color:var(--bw-dgrey);font-size:.88rem;margin-bottom:24px;
-        max-width:420px;margin-left:auto;margin-right:auto;line-height:1.55;">
-        Register your first infrastructure project to start tracking
-        programme, inspections, compliance and payments.
-      </div>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <a href="{% url 'isiolo-stadium-pilot' %}"
-           class="bw-btn bw-btn--ghost">
-          🏟 Start with Isiolo Stadium
-        </a>
-        <a href="{% url 'infra-project-create' %}"
-           class="bw-btn bw-btn--primary">
-          + Register Project
-        </a>
+  <div class="bw-panel">
+    <div class="bw-panel__bd">
+      <h2 style="margin:0 0 8px;font-size:1.05rem;color:var(--bw-navy);">No projects yet</h2>
+      <p class="bw-lead">Register an infrastructure project to track tenders and delivery against a Pioneer task.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
+        <a href="{% url 'isiolo-stadium-pilot' %}" class="bw-btn bw-btn--ghost">Start with Isiolo</a>
+        <a href="{% url 'infra-project-create' %}" class="bw-btn bw-btn--primary">Register project</a>
       </div>
     </div>
+  </div>
   {% endif %}
-
 </div>
 {% endblock %}

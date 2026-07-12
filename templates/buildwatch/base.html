@@ -2,257 +2,364 @@
 {% load static %}
 
 {% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-/* ── BuildWatch design tokens ──────────────────────────────────────────── */
 :root {
-  --bw-navy:   #1B3A5C;
-  --bw-blue:   #2E6DA4;
-  --bw-teal:   #1A7A6E;
-  --bw-amber:  #C07A00;
-  --bw-green:  #1E7A3E;
-  --bw-red:    #B03030;
-  --bw-lgrey:  #F2F5F8;
-  --bw-mgrey:  #CDD5E0;
-  --bw-dgrey:  #555F6D;
-  --bw-radius: 6px;
-  --bw-shadow: 0 2px 8px rgba(27,58,92,.10);
+  --bw-ink: #0F1F33;
+  --bw-navy: #1B3A5C;
+  --bw-teal: #1A7A6E;
+  --bw-mid: #8096AE;
+  --bw-rule: #D4DDE8;
+  --bw-mist: #EEF3F8;
+  --bw-cloud: #F7F9FC;
+  --bw-white: #fff;
+  --bw-danger: #9B2C2C;
+  --bw-warn: #9A3412;
+  --bw-ok: #0F766E;
+  --bw-font: "DM Sans", system-ui, sans-serif;
+  --bw-mono: "DM Mono", ui-monospace, monospace;
+  --bw-max: 1080px;
+  --bw-radius: 10px;
 }
 
-/* ── BuildWatch nav bar ──────────────────────────────────────────────────── */
+.bw-shell, .bw-shell * { box-sizing: border-box; }
+.bw-shell {
+  font-family: var(--bw-font);
+  color: var(--bw-ink);
+  background: var(--bw-cloud);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.bw-shell a { color: var(--bw-navy); }
+.bw-shell a:hover { color: var(--bw-teal); }
+
 .bw-topnav {
-  background: var(--bw-navy);
-  padding: 10px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 3px solid var(--bw-teal);
+  padding: 14px clamp(16px, 3vw, 40px);
+  background: var(--bw-white);
+  border-bottom: 1px solid var(--bw-rule);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 .bw-topnav__brand {
-  display: flex; align-items: center; gap: 10px;
-  color: white; font-weight: 600; font-size: .95rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
+  color: var(--bw-navy);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
 }
-.bw-topnav__brand-mark {
-  width: 30px; height: 30px; background: var(--bw-teal);
-  border-radius: 5px; display: grid; place-content: center;
+.bw-topnav__brand:hover { color: var(--bw-navy); }
+.bw-topnav__mark {
+  width: 32px; height: 32px;
+  background: var(--bw-teal);
+  border-radius: 8px;
+  display: grid;
+  place-content: center;
 }
-.bw-topnav__brand-mark svg {
-  width: 16px; height: 16px; stroke: white; fill: none;
-  stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+.bw-topnav__mark svg {
+  width: 16px; height: 16px;
+  stroke: #fff; fill: none; stroke-width: 2.4;
+  stroke-linecap: round; stroke-linejoin: round;
 }
 .bw-topnav__links {
-  display: flex; gap: 4px; align-items: center;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .bw-topnav__link {
-  color: rgba(255,255,255,.7); text-decoration: none;
-  font-size: .82rem; padding: 6px 12px; border-radius: var(--bw-radius);
-  transition: background .15s, color .15s;
+  color: var(--bw-mid);
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
 }
 .bw-topnav__link:hover,
-.bw-topnav__link.active {
-  background: rgba(255,255,255,.12); color: white;
+.bw-topnav__link.is-active {
+  color: var(--bw-navy);
+  background: var(--bw-mist);
 }
-.bw-topnav__btn {
-  background: var(--bw-teal); color: white;
-  text-decoration: none; font-size: .82rem; font-weight: 600;
-  padding: 7px 16px; border-radius: var(--bw-radius);
-  transition: background .15s;
-}
-.bw-topnav__btn:hover { background: #155f55; }
 
-/* ── Page shell ──────────────────────────────────────────────────────────── */
-.bw-page { min-height: 80vh; background: #F7F9FC; }
-
-/* ── Cards ───────────────────────────────────────────────────────────────── */
-.bw-card {
-  background: white; border: 1px solid var(--bw-mgrey);
-  border-radius: 10px; box-shadow: var(--bw-shadow);
-}
-.bw-card-header {
-  padding: 16px 20px; border-bottom: 1px solid var(--bw-mgrey);
-  font-weight: 600; color: var(--bw-navy); font-size: .9rem;
-}
-.bw-card-body { padding: 20px; }
-
-/* ── Badges ──────────────────────────────────────────────────────────────── */
-.bw-badge {
-  display: inline-block; padding: 3px 10px; border-radius: 20px;
-  font-size: .72rem; font-weight: 600; line-height: 1.4;
-}
-.bw-badge--works       { background: #EBF3FB; color: #2E6DA4; }
-.bw-badge--consultancy { background: #E5F2F0; color: #1A7A6E; }
-.bw-badge--goods       { background: #FDF6E3; color: #C07A00; }
-.bw-badge--gov         { background: #E5EBF2; color: #1B3A5C; }
-.bw-badge--ppp         { background: #EBF3FB; color: #2E6DA4; }
-.bw-badge--donor       { background: #E8F4EC; color: #1E7A3E; }
-.bw-badge--private     { background: #F9F0FF; color: #6B3FA0; }
-.bw-badge--open        { background: #E8F4EC; color: #1E7A3E; }
-.bw-badge--closed      { background: #F2F5F8; color: #8096AE; }
-.bw-badge--closing     { background: #FDF3E3; color: #B8860B; }
-.bw-badge--public      { background: #EBF3FB; color: #2E6DA4; }
-.bw-badge--private-tag { background: #FDF6E3; color: #C07A00; }
-
-/* ── Status pills ────────────────────────────────────────────────────────── */
-.bw-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 10px; border-radius: 20px; font-size: .75rem; font-weight: 500;
-}
-.bw-pill--green  { background: #E8F4EC; color: #1E7A3E; }
-.bw-pill--amber  { background: #FDF6E3; color: #B8860B; }
-.bw-pill--red    { background: #FCEAEA; color: #B03030; }
-.bw-pill--blue   { background: #EBF3FB; color: #2E6DA4; }
-.bw-pill--grey   { background: #F2F5F8; color: #8096AE; }
-
-/* ── Buttons ─────────────────────────────────────────────────────────────── */
 .bw-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 20px; border-radius: var(--bw-radius);
-  font-size: .85rem; font-weight: 600; cursor: pointer;
-  text-decoration: none; border: none; transition: all .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  line-height: 1.2;
 }
-.bw-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none;
-  stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.bw-btn--primary { background: var(--bw-navy); color: white; }
-.bw-btn--primary:hover { background: #0F2740; color: white; }
-.bw-btn--teal { background: var(--bw-teal); color: white; }
-.bw-btn--teal:hover { background: #155f55; color: white; }
-.bw-btn--ghost { background: transparent; color: var(--bw-dgrey);
-  border: 1px solid var(--bw-mgrey); }
+.bw-btn svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; fill: none; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.bw-btn--primary { background: var(--bw-navy); color: #fff; }
+.bw-btn--primary:hover { background: #13293f; color: #fff; }
+.bw-btn--teal { background: var(--bw-teal); color: #fff; }
+.bw-btn--teal:hover { filter: brightness(1.05); color: #fff; }
+.bw-btn--ghost {
+  background: transparent;
+  color: var(--bw-navy);
+  border-color: var(--bw-rule);
+}
 .bw-btn--ghost:hover { border-color: var(--bw-navy); color: var(--bw-navy); }
-.bw-btn--danger { background: var(--bw-red); color: white; }
-.bw-btn--sm { padding: 6px 14px; font-size: .78rem; }
+.bw-btn--sm { padding: 7px 12px; font-size: 0.8rem; }
 
-/* ── Form fields ─────────────────────────────────────────────────────────── */
-.bw-field { margin-bottom: 18px; }
-.bw-label { display: block; font-size: .8rem; font-weight: 600;
-  color: var(--bw-navy); margin-bottom: 5px; }
-.bw-label .req { color: var(--bw-teal); margin-left: 2px; }
-.bw-hint { font-size: .73rem; color: var(--bw-dgrey); margin-bottom: 5px; }
+.bw-page { padding: 28px clamp(16px, 3vw, 40px) 56px; }
+.bw-wrap { max-width: var(--bw-max); margin: 0 auto; }
+
+.bw-kicker {
+  font-family: var(--bw-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bw-teal);
+  margin-bottom: 8px;
+}
+.bw-title {
+  font-size: clamp(1.45rem, 3vw, 1.85rem);
+  font-weight: 700;
+  color: var(--bw-navy);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 8px;
+}
+.bw-lead {
+  color: var(--bw-mid);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-width: 36rem;
+  margin: 0;
+}
+
+.bw-panel {
+  background: var(--bw-white);
+  border: 1px solid var(--bw-rule);
+  border-radius: var(--bw-radius);
+}
+.bw-panel + .bw-panel { margin-top: 14px; }
+.bw-panel__hd {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--bw-rule);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bw-navy);
+}
+.bw-panel__bd { padding: 18px; }
+
+.bw-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--bw-mid);
+  font-size: 0.82rem;
+}
+.bw-meta strong { color: var(--bw-ink); font-weight: 600; }
+.bw-ref {
+  font-family: var(--bw-mono);
+  font-size: 0.75rem;
+  color: var(--bw-mid);
+}
+
+.bw-tag {
+  display: inline-block;
+  font-family: var(--bw-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bw-mist);
+  color: var(--bw-navy);
+  font-weight: 600;
+}
+.bw-tag--ok { background: #ccfbf1; color: var(--bw-ok); }
+.bw-tag--warn { background: #ffedd5; color: var(--bw-warn); }
+.bw-tag--muted { background: var(--bw-mist); color: var(--bw-mid); }
+
+.bw-alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--bw-rule);
+  background: var(--bw-white);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin-bottom: 12px;
+  color: var(--bw-ink);
+}
+.bw-alert--success { border-color: #99f6e4; background: #f0fdfa; color: #115e59; }
+.bw-alert--warning { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+.bw-alert--danger { border-color: #fecaca; background: #fef2f2; color: #9b2c2c; }
+.bw-alert--info { border-color: var(--bw-rule); background: var(--bw-mist); color: var(--bw-navy); }
+
+.bw-field { margin-bottom: 14px; }
+.bw-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--bw-navy);
+  margin-bottom: 5px;
+}
 .bw-input, .bw-select, .bw-textarea {
-  width: 100%; padding: 9px 12px; border: 1px solid var(--bw-mgrey);
-  border-radius: var(--bw-radius); font-size: .85rem; color: #0F1F33;
-  background: white; outline: none; transition: border-color .15s;
-  font-family: inherit;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--bw-rule);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--bw-ink);
+  background: var(--bw-white);
+  outline: none;
 }
 .bw-input:focus, .bw-select:focus, .bw-textarea:focus {
-  border-color: var(--bw-blue);
-  box-shadow: 0 0 0 3px rgba(46,109,164,.1);
+  border-color: var(--bw-teal);
+  box-shadow: 0 0 0 3px rgba(26,122,110,.12);
 }
 .bw-select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238096AE' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238096AE' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 32px;
 }
-.bw-textarea { resize: vertical; min-height: 80px; }
-.bw-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.bw-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-@media(max-width:640px) { .bw-row2,.bw-row3 { grid-template-columns: 1fr; } }
-
-/* ── Alerts / callouts ───────────────────────────────────────────────────── */
-.bw-alert {
-  display: flex; gap: 10px; align-items: flex-start;
-  padding: 12px 16px; border-radius: var(--bw-radius);
-  font-size: .82rem; line-height: 1.5; margin-bottom: 16px;
+.bw-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bw-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) {
+  .bw-row2, .bw-row3 { grid-template-columns: 1fr; }
+  .bw-layout { grid-template-columns: 1fr !important; }
 }
-.bw-alert svg { width: 15px; height: 15px; flex-shrink: 0;
-  stroke: currentColor; fill: none; stroke-width: 2; margin-top: 1px; }
-.bw-alert--info    { background: #EBF3FB; color: #1B3A5C; border: 1px solid #C0D8F0; }
-.bw-alert--success { background: #E8F4EC; color: #1E7A3E; border: 1px solid #A8D5B5; }
-.bw-alert--warning { background: #FDF6E3; color: #8A5C00; border: 1px solid #E8C84A; }
-.bw-alert--danger  { background: #FCEAEA; color: #8B1A1A; border: 1px solid #E8AAAA; }
 
-/* ── Stats strip ─────────────────────────────────────────────────────────── */
-.bw-stats { display: flex; gap: 0; border: 1px solid var(--bw-mgrey);
-  border-radius: 10px; overflow: hidden; margin-bottom: 24px; background: white; }
-.bw-stat { flex: 1; padding: 16px 20px; border-right: 1px solid var(--bw-mgrey); }
-.bw-stat:last-child { border-right: none; }
-.bw-stat__val { font-size: 1.6rem; font-weight: 700; color: var(--bw-navy); line-height: 1; }
-.bw-stat__label { font-size: .72rem; color: var(--bw-dgrey); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
-@media(max-width:600px) { .bw-stats { flex-wrap: wrap; }
-  .bw-stat { flex: 0 0 50%; border-bottom: 1px solid var(--bw-mgrey); } }
+.bw-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.bw-list-item {
+  display: block;
+  padding: 18px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--bw-rule);
+}
+.bw-list-item:last-child { border-bottom: none; }
+.bw-list-item:hover { background: var(--bw-mist); }
+.bw-list-item h3 {
+  margin: 4px 0 6px;
+  font-size: 1rem;
+  color: var(--bw-navy);
+  letter-spacing: -0.02em;
+}
+.bw-list-item p {
+  margin: 0;
+  color: var(--bw-mid);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
 
-/* ── Countdown timer ─────────────────────────────────────────────────────── */
-.bw-countdown { font-family: monospace; font-size: .8rem; color: var(--bw-amber);
-  font-weight: 600; }
-.bw-countdown--urgent { color: var(--bw-red); }
+.bw-footer {
+  border-top: 1px solid var(--bw-rule);
+  padding: 18px clamp(16px, 3vw, 40px);
+  color: var(--bw-mid);
+  font-size: 0.78rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--bw-white);
+}
+.bw-footer a { color: var(--bw-mid); text-decoration: none; }
+.bw-footer a:hover { color: var(--bw-navy); }
 
-/* ── Gate indicators ─────────────────────────────────────────────────────── */
-.bw-gate { display: flex; align-items: center; gap: 8px; padding: 8px 0;
-  font-size: .82rem; border-bottom: 1px solid var(--bw-lgrey); }
-.bw-gate:last-child { border-bottom: none; }
-.bw-gate__dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.bw-gate__dot--green { background: var(--bw-green); }
-.bw-gate__dot--red   { background: var(--bw-red); }
-.bw-gate__dot--amber { background: var(--bw-amber); }
-.bw-gate__label { color: var(--bw-dgrey); }
-.bw-gate__status { margin-left: auto; font-weight: 600; font-size: .75rem; }
+/* Compat aliases used by older templates */
+.bw-card { background: var(--bw-white); border: 1px solid var(--bw-rule); border-radius: var(--bw-radius); }
+.bw-card-header { padding: 14px 18px; border-bottom: 1px solid var(--bw-rule); font-weight: 600; color: var(--bw-navy); font-size: 0.82rem; }
+.bw-card-body { padding: 18px; }
+.bw-badge, .bw-pill { display: inline-block; font-family: var(--bw-mono); font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; background: var(--bw-mist); color: var(--bw-navy); font-weight: 600; }
+.bw-badge--open, .bw-pill--green, .bw-badge--works, .bw-badge--consultancy, .bw-badge--gov, .bw-badge--public { background: #ccfbf1; color: var(--bw-ok); }
+.bw-badge--closing, .bw-pill--amber, .bw-badge--goods, .bw-badge--private-tag { background: #ffedd5; color: var(--bw-warn); }
+.bw-badge--closed, .bw-pill--grey { background: var(--bw-mist); color: var(--bw-mid); }
+.bw-badge--ppp, .bw-badge--donor, .bw-badge--private, .bw-pill--blue, .bw-pill--red { background: var(--bw-mist); color: var(--bw-navy); }
+.bw-stats { display: none; }
+.bw-stat, .bw-stat__val, .bw-stat__label { display: none; }
+.bw-btn--danger { background: var(--bw-danger); color: #fff; }
+.bw-countdown { font-family: var(--bw-mono); font-size: 0.8rem; color: var(--bw-warn); font-weight: 600; }
+.bw-gate { display: flex; align-items: center; gap: 8px; padding: 8px 0; font-size: 0.84rem; border-bottom: 1px solid var(--bw-mist); }
+.bw-gate:last-child { border-bottom: 0; }
+.bw-gate__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bw-mid); }
+.bw-gate__dot--green { background: var(--bw-ok); }
+.bw-gate__dot--amber { background: #ea580c; }
+.bw-gate__dot--red { background: var(--bw-danger); }
+.bw-gate__label { color: var(--bw-mid); }
+.bw-gate__status { margin-left: auto; font-weight: 600; font-size: 0.75rem; color: var(--bw-ink); }
+.bw-hint { font-size: 0.75rem; color: var(--bw-mid); margin-bottom: 5px; }
+.bw-label .req { color: var(--bw-teal); }
 </style>
 {% endblock %}
 
 {% block content %}
-<nav class="bw-topnav">
-  <a class="bw-topnav__brand" href="{% url 'tender-list' %}">
-    <div class="bw-topnav__brand-mark">
-      <svg viewBox="0 0 24 24">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
+<div class="bw-shell">
+  <nav class="bw-topnav">
+    <a class="bw-topnav__brand" href="{% url 'tender-list' %}">
+      <span class="bw-topnav__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </span>
+      BuildWatch
+    </a>
+    <div class="bw-topnav__links">
+      <a href="{% url 'tender-list' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-list' %}is-active{% endif %}">Tenders</a>
+      {% if user.is_authenticated %}
+      <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">My Bids</a>
+      <a href="{% url 'tender-alerts' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-alerts' %}is-active{% endif %}">Alerts</a>
+      <a href="{% url 'infra-project-list' %}" class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}is-active{% endif %}">Projects</a>
+      <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal bw-btn--sm">Publish tender</a>
+      {% else %}
+      <a href="{% url 'login' %}" class="bw-topnav__link">Sign in</a>
+      <a href="{% url 'buildwatch-register' %}" class="bw-btn bw-btn--teal bw-btn--sm">Register</a>
+      {% endif %}
     </div>
-    BuildWatch
-  </a>
-  <div class="bw-topnav__links">
-    <a href="{% url 'tender-list' %}"
-       class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-list' %}active{% endif %}">
-      Tenders
-    </a>
-    {% if user.is_authenticated %}
-    <a href="{% url 'my-bids' %}"
-       class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}active{% endif %}">
-      My Bids
-    </a>
-    <a href="{% url 'tender-alerts' %}"
-       class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-alerts' %}active{% endif %}">
-      Alerts
-    </a>
-    <a href="{% url 'infra-project-list' %}"
-       class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}active{% endif %}">
-      Projects
-    </a>
-    <a href="{% url 'tender-publish' %}" class="bw-topnav__btn">
-      + Publish Tender
-    </a>
-    {% else %}
-    <a href="{% url 'buildwatch-register' %}" class="bw-topnav__btn">
-      Register Free
-    </a>
+  </nav>
+
+  <main class="bw-page">
+    {% if messages %}
+      <div class="bw-wrap" style="margin-bottom:8px;">
+        {% for msg in messages %}
+          <div class="bw-alert bw-alert--{% if msg.tags == 'error' %}danger{% elif msg.tags == 'warning' %}warning{% elif msg.tags == 'success' %}success{% else %}info{% endif %}">
+            {{ msg }}
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
-  </div>
-</nav>
+    {% block bw_content %}{% endblock %}
+  </main>
 
-<div class="bw-page">
-  {% if messages %}
-    <div style="max-width:1200px;margin:0 auto;padding:16px 24px 0;">
-      {% for msg in messages %}
-        <div class="bw-alert bw-alert--{% if msg.tags == 'error' %}danger{% elif msg.tags == 'warning' %}warning{% elif msg.tags == 'success' %}success{% else %}info{% endif %}">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          {{ msg }}
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  {% block bw_content %}{% endblock %}
+  <footer class="bw-footer">
+    <span>BuildWatch</span>
+    <span>
+      <a href="{% url 'tender-list' %}">Tenders</a>
+      &nbsp;·&nbsp;
+      <a href="{% url 'buildwatch-register' %}">Register</a>
+    </span>
+  </footer>
 </div>
-
-<footer style="background:var(--bw-navy);color:rgba(255,255,255,.5);padding:20px 24px;
-  font-size:.75rem;display:flex;justify-content:space-between;align-items:center;margin-top:60px;">
-  <span>BuildWatch — Global Infrastructure Integrity Platform</span>
-  <span><a href="{% url 'tender-list' %}" style="color:rgba(255,255,255,.5);">Tenders</a>
-    &nbsp;·&nbsp;
-    <a href="{% url 'buildwatch-register' %}" style="color:rgba(255,255,255,.5);">Register</a>
-  </span>
-</footer>
 {% endblock %}
