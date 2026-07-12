@@ -242,33 +242,64 @@
         Milestones
       </div>
       <div class="bw-card-body">
-        {% for m_ref, m_desc, m_pct in milestone_placeholders %}
-        {% empty %}
-          {% for ref, desc, pct in "M1,Mobilisation,10|M2,Western Pavilion PC,25|M3,Eastern Pavilion PC,20|M4,External Works,20|M5,ICT & Security,12|M6,Power Reticulation,8|M7,Practical Completion,5"|split:"|" %}
-          {% endfor %}
-          <!-- Placeholder milestone list -->
-          {% with milestones="M1:Mobilisation:10,M2:Western Pavilion:25,M3:Eastern Pavilion:20,M4:External Works:20,M5:ICT & Security:12,M6:Power Reticulation:8,M7:Practical Completion:5" %}
+        {% if milestone_placeholders %}
           <div style="font-size:.78rem;">
-            {% for m in milestones|split:"," %}
+            {% for m_ref, m_desc, m_pct in milestone_placeholders %}
               <div style="display:flex;align-items:center;gap:10px;
                 padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
                 <div style="width:28px;height:28px;border-radius:50%;
                   border:2px solid var(--bw-mgrey);display:grid;
                   place-content:center;font-size:.65rem;font-weight:700;
                   color:var(--bw-dgrey);flex-shrink:0;">
-                  {{ m|slice:":2" }}
+                  {{ m_ref }}
                 </div>
                 <div style="flex:1;color:var(--bw-dgrey);">
-                  {{ m|slice:"3:" }}
+                  {{ m_desc }}
                 </div>
                 <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
               </div>
             {% endfor %}
           </div>
-          {% endwith %}
-        {% endfor %}
+        {% else %}
+          <div style="font-size:.78rem;">
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+              <div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--bw-mgrey);display:grid;place-content:center;font-size:.65rem;font-weight:700;color:var(--bw-dgrey);flex-shrink:0;">M1</div>
+              <div style="flex:1;color:var(--bw-dgrey);">Mobilisation</div>
+              <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+              <div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--bw-mgrey);display:grid;place-content:center;font-size:.65rem;font-weight:700;color:var(--bw-dgrey);flex-shrink:0;">M2</div>
+              <div style="flex:1;color:var(--bw-dgrey);">Western Pavilion</div>
+              <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+              <div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--bw-mgrey);display:grid;place-content:center;font-size:.65rem;font-weight:700;color:var(--bw-dgrey);flex-shrink:0;">M3</div>
+              <div style="flex:1;color:var(--bw-dgrey);">Eastern Pavilion</div>
+              <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+              <div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--bw-mgrey);display:grid;place-content:center;font-size:.65rem;font-weight:700;color:var(--bw-dgrey);flex-shrink:0;">M4</div>
+              <div style="flex:1;color:var(--bw-dgrey);">External Works</div>
+              <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+              <div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--bw-mgrey);display:grid;place-content:center;font-size:.65rem;font-weight:700;color:var(--bw-dgrey);flex-shrink:0;">M5</div>
+              <div style="flex:1;color:var(--bw-dgrey);">ICT &amp; Security</div>
+              <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+              <div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--bw-mgrey);display:grid;place-content:center;font-size:.65rem;font-weight:700;color:var(--bw-dgrey);flex-shrink:0;">M6</div>
+              <div style="flex:1;color:var(--bw-dgrey);">Power Reticulation</div>
+              <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+              <div style="width:28px;height:28px;border-radius:50%;border:2px solid var(--bw-mgrey);display:grid;place-content:center;font-size:.65rem;font-weight:700;color:var(--bw-dgrey);flex-shrink:0;">M7</div>
+              <div style="flex:1;color:var(--bw-dgrey);">Practical Completion</div>
+              <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
+            </div>
+          </div>
+        {% endif %}
 
-        <!-- Actual milestone list (Sprint 3) -->
         <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;font-size:.75rem;">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Sprint 3: Live milestone tracking with gate status activates after award.
