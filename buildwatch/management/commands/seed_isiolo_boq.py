@@ -4,7 +4,13 @@ import json
 
 from django.core.management.base import BaseCommand
 
-from buildwatch.models import TenderBoqLine, TenderBoqPackage, TenderListing, WorkspaceBillPrice
+from buildwatch.models import (
+    BidWorkspace,
+    TenderBoqLine,
+    TenderBoqPackage,
+    TenderListing,
+    WorkspaceBillPrice,
+)
 
 _CANDIDATES = [
     Path(__file__).resolve().parent / "isiolo_boq_lines.json",
@@ -18,7 +24,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         data_path = next((p for p in _CANDIDATES if p.exists()), None)
         if not data_path:
-            self.stderr.write("isiolo_boq_lines.json not found — run scripts/parse_isiolo_boq.py")
+            self.stderr.write("isiolo_boq_lines.json not found - run scripts/parse_isiolo_boq.py")
             return
 
         payload = json.loads(data_path.read_text(encoding="utf-8"))
@@ -59,12 +65,13 @@ class Command(BaseCommand):
                 )
             deleted, _ = pkg.lines.exclude(bill_ref__in=keep_refs).delete()
             self.stdout.write(self.style.SUCCESS(
-                f"  {code}: {pkg.lines.count()} lines (removed {deleted} stale) — {pkg.title}"
+                f"  {code}: {pkg.lines.count()} lines (removed {deleted} stale) - {pkg.title}"
             ))
 
-        TenderBoqPackage.objects.filter(tender=listing).exclude(code__in=keep_codes).delete()
+        TenderBoqPackage.objects.filter(tender=listing).exclude(
+            code__in=keep_codes
+        ).delete()
 
-        # Remap saved prices to new category codes; drop orphan refs
         synced = 0
         dropped = 0
         for bp in WorkspaceBillPrice.objects.filter(workspace__tender=listing):
@@ -88,16 +95,14 @@ class Command(BaseCommand):
                 bp.save()
                 synced += 1
 
-                # Drop obsolete category selections from open workspaces
-        from buildwatch.models import BidWorkspace
         for ws in BidWorkspace.objects.filter(tender=listing):
             codes = [c for c in (ws.selected_package_codes or []) if c in keep_codes]
             if codes != (ws.selected_package_codes or []):
                 ws.selected_package_codes = codes
                 ws.pricing_complete = False
-                ws.save(update_fields=['selected_package_codes', 'pricing_complete'])
+                ws.save(update_fields=["selected_package_codes", "pricing_complete"])
 
-self.stdout.write(self.style.SUCCESS(
+        self.stdout.write(self.style.SUCCESS(
             f"Isiolo BOQ seeded from {data_path.name} "
             f"listing_id={listing.pk} categories={len(keep_codes)} "
             f"synced_prices={synced} dropped_prices={dropped}"
