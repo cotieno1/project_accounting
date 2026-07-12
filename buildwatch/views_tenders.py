@@ -699,20 +699,21 @@ def bid_workspace(request, listing_id):
             desc = request.POST.get(f'desc_{bill_ref}', '')
             unit = request.POST.get(f'unit_{bill_ref}', '')
             pkg = request.POST.get(f'pkg_{bill_ref}', '')
-            qty_raw = request.POST.get(f'qty_{bill_ref}', '1').replace(',', '')
+            qty_raw = request.POST.get(f'qty_{bill_ref}', '0').replace(',', '')
             rate_raw = request.POST.get(f'rate_{bill_ref}', '0').replace(',', '')
             try:
-                # BOQ component lines are always quantity = 1 Unit
-                qty = Decimal('1')
+                qty = Decimal(qty_raw)
                 rate = Decimal(rate_raw)
             except Exception:
+                continue
+            if qty <= 0:
                 continue
             WorkspaceBillPrice.objects.update_or_create(
                 workspace=workspace,
                 bill_ref=bill_ref,
                 defaults={
                     'description': desc,
-                    'unit': 'Unit',
+                    'unit': unit or 'Nr',
                     'quantity': qty,
                     'unit_rate': rate,
                     'package_code': pkg,
