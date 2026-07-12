@@ -483,26 +483,61 @@ def tender_register(request, listing_id):
     Contractor registers interest — required before BOQ download or bid workspace.
     """
     listing = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
-    org     = get_active_organization(request)
-    ua      = _get_user_account(request)
+    org = get_active_organization(request)
+    ua = _get_user_account(request)
 
     if not listing.event.is_open:
         messages.error(request, 'This tender has closed.')
         return redirect('tender-detail', listing_id=listing_id)
 
-    reg, created = BidderRegistration.objects.get_or_create(
+    if org is None:
+        messages.error(
+            request,
+            'No organisation is linked to your login. Contact your administrator.',
+        )
+        return redirect('tender-detail', listing_id=listing_id)
+
+    if ua is None:
+        messages.error(
+            request,
+            'Your user profile (UserAccount) is missing. '
+            'Ask an administrator to link your login before registering interest.',
+        )
+        return redirect('tender-detail', listing_id=listing_id)
+
+    try:
+        reg, created = BidderRegistration.objects.get_or_create(
+            tender=listing,
+            organisation=org,
+            defaults={'registered_by': ua},
+        )
+    except Exception as exc:
+        messages.error(
+            request,
+            f'Could not register interest: {exc}',
+        )
+        return redirect('tender-detail', listing_id=listing_id)
+
+    # Ensure private bid workspace exists so BOQ pricing is available immediately
+    BidWorkspace.objects.get_or_create(
         tender=listing,
         organisation=org,
-        defaults={'registered_by': ua},
+        defaults={'prepared_by': ua},
     )
+
     if created:
-        messages.success(request,
+        messages.success(
+            request,
             f'You are registered for {listing.event.ref}. '
-            f'You will receive notifications for all addenda.')
+            f'Opening the BOQ workspace.',
+        )
     else:
         messages.info(request, 'You are already registered for this tender.')
 
-    return redirect('tender-detail', listing_id=listing_id)
+    # Prefer BOQ file download when available; otherwise open the workspace
+    if listing.boq_document:
+        return redirect('tender-boq-download', listing_id=listing_id)
+    return redirect('bid-workspace', listing_id=listing_id)
 
 
 @login_required
