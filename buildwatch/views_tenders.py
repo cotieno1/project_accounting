@@ -761,17 +761,45 @@ def bid_workspace(request, listing_id):
     }
 
     package_sections = []
+    category_summary = []
+    grand_total = Decimal('0')
     for pkg in selected_packages:
         rows = []
+        subtotal = Decimal('0')
         for line in pkg.lines.all():
             bp = price_map.get(line.bill_ref)
+            amount = bp.amount if bp else Decimal('0')
+            subtotal += amount
             rows.append({
                 'line': line,
                 'price': bp,
                 'rate': bp.unit_rate if bp else Decimal('0'),
-                'amount': bp.amount if bp else Decimal('0'),
+                'amount': amount,
             })
-        package_sections.append({'package': pkg, 'rows': rows})
+        grand_total += subtotal
+        package_sections.append({
+            'package': pkg,
+            'rows': rows,
+            'subtotal': subtotal,
+            'line_count': len(rows),
+        })
+        category_summary.append({
+            'code': pkg.code,
+            'title': pkg.title,
+            'subtotal': subtotal,
+            'line_count': len(rows),
+        })
+
+    # Also show unselected categories in summary as zero / not bidding
+    for pkg in packages:
+        if pkg.code.upper() in selected:
+            continue
+        category_summary.append({
+            'code': pkg.code,
+            'title': pkg.title,
+            'subtotal': None,  # not selected
+            'line_count': pkg.lines.count(),
+        })
 
     ctx = {
         'listing': listing,
@@ -779,6 +807,8 @@ def bid_workspace(request, listing_id):
         'packages': packages,
         'selected_codes': selected,
         'package_sections': package_sections,
+        'category_summary': category_summary,
+        'category_grand_total': grand_total,
         'bill_prices': workspace.bill_prices.order_by('bill_ref'),
         'self_checks': workspace.self_checks.order_by('mr_ref'),
         **branding_template_context(request),

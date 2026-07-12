@@ -1,11 +1,11 @@
-﻿from decimal import Decimal
+from decimal import Decimal
 from pathlib import Path
+import json
 
 from django.core.management.base import BaseCommand
 
 from buildwatch.models import TenderBoqLine, TenderBoqPackage, TenderListing, WorkspaceBillPrice
 
-# Prefer JSON shipped next to this command (Railway), else local scripts/
 _CANDIDATES = [
     Path(__file__).resolve().parent / "isiolo_boq_lines.json",
     Path(__file__).resolve().parents[3] / "scripts" / "isiolo_boq_lines.json",
@@ -21,8 +21,6 @@ class Command(BaseCommand):
             self.stderr.write("isiolo_boq_lines.json not found — run scripts/parse_isiolo_boq.py")
             return
 
-        import json
-
         payload = json.loads(data_path.read_text(encoding="utf-8"))
         listing = TenderListing.objects.filter(
             event__ref="SK/004/2025-2026"
@@ -32,6 +30,7 @@ class Command(BaseCommand):
             return
 
         keep_codes = set()
+        ref_to_pkg = {}
         for pkg_data in payload["packages"]:
             code = pkg_data["code"]
             keep_codes.add(code)
@@ -45,11 +44,12 @@ class Command(BaseCommand):
             )
             keep_refs = set()
             for line in pkg_data["lines"]:
-                ref = line["bill_ref"]
+                ref = (line["bill_ref"] or "")[:20]
                 keep_refs.add(ref)
+                ref_to_pkg[ref] = code
                 TenderBoqLine.objects.update_or_create(
                     package=pkg,
-                    bill_ref=ref[:20],
+                    bill_ref=ref,
                     defaults={
                         "description": (line.get("description") or "")[:255],
                         "unit": (line.get("unit") or "No")[:30],
@@ -59,29 +59,46 @@ class Command(BaseCommand):
                 )
             deleted, _ = pkg.lines.exclude(bill_ref__in=keep_refs).delete()
             self.stdout.write(self.style.SUCCESS(
-                f"  {code}: {pkg.lines.count()} lines (removed {deleted} stale)"
+                f"  {code}: {pkg.lines.count()} lines (removed {deleted} stale) — {pkg.title}"
             ))
 
-        # Drop packages not in the RFQ set
         TenderBoqPackage.objects.filter(tender=listing).exclude(code__in=keep_codes).delete()
 
-        # Align saved contractor prices to master qty/unit where refs still exist
-        master = {
-            ln.bill_ref: ln
-            for ln in TenderBoqLine.objects.filter(package__tender=listing)
-        }
+        # Remap saved prices to new category codes; drop orphan refs
         synced = 0
+        dropped = 0
         for bp in WorkspaceBillPrice.objects.filter(workspace__tender=listing):
-            ln = master.get(bp.bill_ref)
-            if not ln:
+            code = ref_to_pkg.get(bp.bill_ref)
+            if not code:
+                bp.delete()
+                dropped += 1
                 continue
-            if bp.quantity != ln.quantity or bp.unit != ln.unit:
+            ln = TenderBoqLine.objects.filter(
+                package__tender=listing, bill_ref=bp.bill_ref
+            ).first()
+            changed = False
+            if bp.package_code != code:
+                bp.package_code = code
+                changed = True
+            if ln and (bp.quantity != ln.quantity or bp.unit != ln.unit):
                 bp.quantity = ln.quantity
                 bp.unit = ln.unit
+                changed = True
+            if changed:
                 bp.save()
                 synced += 1
 
-        self.stdout.write(self.style.SUCCESS(
+                # Drop obsolete category selections from open workspaces
+        from buildwatch.models import BidWorkspace
+        for ws in BidWorkspace.objects.filter(tender=listing):
+            codes = [c for c in (ws.selected_package_codes or []) if c in keep_codes]
+            if codes != (ws.selected_package_codes or []):
+                ws.selected_package_codes = codes
+                ws.pricing_complete = False
+                ws.save(update_fields=['selected_package_codes', 'pricing_complete'])
+
+self.stdout.write(self.style.SUCCESS(
             f"Isiolo BOQ seeded from {data_path.name} "
-            f"listing_id={listing.pk} synced_prices={synced}"
+            f"listing_id={listing.pk} categories={len(keep_codes)} "
+            f"synced_prices={synced} dropped_prices={dropped}"
         ))

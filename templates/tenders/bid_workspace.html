@@ -27,15 +27,15 @@
   <div class="bw-alert bw-alert--warning">This tender has closed. Workspace is read-only.</div>
   {% endif %}
 
-  <div style="display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;">
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;">
     <div>
       {% if packages %}
       <div class="bw-card" style="margin-bottom:16px;">
-        <div class="bw-card-header">Select BOQ components</div>
+        <div class="bw-card-header">Select BOQ categories</div>
         <div class="bw-card-body">
           <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 14px;">
-            Bid on any combination — Electrical, Structured Cabling, CCTV and/or Solar —
-            or select all.
+            Bid on any combination of RFQ bill categories (or Select all).
+            Each selected category is priced separately; your submission covers only those you select.
           </p>
           <form method="POST" action="{% url 'bid-workspace' listing.pk %}">
             {% csrf_token %}
@@ -74,7 +74,7 @@
         <input type="hidden" name="action" value="save_prices">
 
         {% for section in package_sections %}
-        <div class="bw-card" style="margin-bottom:14px;">
+        <div class="bw-card" style="margin-bottom:14px;" data-pkg="{{ section.package.code }}">
           <div class="bw-card-header">{{ section.package.title }}
             <span style="font-family:var(--bw-mono);font-weight:500;color:var(--bw-mid);margin-left:8px;">{{ section.package.code }}</span>
           </div>
@@ -110,15 +110,25 @@
                            step="0.01" min="0" class="bw-input"
                            style="text-align:right;padding:7px 8px;"
                            data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
+                           data-pkg="{{ section.package.code }}"
                            onchange="recalcRow(this)">
                     {% else %}
                     <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
                     {% endif %}
                   </td>
                   <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
-                      id="amount-{{ row.line.bill_ref }}">{{ row.amount|floatformat:2 }}</td>
+                      id="amount-{{ row.line.bill_ref }}" class="boq-amount" data-pkg="{{ section.package.code }}">{{ row.amount|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
+                <tr style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
+                  <td colspan="5" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;">
+                    Sub-total — {{ section.package.title }}
+                  </td>
+                  <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);"
+                      id="subtotal-{{ section.package.code }}">
+                    {{ section.subtotal|floatformat:2 }}
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -126,21 +136,53 @@
         {% endfor %}
 
         <div class="bw-card" style="margin-bottom:14px;">
-          <div class="bw-card-body" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-            <div>
-              <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bw-mid);">Total bid (selected components)</div>
-              <div style="font-size:1.25rem;font-weight:700;color:var(--bw-navy);">
-                {{ listing.currency }} <span id="grand-total">{{ workspace.total_bid_amount|floatformat:2 }}</span>
-              </div>
-            </div>
-            {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
-            <button type="submit" class="bw-btn bw-btn--teal">Save prices</button>
-            {% endif %}
+          <div class="bw-card-header">Category summary</div>
+          <div class="bw-card-body" style="padding:0;">
+            <table style="width:100%;border-collapse:collapse;font-size:.84rem;">
+              <thead>
+                <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
+                  <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Category</th>
+                  <th style="padding:10px 14px;text-align:center;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:70px;">Lines</th>
+                  <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:140px;">Sub-total ({{ listing.currency }})</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in category_summary %}
+                <tr style="border-bottom:1px solid var(--bw-rule);{% if row.subtotal is None %}opacity:.55;{% endif %}">
+                  <td style="padding:10px 14px;color:var(--bw-navy);">
+                    <strong>{{ row.title }}</strong>
+                    <span style="font-family:var(--bw-mono);font-size:.72rem;color:var(--bw-mid);margin-left:8px;">{{ row.code }}</span>
+                    {% if row.subtotal is None %}
+                    <span style="display:inline-block;margin-left:8px;font-size:.72rem;color:var(--bw-mid);">Not selected</span>
+                    {% endif %}
+                  </td>
+                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line_count }}</td>
+                  <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);font-family:var(--bw-mono);"
+                      {% if row.subtotal is not None %}id="summary-{{ row.code }}"{% endif %}>
+                    {% if row.subtotal is None %}—{% else %}{{ row.subtotal|floatformat:2 }}{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                <tr style="background:var(--bw-mist);">
+                  <td colspan="2" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);">
+                    Total bid (selected categories)
+                  </td>
+                  <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:1.05rem;font-family:var(--bw-mono);">
+                    {{ listing.currency }} <span id="grand-total">{{ category_grand_total|floatformat:2 }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+          {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+          <div class="bw-card-body" style="display:flex;justify-content:flex-end;border-top:1px solid var(--bw-rule);">
+            <button type="submit" class="bw-btn bw-btn--teal">Save prices</button>
+          </div>
+          {% endif %}
         </div>
       </form>
       {% elif packages %}
-      <div class="bw-alert bw-alert--info">Select one or more components above, then apply selection to open the BOQ lines.</div>
+      <div class="bw-alert bw-alert--info">Select one or more categories above, then apply selection to open the BOQ lines.</div>
       {% else %}
       <div class="bw-alert bw-alert--warning">No BOQ packages have been published for this tender yet.</div>
       {% endif %}
@@ -152,7 +194,7 @@
         <div class="bw-card-body">
           <div class="bw-gate">
             <div class="bw-gate__dot bw-gate__dot--{% if selected_codes %}green{% else %}amber{% endif %}"></div>
-            <div class="bw-gate__label">Components</div>
+            <div class="bw-gate__label">Categories</div>
             <div class="bw-gate__status">{{ selected_codes|length }}/{{ packages|length }}</div>
           </div>
           <div class="bw-gate">
@@ -168,6 +210,24 @@
         </div>
       </div>
 
+      {% if package_sections %}
+      <div class="bw-card" style="margin-bottom:14px;">
+        <div class="bw-card-header">Selected sub-totals</div>
+        <div class="bw-card-body" style="padding:10px 0;">
+          {% for section in package_sections %}
+          <div style="display:flex;justify-content:space-between;gap:8px;padding:8px 16px;border-bottom:1px solid var(--bw-rule);font-size:.8rem;">
+            <span style="color:var(--bw-mid);">{{ section.package.code }}</span>
+            <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);" id="aside-{{ section.package.code }}">{{ section.subtotal|floatformat:2 }}</span>
+          </div>
+          {% endfor %}
+          <div style="display:flex;justify-content:space-between;gap:8px;padding:10px 16px;font-size:.86rem;">
+            <strong style="color:var(--bw-navy);">Total</strong>
+            <strong style="font-family:var(--bw-mono);color:var(--bw-navy);" id="aside-grand">{{ category_grand_total|floatformat:2 }}</strong>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
       {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
       <div class="bw-card">
         <div class="bw-card-body">
@@ -175,13 +235,16 @@
           <form method="POST" action="{% url 'bid-submit' listing.pk %}">
             {% csrf_token %}
             <button type="submit" class="bw-btn bw-btn--primary" style="width:100%;justify-content:center;"
-                    onclick="return confirm('Submit bid for {{ listing.event.ref }}?')">
-              Submit bid
+                    onclick="return confirm('Submit bid for selected categories on {{ listing.event.ref }}?')">
+              Submit selected categories
             </button>
           </form>
+          <p style="font-size:.75rem;color:var(--bw-mid);margin:10px 0 0;">
+            Only selected categories are included in this submission.
+          </p>
           {% else %}
           <div style="font-size:.8rem;color:var(--bw-mid);">
-            Select components, save prices, and complete certificates before submitting.
+            Select categories, save prices, and complete certificates before submitting.
           </div>
           {% endif %}
         </div>
@@ -194,18 +257,38 @@
 </div>
 
 <script>
+function fmtMoney(n) {
+  return n.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function recalcTotals() {
+  const byPkg = {};
+  document.querySelectorAll('.boq-amount').forEach(el => {
+    const pkg = el.dataset.pkg;
+    const val = parseFloat(String(el.textContent).replace(/,/g, '')) || 0;
+    byPkg[pkg] = (byPkg[pkg] || 0) + val;
+  });
+  let grand = 0;
+  Object.keys(byPkg).forEach(pkg => {
+    grand += byPkg[pkg];
+    const sub = document.getElementById('subtotal-' + pkg);
+    if (sub) sub.textContent = fmtMoney(byPkg[pkg]);
+    const sum = document.getElementById('summary-' + pkg);
+    if (sum) sum.textContent = fmtMoney(byPkg[pkg]);
+    const aside = document.getElementById('aside-' + pkg);
+    if (aside) aside.textContent = fmtMoney(byPkg[pkg]);
+  });
+  const totalEl = document.getElementById('grand-total');
+  if (totalEl) totalEl.textContent = fmtMoney(grand);
+  const asideGrand = document.getElementById('aside-grand');
+  if (asideGrand) asideGrand.textContent = fmtMoney(grand);
+}
 function recalcRow(input) {
   const ref = input.dataset.ref;
   const qty = parseFloat(input.dataset.qty) || 0;
   const rate = parseFloat(input.value) || 0;
   const amountEl = document.getElementById('amount-' + ref);
-  if (amountEl) amountEl.textContent = (qty * rate).toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-  let total = 0;
-  document.querySelectorAll('[id^="amount-"]').forEach(el => {
-    total += parseFloat(String(el.textContent).replace(/,/g, '')) || 0;
-  });
-  const totalEl = document.getElementById('grand-total');
-  if (totalEl) totalEl.textContent = total.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  if (amountEl) amountEl.textContent = fmtMoney(qty * rate);
+  recalcTotals();
 }
 </script>
 {% endblock %}
