@@ -327,6 +327,9 @@
       BuildWatch
     </a>
     <div class="bw-topnav__links">
+      {% if user.is_authenticated %}
+      <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">← Main dashboard</a>
+      {% endif %}
       <a href="{% url 'tender-list' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-list' %}is-active{% endif %}">Tenders</a>
       {% if user.is_authenticated %}
       <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">My Bids</a>

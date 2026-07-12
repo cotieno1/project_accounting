@@ -1,6 +1,20 @@
+from django.urls import reverse
+
 from .models import AppSettings
 from .tenant import get_active_organization
 from .currency import currency_context
+
+
+def _main_dashboard_url(request):
+    """Platform admin → /platform/; tenant staff → /dashboard/; guests → home."""
+    from .roles import USER_ADMIN, get_role_code
+
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return reverse("home")
+    if user.is_superuser or get_role_code(user) == USER_ADMIN:
+        return reverse("platform_admin")
+    return reverse("dashboard")
 
 
 def branding(request):
@@ -25,6 +39,7 @@ def branding(request):
         "tenant_count": 0,
         "currency_code": "USD",
         "currency_symbol": "US$",
+        "main_dashboard_url": reverse("home"),
     }
     try:
         app = AppSettings.get()
@@ -57,6 +72,7 @@ def branding(request):
             "org_tax_pin": org.tax_pin if org else "",
             "org_tagline": org.document_tagline if org else "",
             "tenant_count": org_count,
+            "main_dashboard_url": _main_dashboard_url(request),
             **currency_context(),
         }
     except Exception:
