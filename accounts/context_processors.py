@@ -1,7 +1,7 @@
 from django.urls import reverse
 
 from .models import AppSettings
-from .tenant import get_active_organization
+from .tenant import get_active_organization, exchange_persona_context
 from .currency import currency_context
 
 
@@ -19,6 +19,7 @@ def _main_dashboard_url(request):
 
 def branding(request):
     """Inject Project Accounting software brand + active client company."""
+    persona = exchange_persona_context(request)
     defaults = {
         "app_name": "Project Accounting",
         "app_short_name": "Project Accounting",
@@ -40,6 +41,7 @@ def branding(request):
         "currency_code": "USD",
         "currency_symbol": "US$",
         "main_dashboard_url": reverse("home"),
+        **persona,
     }
     try:
         app = AppSettings.get()
@@ -73,6 +75,7 @@ def branding(request):
             "org_tagline": org.document_tagline if org else "",
             "tenant_count": org_count,
             "main_dashboard_url": _main_dashboard_url(request),
+            **exchange_persona_context(request, org),
             **currency_context(),
         }
     except Exception:

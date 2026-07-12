@@ -5,11 +5,41 @@
 {% block bw_content %}
 <div class="bw-wrap">
   <header style="margin-bottom:24px;">
-    <div class="bw-kicker">Tender exchange</div>
-    <h1 class="bw-title">Open tenders</h1>
+    <div class="bw-kicker">{{ bw_persona_kicker|default:"Public procurement exchange" }}</div>
+    <h1 class="bw-title">{{ bw_persona_title|default:"Open tenders" }}</h1>
     <p class="bw-lead">
-      Browse published infrastructure tenders. Register to download BOQ documents and bid.
+      {{ bw_persona_lead|default:"Browse published infrastructure tenders. Register to download BOQ documents and bid." }}
     </p>
+    {% if user.is_authenticated %}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+        {% if bw_persona == 'employer' %}
+          <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal">{{ bw_primary_cta_label }}</a>
+          <a href="{% url 'infra-project-list' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label }}</a>
+        {% elif bw_persona == 'contractor' %}
+          <a href="{% url 'my-bids' %}" class="bw-btn bw-btn--teal">{{ bw_primary_cta_label }}</a>
+          <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label }}</a>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="bw-dual-entry" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;max-width:640px;">
+        <div class="bw-panel">
+          <div class="bw-panel__bd">
+            <div class="bw-kicker">Contractors</div>
+            <strong style="display:block;color:var(--bw-navy);margin-bottom:6px;">Building &amp; infrastructure</strong>
+            <p class="bw-lead" style="font-size:0.86rem;">Browse, register interest, download BOQ and bid.</p>
+            <a href="{% url 'buildwatch-register' %}?type=CONTRACTOR" class="bw-btn bw-btn--ghost bw-btn--sm" style="margin-top:12px;">Register as contractor</a>
+          </div>
+        </div>
+        <div class="bw-panel">
+          <div class="bw-panel__bd">
+            <div class="bw-kicker">Employers</div>
+            <strong style="display:block;color:var(--bw-navy);margin-bottom:6px;">Government · DFI · private</strong>
+            <p class="bw-lead" style="font-size:0.86rem;">Publish and manage open tenders for works and services.</p>
+            <a href="{% url 'buildwatch-register' %}?type=GOV_NATIONAL" class="bw-btn bw-btn--teal bw-btn--sm" style="margin-top:12px;">Register as employer</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
   </header>
 
   <div class="bw-layout">

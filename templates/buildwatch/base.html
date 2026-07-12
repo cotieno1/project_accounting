@@ -247,6 +247,7 @@
 @media (max-width: 700px) {
   .bw-row2, .bw-row3 { grid-template-columns: 1fr; }
   .bw-layout { grid-template-columns: 1fr !important; }
+  .bw-dual-entry { grid-template-columns: 1fr !important; }
 }
 
 .bw-layout {
@@ -328,17 +329,25 @@
     </a>
     <div class="bw-topnav__links">
       {% if user.is_authenticated %}
-      <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">← Main dashboard</a>
+      <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">â† Main dashboard</a>
+      <span class="bw-tag" style="align-self:center;">{{ bw_persona_label|default:"Tender exchange" }}</span>
       {% endif %}
       <a href="{% url 'tender-list' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-list' %}is-active{% endif %}">Tenders</a>
       {% if user.is_authenticated %}
-      <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">My Bids</a>
-      <a href="{% url 'tender-alerts' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-alerts' %}is-active{% endif %}">Alerts</a>
-      <a href="{% url 'infra-project-list' %}" class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}is-active{% endif %}">Projects</a>
-      <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal bw-btn--sm">Publish tender</a>
+        {% if bw_persona == 'employer' %}
+          <a href="{% url 'infra-project-list' %}" class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}is-active{% endif %}">Projects</a>
+          <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal bw-btn--sm">Publish tender</a>
+          <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">Bidder activity</a>
+        {% else %}
+          <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">My Bids</a>
+          <a href="{% url 'tender-alerts' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-alerts' %}is-active{% endif %}">Alerts</a>
+          <a href="{% url 'infra-project-list' %}" class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}is-active{% endif %}">Projects</a>
+          <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--ghost bw-btn--sm">Publish tender</a>
+        {% endif %}
       {% else %}
-      <a href="{% url 'login' %}" class="bw-topnav__link">Sign in</a>
-      <a href="{% url 'buildwatch-register' %}" class="bw-btn bw-btn--teal bw-btn--sm">Register</a>
+      <a href="{% url 'login' %}?next={% url 'tender-list' %}" class="bw-topnav__link">Sign in</a>
+      <a href="{% url 'buildwatch-register' %}?type=CONTRACTOR" class="bw-btn bw-btn--ghost bw-btn--sm">Contractor register</a>
+      <a href="{% url 'buildwatch-register' %}?type=GOV_NATIONAL" class="bw-btn bw-btn--teal bw-btn--sm">Employer register</a>
       {% endif %}
     </div>
   </nav>
@@ -360,7 +369,7 @@
     <span>BuildWatch</span>
     <span>
       <a href="{% url 'tender-list' %}">Tenders</a>
-      &nbsp;·&nbsp;
+      &nbsp;Â·&nbsp;
       <a href="{% url 'buildwatch-register' %}">Register</a>
     </span>
   </footer>

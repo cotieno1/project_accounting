@@ -69,3 +69,89 @@ def branding_template_context(request=None):
         }
     except Exception:
         return defaults
+
+
+# BuildWatch tender exchange — two marketplace sides
+EMPLOYER_ORG_TYPES = {
+    'GOV_NATIONAL',
+    'GOV_COUNTY',
+    'PARASTATAL',
+    'FINANCIER',
+    'DEVELOPER',
+    'NGO',
+    'CLIENT',
+    'INSTITUTION',
+    'PRIVATE',
+    'INDIVIDUAL',
+}
+CONTRACTOR_ORG_TYPES = {
+    'CONTRACTOR',
+    'CONSULTANT',
+    'BUILDING',
+    'ROADS',
+    'SPECIALIST',
+    'GENERAL',
+}
+
+
+def get_exchange_persona(org=None, request=None):
+    """Return contractor | employer | guest for BuildWatch UI customisation."""
+    if org is None and request is not None:
+        org = get_active_organization(request)
+    if org is None:
+        return 'guest'
+
+    org_type = (getattr(org, 'organization_type', '') or '').strip().upper()
+    if org_type in EMPLOYER_ORG_TYPES:
+        return 'employer'
+    if org_type in CONTRACTOR_ORG_TYPES:
+        return 'contractor'
+
+    ctype = (getattr(org, 'contractor_type', '') or '').strip().upper()
+    if ctype in {'BUILDING', 'ROADS', 'CONSULTANT'}:
+        return 'contractor'
+    return 'contractor'
+
+
+def exchange_persona_context(request=None, org=None):
+    persona = get_exchange_persona(org=org, request=request)
+    labels = {
+        'guest': {
+            'bw_persona': 'guest',
+            'bw_persona_label': 'Tender exchange',
+            'bw_persona_kicker': 'Public procurement exchange',
+            'bw_persona_title': 'Open tenders',
+            'bw_persona_lead': (
+                'One exchange for both sides: contractors bid on works; '
+                'government departments, DFIs and private institutions publish and manage tenders.'
+            ),
+            'bw_primary_cta_label': 'Browse tenders',
+            'bw_secondary_cta_label': 'Publish a tender',
+        },
+        'contractor': {
+            'bw_persona': 'contractor',
+            'bw_persona_label': 'Contractor workspace',
+            'bw_persona_kicker': 'Contractor · building & infrastructure',
+            'bw_persona_title': 'Tenders you can bid',
+            'bw_persona_lead': (
+                'Browse published works, register interest, download BOQ packages '
+                'and submit bids from your contractor organisation.'
+            ),
+            'bw_primary_cta_label': 'My bids',
+            'bw_secondary_cta_label': 'Set alerts',
+        },
+        'employer': {
+            'bw_persona': 'employer',
+            'bw_persona_label': 'Employer / institution workspace',
+            'bw_persona_kicker': 'Employer · government · DFI · private',
+            'bw_persona_title': 'Tenders you publish',
+            'bw_persona_lead': (
+                'Publish and manage open procurement for works and services — '
+                'for government departments, World Bank / AfDB programmes, '
+                'and private institutions or companies.'
+            ),
+            'bw_primary_cta_label': 'Publish tender',
+            'bw_secondary_cta_label': 'Manage projects',
+        },
+    }
+    return labels[persona]

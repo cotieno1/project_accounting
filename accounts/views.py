@@ -1669,6 +1669,19 @@ def buildwatch_register(request):
                 post["consultant_discipline"] = discipline
         elif reg_type in ("BUILDING", "CONTRACTOR"):
             post["org_type"] = "CONTRACTOR"
+        elif reg_type in (
+            "GOV_NATIONAL",
+            "GOV_COUNTY",
+            "PARASTATAL",
+            "FINANCIER",
+            "DEVELOPER",
+            "NGO",
+            "CLIENT",
+            "INSTITUTION",
+            "PRIVATE",
+            "INDIVIDUAL",
+        ):
+            post["org_type"] = reg_type
         if post.get("org_type"):
             ctx["post"] = post
             ctx["prefill_json"] = json.dumps(post)
