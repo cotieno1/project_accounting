@@ -1,0 +1,94 @@
+{% extends "buildwatch/base.html" %}
+{% block title %}Register Project — BuildWatch{% endblock %}
+{% block bw_content %}
+<div style="max-width:700px;margin:0 auto;padding:32px 24px;">
+  <div style="margin-bottom:24px;">
+    <a href="{% url 'infra-project-list' %}" style="color:var(--bw-blue);
+      text-decoration:none;font-size:.78rem;">← Projects</a>
+  </div>
+  <div style="margin-bottom:24px;">
+    <h1 style="font-size:1.5rem;font-weight:700;color:var(--bw-navy);
+      letter-spacing:-.02em;margin-bottom:8px;">Register Infrastructure Project</h1>
+    <p style="color:var(--bw-dgrey);font-size:.88rem;line-height:1.55;">
+      Link a Pioneer ProjectTask to BuildWatch to enable programme tracking,
+      site inspections, compliance gates and payment certification.
+    </p>
+  </div>
+  <form method="POST" action="{% url 'infra-project-create' %}">
+    {% csrf_token %}
+    <div class="bw-card" style="margin-bottom:20px;">
+      <div class="bw-card-header">Project Details</div>
+      <div class="bw-card-body">
+        <div class="bw-field">
+          <label class="bw-label" for="task_id">
+            Pioneer Project Task <span class="req">*</span>
+          </label>
+          <div class="bw-hint">
+            Select the existing Pioneer task. If not listed, create it in the
+            Pioneer Master Data panel first.
+          </div>
+          <select class="bw-select" name="task_id" id="task_id" required>
+            <option value="" disabled selected>Select task…</option>
+            {% for task in tasks %}
+              <option value="{{ task.project_id }}">
+                {{ task.project_id }} — {{ task.description }}
+              </option>
+            {% empty %}
+              <option disabled>No tasks found — create one in Pioneer first</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="bw-row2">
+          <div class="bw-field">
+            <label class="bw-label">Sector <span class="req">*</span></label>
+            <select class="bw-select" name="sector" required>
+              {% for val, label in sectors %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label">Project Type <span class="req">*</span></label>
+            <select class="bw-select" name="project_type" required>
+              {% for val, label in project_types %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="bw-row2">
+          <div class="bw-field">
+            <label class="bw-label">County / Region</label>
+            <input class="bw-input" type="text" name="county"
+              placeholder="e.g. Isiolo, Nairobi">
+          </div>
+          <div class="bw-field">
+            <label class="bw-label">Contract Value</label>
+            <input class="bw-input" type="number" name="contract_value"
+              step="1" min="0" placeholder="0">
+          </div>
+        </div>
+        <div class="bw-row2">
+          <div class="bw-field">
+            <label class="bw-label">Start Date</label>
+            <input class="bw-input" type="date" name="start_date">
+          </div>
+          <div class="bw-field">
+            <label class="bw-label">End Date</label>
+            <input class="bw-input" type="date" name="end_date">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:12px;">
+      <a href="{% url 'infra-project-list' %}" class="bw-btn bw-btn--ghost">
+        Cancel
+      </a>
+      <button type="submit" class="bw-btn bw-btn--primary">
+        Register Project
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

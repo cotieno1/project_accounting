@@ -1,0 +1,295 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Tenders — BuildWatch Global Tender Exchange{% endblock %}
+
+{% block bw_content %}
+<div style="max-width:1200px;margin:0 auto;padding:32px 24px;">
+
+  <!-- Page header -->
+  <div style="margin-bottom:28px;">
+    <div style="font-size:.7rem;font-family:monospace;letter-spacing:.09em;
+      text-transform:uppercase;color:var(--bw-teal);margin-bottom:6px;">
+      Global Infrastructure Tender Exchange
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:700;color:var(--bw-navy);
+      letter-spacing:-.03em;margin-bottom:8px;">
+      Open Tenders
+    </h1>
+    <p style="color:var(--bw-dgrey);font-size:.88rem;max-width:600px;line-height:1.55;">
+      Government, private and donor-funded infrastructure tenders from across
+      Africa and beyond. Browse free. Register to download BOQ and bid.
+    </p>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="bw-stats">
+    <div class="bw-stat">
+      <div class="bw-stat__val">{{ total_active }}</div>
+      <div class="bw-stat__label">Active Tenders</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">{{ closing_week }}</div>
+      <div class="bw-stat__label">Closing This Week</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">{{ listings|length }}</div>
+      <div class="bw-stat__label">Matching Results</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">18</div>
+      <div class="bw-stat__label">Countries</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:260px 1fr;gap:24px;">
+
+    <!-- ── Filter sidebar ──────────────────────────────────────────────── -->
+    <aside>
+      <form method="GET" action="{% url 'tender-list' %}">
+        <div class="bw-card" style="position:sticky;top:20px;">
+          <div class="bw-card-header">
+            <svg style="width:14px;height:14px;stroke:currentColor;fill:none;
+              stroke-width:2;vertical-align:-2px;margin-right:6px;"
+              viewBox="0 0 24 24">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            Filter Tenders
+          </div>
+          <div class="bw-card-body">
+
+            <!-- Search -->
+            <div class="bw-field">
+              <label class="bw-label">Search</label>
+              <input class="bw-input" type="text" name="q"
+                value="{{ search }}" placeholder="Ref, description, location…">
+            </div>
+
+            <!-- Type -->
+            <div class="bw-field">
+              <label class="bw-label">Tender Type</label>
+              <select class="bw-select" name="type">
+                <option value="">All types</option>
+                {% for val, label in TENDER_TYPES %}
+                  <option value="{{ val }}"
+                    {% if filter_type == val %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Sector -->
+            <div class="bw-field">
+              <label class="bw-label">Sector</label>
+              <select class="bw-select" name="sector">
+                <option value="">All sectors</option>
+                {% for val, label in SECTORS %}
+                  <option value="{{ val }}"
+                    {% if filter_sector == val %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Country -->
+            <div class="bw-field">
+              <label class="bw-label">Country</label>
+              <select class="bw-select" name="country">
+                <option value="">All countries</option>
+                {% for c in countries %}
+                  <option value="{{ c.code }}"
+                    {% if filter_country == c.code %}selected{% endif %}>
+                    {{ c.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Funding -->
+            <div class="bw-field">
+              <label class="bw-label">Funding Source</label>
+              <select class="bw-select" name="funding">
+                <option value="">All sources</option>
+                {% for val, label in FUNDING_TYPES %}
+                  <option value="{{ val }}"
+                    {% if filter_funding == val %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Closing soon -->
+            <div class="bw-field">
+              <label style="display:flex;align-items:center;gap:8px;
+                font-size:.82rem;font-weight:500;cursor:pointer;">
+                <input type="checkbox" name="closing_soon" value="1"
+                  {% if filter_closing %}checked{% endif %}
+                  style="width:16px;height:16px;">
+                Closing within 7 days
+              </label>
+            </div>
+
+            <button type="submit" class="bw-btn bw-btn--primary"
+              style="width:100%;justify-content:center;">
+              Apply Filters
+            </button>
+            {% if search or filter_type or filter_sector or filter_country or filter_funding or filter_closing %}
+              <a href="{% url 'tender-list' %}"
+                 class="bw-btn bw-btn--ghost"
+                 style="width:100%;justify-content:center;margin-top:8px;">
+                Clear All
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </form>
+    </aside>
+
+    <!-- ── Tender listing ───────────────────────────────────────────────── -->
+    <div>
+      {% if not listings %}
+        <div class="bw-card" style="text-align:center;padding:60px 24px;">
+          <div style="font-size:2rem;margin-bottom:12px;">📋</div>
+          <div style="font-weight:600;color:var(--bw-navy);margin-bottom:8px;">
+            No tenders match your filters
+          </div>
+          <div style="color:var(--bw-dgrey);font-size:.85rem;margin-bottom:20px;">
+            Try broadening your search or
+            <a href="{% url 'tender-alerts' %}" style="color:var(--bw-blue);">
+              set up an alert
+            </a>
+            to be notified when matching tenders are published.
+          </div>
+          <a href="{% url 'tender-list' %}" class="bw-btn bw-btn--ghost bw-btn--sm">
+            Clear filters
+          </a>
+        </div>
+      {% endif %}
+
+      {% for listing in listings %}
+      <div class="bw-card" style="margin-bottom:16px;transition:box-shadow .15s;"
+           onmouseover="this.style.boxShadow='0 4px 20px rgba(27,58,92,.14)'"
+           onmouseout="this.style.boxShadow='var(--bw-shadow)'">
+        <div style="padding:20px;">
+
+          <!-- Top row: ref + badges -->
+          <div style="display:flex;align-items:flex-start;
+            justify-content:space-between;gap:12px;margin-bottom:12px;">
+            <div>
+              <div style="font-family:monospace;font-size:.72rem;
+                color:var(--bw-dgrey);margin-bottom:4px;">
+                {{ listing.event.ref }}
+              </div>
+              <a href="{% url 'tender-detail' listing.pk %}"
+                 style="text-decoration:none;">
+                <h3 style="font-size:1rem;font-weight:600;color:var(--bw-navy);
+                  line-height:1.3;margin:0;">
+                  {{ listing.event.description }}
+                </h3>
+              </a>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;
+              justify-content:flex-end;">
+              <!-- Type badge -->
+              <span class="bw-badge bw-badge--{{ listing.tender_type|lower }}">
+                {{ listing.get_tender_type_display|truncatewords:1 }}
+              </span>
+              <!-- Status badge -->
+              {% if listing.is_closing_soon %}
+                <span class="bw-badge bw-badge--closing">Closing Soon</span>
+              {% elif listing.event.is_open %}
+                <span class="bw-badge bw-badge--open">Open</span>
+              {% else %}
+                <span class="bw-badge bw-badge--closed">Closed</span>
+              {% endif %}
+              <!-- Visibility -->
+              {% if listing.visibility != 'PUBLIC' %}
+                <span class="bw-badge bw-badge--private-tag">
+                  {{ listing.get_visibility_display|truncatewords:1 }}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Summary -->
+          {% if listing.summary %}
+            <p style="font-size:.82rem;color:var(--bw-dgrey);
+              line-height:1.5;margin-bottom:14px;">
+              {{ listing.summary|truncatewords:30 }}
+            </p>
+          {% endif %}
+
+          <!-- Meta row -->
+          <div style="display:flex;gap:20px;flex-wrap:wrap;
+            font-size:.78rem;color:var(--bw-dgrey);margin-bottom:16px;">
+            {% if listing.country %}
+              <span>
+                🌍 {{ listing.country.name }}
+                {% if listing.county_region %}
+                  · {{ listing.county_region }}
+                {% endif %}
+              </span>
+            {% endif %}
+            <span>📁 {{ listing.get_funding_source_display }}</span>
+            {% if listing.estimated_value_min %}
+              <span>💰 {{ listing.value_range_display }}</span>
+            {% endif %}
+            <span>
+              📅
+              {% if listing.event.is_open %}
+                <strong style="color:{% if listing.is_closing_soon %}var(--bw-amber){% else %}var(--bw-navy){% endif %};">
+                  {{ listing.event.days_remaining }} day{{ listing.event.days_remaining|pluralize }} left
+                </strong>
+              {% else %}
+                Closed {{ listing.event.closing_date|date:"d M Y" }}
+              {% endif %}
+            </span>
+          </div>
+
+          <!-- Engagement row + CTA -->
+          <div style="display:flex;align-items:center;
+            justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="display:flex;gap:16px;font-size:.75rem;color:var(--bw-dgrey);">
+              <span>👁 {{ listing.view_count }} views</span>
+              <span>🏢 {{ listing.registered_bidder_count }} registered</span>
+              {% if listing.addendum_count %}
+                <span style="color:var(--bw-amber);">
+                  📎 {{ listing.addendum_count }} addendum{{ listing.addendum_count|pluralize }}
+                </span>
+              {% endif %}
+            </div>
+            <a href="{% url 'tender-detail' listing.pk %}"
+               class="bw-btn bw-btn--primary bw-btn--sm">
+              View Tender
+              <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Set up alert CTA -->
+      {% if listings %}
+        <div class="bw-card" style="background:var(--bw-lgrey);
+          border-style:dashed;text-align:center;padding:24px;">
+          <div style="font-size:.88rem;font-weight:600;color:var(--bw-navy);
+            margin-bottom:6px;">
+            Don't miss the next matching tender
+          </div>
+          <div style="font-size:.8rem;color:var(--bw-dgrey);margin-bottom:14px;">
+            Save your search as an alert and get notified by email, SMS or WhatsApp
+            when a matching tender is published.
+          </div>
+          <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost bw-btn--sm">
+            Set Up Alert
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+  </div><!-- grid -->
+</div>
+{% endblock %}

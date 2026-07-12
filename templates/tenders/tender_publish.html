@@ -1,0 +1,285 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Publish Tender — BuildWatch{% endblock %}
+
+{% block bw_content %}
+<div style="max-width:800px;margin:0 auto;padding:32px 24px;">
+
+  <div style="margin-bottom:28px;">
+    <div style="font-size:.7rem;font-family:monospace;letter-spacing:.09em;
+      text-transform:uppercase;color:var(--bw-teal);margin-bottom:6px;">
+      Employer / Procuring Entity
+    </div>
+    <h1 style="font-size:1.6rem;font-weight:700;color:var(--bw-navy);
+      letter-spacing:-.03em;margin-bottom:8px;">
+      Publish a Tender
+    </h1>
+    <p style="color:var(--bw-dgrey);font-size:.88rem;line-height:1.55;">
+      Publish your tender to the BuildWatch global exchange.
+      Government, PPP and private tenders — works, consultancy and goods.
+      Free to publish.
+    </p>
+  </div>
+
+  <form method="POST" action="{% url 'tender-publish' %}"
+        enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- ── Section 1: Project ─────────────────────────────────────────── -->
+    <div class="bw-card" style="margin-bottom:20px;">
+      <div class="bw-card-header">1. Project</div>
+      <div class="bw-card-body">
+        <div class="bw-field">
+          <label class="bw-label" for="project_id">
+            BuildWatch Project <span class="req">*</span>
+          </label>
+          <div class="bw-hint">
+            Select the project this tender belongs to.
+            If your project isn't listed,
+            <a href="{% url 'infra-project-create' %}"
+               style="color:var(--bw-blue);">register it first</a>.
+          </div>
+          <select class="bw-select" name="project_id" id="project_id" required>
+            <option value="" disabled selected>Select project…</option>
+            {% for project in projects %}
+              <option value="{{ project.pk }}">
+                {{ project.task.project_id }} — {{ project.task.description }}
+                ({{ project.county|default:project.country.code }})
+              </option>
+            {% empty %}
+              <option disabled>No projects yet — register a project first</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="bw-row2">
+          <div class="bw-field">
+            <label class="bw-label" for="ref">
+              Tender Reference <span class="req">*</span>
+            </label>
+            <div class="bw-hint">Official procurement reference number</div>
+            <input class="bw-input" type="text" name="ref" id="ref"
+              placeholder="e.g. SK/004/2025-2026" required>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="tender_type">
+              Tender Type <span class="req">*</span>
+            </label>
+            <select class="bw-select" name="tender_type" id="tender_type" required>
+              {% for val, label in TENDER_TYPES %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="bw-field">
+          <label class="bw-label" for="description">
+            Tender Description <span class="req">*</span>
+          </label>
+          <input class="bw-input" type="text" name="description" id="description"
+            placeholder="e.g. Proposed Completion of Isiolo Stadium — Electrical Services"
+            required>
+        </div>
+
+        <div class="bw-field">
+          <label class="bw-label" for="summary">Summary (for listing card)</label>
+          <div class="bw-hint">2–3 sentences shown on the tender exchange listing. Max 500 characters.</div>
+          <textarea class="bw-textarea" name="summary" id="summary"
+            placeholder="Brief overview of scope, location and key requirements…"
+            maxlength="500" rows="3"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 2: Classification ─────────────────────────────────── -->
+    <div class="bw-card" style="margin-bottom:20px;">
+      <div class="bw-card-header">2. Classification & Funding</div>
+      <div class="bw-card-body">
+        <div class="bw-row2">
+          <div class="bw-field">
+            <label class="bw-label" for="funding_source">
+              Funding Source <span class="req">*</span>
+            </label>
+            <select class="bw-select" name="funding_source" id="funding_source" required>
+              {% for val, label in FUNDING_TYPES %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="visibility">
+              Visibility <span class="req">*</span>
+            </label>
+            <select class="bw-select" name="visibility" id="visibility" required>
+              {% for val, label in VISIBILITY %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="bw-row2">
+          <div class="bw-field">
+            <label class="bw-label" for="country">Country</label>
+            <select class="bw-select" name="country" id="country">
+              <option value="" selected>Select country…</option>
+              {% for c in countries %}
+                <option value="{{ c.code }}"
+                  {% if c.code == 'KE' %}selected{% endif %}>
+                  {{ c.name }} ({{ c.currency_code }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="county_region">County / Region</label>
+            <input class="bw-input" type="text" name="county_region" id="county_region"
+              placeholder="e.g. Isiolo County, Nairobi, Lagos State">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 3: Value & Dates ───────────────────────────────────── -->
+    <div class="bw-card" style="margin-bottom:20px;">
+      <div class="bw-card-header">3. Value & Key Dates</div>
+      <div class="bw-card-body">
+        <div class="bw-row3">
+          <div class="bw-field">
+            <label class="bw-label" for="currency">Currency</label>
+            <select class="bw-select" name="currency" id="currency">
+              <option value="KES" selected>KES — Kenyan Shilling</option>
+              <option value="UGX">UGX — Ugandan Shilling</option>
+              <option value="TZS">TZS — Tanzanian Shilling</option>
+              <option value="NGN">NGN — Nigerian Naira</option>
+              <option value="GHS">GHS — Ghanaian Cedi</option>
+              <option value="ZAR">ZAR — South African Rand</option>
+              <option value="USD">USD — US Dollar</option>
+              <option value="GBP">GBP — British Pound</option>
+              <option value="EUR">EUR — Euro</option>
+            </select>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="value_min">Est. Value Min</label>
+            <div class="bw-hint">Range shown to bidders (not exact)</div>
+            <input class="bw-input" type="number" name="value_min" id="value_min"
+              step="1000000" min="0" placeholder="50000000">
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="value_max">Est. Value Max</label>
+            <input class="bw-input" type="number" name="value_max" id="value_max"
+              step="1000000" min="0" placeholder="200000000">
+          </div>
+        </div>
+
+        <div class="bw-row3">
+          <div class="bw-field">
+            <label class="bw-label" for="issue_date">
+              Issue Date <span class="req">*</span>
+            </label>
+            <input class="bw-input" type="date" name="issue_date" id="issue_date"
+              required>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="closing_date">
+              Closing Date & Time <span class="req">*</span>
+            </label>
+            <input class="bw-input" type="datetime-local" name="closing_date"
+              id="closing_date" required>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="clarification_deadline">
+              Clarification Deadline
+            </label>
+            <input class="bw-input" type="datetime-local"
+              name="clarification_deadline" id="clarification_deadline">
+          </div>
+        </div>
+
+        <div class="bw-row2">
+          <div class="bw-field">
+            <label class="bw-label" for="site_visit_date">Site Visit Date</label>
+            <input class="bw-input" type="datetime-local" name="site_visit_date"
+              id="site_visit_date">
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="site_visit_location">
+              Site Visit Location
+            </label>
+            <input class="bw-input" type="text" name="site_visit_location"
+              id="site_visit_location"
+              placeholder="e.g. Isiolo Stadium main gate, Isiolo Town">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 4: Documents ───────────────────────────────────────── -->
+    <div class="bw-card" style="margin-bottom:20px;">
+      <div class="bw-card-header">4. Documents</div>
+      <div class="bw-card-body">
+        <div class="bw-alert bw-alert--info" style="margin-bottom:16px;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Documents are only available to registered bidders —
+          registration is required before download.
+        </div>
+        <div class="bw-field">
+          <label class="bw-label" for="boq_document">
+            Bills of Quantities (BOQ)
+          </label>
+          <div class="bw-hint">PDF or XLSX. This is the primary pricing document.</div>
+          <input type="file" name="boq_document" id="boq_document"
+                 accept=".pdf,.xlsx,.xls" class="bw-input"
+                 style="padding:6px 10px;">
+        </div>
+        <div class="bw-row2">
+          <div class="bw-field">
+            <label class="bw-label" for="specification">
+              Technical Specification
+            </label>
+            <input type="file" name="specification" id="specification"
+                   accept=".pdf" class="bw-input" style="padding:6px 10px;">
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="drawings">Drawings</label>
+            <input type="file" name="drawings" id="drawings"
+                   accept=".pdf,.zip" class="bw-input" style="padding:6px 10px;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Publish options ────────────────────────────────────────────── -->
+    <div class="bw-card" style="margin-bottom:28px;">
+      <div class="bw-card-body">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <label style="display:flex;align-items:center;gap:10px;
+            cursor:pointer;font-size:.88rem;font-weight:500;">
+            <input type="checkbox" name="publish_now" value="1"
+                   id="publish_now"
+                   style="width:18px;height:18px;" checked>
+            Publish immediately to the BuildWatch exchange
+          </label>
+        </div>
+        <div style="font-size:.78rem;color:var(--bw-dgrey);margin-left:28px;">
+          Uncheck to save as draft — you can publish later from the manage page.
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div style="display:flex;justify-content:space-between;
+      align-items:center;gap:12px;flex-wrap:wrap;">
+      <a href="{% url 'tender-list' %}" class="bw-btn bw-btn--ghost">
+        Cancel
+      </a>
+      <button type="submit" class="bw-btn bw-btn--primary">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Publish Tender
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

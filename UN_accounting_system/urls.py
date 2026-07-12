@@ -24,10 +24,12 @@ urlpatterns = [
 import os
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
-from django.urls import path
+from django.urls import path, include
 from accounts import views
+from accounts import misc_variation_views as misc_var
 from django.conf import settings
 from django.conf.urls.static import static
+from buildwatch.urls import buildwatch_patterns, tender_patterns
 
 
 urlpatterns = [
@@ -203,6 +205,27 @@ urlpatterns = [
     path('api/list/<str:entity_type>/', views.get_entity_list, name='api_get_list'),
     path('api/detail/<str:entity_type>/<str:pk>/', views.get_entity_detail, name='api_detail'),
     path('api/delete/<str:entity_type>/<str:pk>/', views.delete_entity, name='api_delete'),
+
+    # --- BuildWatch (Sprint 1+2) ---
+    path('buildwatch/', include(buildwatch_patterns)),
+    path('tenders/', include(tender_patterns)),
+
+    # Misc variation (BuildWatch Addendum A)
+    path(
+        'misc/<uuid:mpo_id>/approve-ceiling/',
+        misc_var.ceo_approve_misc_variation,
+        name='misc_ceo_approve',
+    ),
+    path(
+        'misc/<uuid:mpo_id>/completion-signoff/',
+        misc_var.misc_completion_signoff,
+        name='misc_completion_signoff',
+    ),
+    path(
+        'buildwatch/projects/<int:project_id>/variations/',
+        misc_var.project_variation_register,
+        name='project_variation_register',
+    ),
 ]
 
 if settings.DEBUG:

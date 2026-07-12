@@ -1,0 +1,386 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}{{ listing.event.ref }} — BuildWatch{% endblock %}
+
+{% block bw_content %}
+<div style="max-width:1100px;margin:0 auto;padding:32px 24px;">
+
+  <!-- Breadcrumb -->
+  <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:20px;">
+    <a href="{% url 'tender-list' %}" style="color:var(--bw-blue);text-decoration:none;">
+      Tenders
+    </a>
+    &nbsp;/&nbsp; {{ listing.event.ref }}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:28px;">
+
+    <!-- ── Main content ─────────────────────────────────────────────────── -->
+    <div>
+      <!-- Header card -->
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div style="padding:28px;">
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <span class="bw-badge bw-badge--{{ listing.tender_type|lower }}">
+              {{ listing.get_tender_type_display }}
+            </span>
+            <span class="bw-badge bw-badge--{{ listing.get_funding_source_display|lower|truncatewords:1 }}">
+              {{ listing.get_funding_source_display }}
+            </span>
+            {% if listing.event.is_open %}
+              <span class="bw-badge bw-badge--open">Open</span>
+            {% else %}
+              <span class="bw-badge bw-badge--closed">Closed</span>
+            {% endif %}
+          </div>
+
+          <div style="font-family:monospace;font-size:.78rem;color:var(--bw-dgrey);margin-bottom:6px;">
+            Ref: {{ listing.event.ref }}
+          </div>
+          <h1 style="font-size:1.5rem;font-weight:700;color:var(--bw-navy);
+            letter-spacing:-.02em;margin-bottom:14px;line-height:1.25;">
+            {{ listing.event.description }}
+          </h1>
+
+          {% if listing.summary %}
+            <p style="font-size:.88rem;color:var(--bw-dgrey);line-height:1.6;
+              margin-bottom:0;">
+              {{ listing.summary }}
+            </p>
+          {% endif %}
+        </div>
+
+        <!-- Key details strip -->
+        <div style="border-top:1px solid var(--bw-mgrey);padding:16px 28px;
+          display:flex;gap:28px;flex-wrap:wrap;background:var(--bw-lgrey);
+          border-radius:0 0 10px 10px;">
+          {% if listing.country %}
+          <div>
+            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+              color:var(--bw-dgrey);margin-bottom:3px;">Location</div>
+            <div style="font-size:.85rem;font-weight:600;color:var(--bw-navy);">
+              {{ listing.country.name }}{% if listing.county_region %}, {{ listing.county_region }}{% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <div>
+            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+              color:var(--bw-dgrey);margin-bottom:3px;">Estimated Value</div>
+            <div style="font-size:.85rem;font-weight:600;color:var(--bw-navy);">
+              {{ listing.value_range_display }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+              color:var(--bw-dgrey);margin-bottom:3px;">Issue Date</div>
+            <div style="font-size:.85rem;font-weight:600;color:var(--bw-navy);">
+              {{ listing.event.issue_date|date:"d M Y" }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+              color:var(--bw-dgrey);margin-bottom:3px;">Closing Date</div>
+            <div style="font-size:.85rem;font-weight:600;
+              color:{% if listing.is_closing_soon %}var(--bw-amber){% elif listing.event.is_open %}var(--bw-navy){% else %}var(--bw-red){% endif %};">
+              {{ listing.event.closing_date|date:"d M Y H:i" }}
+              {% if listing.event.is_open %}
+                ({{ listing.event.days_remaining }} day{{ listing.event.days_remaining|pluralize }} remaining)
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mandatory requirements -->
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div class="bw-card-header">Mandatory Requirements</div>
+        <div class="bw-card-body">
+          <p style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:14px;">
+            Bidders must satisfy all mandatory requirements. Failure on any single
+            item results in disqualification.
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            {% for req in listing.event.project.owner_org.tender_alerts.all %}
+              {# placeholder — actual MR list comes from MandatoryRequirement queryset #}
+            {% empty %}
+              <div style="font-size:.82rem;color:var(--bw-dgrey);grid-column:1/-1;">
+                MR1 — Certificate of Incorporation<br>
+                MR2 — Valid Tax Compliance Certificate (KRA)<br>
+                MR3 — EPRA Licence (Class B Electrical)<br>
+                MR4 — EPRA Licence (Class T2 Solar)<br>
+                MR5 — NCA Certificate (Electrical, Grade 6+)<br>
+                MR6 — Valid NCA Practising Licence<br>
+                MR7 — NCA Certificate (CCTV/Cabling, Grade 8+)<br>
+                MR8 — Valid NCA Practising Licence (Cabling)<br>
+                MR9 — CAK Registration Licence<br>
+                MR10 — CAK Compliance Certificate<br>
+                MR11 — Manufacturer Authorisation (NVRs/Switches)<br>
+                MR12 — Valid Single Business Permit<br>
+                MR13 — CR12 Form (within 12 months)<br>
+                MR14 — Sub-Contractor Agreement (if applicable)
+              </div>
+            {% endfor %}
+          </div>
+          {% if user.is_authenticated and workspace %}
+            <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Your self-assessment:
+              {% if workspace.self_assessment_passed %}
+                <strong style="color:var(--bw-green);">All requirements satisfied ✓</strong>
+              {% else %}
+                <a href="{% url 'bid-self-assess' listing.pk %}"
+                   style="color:var(--bw-blue);">Check your compliance status →</a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Addenda -->
+      {% if addenda %}
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div class="bw-card-header">
+          Addenda & Clarifications
+          <span style="background:var(--bw-amber);color:white;font-size:.7rem;
+            padding:2px 7px;border-radius:10px;margin-left:8px;">
+            {{ addenda|length }}
+          </span>
+        </div>
+        <div class="bw-card-body">
+          {% for a in addenda %}
+            <div style="border-bottom:1px solid var(--bw-lgrey);padding:12px 0;">
+              <div style="display:flex;justify-content:space-between;
+                align-items:flex-start;gap:12px;">
+                <div>
+                  <div style="font-size:.78rem;font-weight:600;color:var(--bw-navy);">
+                    Addendum {{ a.addendum_no }}: {{ a.subject }}
+                  </div>
+                  <div style="font-size:.75rem;color:var(--bw-dgrey);margin-top:4px;">
+                    Issued {{ a.issued_at|date:"d M Y" }}
+                  </div>
+                  <div style="font-size:.82rem;color:var(--bw-dgrey);
+                    margin-top:8px;line-height:1.5;">
+                    {{ a.content|truncatewords:40 }}
+                  </div>
+                </div>
+                {% if a.document %}
+                  <a href="{{ a.document.url }}"
+                     class="bw-btn bw-btn--ghost bw-btn--sm" style="flex-shrink:0;">
+                    Download
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Site visit -->
+      {% if listing.site_visit_date %}
+      <div class="bw-alert bw-alert--info">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+        <div>
+          <strong>Mandatory Site Visit:</strong>
+          {{ listing.site_visit_date|date:"d M Y H:i" }}
+          {% if listing.site_visit_location %}
+            — {{ listing.site_visit_location }}
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Action sidebar ───────────────────────────────────────────────── -->
+    <div>
+
+      <!-- Countdown -->
+      {% if listing.event.is_open %}
+      <div class="bw-card" style="margin-bottom:16px;
+        border-left:4px solid {% if listing.is_closing_soon %}var(--bw-amber){% else %}var(--bw-teal){% endif %};">
+        <div style="padding:16px 18px;">
+          <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+            color:var(--bw-dgrey);margin-bottom:6px;">Time Remaining</div>
+          <div style="font-size:1.6rem;font-weight:700;
+            color:{% if listing.is_closing_soon %}var(--bw-amber){% else %}var(--bw-navy){% endif %};">
+            {{ listing.event.days_remaining }} day{{ listing.event.days_remaining|pluralize }}
+          </div>
+          <div style="font-size:.75rem;color:var(--bw-dgrey);margin-top:4px;">
+            Closes {{ listing.event.closing_date|date:"d M Y \a\t H:i" }}
+          </div>
+          {% if listing.clarification_deadline %}
+            <div style="font-size:.75rem;color:var(--bw-amber);margin-top:6px;">
+              Clarifications by {{ listing.clarification_deadline|date:"d M Y" }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Action card -->
+      <div class="bw-card" style="margin-bottom:16px;">
+        <div class="bw-card-header">Bid on this Tender</div>
+        <div class="bw-card-body">
+          {% if not user.is_authenticated %}
+            <div class="bw-alert bw-alert--info" style="margin-bottom:16px;">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Register free to download the BOQ and submit a bid.</span>
+            </div>
+            <a href="{% url 'buildwatch-register' %}"
+               class="bw-btn bw-btn--primary" style="width:100%;justify-content:center;margin-bottom:8px;">
+              Register Free
+            </a>
+            <a href="{% url 'login' %}?next={{ request.path }}"
+               class="bw-btn bw-btn--ghost" style="width:100%;justify-content:center;">
+              Sign In
+            </a>
+
+          {% elif not listing.event.is_open %}
+            <div class="bw-alert bw-alert--warning" style="margin-bottom:0;">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              This tender has closed. Submissions are no longer accepted.
+            </div>
+
+          {% elif workspace and workspace.status == 'SUBMITTED' %}
+            <div class="bw-alert bw-alert--success" style="margin-bottom:14px;">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Bid submitted on {{ workspace.submitted_at|date:"d M Y" }}.
+            </div>
+            <a href="{% url 'my-bids' %}"
+               class="bw-btn bw-btn--ghost" style="width:100%;justify-content:center;">
+              View My Bids
+            </a>
+
+          {% else %}
+            <!-- Step 1: Register interest -->
+            {% if not bidder_reg %}
+              <form method="POST" action="{% url 'tender-register' listing.pk %}">
+                {% csrf_token %}
+                <button type="submit"
+                  class="bw-btn bw-btn--teal"
+                  style="width:100%;justify-content:center;margin-bottom:10px;">
+                  Register Interest
+                </button>
+              </form>
+              <div style="font-size:.75rem;color:var(--bw-dgrey);text-align:center;">
+                Required before downloading BOQ or bidding
+              </div>
+            {% else %}
+              <!-- Gate indicators -->
+              <div style="margin-bottom:14px;">
+                <div class="bw-gate">
+                  <div class="bw-gate__dot bw-gate__dot--green"></div>
+                  <div class="bw-gate__label">Interest registered</div>
+                  <div class="bw-gate__status" style="color:var(--bw-green);">✓</div>
+                </div>
+                <div class="bw-gate">
+                  <div class="bw-gate__dot bw-gate__dot--{% if bidder_reg.has_downloaded_boq %}green{% else %}amber{% endif %}"></div>
+                  <div class="bw-gate__label">BOQ downloaded</div>
+                  <div class="bw-gate__status"
+                    style="color:{% if bidder_reg.has_downloaded_boq %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
+                    {% if bidder_reg.has_downloaded_boq %}✓{% else %}Pending{% endif %}
+                  </div>
+                </div>
+                <div class="bw-gate">
+                  <div class="bw-gate__dot bw-gate__dot--{% if workspace and workspace.self_assessment_passed %}green{% else %}amber{% endif %}"></div>
+                  <div class="bw-gate__label">Self-assessment</div>
+                  <div class="bw-gate__status"
+                    style="color:{% if workspace and workspace.self_assessment_passed %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
+                    {% if workspace and workspace.self_assessment_passed %}✓{% else %}Pending{% endif %}
+                  </div>
+                </div>
+                <div class="bw-gate">
+                  <div class="bw-gate__dot bw-gate__dot--{% if workspace and workspace.pricing_complete %}green{% else %}amber{% endif %}"></div>
+                  <div class="bw-gate__label">BOQ priced</div>
+                  <div class="bw-gate__status"
+                    style="color:{% if workspace and workspace.pricing_complete %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
+                    {% if workspace and workspace.pricing_complete %}✓{% else %}Pending{% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action buttons -->
+              {% if listing.boq_document %}
+                <a href="{% url 'tender-boq-download' listing.pk %}"
+                   class="bw-btn bw-btn--ghost"
+                   style="width:100%;justify-content:center;margin-bottom:8px;">
+                  📥 Download BOQ
+                </a>
+              {% endif %}
+
+              <a href="{% url 'bid-self-assess' listing.pk %}"
+                 class="bw-btn bw-btn--ghost"
+                 style="width:100%;justify-content:center;margin-bottom:8px;">
+                ✓ Self-Assessment
+              </a>
+
+              <a href="{% url 'bid-workspace' listing.pk %}"
+                 class="bw-btn bw-btn--primary"
+                 style="width:100%;justify-content:center;">
+                Open Bid Workspace
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </a>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Stats card -->
+      <div class="bw-card" style="margin-bottom:16px;">
+        <div class="bw-card-body" style="padding:14px 18px;">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;
+            font-size:.8rem;border-bottom:1px solid var(--bw-lgrey);">
+            <span style="color:var(--bw-dgrey);">Views</span>
+            <span style="font-weight:600;color:var(--bw-navy);">
+              {{ listing.view_count }}
+            </span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;
+            font-size:.8rem;border-bottom:1px solid var(--bw-lgrey);">
+            <span style="color:var(--bw-dgrey);">Registered bidders</span>
+            <span style="font-weight:600;color:var(--bw-navy);">
+              {{ listing.registered_bidder_count }}
+            </span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;
+            font-size:.8rem;border-bottom:1px solid var(--bw-lgrey);">
+            <span style="color:var(--bw-dgrey);">Submissions received</span>
+            <span style="font-weight:600;color:var(--bw-navy);">
+              {{ listing.submission_count }}
+            </span>
+          </div>
+          {% if listing.addendum_count %}
+          <div style="display:flex;justify-content:space-between;padding:6px 0;
+            font-size:.8rem;">
+            <span style="color:var(--bw-dgrey);">Addenda issued</span>
+            <span style="font-weight:600;color:var(--bw-amber);">
+              {{ listing.addendum_count }}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Regulatory context -->
+      {% if listing.country %}
+      <div class="bw-card">
+        <div class="bw-card-body" style="padding:14px 18px;">
+          <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+            color:var(--bw-dgrey);margin-bottom:8px;">Regulatory Context</div>
+          <div style="font-size:.8rem;color:var(--bw-navy);margin-bottom:4px;">
+            <strong>Law:</strong> {{ listing.country.procurement_law|default:"—" }}
+          </div>
+          <div style="font-size:.8rem;color:var(--bw-navy);margin-bottom:4px;">
+            <strong>Currency:</strong> {{ listing.country.currency_code }}
+          </div>
+          <div style="font-size:.8rem;color:var(--bw-navy);">
+            <strong>Regulator:</strong> {{ listing.country.regulator_name|default:"—" }}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

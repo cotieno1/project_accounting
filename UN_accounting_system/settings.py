@@ -94,6 +94,7 @@ for origin in _csrf_origins_for_hosts(ALLOWED_HOSTS):
 
 INSTALLED_APPS = [
     'accounts',
+    'buildwatch',  # Sprint 1+2: core registry + tender exchange
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -220,6 +221,13 @@ STORAGES = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# BuildWatch platform settings
+BUILDWATCH_ENV = os.environ.get('BUILDWATCH_ENV', 'staging')
+BUILDWATCH_PLATFORM_URL = os.environ.get(
+    'BUILDWATCH_PLATFORM_URL',
+    'https://projectaccounting-production.up.railway.app',
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -1,0 +1,198 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}My Bids — BuildWatch{% endblock %}
+
+{% block bw_content %}
+<div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
+
+  <div style="margin-bottom:28px;">
+    <h1 style="font-size:1.6rem;font-weight:700;color:var(--bw-navy);
+      letter-spacing:-.03em;margin-bottom:6px;">My Bids</h1>
+    <p style="color:var(--bw-dgrey);font-size:.88rem;">
+      All tenders you have registered for or bid on.
+    </p>
+  </div>
+
+  <!-- Active workspaces -->
+  {% if workspaces %}
+  <h2 style="font-size:1rem;font-weight:600;color:var(--bw-navy);
+    margin-bottom:14px;">Bid Workspaces</h2>
+
+  {% for ws in workspaces %}
+  <div class="bw-card" style="margin-bottom:12px;">
+    <div style="padding:18px 20px;display:flex;align-items:center;
+      justify-content:space-between;gap:16px;flex-wrap:wrap;">
+
+      <div style="flex:1;min-width:200px;">
+        <div style="font-family:monospace;font-size:.7rem;color:var(--bw-dgrey);
+          margin-bottom:3px;">
+          {{ ws.tender.event.ref }}
+        </div>
+        <div style="font-size:.92rem;font-weight:600;color:var(--bw-navy);
+          margin-bottom:4px;">
+          {{ ws.tender.event.description|truncatewords:12 }}
+        </div>
+        <div style="font-size:.78rem;color:var(--bw-dgrey);">
+          {% if ws.tender.country %}{{ ws.tender.country.name }}{% endif %}
+          {% if ws.tender.county_region %} · {{ ws.tender.county_region }}{% endif %}
+          &nbsp;·&nbsp; Started {{ ws.started_at|date:"d M Y" }}
+        </div>
+      </div>
+
+      <!-- Status indicators -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <!-- Gates -->
+        <div style="display:flex;gap:6px;">
+          <span title="Self-assessment"
+            style="width:28px;height:28px;border-radius:50%;display:grid;
+            place-content:center;font-size:.7rem;font-weight:700;
+            background:{% if ws.self_assessment_passed %}var(--bw-green){% else %}var(--bw-mgrey){% endif %};
+            color:white;">SA</span>
+          <span title="Pricing complete"
+            style="width:28px;height:28px;border-radius:50%;display:grid;
+            place-content:center;font-size:.7rem;font-weight:700;
+            background:{% if ws.pricing_complete %}var(--bw-green){% else %}var(--bw-mgrey){% endif %};
+            color:white;">PR</span>
+        </div>
+
+        <!-- Bid total -->
+        {% if ws.total_bid_amount %}
+          <div style="text-align:right;">
+            <div style="font-size:.72rem;color:var(--bw-dgrey);">Bid total</div>
+            <div style="font-size:.9rem;font-weight:700;color:var(--bw-navy);">
+              {{ ws.tender.currency }} {{ ws.total_bid_amount|floatformat:0 }}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Status badge -->
+        {% if ws.status == 'SUBMITTED' %}
+          <span class="bw-badge bw-badge--open">Submitted</span>
+        {% elif ws.status == 'SELF_CHECKED' %}
+          <span class="bw-badge bw-badge--consultancy">Ready to Submit</span>
+        {% elif ws.status == 'WITHDRAWN' %}
+          <span class="bw-badge bw-badge--closed">Withdrawn</span>
+        {% else %}
+          <span class="bw-badge bw-badge--closing">In Progress</span>
+        {% endif %}
+
+        <!-- Action -->
+        {% if ws.status != 'SUBMITTED' and ws.tender.event.is_open %}
+          <a href="{% url 'bid-workspace' ws.tender.pk %}"
+             class="bw-btn bw-btn--primary bw-btn--sm">
+            Continue
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        {% elif ws.status == 'SUBMITTED' %}
+          <a href="{% url 'tender-detail' ws.tender.pk %}"
+             class="bw-btn bw-btn--ghost bw-btn--sm">
+            View Tender
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Submission outcome (if known) -->
+    {% if ws.submission %}
+      <div style="border-top:1px solid var(--bw-lgrey);padding:10px 20px;
+        background:var(--bw-lgrey);border-radius:0 0 10px 10px;
+        font-size:.78rem;display:flex;gap:20px;flex-wrap:wrap;">
+        <span>
+          Submitted {{ ws.submitted_at|date:"d M Y H:i" }}
+        </span>
+        {% if ws.submission.rank %}
+          <span>
+            Rank: <strong style="color:var(--bw-navy);">
+              #{{ ws.submission.rank }}
+            </strong>
+          </span>
+        {% endif %}
+        {% if ws.submission.is_awarded %}
+          <span style="color:var(--bw-green);font-weight:600;">
+            ✓ Awarded
+          </span>
+        {% elif ws.submission.disqualified %}
+          <span style="color:var(--bw-red);">
+            Disqualified: {{ ws.submission.disq_reason }}
+          </span>
+        {% elif ws.tender.event.status == 'AWARDED' %}
+          <span style="color:var(--bw-dgrey);">Not awarded</span>
+        {% else %}
+          <span style="color:var(--bw-amber);">Under evaluation</span>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Registered but not yet bidding -->
+  {% if registrations %}
+  <h2 style="font-size:1rem;font-weight:600;color:var(--bw-navy);
+    margin:28px 0 14px;">Registered Interests</h2>
+  <p style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:16px;">
+    Tenders you have registered for but not yet started a bid workspace.
+  </p>
+
+  {% for reg in registrations %}
+    {% if not reg.has_submitted %}
+    <div class="bw-card" style="margin-bottom:10px;">
+      <div style="padding:14px 20px;display:flex;align-items:center;
+        justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="font-family:monospace;font-size:.7rem;
+            color:var(--bw-dgrey);margin-bottom:2px;">
+            {{ reg.tender.event.ref }}
+          </div>
+          <div style="font-size:.88rem;font-weight:600;color:var(--bw-navy);">
+            {{ reg.tender.event.description|truncatewords:12 }}
+          </div>
+          <div style="font-size:.75rem;color:var(--bw-dgrey);margin-top:3px;">
+            Registered {{ reg.registered_at|date:"d M Y" }}
+            {% if reg.has_downloaded_boq %}
+              · BOQ downloaded
+            {% endif %}
+            {% if reg.tender.event.days_remaining > 0 %}
+              · {{ reg.tender.event.days_remaining }} day{{ reg.tender.event.days_remaining|pluralize }} left
+            {% else %}
+              · <span style="color:var(--bw-red);">Closed</span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          {% if reg.tender.event.is_open %}
+            <a href="{% url 'bid-workspace' reg.tender.pk %}"
+               class="bw-btn bw-btn--primary bw-btn--sm">
+              Start Bid
+              <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+          {% endif %}
+          <a href="{% url 'tender-detail' reg.tender.pk %}"
+             class="bw-btn bw-btn--ghost bw-btn--sm">
+            View
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+  {% endif %}
+
+  {% if not workspaces and not registrations %}
+    <div class="bw-card" style="text-align:center;padding:60px 24px;">
+      <div style="font-size:2rem;margin-bottom:12px;">📋</div>
+      <div style="font-weight:600;color:var(--bw-navy);margin-bottom:8px;">
+        No bids yet
+      </div>
+      <div style="color:var(--bw-dgrey);font-size:.85rem;margin-bottom:20px;">
+        Browse the tender exchange and register your interest to get started.
+      </div>
+      <a href="{% url 'tender-list' %}" class="bw-btn bw-btn--primary">
+        Browse Tenders
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

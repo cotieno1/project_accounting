@@ -1,0 +1,329 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}{{ project.task.project_id }} — BuildWatch Dashboard{% endblock %}
+
+{% block bw_content %}
+<div style="max-width:1200px;margin:0 auto;padding:32px 24px;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;
+    gap:16px;margin-bottom:24px;flex-wrap:wrap;">
+    <div>
+      <div style="font-size:.7rem;font-family:monospace;letter-spacing:.09em;
+        text-transform:uppercase;color:var(--bw-teal);margin-bottom:6px;">
+        {{ project.get_sector_display }} · {{ project.get_project_type_display }}
+        {% if project.county %}· {{ project.county }}{% endif %}
+      </div>
+      <h1 style="font-size:1.5rem;font-weight:700;color:var(--bw-navy);
+        letter-spacing:-.02em;margin-bottom:4px;">
+        {{ project.task.description }}
+      </h1>
+      <div style="font-family:monospace;font-size:.78rem;color:var(--bw-dgrey);">
+        {{ project.task.project_id }}
+        {% if project.owner_org %}· {{ project.owner_org.name }}{% endif %}
+      </div>
+    </div>
+
+    <!-- Risk score -->
+    <div style="text-align:center;flex-shrink:0;">
+      <div style="width:72px;height:72px;border-radius:50%;
+        background:{% if project.risk_score >= 70 %}var(--bw-green){% elif project.risk_score >= 50 %}var(--bw-amber){% else %}var(--bw-red){% endif %};
+        display:grid;place-content:center;box-shadow:0 4px 16px rgba(0,0,0,.15);">
+        <span style="color:white;font-weight:700;font-size:1.2rem;">
+          {{ project.risk_score|floatformat:0 }}
+        </span>
+      </div>
+      <div style="font-size:.7rem;color:var(--bw-dgrey);margin-top:4px;
+        text-transform:uppercase;letter-spacing:.05em;">Risk Score</div>
+      <div style="font-size:.68rem;color:
+        {% if project.risk_score >= 70 %}var(--bw-green)
+        {% elif project.risk_score >= 50 %}var(--bw-amber)
+        {% else %}var(--bw-red){% endif %};">
+        {% if project.risk_score >= 70 %}Healthy
+        {% elif project.risk_score >= 50 %}Caution
+        {% else %}Critical{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Key stats -->
+  <div class="bw-stats" style="margin-bottom:24px;">
+    <div class="bw-stat">
+      <div class="bw-stat__val">
+        {% if project.contract_value %}
+          {{ project.owner_org.currency_symbol|default:"KES" }}
+          {{ project.contract_value|floatformat:0 }}
+        {% else %}TBC{% endif %}
+      </div>
+      <div class="bw-stat__label">Contract Value</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">—</div>
+      <div class="bw-stat__label">Certified to Date</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">—</div>
+      <div class="bw-stat__label">Open Flags</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">—</div>
+      <div class="bw-stat__label">Days to Completion</div>
+    </div>
+  </div>
+
+  <!-- Four-panel dashboard -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+    <!-- Budget Health -->
+    <div class="bw-card">
+      <div class="bw-card-header">
+        <svg style="width:13px;height:13px;stroke:var(--bw-navy);fill:none;
+          stroke-width:2;vertical-align:-2px;margin-right:6px;"
+          viewBox="0 0 24 24">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        Budget Health
+      </div>
+      <div class="bw-card-body">
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;
+            font-size:.8rem;margin-bottom:4px;">
+            <span style="color:var(--bw-dgrey);">Certified</span>
+            <span style="font-weight:600;">0%</span>
+          </div>
+          <div style="height:8px;background:var(--bw-lgrey);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;background:var(--bw-teal);border-radius:4px;width:0%;"></div>
+          </div>
+        </div>
+        <div style="font-size:.78rem;color:var(--bw-dgrey);line-height:1.6;">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;
+            border-bottom:1px solid var(--bw-lgrey);">
+            <span>Original Contract Sum</span>
+            <span style="font-weight:600;color:var(--bw-navy);">
+              {% if project.contract_value %}{{ project.contract_value|floatformat:0 }}{% else %}TBC{% endif %}
+            </span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;
+            border-bottom:1px solid var(--bw-lgrey);">
+            <span>Variations (Type A + B)</span>
+            <span style="font-weight:600;color:var(--bw-navy);">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;
+            border-bottom:1px solid var(--bw-lgrey);">
+            <span>Revised Contract Sum</span>
+            <span style="font-weight:600;color:var(--bw-navy);">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span>Certified to Date</span>
+            <span style="font-weight:600;color:var(--bw-navy);">—</span>
+          </div>
+        </div>
+        <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;font-size:.75rem;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Sprint 3: Payment certificates and budget actuals populate here after award.
+        </div>
+      </div>
+    </div>
+
+    <!-- Programme Health -->
+    <div class="bw-card">
+      <div class="bw-card-header">
+        <svg style="width:13px;height:13px;stroke:var(--bw-navy);fill:none;
+          stroke-width:2;vertical-align:-2px;margin-right:6px;"
+          viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Programme
+      </div>
+      <div class="bw-card-body">
+        {% if project.start_date and project.end_date %}
+          <div style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:12px;">
+            <strong style="color:var(--bw-navy);">
+              {{ project.start_date|date:"d M Y" }}
+            </strong>
+            &nbsp;→&nbsp;
+            <strong style="color:var(--bw-navy);">
+              {{ project.end_date|date:"d M Y" }}
+            </strong>
+          </div>
+        {% endif %}
+
+        <!-- Phase placeholder -->
+        {% for phase_no, phase_name, status in phases_placeholder %}
+        {% empty %}
+          <div style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:8px;">
+            9 work phases — Gantt programme generated at contract award.
+          </div>
+          {% for i in "123456789" %}
+            <div style="display:flex;align-items:center;gap:10px;
+              margin-bottom:6px;">
+              <div style="font-family:monospace;font-size:.68rem;
+                color:var(--bw-dgrey);width:20px;text-align:right;">
+                P{{ forloop.counter }}
+              </div>
+              <div style="flex:1;height:14px;background:var(--bw-lgrey);
+                border-radius:3px;">
+              </div>
+            </div>
+          {% endfor %}
+        {% endfor %}
+
+        <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;font-size:.75rem;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Sprint 3: Live Gantt with progress tracking activates after award.
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance -->
+    <div class="bw-card">
+      <div class="bw-card-header">
+        <svg style="width:13px;height:13px;stroke:var(--bw-navy);fill:none;
+          stroke-width:2;vertical-align:-2px;margin-right:6px;"
+          viewBox="0 0 24 24">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        Compliance
+      </div>
+      <div class="bw-card-body">
+        <!-- Three gates -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;
+            color:var(--bw-dgrey);margin-bottom:8px;">Payment Lock Gates</div>
+          <div class="bw-gate">
+            <div class="bw-gate__dot bw-gate__dot--amber"></div>
+            <div class="bw-gate__label">Programme Gate</div>
+            <div class="bw-gate__status" style="color:var(--bw-amber);">Pending</div>
+          </div>
+          <div class="bw-gate">
+            <div class="bw-gate__dot bw-gate__dot--amber"></div>
+            <div class="bw-gate__label">Inspection Gate</div>
+            <div class="bw-gate__status" style="color:var(--bw-amber);">Pending</div>
+          </div>
+          <div class="bw-gate">
+            <div class="bw-gate__dot bw-gate__dot--amber"></div>
+            <div class="bw-gate__label">Compliance Gate</div>
+            <div class="bw-gate__status" style="color:var(--bw-amber);">Pending</div>
+          </div>
+        </div>
+
+        <div style="font-size:.78rem;color:var(--bw-dgrey);line-height:1.6;">
+          <div style="display:flex;justify-content:space-between;
+            padding:4px 0;border-bottom:1px solid var(--bw-lgrey);">
+            <span>Open compliance flags</span>
+            <span style="font-weight:600;color:var(--bw-navy);">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;
+            padding:4px 0;border-bottom:1px solid var(--bw-lgrey);">
+            <span>Resolved flags</span>
+            <span style="font-weight:600;color:var(--bw-navy);">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span>Inspections this month</span>
+            <span style="font-weight:600;color:var(--bw-navy);">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Next Milestone -->
+    <div class="bw-card">
+      <div class="bw-card-header">
+        <svg style="width:13px;height:13px;stroke:var(--bw-navy);fill:none;
+          stroke-width:2;vertical-align:-2px;margin-right:6px;"
+          viewBox="0 0 24 24">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        Milestones
+      </div>
+      <div class="bw-card-body">
+        {% for m_ref, m_desc, m_pct in milestone_placeholders %}
+        {% empty %}
+          {% for ref, desc, pct in "M1,Mobilisation,10|M2,Western Pavilion PC,25|M3,Eastern Pavilion PC,20|M4,External Works,20|M5,ICT & Security,12|M6,Power Reticulation,8|M7,Practical Completion,5"|split:"|" %}
+          {% endfor %}
+          <!-- Placeholder milestone list -->
+          {% with milestones="M1:Mobilisation:10,M2:Western Pavilion:25,M3:Eastern Pavilion:20,M4:External Works:20,M5:ICT & Security:12,M6:Power Reticulation:8,M7:Practical Completion:5" %}
+          <div style="font-size:.78rem;">
+            {% for m in milestones|split:"," %}
+              <div style="display:flex;align-items:center;gap:10px;
+                padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+                <div style="width:28px;height:28px;border-radius:50%;
+                  border:2px solid var(--bw-mgrey);display:grid;
+                  place-content:center;font-size:.65rem;font-weight:700;
+                  color:var(--bw-dgrey);flex-shrink:0;">
+                  {{ m|slice:":2" }}
+                </div>
+                <div style="flex:1;color:var(--bw-dgrey);">
+                  {{ m|slice:"3:" }}
+                </div>
+                <div style="font-size:.68rem;color:var(--bw-amber);">Pending</div>
+              </div>
+            {% endfor %}
+          </div>
+          {% endwith %}
+        {% endfor %}
+
+        <!-- Actual milestone list (Sprint 3) -->
+        <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;font-size:.75rem;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Sprint 3: Live milestone tracking with gate status activates after award.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- four panel grid -->
+
+  <!-- Tender listing for this project -->
+  {% if project.evaluation_events.exists %}
+    <div class="bw-card" style="margin-bottom:20px;">
+      <div class="bw-card-header">Tenders & Evaluations</div>
+      <div class="bw-card-body" style="padding:0;">
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+          <tbody>
+            {% for event in project.evaluation_events.all %}
+              <tr style="border-bottom:1px solid var(--bw-lgrey);">
+                <td style="padding:12px 16px;font-family:monospace;
+                  font-size:.75rem;color:var(--bw-dgrey);">
+                  {{ event.ref }}
+                </td>
+                <td style="padding:12px 16px;color:var(--bw-navy);font-weight:500;">
+                  {{ event.description|truncatewords:10 }}
+                </td>
+                <td style="padding:12px 16px;">
+                  <span class="bw-badge bw-badge--{% if event.status == 'OPEN' %}open{% else %}closed{% endif %}">
+                    {{ event.get_status_display }}
+                  </span>
+                </td>
+                <td style="padding:12px 16px;text-align:right;">
+                  {% if event.listing %}
+                    <a href="{% url 'tender-manage' event.listing.pk %}"
+                       class="bw-btn bw-btn--ghost bw-btn--sm">Manage</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Quick links -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{% url 'infra-project-list' %}"
+       class="bw-btn bw-btn--ghost bw-btn--sm">
+      ← All Projects
+    </a>
+    <a href="{% url 'tender-publish' %}"
+       class="bw-btn bw-btn--ghost bw-btn--sm">
+      + Publish Tender for this Project
+    </a>
+  </div>
+
+</div>
+{% endblock %}

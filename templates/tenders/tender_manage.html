@@ -1,0 +1,331 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Manage — {{ listing.event.ref }} — BuildWatch{% endblock %}
+
+{% block bw_content %}
+<div style="max-width:1100px;margin:0 auto;padding:32px 24px;">
+
+  <!-- Breadcrumb + header -->
+  <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:16px;">
+    <a href="{% url 'tender-list' %}" style="color:var(--bw-blue);text-decoration:none;">Tenders</a>
+    &nbsp;/&nbsp; Manage &nbsp;/&nbsp; {{ listing.event.ref }}
+  </div>
+
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;
+    gap:16px;margin-bottom:24px;flex-wrap:wrap;">
+    <div>
+      <div style="font-family:monospace;font-size:.72rem;color:var(--bw-dgrey);margin-bottom:4px;">
+        {{ listing.event.ref }}
+      </div>
+      <h1 style="font-size:1.4rem;font-weight:700;color:var(--bw-navy);
+        letter-spacing:-.02em;margin-bottom:6px;">
+        {{ listing.event.description|truncatewords:10 }}
+      </h1>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span class="bw-badge bw-badge--{{ listing.tender_type|lower }}">
+          {{ listing.get_tender_type_display }}
+        </span>
+        {% if listing.is_published %}
+          <span class="bw-badge bw-badge--open">Published</span>
+        {% else %}
+          <span class="bw-badge bw-badge--closed">Draft</span>
+        {% endif %}
+        {% if listing.event.is_open %}
+          <span class="bw-badge bw-badge--open">Open — {{ listing.event.days_remaining }} days left</span>
+        {% else %}
+          <span class="bw-badge bw-badge--closed">Closed</span>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a href="{% url 'tender-detail' listing.pk %}"
+         class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank">
+        👁 Public View
+      </a>
+      <form method="POST" action="{% url 'tender-publish-toggle' listing.pk %}"
+            style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="bw-btn bw-btn--{% if listing.is_published %}ghost{% else %}teal{% endif %} bw-btn--sm">
+          {% if listing.is_published %}Unpublish{% else %}Publish Now{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="bw-stats" style="margin-bottom:24px;">
+    <div class="bw-stat">
+      <div class="bw-stat__val">{{ listing.view_count }}</div>
+      <div class="bw-stat__label">Views</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">{{ listing.registered_bidder_count }}</div>
+      <div class="bw-stat__label">Registered Bidders</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">{{ listing.submission_count }}</div>
+      <div class="bw-stat__label">Submissions</div>
+    </div>
+    <div class="bw-stat">
+      <div class="bw-stat__val">{{ listing.addendum_count }}</div>
+      <div class="bw-stat__label">Addenda</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:24px;">
+
+    <!-- ── Main: Submissions ─────────────────────────────────────────── -->
+    <div>
+
+      <!-- Submissions table -->
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div class="bw-card-header">
+          Submissions
+          {% if submissions %}
+            <span style="background:var(--bw-navy);color:white;font-size:.7rem;
+              padding:2px 7px;border-radius:10px;margin-left:8px;">
+              {{ submissions|length }}
+            </span>
+          {% endif %}
+        </div>
+        {% if submissions %}
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+              <thead>
+                <tr style="background:var(--bw-lgrey);
+                  border-bottom:1px solid var(--bw-mgrey);">
+                  <th style="padding:10px 16px;text-align:left;color:var(--bw-navy);
+                    font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">
+                    Rank
+                  </th>
+                  <th style="padding:10px 16px;text-align:left;color:var(--bw-navy);
+                    font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">
+                    Bidder
+                  </th>
+                  <th style="padding:10px 16px;text-align:center;color:var(--bw-navy);
+                    font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">
+                    MR
+                  </th>
+                  <th style="padding:10px 16px;text-align:right;color:var(--bw-navy);
+                    font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">
+                    Tech Score
+                  </th>
+                  <th style="padding:10px 16px;text-align:right;color:var(--bw-navy);
+                    font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">
+                    Bid Total
+                  </th>
+                  <th style="padding:10px 16px;text-align:center;color:var(--bw-navy);
+                    font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for sub in submissions %}
+                  <tr style="border-bottom:1px solid var(--bw-lgrey);
+                    {% if sub.is_awarded %}background:#F0FAF3;{% elif sub.disqualified %}background:#FEF5F5;opacity:.7;{% endif %}">
+                    <td style="padding:10px 16px;font-weight:700;color:var(--bw-navy);">
+                      {% if sub.rank %}#{{ sub.rank }}{% else %}—{% endif %}
+                    </td>
+                    <td style="padding:10px 16px;">
+                      <div style="font-weight:600;color:var(--bw-navy);">
+                        {{ sub.submitter_org.short_name }}
+                      </div>
+                      <div style="font-size:.72rem;color:var(--bw-dgrey);">
+                        {{ sub.submitted_at|date:"d M Y H:i" }}
+                        {% if sub.is_late %}
+                          <span style="color:var(--bw-red);"> · Late</span>
+                        {% endif %}
+                      </div>
+                    </td>
+                    <td style="padding:10px 16px;text-align:center;">
+                      {% if sub.mr_passed == True %}
+                        <span class="bw-pill bw-pill--green">Pass</span>
+                      {% elif sub.mr_passed == False %}
+                        <span class="bw-pill bw-pill--red">Fail</span>
+                      {% else %}
+                        <span class="bw-pill bw-pill--amber">Pending</span>
+                      {% endif %}
+                    </td>
+                    <td style="padding:10px 16px;text-align:right;">
+                      {% if sub.technical_score %}
+                        <span style="font-weight:600;color:
+                          {% if sub.technical_score >= 70 %}var(--bw-green)
+                          {% else %}var(--bw-red){% endif %};">
+                          {{ sub.technical_score|floatformat:1 }}%
+                        </span>
+                      {% else %}
+                        <span style="color:var(--bw-dgrey);">—</span>
+                      {% endif %}
+                    </td>
+                    <td style="padding:10px 16px;text-align:right;
+                      font-weight:600;color:var(--bw-navy);">
+                      {% if sub.tender_total %}
+                        {{ listing.currency }} {{ sub.tender_total|floatformat:0 }}
+                      {% else %}—{% endif %}
+                    </td>
+                    <td style="padding:10px 16px;text-align:center;">
+                      {% if sub.is_awarded %}
+                        <span class="bw-pill bw-pill--green">✓ Awarded</span>
+                      {% elif sub.disqualified %}
+                        <span class="bw-pill bw-pill--red">Disqualified</span>
+                      {% else %}
+                        <span class="bw-pill bw-pill--amber">Under eval.</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="bw-card-body" style="text-align:center;padding:40px;
+            color:var(--bw-dgrey);font-size:.88rem;">
+            No submissions received yet.
+            {% if not listing.is_published %}
+              Publish the tender to start receiving bids.
+            {% elif not listing.event.is_open %}
+              The tender has closed.
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Registered bidders -->
+      <div class="bw-card">
+        <div class="bw-card-header">
+          Registered Bidders
+          <span style="background:var(--bw-blue);color:white;font-size:.7rem;
+            padding:2px 7px;border-radius:10px;margin-left:8px;">
+            {{ registrations|length }}
+          </span>
+        </div>
+        <div class="bw-card-body" style="padding:0;">
+          {% if registrations %}
+            <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+              <tbody>
+                {% for reg in registrations %}
+                  <tr style="border-bottom:1px solid var(--bw-lgrey);">
+                    <td style="padding:10px 16px;font-weight:600;color:var(--bw-navy);">
+                      {{ reg.organisation.short_name }}
+                    </td>
+                    <td style="padding:10px 16px;color:var(--bw-dgrey);">
+                      Registered {{ reg.registered_at|date:"d M Y" }}
+                    </td>
+                    <td style="padding:10px 16px;text-align:center;">
+                      {% if reg.has_downloaded_boq %}
+                        <span class="bw-pill bw-pill--blue">BOQ downloaded</span>
+                      {% endif %}
+                    </td>
+                    <td style="padding:10px 16px;text-align:center;">
+                      {% if reg.has_submitted %}
+                        <span class="bw-pill bw-pill--green">Submitted</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div style="padding:24px;text-align:center;color:var(--bw-dgrey);
+              font-size:.85rem;">
+              No bidders registered yet.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Sidebar: Addenda + info ────────────────────────────────────── -->
+    <div>
+
+      <!-- Issue addendum -->
+      <div class="bw-card" style="margin-bottom:16px;">
+        <div class="bw-card-header">Issue Addendum</div>
+        <div class="bw-card-body">
+          <form method="POST" action="{% url 'tender-addendum' listing.pk %}"
+                enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="bw-field">
+              <label class="bw-label">Subject <span class="req">*</span></label>
+              <input class="bw-input" type="text" name="subject"
+                placeholder="e.g. Correction to Bill 8 quantities" required>
+            </div>
+            <div class="bw-field">
+              <label class="bw-label">Content <span class="req">*</span></label>
+              <textarea class="bw-textarea" name="content" rows="4"
+                placeholder="Full text of the addendum…" required></textarea>
+            </div>
+            <div class="bw-field">
+              <label class="bw-label">Attachment (optional)</label>
+              <input type="file" name="document" accept=".pdf"
+                     class="bw-input" style="padding:6px 10px;">
+            </div>
+            <div class="bw-alert bw-alert--info" style="margin-bottom:14px;">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              All {{ listing.registered_bidder_count }} registered bidder(s) will be notified.
+            </div>
+            <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm"
+              style="width:100%;justify-content:center;">
+              Issue Addendum {{ listing.addendum_count|add:1 }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Existing addenda -->
+      {% if addenda %}
+        <div class="bw-card" style="margin-bottom:16px;">
+          <div class="bw-card-header">Addenda Issued</div>
+          <div class="bw-card-body" style="padding:0;">
+            {% for a in addenda %}
+              <div style="padding:12px 16px;
+                border-bottom:1px solid var(--bw-lgrey);">
+                <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);">
+                  Addendum {{ a.addendum_no }}: {{ a.subject }}
+                </div>
+                <div style="font-size:.72rem;color:var(--bw-dgrey);margin-top:3px;">
+                  {{ a.issued_at|date:"d M Y" }}
+                  · {{ a.notified_count }} notified
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Tender info summary -->
+      <div class="bw-card">
+        <div class="bw-card-body" style="padding:14px 18px;">
+          <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+            color:var(--bw-dgrey);margin-bottom:10px;">Tender Details</div>
+          {% for label, val in forloop_info %}
+          {% endfor %}
+          <div style="font-size:.8rem;border-bottom:1px solid var(--bw-lgrey);
+            padding:6px 0;display:flex;justify-content:space-between;">
+            <span style="color:var(--bw-dgrey);">Issued</span>
+            <span style="font-weight:600;">{{ listing.event.issue_date|date:"d M Y" }}</span>
+          </div>
+          <div style="font-size:.8rem;border-bottom:1px solid var(--bw-lgrey);
+            padding:6px 0;display:flex;justify-content:space-between;">
+            <span style="color:var(--bw-dgrey);">Closes</span>
+            <span style="font-weight:600;">{{ listing.event.closing_date|date:"d M Y H:i" }}</span>
+          </div>
+          <div style="font-size:.8rem;border-bottom:1px solid var(--bw-lgrey);
+            padding:6px 0;display:flex;justify-content:space-between;">
+            <span style="color:var(--bw-dgrey);">Value range</span>
+            <span style="font-weight:600;">{{ listing.value_range_display }}</span>
+          </div>
+          <div style="font-size:.8rem;padding:6px 0;display:flex;justify-content:space-between;">
+            <span style="color:var(--bw-dgrey);">Published</span>
+            <span style="font-weight:600;">
+              {% if listing.published_at %}{{ listing.published_at|date:"d M Y" }}{% else %}Draft{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
