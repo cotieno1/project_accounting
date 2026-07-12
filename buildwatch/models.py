@@ -819,6 +819,15 @@ class BidWorkspace(models.Model):
             raise ValueError(
                 "Price all lines in your selected BOQ components before submitting."
             )
+        # Refresh total from priced lines
+        from django.db.models import Sum
+        total = (
+            self.bill_prices.aggregate(s=Sum("amount")).get("s")
+            or Decimal("0")
+        )
+        self.total_bid_amount = total
+        self.save(update_fields=["total_bid_amount"])
+
         submission = Submission.objects.create(
             event=self.tender.event,
             submitter_org=self.organisation,
@@ -826,6 +835,34 @@ class BidWorkspace(models.Model):
             submitted_at=timezone.now(),
             tender_total=self.total_bid_amount,
         )
+
+        # Snapshot BOQ prices for employer evaluation
+        for bp in self.bill_prices.all():
+            SubmissionBillPrice.objects.create(
+                submission=submission,
+                bill_ref=bp.bill_ref[:20],
+                description=(bp.description or "")[:255],
+                qs_estimate=Decimal("0"),
+                submitted_amount=bp.amount,
+            )
+
+        # Snapshot self-assessment / certificate checklist
+        for sc in self.self_checks.all():
+            result = MandatoryCheck.PASS if sc.self_result == SelfAssessmentCheck.PASS else MandatoryCheck.FAIL
+            doc_name = ""
+            if sc.document:
+                doc_name = sc.document.name.rsplit('/', 1)[-1][:200]
+            MandatoryCheck.objects.create(
+                submission=submission,
+                requirement=sc.requirement,
+                mr_ref=sc.mr_ref,
+                description=(sc.description or "")[:500],
+                result=result,
+                notes=sc.notes or "",
+                document_ref=doc_name,
+                checked_by=submitted_by,
+            )
+
         self.submission     = submission
         self.status         = self.SUBMITTED
         self.submitted_at   = timezone.now()

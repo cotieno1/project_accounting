@@ -14,6 +14,7 @@
 #   tender_boq_download  GET  /tenders/<id>/boq/
 #   bid_workspace        GET/POST /tenders/<id>/bid/
 #   bid_self_assess      GET/POST /tenders/<id>/bid/self-assess/
+#   bid_draft_pdf        GET  /tenders/<id>/bid/draft.pdf/
 #   bid_submit           POST /tenders/<id>/bid/submit/
 #   my_bids              GET /tenders/my-bids/
 #   tender_alerts        GET/POST /tenders/alerts/
@@ -622,6 +623,69 @@ def tender_boq_download(request, listing_id):
 
 @login_required
 
+
+def _bid_pack_context(request, listing, workspace, org, ua):
+    """Shared context for draft/submitted bid PDF pack."""
+    selected = workspace.selected_codes()
+    packages = list(
+        TenderBoqPackage.objects.filter(tender=listing)
+        .prefetch_related("lines")
+        .order_by("sort_order", "code")
+    )
+    selected_packages = [p for p in packages if p.code.upper() in selected]
+    price_map = {bp.bill_ref: bp for bp in workspace.bill_prices.all()}
+
+    package_sections = []
+    category_summary = []
+    grand_total = Decimal("0")
+    for pkg in selected_packages:
+        rows = []
+        subtotal = Decimal("0")
+        for line in pkg.lines.all():
+            bp = price_map.get(line.bill_ref)
+            amount = bp.amount if bp else Decimal("0")
+            rate = bp.unit_rate if bp else Decimal("0")
+            subtotal += amount
+            rows.append({"line": line, "rate": rate, "amount": amount})
+        grand_total += subtotal
+        package_sections.append({
+            "package": pkg,
+            "rows": rows,
+            "subtotal": subtotal,
+            "line_count": len(rows),
+        })
+        category_summary.append({
+            "code": pkg.code,
+            "title": pkg.title,
+            "subtotal": subtotal,
+            "line_count": len(rows),
+        })
+
+    prepared_by_name = ""
+    if ua:
+        prepared_by_name = (
+            getattr(ua, "get_full_name", lambda: "")()
+            or getattr(ua, "username", "")
+            or str(ua)
+        )
+
+    is_draft = workspace.status != BidWorkspace.SUBMITTED
+    ctx = {
+        "listing": listing,
+        "workspace": workspace,
+        "org": org,
+        "self_checks": workspace.self_checks.order_by("mr_ref"),
+        "package_sections": package_sections,
+        "category_summary": category_summary,
+        "grand_total": grand_total,
+        "is_draft": is_draft,
+        "prepared_by_name": prepared_by_name,
+        "generated_at": timezone.now(),
+        **branding_template_context(request),
+    }
+    return ctx
+
+
 def _apply_boq_input_mode(listing, mode: str) -> dict:
     """Switch listing BOQ data source; keep the same bid form (packages/lines)."""
     from buildwatch.boq_ingest.persist import apply_standard_boq
@@ -978,6 +1042,53 @@ def bid_self_assess(request, listing_id):
     return render(request, 'tenders/bid_self_assess.html', ctx)
 
 
+
+@login_required
+def bid_draft_pdf(request, listing_id):
+    """
+    GET /tenders/<listing_id>/bid/draft.pdf/
+    Completed draft (or submitted) bid pack PDF: certificates + priced BOQ.
+    """
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
+
+    listing = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
+    org = get_active_organization(request)
+    try:
+        ua = _ensure_user_account(request, org)
+    except Exception:
+        ua = _get_user_account(request)
+
+    if not BidderRegistration.objects.filter(tender=listing, organisation=org).exists():
+        messages.warning(request, "Register your interest before downloading the bid pack.")
+        return redirect("tender-detail", listing_id=listing_id)
+
+    workspace = get_object_or_404(BidWorkspace, tender=listing, organisation=org)
+    ctx = _bid_pack_context(request, listing, workspace, org, ua)
+
+    # Soft readiness: allow download anytime, but warn if incomplete for draft
+    ready = (
+        bool(workspace.selected_codes())
+        and workspace.pricing_complete
+        and workspace.self_assessment_passed
+    )
+    if not ready and ctx["is_draft"]:
+        messages.warning(
+            request,
+            "Draft PDF generated with incomplete gates "
+            "(categories / pricing / certificates). Complete all before submit.",
+        )
+
+    try:
+        pdf = build_pdf_bytes("tenders/bid_draft_print.html", ctx)
+    except Exception as exc:
+        messages.error(request, f"Could not build bid PDF: {exc}")
+        return redirect("bid-workspace", listing_id=listing_id)
+
+    status = "DRAFT" if ctx["is_draft"] else "SUBMITTED"
+    filename = f"Bid_{listing.event.ref}_{org.short_name}_{status}".replace("/", "-")
+    return pdf_inline_response(pdf, filename)
+
+
 @login_required
 @require_POST
 def bid_submit(request, listing_id):
@@ -999,7 +1110,7 @@ def bid_submit(request, listing_id):
         messages.success(request,
             f'Bid submitted successfully. Reference: {listing.event.ref}. '
             f'Your submission ID is {submission.pk}. '
-            f'You will be notified of the outcome.')
+            f'Download your submitted bid pack from the workspace if needed.')
     except ValueError as e:
         messages.error(request, str(e))
         return redirect('bid-workspace', listing_id=listing_id)

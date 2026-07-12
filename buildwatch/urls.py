@@ -63,6 +63,10 @@ tender_patterns = [
          t.bid_self_assess,
          name='bid-self-assess'),
 
+    path('<int:listing_id>/bid/draft.pdf/',
+         t.bid_draft_pdf,
+         name='bid-draft-pdf'),
+
     path('<int:listing_id>/bid/submit/',
          t.bid_submit,
          name='bid-submit'),

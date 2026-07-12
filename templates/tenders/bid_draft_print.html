@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bid Draft — {{ listing.event.ref }}</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a2332; }
+    h1 { font-size: 16pt; margin: 0 0 4pt; color: #0b1f33; }
+    h2 { font-size: 12pt; margin: 16pt 0 6pt; color: #0b1f33; border-bottom: 1px solid #c5ced9; padding-bottom: 3pt; }
+    .muted { color: #5a6a7a; font-size: 9pt; }
+    .kicker { text-transform: uppercase; letter-spacing: 0.06em; font-size: 8pt; color: #5a6a7a; margin-bottom: 2pt; }
+    .banner { background: #fff4e5; border: 1px solid #e0a86a; padding: 6pt 8pt; margin: 8pt 0 12pt; font-size: 9pt; }
+    .banner-final { background: #e8f7f1; border: 1px solid #2a9d7a; }
+    table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; }
+    th, td { border: 1px solid #c5ced9; padding: 4pt 5pt; vertical-align: top; }
+    th { background: #eef2f6; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; }
+    td.num, th.num { text-align: right; }
+    td.ctr, th.ctr { text-align: center; }
+    .mono { font-family: Courier, monospace; font-size: 9pt; }
+    .total-row td { font-weight: bold; background: #eef2f6; }
+    .sig { margin-top: 18pt; }
+    .sig td { border: none; padding: 10pt 4pt 0; height: 48pt; }
+  </style>
+</head>
+<body>
+  <div class="kicker">BuildWatch tender exchange</div>
+  <h1>Bid document — {{ listing.event.ref }}</h1>
+  <p class="muted">{{ listing.event.description }}</p>
+
+  {% if is_draft %}
+  <div class="banner"><strong>DRAFT</strong> — for contractor review before final submission. Not yet lodged with the employer.</div>
+  {% else %}
+  <div class="banner banner-final"><strong>SUBMITTED</strong> — lodged {{ workspace.submitted_at|date:"d M Y H:i" }} (submission #{{ workspace.submission_id }}).</div>
+  {% endif %}
+
+  <h2>1. Parties and tender</h2>
+  <table>
+    <tr><th width="28%">Tender ref</th><td class="mono">{{ listing.event.ref }}</td></tr>
+    <tr><th>Employer / project</th><td>{{ listing.event.project }}</td></tr>
+    <tr><th>Bidder organisation</th><td>{{ org.name|default:org.short_name }}</td></tr>
+    <tr><th>Prepared by</th><td>{{ prepared_by_name }}</td></tr>
+    <tr><th>Currency</th><td>{{ listing.currency }}</td></tr>
+    <tr><th>BOQ source mode</th><td class="mono">{{ listing.boq_input_mode }}</td></tr>
+    <tr><th>Closing</th><td>{{ listing.event.closing_date|date:"d M Y H:i"|default:"—" }}</td></tr>
+  </table>
+
+  <h2>2. Mandatory certificates and supporting documents</h2>
+  <table>
+    <tr>
+      <th width="12%">Ref</th>
+      <th width="42%">Requirement</th>
+      <th width="12%" class="ctr">Result</th>
+      <th width="18%">Document</th>
+      <th width="16%">Expiry / notes</th>
+    </tr>
+    {% for c in self_checks %}
+    <tr>
+      <td class="mono">{{ c.mr_ref }}</td>
+      <td>{{ c.description }}</td>
+      <td class="ctr">{{ c.self_result }}</td>
+      <td class="muted">{% if c.document %}{{ c.document.name|cut:"bids/self_assess/" }}{% elif c.document_uploaded %}Uploaded{% else %}—{% endif %}</td>
+      <td class="muted">{% if c.expiry_date %}{{ c.expiry_date|date:"d M Y" }}{% endif %}{% if c.notes %} {{ c.notes }}{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="muted">No certificate checklist rows yet.</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>3. Selected BOQ categories</h2>
+  <table>
+    <tr>
+      <th width="14%">Code</th>
+      <th width="56%">Category</th>
+      <th width="12%" class="ctr">Lines</th>
+      <th width="18%" class="num">Sub-total</th>
+    </tr>
+    {% for row in category_summary %}
+    <tr>
+      <td class="mono">{{ row.code }}</td>
+      <td>{{ row.title }}</td>
+      <td class="ctr">{{ row.line_count }}</td>
+      <td class="num mono">{{ listing.currency }} {{ row.subtotal|floatformat:2 }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="muted">No categories selected.</td></tr>
+    {% endfor %}
+    <tr class="total-row">
+      <td colspan="3" class="num">Total bid (selected categories)</td>
+      <td class="num mono">{{ listing.currency }} {{ grand_total|floatformat:2 }}</td>
+    </tr>
+  </table>
+
+  <h2>4. Priced bill of quantities</h2>
+  {% for section in package_sections %}
+  <p style="margin:10pt 0 4pt;"><strong>{{ section.package.code }}</strong> — {{ section.package.title }}</p>
+  <table>
+    <tr>
+      <th width="12%">Ref</th>
+      <th width="40%">Description</th>
+      <th width="8%" class="ctr">Unit</th>
+      <th width="10%" class="num">Qty</th>
+      <th width="15%" class="num">Rate</th>
+      <th width="15%" class="num">Amount</th>
+    </tr>
+    {% for row in section.rows %}
+    <tr>
+      <td class="mono">{{ row.line.bill_ref }}</td>
+      <td>{{ row.line.description }}</td>
+      <td class="ctr">{{ row.line.unit }}</td>
+      <td class="num">{{ row.line.quantity|floatformat:-3 }}</td>
+      <td class="num mono">{{ row.rate|floatformat:2 }}</td>
+      <td class="num mono">{{ row.amount|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+    <tr class="total-row">
+      <td colspan="5" class="num">Sub-total — {{ section.package.title }}</td>
+      <td class="num mono">{{ section.subtotal|floatformat:2 }}</td>
+    </tr>
+  </table>
+  {% empty %}
+  <p class="muted">No priced lines in this draft.</p>
+  {% endfor %}
+
+  <h2>5. Declaration</h2>
+  <p class="muted">
+    The bidder confirms that the rates and amounts above are inclusive of all applicable taxes
+    (including VAT where required), that supporting certificates listed in section 2 are true copies
+    of originals held by the bidder, and that this bid covers only the selected categories.
+  </p>
+  <table class="sig" width="100%">
+    <tr>
+      <td width="50%">_______________________________<br/><span class="muted">Authorised signatory / date</span></td>
+      <td width="50%">_______________________________<br/><span class="muted">Company stamp</span></td>
+    </tr>
+  </table>
+  <p class="muted" style="margin-top:12pt;">Generated {{ generated_at|date:"d M Y H:i" }} · {{ listing.event.ref }} · {{ org.short_name }}</p>
+</body>
+</html>
