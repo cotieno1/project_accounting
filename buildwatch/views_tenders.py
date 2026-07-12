@@ -35,7 +35,7 @@ from .models import (
     TenderListing, TenderInvitation, TenderAddendum, TenderAlert,
     BidderRegistration, BidWorkspace, SelfAssessmentCheck, WorkspaceBillPrice,
     EvaluationEvent, MandatoryRequirement, Submission, AuditLedger, Country,
-    InfraProject,
+    InfraProject, TenderBoqPackage, TenderBoqLine,
 )
 from accounts.models import Organization, UserAccount
 from accounts.tenant import (
@@ -625,13 +625,15 @@ def bid_workspace(request, listing_id):
     """
     GET/POST /tenders/<listing_id>/bid/
     Contractor's private bid preparation workspace.
-    POST: save bill prices and update workspace.
+    Supports multi-select of BOQ packages (partial or all) then rate entry.
     """
     listing = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
-    org     = get_active_organization(request)
-    ua      = _get_user_account(request)
+    org = get_active_organization(request)
+    try:
+        ua = _ensure_user_account(request, org)
+    except Exception:
+        ua = _get_user_account(request)
 
-    # Must be registered
     if not BidderRegistration.objects.filter(
             tender=listing, organisation=org).exists():
         messages.warning(request,
@@ -641,23 +643,66 @@ def bid_workspace(request, listing_id):
     if not listing.event.is_open:
         messages.error(request, 'This tender has closed. Bid workspace is read-only.')
 
-    # Get or create workspace
+    if ua is None:
+        messages.error(request, 'Your user profile could not be resolved.')
+        return redirect('tender-detail', listing_id=listing_id)
+
     workspace, _ = BidWorkspace.objects.get_or_create(
         tender=listing,
         organisation=org,
         defaults={'prepared_by': ua},
     )
 
-    if request.method == 'POST' and listing.event.is_open:
-        # Save bill prices from POST
+    packages = list(
+        TenderBoqPackage.objects.filter(tender=listing)
+        .prefetch_related('lines')
+        .order_by('sort_order', 'code')
+    )
+
+    if request.method == 'POST' and listing.event.is_open and workspace.status != BidWorkspace.SUBMITTED:
+        action = (request.POST.get('action') or 'save_prices').strip()
+
+        if action == 'select_packages':
+            selected = [
+                c.strip().upper()
+                for c in request.POST.getlist('package_code')
+                if c.strip()
+            ]
+            valid = {p.code.upper() for p in packages}
+            selected = [c for c in selected if c in valid]
+            if not selected and packages:
+                messages.error(request, 'Select at least one BOQ component to bid.')
+                return redirect('bid-workspace', listing_id=listing_id)
+            workspace.selected_package_codes = selected
+            # Drop priced lines for deselected packages
+            WorkspaceBillPrice.objects.filter(workspace=workspace).exclude(
+                package_code__in=selected
+            ).delete()
+            workspace.pricing_complete = False
+            workspace.save(update_fields=[
+                'selected_package_codes', 'pricing_complete',
+            ])
+            messages.success(
+                request,
+                f'{len(selected)} component(s) selected. Enter unit rates below.',
+            )
+            return redirect('bid-workspace', listing_id=listing_id)
+
+        # save_prices
+        selected = workspace.selected_codes()
+        if packages and not selected:
+            messages.error(request, 'Select BOQ components before saving prices.')
+            return redirect('bid-workspace', listing_id=listing_id)
+
         bill_refs = request.POST.getlist('bill_ref')
         for bill_ref in bill_refs:
-            desc       = request.POST.get(f'desc_{bill_ref}', '')
-            unit       = request.POST.get(f'unit_{bill_ref}', '')
-            qty_raw    = request.POST.get(f'qty_{bill_ref}', '0').replace(',', '')
-            rate_raw   = request.POST.get(f'rate_{bill_ref}', '0').replace(',', '')
+            desc = request.POST.get(f'desc_{bill_ref}', '')
+            unit = request.POST.get(f'unit_{bill_ref}', '')
+            pkg = request.POST.get(f'pkg_{bill_ref}', '')
+            qty_raw = request.POST.get(f'qty_{bill_ref}', '0').replace(',', '')
+            rate_raw = request.POST.get(f'rate_{bill_ref}', '0').replace(',', '')
             try:
-                qty  = Decimal(qty_raw)
+                qty = Decimal(qty_raw)
                 rate = Decimal(rate_raw)
             except Exception:
                 continue
@@ -666,29 +711,74 @@ def bid_workspace(request, listing_id):
                 bill_ref=bill_ref,
                 defaults={
                     'description': desc,
-                    'unit':        unit,
-                    'quantity':    qty,
-                    'unit_rate':   rate,
-                }
+                    'unit': unit,
+                    'quantity': qty,
+                    'unit_rate': rate,
+                    'package_code': pkg,
+                },
             )
-        # Check pricing completeness
-        priced = WorkspaceBillPrice.objects.filter(
-            workspace=workspace,
-            amount__gt=0,
-        ).count()
-        workspace.pricing_complete = priced > 0
+
+        # Completeness: every line in every selected package must have amount > 0
+        complete = True
+        if selected:
+            for pkg in packages:
+                if pkg.code.upper() not in selected:
+                    continue
+                for line in pkg.lines.all():
+                    bp = WorkspaceBillPrice.objects.filter(
+                        workspace=workspace, bill_ref=line.bill_ref
+                    ).first()
+                    if not bp or bp.amount <= 0:
+                        complete = False
+                        break
+                if not complete:
+                    break
+        else:
+            priced = WorkspaceBillPrice.objects.filter(
+                workspace=workspace, amount__gt=0
+            ).count()
+            complete = priced > 0
+
+        workspace.pricing_complete = complete
         workspace.save(update_fields=['pricing_complete'])
-        messages.success(request, 'Bid prices saved.')
+        if complete:
+            messages.success(request, 'Bid prices saved. Selected components are fully priced.')
+        else:
+            messages.warning(
+                request,
+                'Prices saved. Some lines in selected components still need rates.',
+            )
         return redirect('bid-workspace', listing_id=listing_id)
 
-    bill_prices = workspace.bill_prices.order_by('bill_ref')
-    self_checks = workspace.self_checks.order_by('mr_ref')
+    selected = workspace.selected_codes()
+    # Default: if packages exist and none selected yet, leave empty so UI prompts
+    selected_packages = [p for p in packages if p.code.upper() in selected]
+    price_map = {
+        bp.bill_ref: bp
+        for bp in workspace.bill_prices.all()
+    }
+
+    package_sections = []
+    for pkg in selected_packages:
+        rows = []
+        for line in pkg.lines.all():
+            bp = price_map.get(line.bill_ref)
+            rows.append({
+                'line': line,
+                'price': bp,
+                'rate': bp.unit_rate if bp else Decimal('0'),
+                'amount': bp.amount if bp else Decimal('0'),
+            })
+        package_sections.append({'package': pkg, 'rows': rows})
 
     ctx = {
-        'listing':    listing,
-        'workspace':  workspace,
-        'bill_prices':bill_prices,
-        'self_checks':self_checks,
+        'listing': listing,
+        'workspace': workspace,
+        'packages': packages,
+        'selected_codes': selected,
+        'package_sections': package_sections,
+        'bill_prices': workspace.bill_prices.order_by('bill_ref'),
+        'self_checks': workspace.self_checks.order_by('mr_ref'),
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_workspace.html', ctx)

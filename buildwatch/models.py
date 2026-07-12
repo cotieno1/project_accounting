@@ -769,6 +769,11 @@ class BidWorkspace(models.Model):
                               on_delete=models.SET_NULL,
                               null=True, blank=True,
                               related_name='workspace')
+    selected_package_codes = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='TenderBoqPackage.code values selected for this bid',
+    )
 
     class Meta:
         unique_together = [['tender', 'organisation']]
@@ -777,6 +782,10 @@ class BidWorkspace(models.Model):
     def __str__(self):
         return (f"{self.tender.event.ref} workspace — "
                 f"{self.organisation.short_name} [{self.status}]")
+
+    def selected_codes(self):
+        codes = self.selected_package_codes or []
+        return [str(c).strip().upper() for c in codes if str(c).strip()]
 
     def submit(self, submitted_by):
         """
@@ -788,9 +797,13 @@ class BidWorkspace(models.Model):
                 "Self-assessment must be completed before submitting. "
                 "Fix all failing mandatory checks first."
             )
+        if not self.selected_codes():
+            raise ValueError(
+                "Select at least one BOQ component before submitting."
+            )
         if not self.pricing_complete:
             raise ValueError(
-                "All BOQ items must be priced before submitting."
+                "Price all lines in your selected BOQ components before submitting."
             )
         submission = Submission.objects.create(
             event=self.tender.event,
@@ -819,10 +832,46 @@ class BidWorkspace(models.Model):
                 'tender_ref':   self.tender.event.ref,
                 'org':          self.organisation.short_name,
                 'total':        str(self.total_bid_amount),
+                'packages':     self.selected_codes(),
             },
-            professional_reg=submitted_by.professional_reg_no,
+            professional_reg=getattr(submitted_by, 'professional_reg_no', '') or '',
         )
         return submission
+
+
+class TenderBoqPackage(models.Model):
+    """BOQ component / lot (Electrical, Structured Cabling, CCTV, Solar)."""
+    tender      = models.ForeignKey(TenderListing, on_delete=models.CASCADE,
+                      related_name='boq_packages')
+    code        = models.CharField(max_length=20)
+    title       = models.CharField(max_length=120)
+    sort_order  = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        unique_together = [['tender', 'code']]
+        ordering = ['sort_order', 'code']
+
+    def __str__(self):
+        return f"{self.code} — {self.title}"
+
+
+class TenderBoqLine(models.Model):
+    """Employer-published BOQ line under a package."""
+    package     = models.ForeignKey(TenderBoqPackage, on_delete=models.CASCADE,
+                      related_name='lines')
+    bill_ref    = models.CharField(max_length=20)
+    description = models.CharField(max_length=255)
+    unit        = models.CharField(max_length=30, blank=True, default='Sum')
+    quantity    = models.DecimalField(max_digits=12, decimal_places=3,
+                      default=Decimal('1'))
+    sort_order  = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        unique_together = [['package', 'bill_ref']]
+        ordering = ['sort_order', 'bill_ref']
+
+    def __str__(self):
+        return f"{self.bill_ref} — {self.description[:40]}"
 
 
 class SelfAssessmentCheck(models.Model):
@@ -877,6 +926,8 @@ class WorkspaceBillPrice(models.Model):
                           default=Decimal('0'))
     amount          = models.DecimalField(max_digits=15, decimal_places=2,
                           default=Decimal('0'))
+    package_code    = models.CharField(max_length=20, blank=True, default='',
+                          help_text='TenderBoqPackage.code this line belongs to')
     # Market intelligence (set from anonymised historical data)
     market_rate_low  = models.DecimalField(max_digits=12, decimal_places=2,
                            null=True, blank=True)

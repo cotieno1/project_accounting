@@ -1,369 +1,195 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}Bid Workspace — {{ listing.event.ref }}{% endblock %}
+{% block title %}BOQ Workspace — {{ listing.event.ref }}{% endblock %}
 
 {% block bw_content %}
-<div style="max-width:1100px;margin:0 auto;padding:32px 24px;">
+<div class="bw-wrap">
 
-  <!-- Breadcrumb -->
-  <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:20px;">
-    <a href="{% url 'tender-list' %}" style="color:var(--bw-blue);text-decoration:none;">Tenders</a>
+  <div class="bw-ref" style="margin-bottom:18px;">
+    <a href="{% url 'tender-list' %}">Tenders</a>
     &nbsp;/&nbsp;
-    <a href="{% url 'tender-detail' listing.pk %}" style="color:var(--bw-blue);text-decoration:none;">
-      {{ listing.event.ref }}
-    </a>
-    &nbsp;/&nbsp; Bid Workspace
+    <a href="{% url 'tender-detail' listing.pk %}">{{ listing.event.ref }}</a>
+    &nbsp;/&nbsp;
+    BOQ Workspace
   </div>
 
-  <!-- Header -->
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;
-    gap:16px;margin-bottom:24px;flex-wrap:wrap;">
-    <div>
-      <div style="font-family:monospace;font-size:.72rem;color:var(--bw-dgrey);margin-bottom:4px;">
-        {{ listing.event.ref }}
-      </div>
-      <h1 style="font-size:1.4rem;font-weight:700;color:var(--bw-navy);
-        letter-spacing:-.02em;margin-bottom:6px;">
-        Bid Workspace
-      </h1>
-      <p style="font-size:.85rem;color:var(--bw-dgrey);">
-        {{ listing.event.description }}
-      </p>
+  <header style="margin-bottom:22px;">
+    <div class="bw-kicker">{{ listing.event.ref }}</div>
+    <h1 class="bw-title">BOQ Workspace</h1>
+    <p class="bw-lead">{{ listing.event.description }}</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+      <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
+      <a href="{% url 'bid-self-assess' listing.pk %}" class="bw-btn bw-btn--ghost">Certificates</a>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <a href="{% url 'bid-self-assess' listing.pk %}"
-         class="bw-btn bw-btn--ghost bw-btn--sm">
-        ✓ Self-Assessment
-        {% if workspace.self_assessment_passed %}
-          <span style="color:var(--bw-green);">●</span>
-        {% else %}
-          <span style="color:var(--bw-amber);">●</span>
-        {% endif %}
-      </a>
-      {% if listing.boq_document %}
-        <a href="{% url 'tender-boq-download' listing.pk %}"
-           class="bw-btn bw-btn--ghost bw-btn--sm">
-          📥 Download BOQ
-        </a>
-      {% endif %}
-    </div>
-  </div>
+  </header>
 
-  <div style="display:grid;grid-template-columns:1fr 280px;gap:24px;">
+  {% if not listing.event.is_open %}
+  <div class="bw-alert bw-alert--warning">This tender has closed. Workspace is read-only.</div>
+  {% endif %}
 
-    <!-- ── BOQ pricing table ─────────────────────────────────────────────── -->
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;">
     <div>
-
-      <!-- Warnings -->
-      {% if not listing.event.is_open %}
-        <div class="bw-alert bw-alert--warning" style="margin-bottom:20px;">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          This tender has closed. Your workspace is read-only.
-        </div>
-      {% endif %}
-
-      {% if workspace.below_market_flag %}
-        <div class="bw-alert bw-alert--warning" style="margin-bottom:20px;">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Your total bid is significantly below market range. Review your rates before submitting to avoid winning a job at a loss.
-        </div>
-      {% endif %}
-
-      {% if workspace.above_market_flag %}
-        <div class="bw-alert bw-alert--danger" style="margin-bottom:20px;">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Your total bid is significantly above market range and may be flagged as an outlier during evaluation.
-        </div>
-      {% endif %}
-
-      <!-- BOQ form -->
-      <div class="bw-card">
-        <div class="bw-card-header">
-          Bills of Quantities — Enter Unit Rates
-        </div>
-        <div class="bw-card-body" style="padding:0;">
-          <form method="POST" action="{% url 'bid-workspace' listing.pk %}" id="boq-form">
+      {% if packages %}
+      <div class="bw-card" style="margin-bottom:16px;">
+        <div class="bw-card-header">Select BOQ components</div>
+        <div class="bw-card-body">
+          <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 14px;">
+            Bid on any combination — Electrical, Structured Cabling, CCTV and/or Solar —
+            or select all.
+          </p>
+          <form method="POST" action="{% url 'bid-workspace' listing.pk %}">
             {% csrf_token %}
-
-            <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
-              <thead>
-                <tr style="background:var(--bw-lgrey);border-bottom:2px solid var(--bw-mgrey);">
-                  <th style="padding:10px 16px;text-align:left;color:var(--bw-navy);
-                    font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;width:80px;">
-                    Bill Ref
-                  </th>
-                  <th style="padding:10px 16px;text-align:left;color:var(--bw-navy);
-                    font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;">
-                    Description
-                  </th>
-                  <th style="padding:10px 16px;text-align:center;color:var(--bw-navy);
-                    font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;width:60px;">
-                    Unit
-                  </th>
-                  <th style="padding:10px 16px;text-align:right;color:var(--bw-navy);
-                    font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;width:90px;">
-                    Qty
-                  </th>
-                  <th style="padding:10px 16px;text-align:right;color:var(--bw-navy);
-                    font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;width:130px;">
-                    Unit Rate ({{ listing.currency }})
-                  </th>
-                  <th style="padding:10px 16px;text-align:right;color:var(--bw-navy);
-                    font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;width:130px;">
-                    Amount ({{ listing.currency }})
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="boq-body">
-
-              {# Render existing priced lines #}
-              {% for bp in bill_prices %}
-                <tr class="boq-row"
-                    style="border-bottom:1px solid var(--bw-lgrey);"
-                    data-ref="{{ bp.bill_ref }}"
-                    data-qty="{{ bp.quantity }}"
-                    data-rate="{{ bp.unit_rate }}">
-                  <td style="padding:10px 16px;">
-                    <input type="hidden" name="bill_ref" value="{{ bp.bill_ref }}">
-                    <span style="font-family:monospace;font-size:.78rem;
-                      color:var(--bw-navy);font-weight:600;">{{ bp.bill_ref }}</span>
-                  </td>
-                  <td style="padding:10px 16px;">
-                    <input type="hidden" name="desc_{{ bp.bill_ref }}" value="{{ bp.description }}">
-                    <span style="color:var(--bw-navy);">{{ bp.description }}</span>
-                    {% if bp.is_below_market %}
-                      <span class="bw-badge bw-badge--closing" style="margin-left:6px;font-size:.65rem;">
-                        Below market
-                      </span>
-                    {% endif %}
-                    {% if bp.is_above_market %}
-                      <span class="bw-badge bw-badge--closing" style="margin-left:6px;font-size:.65rem;">
-                        Above market
-                      </span>
-                    {% endif %}
-                  </td>
-                  <td style="padding:10px 16px;text-align:center;color:var(--bw-dgrey);">
-                    <input type="hidden" name="unit_{{ bp.bill_ref }}" value="{{ bp.unit }}">
-                    {{ bp.unit|default:"—" }}
-                  </td>
-                  <td style="padding:10px 16px;text-align:right;color:var(--bw-dgrey);">
-                    <input type="hidden" name="qty_{{ bp.bill_ref }}" value="{{ bp.quantity }}">
-                    {{ bp.quantity|floatformat:0 }}
-                  </td>
-                  <td style="padding:10px 16px;">
-                    {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
-                      <input type="number"
-                             name="rate_{{ bp.bill_ref }}"
-                             value="{{ bp.unit_rate }}"
-                             step="0.01" min="0"
-                             class="bw-input rate-input"
-                             style="text-align:right;padding:6px 8px;"
-                             data-ref="{{ bp.bill_ref }}"
-                             data-qty="{{ bp.quantity }}"
-                             onchange="recalcRow(this)">
-                    {% else %}
-                      <div style="text-align:right;font-weight:600;color:var(--bw-navy);">
-                        {{ bp.unit_rate|floatformat:2 }}
-                      </div>
-                    {% endif %}
-                  </td>
-                  <td style="padding:10px 16px;text-align:right;font-weight:600;
-                    color:var(--bw-navy);" id="amount-{{ bp.bill_ref }}">
-                    {{ bp.amount|floatformat:2 }}
-                  </td>
-                </tr>
-              {% empty %}
-                {# No lines yet — show Isiolo Stadium BOQ structure as default #}
-                {% for ref, desc, unit, qty in boq_template %}
-                  <tr class="boq-row" style="border-bottom:1px solid var(--bw-lgrey);"
-                      data-ref="{{ ref }}" data-qty="{{ qty }}" data-rate="0">
-                    <td style="padding:10px 16px;">
-                      <input type="hidden" name="bill_ref" value="{{ ref }}">
-                      <span style="font-family:monospace;font-size:.78rem;
-                        color:var(--bw-navy);font-weight:600;">{{ ref }}</span>
-                    </td>
-                    <td style="padding:10px 16px;">
-                      <input type="hidden" name="desc_{{ ref }}" value="{{ desc }}">
-                      <span style="color:var(--bw-navy);">{{ desc }}</span>
-                    </td>
-                    <td style="padding:10px 16px;text-align:center;color:var(--bw-dgrey);">
-                      <input type="hidden" name="unit_{{ ref }}" value="{{ unit }}">
-                      {{ unit }}
-                    </td>
-                    <td style="padding:10px 16px;text-align:right;color:var(--bw-dgrey);">
-                      <input type="hidden" name="qty_{{ ref }}" value="{{ qty }}">
-                      {{ qty }}
-                    </td>
-                    <td style="padding:10px 16px;">
-                      <input type="number"
-                             name="rate_{{ ref }}"
-                             value="0"
-                             step="0.01" min="0"
-                             class="bw-input rate-input"
-                             style="text-align:right;padding:6px 8px;"
-                             data-ref="{{ ref }}"
-                             data-qty="{{ qty }}"
-                             onchange="recalcRow(this)">
-                    </td>
-                    <td style="padding:10px 16px;text-align:right;font-weight:600;
-                      color:var(--bw-navy);" id="amount-{{ ref }}">
-                      0.00
-                    </td>
-                  </tr>
-                {% endfor %}
+            <input type="hidden" name="action" value="select_packages">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+              {% for pkg in packages %}
+              <label style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;
+                border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;
+                background:{% if pkg.code in selected_codes %}#f0fdf9{% else %}var(--bw-white){% endif %};">
+                <input type="checkbox" name="package_code" value="{{ pkg.code }}"
+                       {% if pkg.code in selected_codes %}checked{% endif %}
+                       {% if workspace.status == 'SUBMITTED' or not listing.event.is_open %}disabled{% endif %}
+                       style="margin-top:3px;">
+                <span>
+                  <strong style="display:block;color:var(--bw-navy);font-size:.88rem;">{{ pkg.title }}</strong>
+                  <span style="font-family:var(--bw-mono);font-size:.7rem;color:var(--bw-mid);">{{ pkg.code }} · {{ pkg.lines.all|length }} line{{ pkg.lines.all|length|pluralize }}</span>
+                </span>
+              </label>
               {% endfor %}
-
-              </tbody>
-              <tfoot>
-                <tr style="background:var(--bw-navy);">
-                  <td colspan="5" style="padding:12px 16px;color:white;
-                    font-weight:600;font-size:.85rem;">
-                    TOTAL BID AMOUNT ({{ listing.currency }})
-                  </td>
-                  <td style="padding:12px 16px;text-align:right;color:white;
-                    font-weight:700;font-size:1rem;" id="grand-total">
-                    {{ workspace.total_bid_amount|floatformat:2 }}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-
+            </div>
             {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
-              <div style="padding:16px 20px;border-top:1px solid var(--bw-mgrey);
-                display:flex;justify-content:flex-end;">
-                <button type="submit" class="bw-btn bw-btn--primary">
-                  💾 Save Prices
-                </button>
-              </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;">
+              <button type="button" class="bw-btn bw-btn--ghost bw-btn--sm"
+                      onclick="document.querySelectorAll('input[name=package_code]').forEach(c=>c.checked=true)">Select all</button>
+              <button type="submit" class="bw-btn bw-btn--teal">Apply selection</button>
+            </div>
             {% endif %}
           </form>
         </div>
       </div>
-    </div>
+      {% endif %}
 
-    <!-- ── Sidebar ───────────────────────────────────────────────────────── -->
-    <div>
+      {% if package_sections %}
+      <form method="POST" action="{% url 'bid-workspace' listing.pk %}" id="boq-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_prices">
 
-      <!-- Workspace status -->
-      <div class="bw-card" style="margin-bottom:16px;">
-        <div class="bw-card-header">Workspace Status</div>
-        <div class="bw-card-body" style="padding:14px 18px;">
-          <div class="bw-gate">
-            <div class="bw-gate__dot bw-gate__dot--green"></div>
-            <div class="bw-gate__label">Registered</div>
-            <div class="bw-gate__status" style="color:var(--bw-green);">✓</div>
+        {% for section in package_sections %}
+        <div class="bw-card" style="margin-bottom:14px;">
+          <div class="bw-card-header">{{ section.package.title }}
+            <span style="font-family:var(--bw-mono);font-weight:500;color:var(--bw-mid);margin-left:8px;">{{ section.package.code }}</span>
           </div>
-          <div class="bw-gate">
-            <div class="bw-gate__dot bw-gate__dot--{% if workspace.self_assessment_passed %}green{% else %}amber{% endif %}">
-            </div>
-            <div class="bw-gate__label">Self-assessment</div>
-            <div class="bw-gate__status"
-              style="color:{% if workspace.self_assessment_passed %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
-              {% if workspace.self_assessment_passed %}✓{% else %}Pending{% endif %}
-            </div>
-          </div>
-          <div class="bw-gate">
-            <div class="bw-gate__dot bw-gate__dot--{% if workspace.pricing_complete %}green{% else %}amber{% endif %}">
-            </div>
-            <div class="bw-gate__label">BOQ priced</div>
-            <div class="bw-gate__status"
-              style="color:{% if workspace.pricing_complete %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
-              {% if workspace.pricing_complete %}✓{% else %}Pending{% endif %}
-            </div>
+          <div class="bw-card-body" style="padding:0;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+              <thead>
+                <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
+                  <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:90px;">Ref</th>
+                  <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Description</th>
+                  <th style="padding:10px 14px;text-align:center;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:60px;">Unit</th>
+                  <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:70px;">Qty</th>
+                  <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:130px;">Unit rate ({{ listing.currency }})</th>
+                  <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:120px;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in section.rows %}
+                <tr style="border-bottom:1px solid var(--bw-rule);">
+                  <td style="padding:10px 14px;">
+                    <input type="hidden" name="bill_ref" value="{{ row.line.bill_ref }}">
+                    <input type="hidden" name="pkg_{{ row.line.bill_ref }}" value="{{ section.package.code }}">
+                    <input type="hidden" name="desc_{{ row.line.bill_ref }}" value="{{ row.line.description }}">
+                    <input type="hidden" name="unit_{{ row.line.bill_ref }}" value="{{ row.line.unit }}">
+                    <input type="hidden" name="qty_{{ row.line.bill_ref }}" value="{{ row.line.quantity }}">
+                    <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);">{{ row.line.bill_ref }}</span>
+                  </td>
+                  <td style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
+                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
+                  <td style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:0 }}</td>
+                  <td style="padding:10px 14px;">
+                    {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+                    <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
+                           step="0.01" min="0" class="bw-input"
+                           style="text-align:right;padding:7px 8px;"
+                           data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
+                           onchange="recalcRow(this)">
+                    {% else %}
+                    <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
+                    {% endif %}
+                  </td>
+                  <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
+                      id="amount-{{ row.line.bill_ref }}">{{ row.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
+        {% endfor %}
 
-      <!-- Bid total summary -->
-      <div class="bw-card" style="margin-bottom:16px;">
-        <div class="bw-card-header">Bid Summary</div>
-        <div class="bw-card-body" style="padding:14px 18px;">
-          <div style="font-size:1.4rem;font-weight:700;color:var(--bw-navy);margin-bottom:4px;">
-            {{ listing.currency }} {{ workspace.total_bid_amount|floatformat:2 }}
-          </div>
-          <div style="font-size:.75rem;color:var(--bw-dgrey);margin-bottom:14px;">
-            Total bid amount
-          </div>
-          {% if listing.estimated_value_min and listing.estimated_value_max %}
-            <div style="font-size:.78rem;margin-bottom:6px;">
-              <span style="color:var(--bw-dgrey);">Market range:</span>
-              <span style="font-weight:600;color:var(--bw-navy);">
-                {{ listing.value_range_display }}
-              </span>
-            </div>
-            <!-- Range bar -->
-            <div style="height:6px;background:var(--bw-lgrey);border-radius:3px;
-              margin-bottom:8px;overflow:hidden;">
-              <div style="height:100%;background:var(--bw-teal);border-radius:3px;
-                width:60%;"></div>
-            </div>
-          {% endif %}
-          <div style="font-size:.72rem;color:var(--bw-dgrey);">
-            Started {{ workspace.started_at|date:"d M Y" }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Submit -->
-      {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
-        <div class="bw-card" style="margin-bottom:16px;border:1px solid
-          {% if workspace.self_assessment_passed and workspace.pricing_complete %}var(--bw-teal){% else %}var(--bw-mgrey){% endif %};">
-          <div class="bw-card-body">
-            {% if workspace.self_assessment_passed and workspace.pricing_complete %}
-              <div class="bw-alert bw-alert--success" style="margin-bottom:14px;">
-                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                All gates green. Ready to submit.
+        <div class="bw-card" style="margin-bottom:14px;">
+          <div class="bw-card-body" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bw-mid);">Total bid (selected components)</div>
+              <div style="font-size:1.25rem;font-weight:700;color:var(--bw-navy);">
+                {{ listing.currency }} <span id="grand-total">{{ workspace.total_bid_amount|floatformat:2 }}</span>
               </div>
-              <form method="POST" action="{% url 'bid-submit' listing.pk %}">
-                {% csrf_token %}
-                <button type="submit" class="bw-btn bw-btn--teal"
-                  style="width:100%;justify-content:center;"
-                  onclick="return confirm('Submit your bid for {{ listing.event.ref }}? This cannot be undone.')">
-                  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                  Submit Bid
-                </button>
-              </form>
-            {% else %}
-              <div style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:12px;">
-                Complete all gates before submitting:
-              </div>
-              {% if not workspace.self_assessment_passed %}
-                <a href="{% url 'bid-self-assess' listing.pk %}"
-                   class="bw-btn bw-btn--ghost bw-btn--sm"
-                   style="width:100%;justify-content:center;margin-bottom:8px;">
-                  Complete Self-Assessment
-                </a>
-              {% endif %}
-              {% if not workspace.pricing_complete %}
-                <div style="font-size:.78rem;color:var(--bw-dgrey);text-align:center;">
-                  Price all BOQ items, then save.
-                </div>
-              {% endif %}
+            </div>
+            {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+            <button type="submit" class="bw-btn bw-btn--teal">Save prices</button>
             {% endif %}
           </div>
         </div>
-      {% elif workspace.status == 'SUBMITTED' %}
-        <div class="bw-card"
-             style="border:1px solid var(--bw-teal);margin-bottom:16px;">
-          <div class="bw-card-body">
-            <div class="bw-alert bw-alert--success" style="margin-bottom:0;">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              Bid submitted on {{ workspace.submitted_at|date:"d M Y H:i" }}.
-              You will be notified of the outcome.
-            </div>
+      </form>
+      {% elif packages %}
+      <div class="bw-alert bw-alert--info">Select one or more components above, then apply selection to open the BOQ lines.</div>
+      {% else %}
+      <div class="bw-alert bw-alert--warning">No BOQ packages have been published for this tender yet.</div>
+      {% endif %}
+    </div>
+
+    <aside>
+      <div class="bw-card" style="margin-bottom:14px;">
+        <div class="bw-card-header">Status</div>
+        <div class="bw-card-body">
+          <div class="bw-gate">
+            <div class="bw-gate__dot bw-gate__dot--{% if selected_codes %}green{% else %}amber{% endif %}"></div>
+            <div class="bw-gate__label">Components</div>
+            <div class="bw-gate__status">{{ selected_codes|length }}/{{ packages|length }}</div>
+          </div>
+          <div class="bw-gate">
+            <div class="bw-gate__dot bw-gate__dot--{% if workspace.pricing_complete %}green{% else %}amber{% endif %}"></div>
+            <div class="bw-gate__label">BOQ priced</div>
+            <div class="bw-gate__status">{% if workspace.pricing_complete %}Done{% else %}Open{% endif %}</div>
+          </div>
+          <div class="bw-gate">
+            <div class="bw-gate__dot bw-gate__dot--{% if workspace.self_assessment_passed %}green{% else %}amber{% endif %}"></div>
+            <div class="bw-gate__label">Certificates</div>
+            <div class="bw-gate__status">{% if workspace.self_assessment_passed %}Done{% else %}Open{% endif %}</div>
           </div>
         </div>
-      {% endif %}
-
-      <!-- Tender closes -->
-      <div style="font-size:.75rem;color:var(--bw-dgrey);text-align:center;padding:8px;">
-        Tender closes {{ listing.event.closing_date|date:"d M Y \a\t H:i" }}
-        {% if listing.event.days_remaining > 0 %}
-          — {{ listing.event.days_remaining }} day{{ listing.event.days_remaining|pluralize }} left
-        {% endif %}
       </div>
 
-    </div>
+      {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+      <div class="bw-card">
+        <div class="bw-card-body">
+          {% if workspace.self_assessment_passed and workspace.pricing_complete and selected_codes %}
+          <form method="POST" action="{% url 'bid-submit' listing.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="bw-btn bw-btn--primary" style="width:100%;justify-content:center;"
+                    onclick="return confirm('Submit bid for {{ listing.event.ref }}?')">
+              Submit bid
+            </button>
+          </form>
+          {% else %}
+          <div style="font-size:.8rem;color:var(--bw-mid);">
+            Select components, save prices, and complete certificates before submitting.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% elif workspace.status == 'SUBMITTED' %}
+      <div class="bw-alert bw-alert--success">Bid submitted {{ workspace.submitted_at|date:"d M Y" }}.</div>
+      {% endif %}
+    </aside>
   </div>
 </div>
 
@@ -372,19 +198,14 @@ function recalcRow(input) {
   const ref = input.dataset.ref;
   const qty = parseFloat(input.dataset.qty) || 0;
   const rate = parseFloat(input.value) || 0;
-  const amount = (qty * rate).toFixed(2);
   const amountEl = document.getElementById('amount-' + ref);
-  if (amountEl) amountEl.textContent = parseFloat(amount).toLocaleString('en-KE', {minimumFractionDigits:2});
-  recalcTotal();
-}
-
-function recalcTotal() {
+  if (amountEl) amountEl.textContent = (qty * rate).toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   let total = 0;
   document.querySelectorAll('[id^="amount-"]').forEach(el => {
-    total += parseFloat(el.textContent.replace(/,/g,'')) || 0;
+    total += parseFloat(String(el.textContent).replace(/,/g, '')) || 0;
   });
   const totalEl = document.getElementById('grand-total');
-  if (totalEl) totalEl.textContent = total.toLocaleString('en-KE', {minimumFractionDigits:2});
+  if (totalEl) totalEl.textContent = total.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 </script>
 {% endblock %}
