@@ -1,0 +1,3232 @@
+{
+  "packages": [
+    {
+      "code": "ELEC",
+      "title": "Electrical Works",
+      "sort_order": 1,
+      "lines": [
+        {
+          "bill_ref": "1/1.01",
+          "description": "Discover and Repair any broken/damaged existing",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 1,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.02",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "253",
+          "sort_order": 2,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.03",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 3,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.04",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 4,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.05",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 5,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.06",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 6,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.07",
+          "description": "Weatherproof LED Batten, 4ft, 3200lms, 18W",
+          "unit": "No",
+          "quantity": "112",
+          "sort_order": 7,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.08",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent. (Type N)",
+          "unit": "No",
+          "quantity": "96",
+          "sort_order": 8,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.09",
+          "description": "40W Wall mounted External Bulkhead (Type B)",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 9,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.11",
+          "description": "Mirror Light ---PAGE 16--- 13",
+          "unit": "No",
+          "quantity": "30",
+          "sort_order": 10,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.12",
+          "description": "Points wired appoximately 20m for each point from the communication room done in 25mmsq. Size conduits concealed inside ceiling",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 11,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.13",
+          "description": "13A SP socket point completely wired in",
+          "unit": "No",
+          "quantity": "22",
+          "sort_order": 12,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.14",
+          "description": "13A SP twin switched socket outlet as MK",
+          "unit": "No",
+          "quantity": "22",
+          "sort_order": 13,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.15",
+          "description": "150x150x75mm HG galvanized adaptable box for ICT and power cables",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 14,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.16",
+          "description": "Power point wired in 3 x 4.0mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories. (Instant Shower and Air Conditioning )",
+          "unit": "No",
+          "quantity": "18",
+          "sort_order": 15,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.17",
+          "description": "45A DP with Pilot Lamp marked 'As Per Application' for item above as MK, MEM or approved equivalent",
+          "unit": "No",
+          "quantity": "18",
+          "sort_order": 16,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.18",
+          "description": "Hand Drier wired in 3 x 2.5mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 17,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.19",
+          "description": "20A DP with Pilot Lamp marked 'As Per Application' for item above as MK, MEM or approved equivalent",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 18,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.20",
+          "description": "4 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin. ---PAGE 17--- 14",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 19,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.21",
+          "description": "8 ways 100A TP&N Distribution Board and complete with 100A TPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 20,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.22",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 21,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.23",
+          "description": "32A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "15",
+          "sort_order": 22,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.24",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 23,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.25",
+          "description": "5x50 mm\u00b2 armored PVC insulated copper cables drawn in 38mm diameter HG PVC conduits cast in floor slab and concealed in the walls from VIP Pavillion Sub board to Ground Floor DB",
+          "unit": "Lm",
+          "quantity": "20",
+          "sort_order": 24,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.26",
+          "description": "Firealarm outlet point comprising wiring in",
+          "unit": "No",
+          "quantity": "32",
+          "sort_order": 25,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.27",
+          "description": "Addressable Photoelectric Smoke Detector as Menvier or Approved Equivalent",
+          "unit": "No",
+          "quantity": "26",
+          "sort_order": 26,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.28",
+          "description": "Addressable Manual Fire Alarm 'Break Glass' call points as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 27,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.29",
+          "description": "Addressable Electronic Fire Alarm sounder complete with Red Flashing beacon(Visual alarm) as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 28,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "1/1.30",
+          "description": "4 loop adressable Fire Alarm control panel as MENVIER",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 29,
+          "schedule": 1
+        },
+        {
+          "bill_ref": "2/2.01",
+          "description": "Discover and Repair any broken/damaged existing",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 30,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.02",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "113",
+          "sort_order": 31,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.03",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 32,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.04",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 33,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.05",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 34,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.06",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 35,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.07",
+          "description": "Weatherproof LED Batten, 4ft, 3200lms, 18W",
+          "unit": "No",
+          "quantity": "84",
+          "sort_order": 36,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.08",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent. (Type N)",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 37,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.09",
+          "description": "Self-contained single sided EXIT sign with 8W LED lamp for non-maintained emergency lighting for 3 hour duration as Thorn EF X3 or approved equivalent",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 38,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.10",
+          "description": "Mirror Light",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 39,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.11",
+          "description": "Points wired appoximately 20m for each point from the communication room done in 25mmsq. Size conduits concealed inside ceiling ---PAGE 19--- 16 POINTS",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 40,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.12",
+          "description": "13A SP socket point completely wired in",
+          "unit": "No",
+          "quantity": "20",
+          "sort_order": 41,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.13",
+          "description": "13A SP twin switched socket outlet as MK",
+          "unit": "No",
+          "quantity": "20",
+          "sort_order": 42,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.14",
+          "description": "150x150x75mm HG galvanized adaptable box for TV and telephone and power cables",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 43,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.15",
+          "description": "Cooker power point wired in 3 x 6.0mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories. (Instant Shower and Undersink Heater)",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 44,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.16",
+          "description": "Power point wired in 3 x 4.0mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories. (Air Conditioning)",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 45,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.17",
+          "description": "45A DP with Pilot Lamp marked 'As Per Application' for item above as MK, MEM or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 46,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.18",
+          "description": "Hand Drier wired in 3 x 2.5mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 47,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.19",
+          "description": "20A DP with Pilot Lamp marked 'As Per Application' for item above as MK, MEM or approved equivalent ---PAGE 20--- 17",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 48,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.20",
+          "description": "4 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 49,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.21",
+          "description": "6 ways 100A TP&N Distribution Board and complete with 100A TPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 50,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.22",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 51,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.23",
+          "description": "32A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 52,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.24",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 53,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.25",
+          "description": "5x10 mm\u00b2 armored PVC insulated copper cables drawn in 38mm diameter HG PVC conduits cast in floor slab and concealed in the walls from VIP Pavillion DB to First Floor DB",
+          "unit": "Lm",
+          "quantity": "25",
+          "sort_order": 54,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.26",
+          "description": "Firealarm outlet point comprising wiring in",
+          "unit": "No",
+          "quantity": "16",
+          "sort_order": 55,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.27",
+          "description": "Addressable Photoelectric Smoke Detector as Menvier or Approved Equivalent",
+          "unit": "No",
+          "quantity": "11",
+          "sort_order": 56,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.28",
+          "description": "Addressable Manual Fire Alarm 'Break Glass' call points as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 57,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "2/2.29",
+          "description": "Addressable Electronic Fire Alarm sounder complete with Red Flashing beacon(Visual alarm) as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 58,
+          "schedule": 2
+        },
+        {
+          "bill_ref": "3/3.01",
+          "description": "Discover and Repair any broken/damaged existing",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 59,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.02",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "134",
+          "sort_order": 60,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.03",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "6",
+          "sort_order": 61,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.04",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 62,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.05",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 63,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.06",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 64,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.07",
+          "description": "Weatherproof LED Batten, 4ft, 3200lms, 18W",
+          "unit": "No",
+          "quantity": "84",
+          "sort_order": 65,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.08",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent. (Type N)",
+          "unit": "No",
+          "quantity": "26",
+          "sort_order": 66,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.09",
+          "description": "500 lumens, 4000K 6W COB, 60mm Surface/Receessed downlighter as Philips ClearAscent Downlight or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 67,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.10",
+          "description": "Self-contained single sided EXIT sign with 8W LED lamp for non-maintained emergency lighting for 3 hour duration as Thorn EF X3 or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 68,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.11",
+          "description": "Mirror Light ---PAGE 22--- 19",
+          "unit": "No",
+          "quantity": "12",
+          "sort_order": 69,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.12",
+          "description": "Points wired appoximately 20m for each point from the communication room done in 25mmsq. Size conduits concealed inside ceiling",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 70,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.13",
+          "description": "13A SP twin switched socket outlet as MK",
+          "unit": "No",
+          "quantity": "24",
+          "sort_order": 71,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.14",
+          "description": "150x150x75mm HG galvanized adaptable box for TV and telephone and power cables",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 72,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.15",
+          "description": "Power point wired in 3 x 4.0mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories. (Air Conditioning)",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 73,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.16",
+          "description": "45A DP with Pilot Lamp marked 'As Per Application' for item above as MK, MEM or approved equivalent",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 74,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.17",
+          "description": "Hand Drier wired in 3 x 2.5mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 75,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.18",
+          "description": "20A DP with Pilot Lamp marked 'As Per Application' for item above as MK, MEM or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 76,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.19",
+          "description": "4 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin. ---PAGE 23--- 20",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 77,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.20",
+          "description": "6 ways 100A TP&N Distribution Board and complete with 100A TPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 78,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.21",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 79,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.22",
+          "description": "32A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 80,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.23",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 81,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.24",
+          "description": "5x4 mm\u00b2 armored PVC insulated copper cables drawn in 38mm diameter HG PVC conduits cast in floor slab and concealed in the walls from VIP Pavillion DB to Second Floor DB",
+          "unit": "Lm",
+          "quantity": "20",
+          "sort_order": 82,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.25",
+          "description": "Firealarm outlet point comprising wiring in",
+          "unit": "No",
+          "quantity": "19",
+          "sort_order": 83,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.26",
+          "description": "Addressable Photoelectric Smoke Detector as Menvier or Approved Equivalent",
+          "unit": "No",
+          "quantity": "15",
+          "sort_order": 84,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.27",
+          "description": "Addressable Manual Fire Alarm 'Break Glass' call points as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 85,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "3/3.28",
+          "description": "Addressable Electronic Fire Alarm sounder complete with Red Flashing beacon(Visual alarm) as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 86,
+          "schedule": 3
+        },
+        {
+          "bill_ref": "4/4.01",
+          "description": "Discover and Repair any broken/damaged existing",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 87,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.02",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "97",
+          "sort_order": 88,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.03",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 89,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.04",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 90,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.05",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 91,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.06",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 92,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.07",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent. (Type N)",
+          "unit": "No",
+          "quantity": "26",
+          "sort_order": 93,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.08",
+          "description": "Self-contained single sided EXIT sign with 8W LED lamp for non-maintained emergency lighting for 3 hour duration as Thorn EF X3 or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 94,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.09",
+          "description": "Mirror Light",
+          "unit": "No",
+          "quantity": "12",
+          "sort_order": 95,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.10",
+          "description": "13A SP twin switched socket outlet as MK",
+          "unit": "No",
+          "quantity": "23",
+          "sort_order": 96,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.11",
+          "description": "150x150x75mm HG galvanized adaptable box for TV and telephone and power cables",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 97,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.12",
+          "description": "Power point wired in 3 x 4.0mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories. (Air Conditioning)",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 98,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.13",
+          "description": "45A DP with Pilot Lamp marked 'As Per Application' for item above as MK, MEM or approved equivalent",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 99,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.14",
+          "description": "Hand Drier wired in 3 x 2.5mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 100,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.15",
+          "description": "20A DP with Pilot Lamp marked 'As Per Application' for item above as MK, MEM or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 101,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.16",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 102,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.17",
+          "description": "5x4 mm\u00b2 armored PVC insulated copper cables drawn in 32mm diameter HG PVC conduits cast in floor slab and concealed in the walls from VIP Pavillion DB to Third Floor DB",
+          "unit": "Lm",
+          "quantity": "25",
+          "sort_order": 103,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.18",
+          "description": "3core 6mm2 PVC non-armored cables in 32mm . HG PVC conduits to the Solar Hybrid Inverter",
+          "unit": "Lm",
+          "quantity": "20",
+          "sort_order": 104,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.19",
+          "description": "Firealarm outlet point comprising wiring in",
+          "unit": "No",
+          "quantity": "19",
+          "sort_order": 105,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.20",
+          "description": "Addressable Photoelectric Smoke Detector as Menvier or Approved Equivalent",
+          "unit": "No",
+          "quantity": "15",
+          "sort_order": 106,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.21",
+          "description": "Addressable Manual Fire Alarm 'Break Glass' call points as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 107,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "4/4.22",
+          "description": "Addressable Electronic Fire Alarm sounder complete with Red Flashing beacon(Visual alarm) as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 108,
+          "schedule": 4
+        },
+        {
+          "bill_ref": "8/8.01",
+          "description": "Supply and lay along the ridge cap 25mm x 3mm thick bare copper tape as Furse P. No. TC030",
+          "unit": "Lm",
+          "quantity": "100",
+          "sort_order": 109,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.02",
+          "description": "State Holdfast as Furse Cat. No. HF015 to fix the above tape to the roof ridge / parapet wall",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 110,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.03",
+          "description": "Air termination spike comprising the following. 2000mm by 15mm diameter copper rod as Furse P.No. RA240 Complete with: Copper multiple point as Furse P. No. RA 600 and Copper ridge saddle as Furse P No. SD115. DOWNWARD CONDUCTOR",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 111,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.04",
+          "description": "Downward conductor comprising 25mm x 3mm",
+          "unit": "Lm",
+          "quantity": "30",
+          "sort_order": 112,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.05",
+          "description": "Copper square tape clamp for making crossing tape joints as Furse CT 105 \u2013 FU",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 113,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.06",
+          "description": "DC tape clips for fixing the down conductors to the wall as Furse CT 105 \u2013 FU",
+          "unit": "No",
+          "quantity": "12",
+          "sort_order": 114,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.07",
+          "description": "Copper Oblong test clamp as Furse P NO CN . 2",
+          "unit": "No",
+          "quantity": "105",
+          "sort_order": 115,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.08",
+          "description": "Steel conduits 32 mm diameter conduit",
+          "unit": "Lm",
+          "quantity": "10",
+          "sort_order": 116,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.09",
+          "description": "Saddles for the above item",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 117,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.10",
+          "description": "Earth inspection concrete chamber 300mm x 300mm x 300mm with an air tight inspection cover to approval",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 118,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.11",
+          "description": "16 mm nominal diameter by 1500mm threaded",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 119,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "8/8.12",
+          "description": "Driving stud for the above item as Furse ST",
+          "unit": "No",
+          "quantity": "300",
+          "sort_order": 120,
+          "schedule": 8
+        },
+        {
+          "bill_ref": "9/9.07",
+          "description": "No. 2 9.08 No. 2 9.09 No. 10 9.10 No. 10 9.11",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 121,
+          "schedule": 9
+        },
+        {
+          "bill_ref": "10/10.01",
+          "description": "Discover and Repair any broken/damaged",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 122,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.02",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "73",
+          "sort_order": 123,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.03",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 124,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.04",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 125,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.05",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 126,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.06",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 127,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.07",
+          "description": "Weatherproof LED Batten, 4ft, 3200lms, 18W",
+          "unit": "No",
+          "quantity": "76",
+          "sort_order": 128,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.08",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent.(Type N)",
+          "unit": "No",
+          "quantity": "40",
+          "sort_order": 129,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.09",
+          "description": "40W Wall mounted External Bulkhead (Type B)",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 130,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.11",
+          "description": "Mirror Light ---PAGE 39--- 36",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 131,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.12",
+          "description": "Points wired appoximately 20m for each point from the communication room done in 25mmsq. Size conduits concealed inside ceiling",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 132,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.13",
+          "description": "150x150x75mm HG galvanized adaptable box for ICT and power cables",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 133,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.14",
+          "description": "4 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 134,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.15",
+          "description": "6 ways 100A TP&N Distribution Board and complete with 100A TPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 135,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.16",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 136,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.17",
+          "description": "32A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 137,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.18",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 138,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.19",
+          "description": "5x4 mm\u00b2 armored PVC insulated copper cables drawn in 38mm diameter HG PVC conduits cast in floor slab and concealed in the walls from VIP Pavillion DB to Ground Floor DB ---PAGE 40--- 37",
+          "unit": "Lm",
+          "quantity": "10",
+          "sort_order": 139,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.20",
+          "description": "Firealarm outlet point comprising wiring in . 2x1.5mm2 special fire resistant-SC-Cu cables in 20mm diameter HG conduits in concealed in the ceiling",
+          "unit": "No",
+          "quantity": "13",
+          "sort_order": 140,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.21",
+          "description": "Addressable Photoelectric Smoke Detector as . Menvier or Approved Equivalent",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 141,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.22",
+          "description": "Addressable Manual Fire Alarm 'Break Glass' call",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 142,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "10/10.24",
+          "description": "4 loop adressable Fire Alarm control panel as . MENVIER",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 143,
+          "schedule": 10
+        },
+        {
+          "bill_ref": "11/11.01",
+          "description": "Discover and Repair any broken/damaged",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 144,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.02",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "57",
+          "sort_order": 145,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.03",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 146,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.04",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 147,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.05",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 148,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.06",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 149,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.07",
+          "description": "Weatherproof LED Batten, 4ft, 3200lms, 18W",
+          "unit": "No",
+          "quantity": "53",
+          "sort_order": 150,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.08",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent. (Type N)",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 151,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.09",
+          "description": "Self-contained single sided EXIT sign with 8W LED lamp for non-maintained emergency lighting for 3 hour duration as Thorn EF X3 or approved equivalent",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 152,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.10",
+          "description": "Points wired appoximately 20m for each point from the communication room done in 25mmsq. Size conduits concealed inside ceiling ---PAGE 42--- 39 POINTS",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 153,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.11",
+          "description": "13A SP twin switched socket outlet as MK",
+          "unit": "No",
+          "quantity": "20",
+          "sort_order": 154,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.12",
+          "description": "150x150x75mm HG galvanized adaptable box for TV and telephone and power cables",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 155,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.13",
+          "description": "Cooker power point wired in 3 x 6.0mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories. (Instant Shower and Undersink Heater)",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 156,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.14",
+          "description": "45A DP Cooker Control Unit with 13A integral Application' for item above as MK, MEM or approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 157,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.15",
+          "description": "Hand Drier power point wired in 3 x 4.0mm\u00b2 SC/PVC insulated copper cables drawn in concealed 25mm diameter HG/PVC conduits and including all the other accessories",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 158,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.16",
+          "description": "20A switched DP switch with neon light",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 159,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.17",
+          "description": "4 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 160,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.18",
+          "description": "4 ways 100A TP&N Distribution Board and complete with 100A TPN integral isolator ,but excluding the MCBs as Merlin Gerin. ---PAGE 43--- 40",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 161,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.19",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 162,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.20",
+          "description": "32A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 163,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.21",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 164,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.22",
+          "description": "5x6 mm\u00b2 armored PVC insulated copper cables drawn in 38mm diameter HG PVC conduits cast in floor slab and concealed in the walls from VIP Pavillion DB to First Floor DB",
+          "unit": "Lm",
+          "quantity": "15",
+          "sort_order": 165,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.23",
+          "description": "Firealarm outlet point comprising wiring in . 2x1.5mm2 special fire resistant-SC-Cu cables in 20mm diameter HG conduits in concealed in the ceiling",
+          "unit": "No",
+          "quantity": "16",
+          "sort_order": 166,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.24",
+          "description": "Addressable Photoelectric Smoke Detector as . Menvier or Approved Equivalent",
+          "unit": "No",
+          "quantity": "11",
+          "sort_order": 167,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "11/11.25",
+          "description": "Addressable Manual Fire Alarm 'Break Glass' call",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 168,
+          "schedule": 11
+        },
+        {
+          "bill_ref": "12/12.01",
+          "description": "Discover and Repair any broken/damaged",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 169,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.02",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "20",
+          "sort_order": 170,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.03",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "6",
+          "sort_order": 171,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.04",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 172,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.05",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 173,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.06",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 174,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.07",
+          "description": "Weatherproof LED Batten, 4ft, 3200lms, 18W",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 175,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.08",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent. (Type N)",
+          "unit": "No",
+          "quantity": "20",
+          "sort_order": 176,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.09",
+          "description": "Self-contained single sided EXIT sign with 8W LED lamp for non-maintained emergency lighting for 3 hour duration as Thorn EF X3 or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 177,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.10",
+          "description": "13A SP twin switched socket outlet as MK",
+          "unit": "No",
+          "quantity": "8",
+          "sort_order": 178,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.11",
+          "description": "150x150x75mm HG galvanized adaptable box for TV and telephone and power cables",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 179,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.12",
+          "description": "4 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 180,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.13",
+          "description": "4 ways 100A TP&N Distribution Board and complete with 100A TPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 181,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.14",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 182,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.15",
+          "description": "32A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 183,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.16",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 184,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.17",
+          "description": "5x4 mm\u00b2 armored PVC insulated copper cables drawn in 38mm diameter HG PVC conduits cast in floor slab and concealed in the walls from VIP Pavillion DB to Second Floor DB",
+          "unit": "Lm",
+          "quantity": "20",
+          "sort_order": 185,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.18",
+          "description": "3core 6mm2 PVC non-armored cables in 32mm",
+          "unit": "Lm",
+          "quantity": "20",
+          "sort_order": 186,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.20",
+          "description": "Addressable Photoelectric Smoke Detector as Menvier or Approved Equivalent",
+          "unit": "No",
+          "quantity": "6",
+          "sort_order": 187,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "12/12.21",
+          "description": "Addressable Manual Fire Alarm 'Break Glass' call points as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 188,
+          "schedule": 12
+        },
+        {
+          "bill_ref": "13/13.01",
+          "description": "Discover and Repair any broken/damaged",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 189,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.02",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "30",
+          "sort_order": 190,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.03",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 191,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.04",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 192,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.05",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 193,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.06",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 194,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.07",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent. (Type N)",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 195,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.08",
+          "description": "Self-contained single sided EXIT sign with 8W LED lamp for non-maintained emergency lighting for 3 hour duration as Thorn EF X3 or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 196,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.09",
+          "description": "Points wired appoximately 20m for each point from the communication room done in 25mmsq. Size conduits concealed inside ceiling ---PAGE 48--- 45",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 197,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.10",
+          "description": "13A SP twin switched socket outlet as MK",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 198,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.11",
+          "description": "150x150x75mm HG galvanized adaptable box for TV and telephone and power cables",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 199,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.12",
+          "description": "4 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 200,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.13",
+          "description": "4 ways 100A TP&N Distribution Board and complete with 100A TPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 201,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.14",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 202,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.15",
+          "description": "32A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 203,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.16",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 204,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.17",
+          "description": "5x4 mm\u00b2 armored PVC insulated copper cables drawn in 38mm diameter HG PVC conduits cast in floor slab and concealed in the walls from VIP Pavillion DB to Third Floor DB",
+          "unit": "Lm",
+          "quantity": "25",
+          "sort_order": 205,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.18",
+          "description": "4 core 25 mm\u00b2 armored PVC insulated copper",
+          "unit": "Lm",
+          "quantity": "100",
+          "sort_order": 206,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.20",
+          "description": "Addressable Photoelectric Smoke Detector as Menvier or Approved Equivalent",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 207,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "13/13.21",
+          "description": "Addressable Manual Fire Alarm 'Break Glass' call points as MENVIER or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 208,
+          "schedule": 13
+        },
+        {
+          "bill_ref": "16/16.01",
+          "description": "Supply and lay along the ridge cap 25mm x 3mm thick bare copper tape as Furse P. No. TC030",
+          "unit": "Lm",
+          "quantity": "45",
+          "sort_order": 209,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.02",
+          "description": "State Holdfast as Furse Cat. No. HF015 to fix the above tape to the roof ridge / parapet wall",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 210,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.03",
+          "description": "Air termination spike comprising the following. 2000mm by 15mm diameter copper rod as Furse P.No. RA240 Complete with: Copper multiple point as Furse P. No. RA 600 and Copper ridge saddle as Furse P No. SD115. DOWNWARD CONDUCTOR",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 211,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.04",
+          "description": "Downward conductor comprising 25mm x 3mm",
+          "unit": "Lm",
+          "quantity": "30",
+          "sort_order": 212,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.05",
+          "description": "Copper square tape clamp for making crossing tape joints as Furse CT 105 \u2013 FU",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 213,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.06",
+          "description": "DC tape clips for fixing the down conductors to the wall as Furse CT 105 \u2013 FU",
+          "unit": "No",
+          "quantity": "12",
+          "sort_order": 214,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.07",
+          "description": "Copper Oblong test clamp as Furse P NO CN",
+          "unit": "No",
+          "quantity": "105",
+          "sort_order": 215,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.09",
+          "description": "Saddles for the above item",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 216,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.10",
+          "description": "Earth inspection concrete chamber 300mm x 300mm x 300mm with an air tight inspection cover to approval",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 217,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.11",
+          "description": "16 mm nominal diameter by 1500mm threaded",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 218,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.12",
+          "description": "Driving stud for the above item as Furse ST . 2",
+          "unit": "No",
+          "quantity": "300",
+          "sort_order": 219,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "16/16.13",
+          "description": "Earth electrode rod - to - downward conductor copper tape clamps as Furse CR . 2",
+          "unit": "No",
+          "quantity": "105",
+          "sort_order": 220,
+          "schedule": 16
+        },
+        {
+          "bill_ref": "17/17.01",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "21",
+          "sort_order": 221,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.02",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 222,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.03",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 223,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.04",
+          "description": "Weatherproof LED Batten, 4ft, 3200lms, 18W",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 224,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.05",
+          "description": "1000 lumens, 4000K 13W COB, 85mm Surface mounted downlighter as Philips ClearAscent Downlight or equal and approved equivalent. (Type N)",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 225,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.06",
+          "description": "40W Wall mounted External Bulkhead (Type B)",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 226,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.07",
+          "description": "Self-contained single sided EXIT sign with 8W LED lamp for non-maintained emergency lighting for 3 hour duration as Thorn EF X3 or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 227,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.08",
+          "description": "Mirror Light",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 228,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.09",
+          "description": "6 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 229,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.10",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 230,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.11",
+          "description": "Blanking plates ---PAGE 58--- 55 4",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 231,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.12",
+          "description": "IP65 rated, standard cable loop-in box made of galvanized steel sheets complete with space for MCB Cut-out with a earth block as Henleys or approved equivalent. i) 32A TPN MCB to fit in the above as SCHNEIDER No",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 232,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.14",
+          "description": "Pure copper earth rod (1500mm x 16mm)",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 233,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.15",
+          "description": "Driving head for earth rod",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 234,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.16",
+          "description": "Earth rod coupling",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 235,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "17/17.17",
+          "description": "4 mm2 single core green PVC insulated copper earth lead",
+          "unit": "Lm",
+          "quantity": "5",
+          "sort_order": 236,
+          "schedule": 17
+        },
+        {
+          "bill_ref": "18/18.01",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "14",
+          "sort_order": 237,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.02",
+          "description": "Ditto as in item above but for two way switching excluding the switch and luminaire",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 238,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.03",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 239,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.04",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 240,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.05",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 241,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.06",
+          "description": "LED Batten, 2ft, 3200lms, 18W, 6500K as Thorn Poppack (Type P)",
+          "unit": "No",
+          "quantity": "6",
+          "sort_order": 242,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.07",
+          "description": "Standard high quality 2D LED Eyelid Bulkhead",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 243,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.08",
+          "description": "50W Security Floodlight (Type S)",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 244,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.09",
+          "description": "5A photocell unit complete with its mounting bracket and wired to energize a contactor",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 245,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.10",
+          "description": "3 Pole, 20A, 240V, contactor complete with its housing, wired to control the lights, and to be energized by photocell. DATA",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 246,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.11",
+          "description": "CCTV point appoximately 20m for each point from the communication room done in 25mm size conduits concealed in ceiling ---PAGE 60--- 57",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 247,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.12",
+          "description": "13A SP socket point completely wired in",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 248,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.13",
+          "description": "13A SP twin switched socket outlet as MK",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 249,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.14",
+          "description": "13A SP twin switched weatherproof socket outlet as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 250,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.15",
+          "description": "150x150x75mm HG galvanized adaptable box for TV and telephone and power cables",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 251,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.16",
+          "description": "4 ways 100A SP&N Consumer control unit and complete with 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 252,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.17",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 253,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.18",
+          "description": "32A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 254,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.19",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 255,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.20",
+          "description": "IP65 rated, standard cable loop-in box made of",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 256,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.21",
+          "description": "UV resistant Plastic Earth PIT 315mm X 315mm . X 230mm complete with lockable cover",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 257,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.22",
+          "description": "Pure copper earth rod (1500mm x 16mm)",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 258,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "18/18.25",
+          "description": "5 Lm. A B . 180 TOTAL C/F TO SUMMARY PAGE ---PAGE 62--- 59",
+          "unit": "Lm",
+          "quantity": "18.26",
+          "sort_order": 259,
+          "schedule": 18
+        },
+        {
+          "bill_ref": "19/19.00",
+          "description": "4m rooted galvanized steel column powder coated stepped (with decorative waist finial) , complete with 60mm Spigot designed to the EN40 as Thorn PLURIO columns and brackets or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "50",
+          "sort_order": 260,
+          "schedule": 19
+        },
+        {
+          "bill_ref": "19/19.01",
+          "description": "Allow for Earthing at every third pole interval and the control pillars. The contractor to ensure that the earth resistance does not exceed 10 Ohms",
+          "unit": "Item",
+          "quantity": "17",
+          "sort_order": 261,
+          "schedule": 19
+        },
+        {
+          "bill_ref": "19/19.02",
+          "description": "Excavate holes to a depth of one metre to take area/security light poles and backfill after installation of the poles",
+          "unit": "No",
+          "quantity": "50",
+          "sort_order": 262,
+          "schedule": 19
+        },
+        {
+          "bill_ref": "19/19.03",
+          "description": "Mix and place 1:3:6 concrete pad at the base of every pole",
+          "unit": "No",
+          "quantity": "50",
+          "sort_order": 263,
+          "schedule": 19
+        },
+        {
+          "bill_ref": "19/19.04",
+          "description": "40 W, 4188lm, 6500K LED solar top post light with street distribution. Class I electrical, IP66, IK08 as Thorn Avenue F2 LED or equal and approved equivalent TOTAL C/F TO SUMMARY PAGE ---PAGE 63--- 60",
+          "unit": "No",
+          "quantity": "50",
+          "sort_order": 264,
+          "schedule": 19
+        },
+        {
+          "bill_ref": "20/20.01",
+          "description": "Lighting point completely wired in 3x1.5mm\u00b2 SC cables drawn in 20mm diameter HG PVC conduits including all accessories for one way switching but excluding the switch and luminaire.(terrace lighting)",
+          "unit": "No",
+          "quantity": "352",
+          "sort_order": 265,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.02",
+          "description": "Ditto as in item",
+          "unit": "No",
+          "quantity": "1.01",
+          "sort_order": 266,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.03",
+          "description": "10A one gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 267,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.04",
+          "description": "10A two gang one way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 268,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.05",
+          "description": "10A one gang two way switch as MK",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 269,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.06",
+          "description": "Weatherproof twin LED Batten, 4ft, 3200lms, 36W",
+          "unit": "No",
+          "quantity": "352",
+          "sort_order": 270,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.07",
+          "description": "12-way 415 v grid switched box,C/Weather proof IP65 enclosure",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 271,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.08",
+          "description": "6 ways 100A SP&N Distribution board and complete with 100A TPN integral isolator ,but excluding the MCBs as Merlin Gerin. (southern, eastern and western)",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 272,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.09",
+          "description": "10A SP MCB as Merlin Gerin",
+          "unit": "No",
+          "quantity": "24",
+          "sort_order": 273,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.10",
+          "description": "Blanking plates",
+          "unit": "No",
+          "quantity": "24",
+          "sort_order": 274,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "20/20.11",
+          "description": "3 core 2.5 mm\u00b2 armored PVC insulated copper cables",
+          "unit": "Lm",
+          "quantity": "80",
+          "sort_order": 275,
+          "schedule": 20
+        },
+        {
+          "bill_ref": "21/21.02",
+          "description": "Supply of foundation bolts manufactured from special steel along with nuts, washers, anchor plates and templates",
+          "unit": "Lot",
+          "quantity": "1",
+          "sort_order": 276,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.03",
+          "description": "Lighting points wired in 2.5mm twin with earth . PVC insulated copper cables including all accessories but without lighting fittings",
+          "unit": "No",
+          "quantity": "12",
+          "sort_order": 277,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.04",
+          "description": "1000W Ultra High Power LED floodlight",
+          "unit": "No",
+          "quantity": "12",
+          "sort_order": 278,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.05",
+          "description": "Supply of LED type single dome aviation obstruction light fitting with lamps. (2 fittings per mast)",
+          "unit": "Lot",
+          "quantity": "2",
+          "sort_order": 279,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.06",
+          "description": "Supply of rust proof, Metal control panel, spray",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 280,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.07",
+          "description": "Erection of the high mast with the help of suitable equipment and Manually operated winch for lowering and raising the mast as described in the design and specifications",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 281,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.08",
+          "description": "10mm\u00b2 4-core PVC/SWA copper cable for power",
+          "unit": "Lm",
+          "quantity": "20",
+          "sort_order": 282,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.09",
+          "description": "Trenching, shifting, cable laying, tiling and . backfilling. The area should be reinstated to the satisfaction of the Project Manager Sub total carried to next page ---PAGE 67--- 64 SHS. SHS. Sub total b/f",
+          "unit": "Lm",
+          "quantity": "50",
+          "sort_order": 283,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.10",
+          "description": "Earthing of the mast comprising of 6.0mm2 earth lead and 1800mm long by 15mm diameter copper earth electrode in accordance with the IEE regulations",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 284,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.11",
+          "description": "400 x 400 x 450mm deep masonry manhole with a . removable cover for item B above",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 285,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.12",
+          "description": "Testing and Commissioning of the Installation",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 286,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.13",
+          "description": "Carry out Concrete tests",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 287,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.14",
+          "description": "Air Termination Spike (lightning arrestors) . comprising 2000mm by 15mm diameter copper rod as Furse P.No. RA240 complete with; Copper Multiple Point Multi Spike Air Terminal) as Furse P. No. RA 600 or approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 288,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.15",
+          "description": "Air Terminal Base as Furse P. No. RA 600 or . approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 289,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.16",
+          "description": "Downward Conductor comprising 25mm X 3mm . thick bare pure copper tape as Furse P. No. TC030 or approved equivalent",
+          "unit": "Lm",
+          "quantity": "30",
+          "sort_order": 290,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.17",
+          "description": "DC Tape Clips for Fixing the Down Conductors to . the wall as Furse CT 105-FU or approved equivalent",
+          "unit": "No",
+          "quantity": "30",
+          "sort_order": 291,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.18",
+          "description": "Earthing with 25mm nominal diameter by 1500mm . long threaded copper bond earth rods, complete with driving head and clamp",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 292,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.19",
+          "description": "Earth Electrode Rod-to-Downward Conductor . Copper Tape Clamps as Furse CR 105 or approved equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 293,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "21/21.20",
+          "description": "Earth Inspection Concrete Chamber 300mm x . 300mm x 300mm with an air tight inspection cover to approval. Towers = [A] Towers =4x[A] TOTAL C/F TO MAIN SUMMARY PAGE ---PAGE 68--- 65",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 294,
+          "schedule": 21
+        },
+        {
+          "bill_ref": "22/22.01",
+          "description": "COMPREHENSIVE PROTECTIVE MULTIPLE EARTHING KP&L company requirements, IET regulations,the government Electrical Installations regulations and other statutory requirements comprising but not limited to the following a) Establish 450x450x700mm deep earthing",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 295,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.02",
+          "description": "Supply dust proof, weather proof, IP 66 rated Low Voltage cublicle type Sub-Switchboard, 3- phase, 415 Volts as specified in Technical Specifications. The Sub-switchboard shall be manufactured in accordance with BS 162. Switchboard shall be of the flush fronted, enclosed type with full lockable front access. To be manufactured in 12 SWG galvanised mild steel sheet and finished in cream (or appropr",
+          "unit": "Item",
+          "quantity": "4",
+          "sort_order": 296,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.03",
+          "description": "PME Earthing to KP&LC requirements, complete with earth electrode, earthing manhole as FURSE etc., or the above Meterboard",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 297,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.05",
+          "description": "PME Earthing to KP&LC requirements, complete with earth electrode, earthing manhole as FURSE etc., or the above Meterboard",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 298,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.07",
+          "description": "PME Earthing to KP&LC requirements",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 299,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.08",
+          "description": "4 core 35mm\u00b2 CU/ PVC/SWA/PVC cables . cables drawn in 200mm diameter HG PVC conduits /burried in ground fromfrom LV Board to Sub-board A",
+          "unit": "Lm",
+          "quantity": "150",
+          "sort_order": 300,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.09",
+          "description": "4 core 16mm\u00b2 CU/ PVC/SWA/PVC cables . cables drawn in 200mm diameter HG PVC conduits /burried in ground fromfrom LV Board to Sub-board B",
+          "unit": "Lm",
+          "quantity": "50",
+          "sort_order": 301,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.10",
+          "description": "4 core 70mm\u00b2 CU/ PVC/SWA/PVC cables . cables drawn in 200mm diameter HG PVC conduits /burried in ground fromfrom LV Board to Sub-board C",
+          "unit": "Lm",
+          "quantity": "300",
+          "sort_order": 302,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.11",
+          "description": "4 core 35mm\u00b2 CU/ PVC/SWA/PVC cables . cables drawn in 200mm diameter HG PVC conduits /burried in ground fromfrom LV Board to Sub-board D",
+          "unit": "Lm",
+          "quantity": "190",
+          "sort_order": 303,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.12",
+          "description": "4 core 185mm\u00b2 CU/ PVC/SWA/PVC cables . cables drawn in 200mm diameter HG PVC conduits /burried in ground fromfrom LV Board to Western Pavillion DB",
+          "unit": "Lm",
+          "quantity": "230",
+          "sort_order": 304,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.13",
+          "description": "4 core 35mm\u00b2 CU/ PVC/SWA/PVC cables . cables drawn in 200mm diameter HG PVC conduits /burried in ground fromfrom LV Board to Eastern Pavillion DB RETICULATION",
+          "unit": "Lm",
+          "quantity": "120",
+          "sort_order": 305,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.14",
+          "description": "100mm\u00d8 PVC Ducts in 200mm concrete surround buried 600mm underground for ICT services",
+          "unit": "Lm",
+          "quantity": "600",
+          "sort_order": 306,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.15",
+          "description": "2x100mm dia. HG PVC duct in 200mm concrete surround buried 600mm underground for power supply cables way Sub total carried to next page ---PAGE 72--- 69",
+          "unit": "Lm",
+          "quantity": "600",
+          "sort_order": 307,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.16",
+          "description": "Concrete surround at road crossings",
+          "unit": "Lm",
+          "quantity": "50",
+          "sort_order": 308,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.17",
+          "description": "1000 x 1000 x 1000 Manhole complete with cover for power cables",
+          "unit": "No",
+          "quantity": "30",
+          "sort_order": 309,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.18",
+          "description": "600 x 600 x 1000 Manhole complete with cover for ICT cables",
+          "unit": "No",
+          "quantity": "30",
+          "sort_order": 310,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.19",
+          "description": "Earthing of all cable loop-in boxes &",
+          "unit": "Lot",
+          "quantity": "1",
+          "sort_order": 311,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.20",
+          "description": "Excavate trenches for ducts and armoured cables above, average depth 700mm, remove soft earth, lay ducts, cover with \"DANGER-HATARI\" tiles, back fill soft earth and compact to natural ground level",
+          "unit": "Lm",
+          "quantity": "1200",
+          "sort_order": 312,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "22/22.21",
+          "description": "Concrete Cable Route Markers TOTAL C/F TO SUMMARY PAGE ---PAGE 73--- 70",
+          "unit": "No",
+          "quantity": "30",
+          "sort_order": 313,
+          "schedule": 22
+        },
+        {
+          "bill_ref": "23/23.02",
+          "description": "4 No. 23.03",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 314,
+          "schedule": 23
+        },
+        {
+          "bill_ref": "24/24.02",
+          "description": "Allow for VAT, profit, and attendance on item above",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 315,
+          "schedule": 24
+        },
+        {
+          "bill_ref": "24/24.03",
+          "description": "Allow a Contigency Sum to be expended at the discretion of the Project Manager",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 316,
+          "schedule": 24
+        },
+        {
+          "bill_ref": "24/24.04",
+          "description": "Allow for KPLC Capital Contribution",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 317,
+          "schedule": 24
+        },
+        {
+          "bill_ref": "24/24.05",
+          "description": "Allow for VAT, profit, and attendance on item above",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 318,
+          "schedule": 24
+        }
+      ]
+    },
+    {
+      "code": "CABLING",
+      "title": "Structured Cabling",
+      "sort_order": 2,
+      "lines": [
+        {
+          "bill_ref": "7/7.01",
+          "description": "RJ45 cat 6 UTP (Dual) Data and voice outlets . complete with faceplates and labelling system as Siemons or its equal and approved equivalent",
+          "unit": "No",
+          "quantity": "96",
+          "sort_order": 1,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.02",
+          "description": "3m RJ45- RJ45 Cat 6 UTP factory terminated",
+          "unit": "No",
+          "quantity": "96",
+          "sort_order": 2,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.04",
+          "description": "Cat 6 UTP 4-pair screened cable as Siemons . pulled between cabinet and work stations. CABINETS",
+          "unit": "Lm",
+          "quantity": "5760",
+          "sort_order": 3,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.05",
+          "description": "22U 600x800mm wall/ground mount Cabinet to . house the Network Switch as described in particular specification",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 4,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.06",
+          "description": "9U 600x800mm wall/ground mount Cabinet to . house the Network Switch as described in particular specification",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 5,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.07",
+          "description": "24 port RJ45 cat 6 Data patch panel for UTP . termination as Siemon",
+          "unit": "No",
+          "quantity": "6",
+          "sort_order": 6,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.08",
+          "description": "2U Cable Manager",
+          "unit": "No",
+          "quantity": "16",
+          "sort_order": 7,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.09",
+          "description": "Rack mountable 240V, 50Hz 1500VA, APC Smart . UPS RM SMT2000RM2U(240V) un-interupted or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 8,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.10",
+          "description": "Rack mountable 240V, 50Hz 1000VA, APC Smart . UPS RM SMT2000RM2U(240V) un-interupted or equal and approved equivalent Sub total carried to next page ---PAGE 32--- 29 SHS. SHS. Sub total b/f",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 9,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.11",
+          "description": "24 Port Edge Switch as Cisco SG350-28P with 24 . x 1G Base-T/SFP+ combo + 2 x SFP/1G uplink ports",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 10,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.12",
+          "description": "Wireless Access point, versatile, high-performance",
+          "unit": "No",
+          "quantity": "8",
+          "sort_order": 11,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.14",
+          "description": "SFP fibre modules as CISCO or approved . equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 12,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.15",
+          "description": "8 core multimode fibre optic cable complete with connectors",
+          "unit": "Lm",
+          "quantity": "300",
+          "sort_order": 13,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.16",
+          "description": "Fully Loaded 24 Port fibre optic patch panel . CONTROL PANEL",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 14,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.17",
+          "description": "Access Control Module complete with Integrated . Particular Specifications as Impro IPS Combo Cluster box or approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 15,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.18",
+          "description": "Door Controller Module as Impro Weigand Reader . Module Sub total carried to next page ---PAGE 33--- 30 SHS. SHS. Sub total b/f READERS",
+          "unit": "No",
+          "quantity": "7",
+          "sort_order": 16,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.19",
+          "description": "Multi-Discipline Reader, 125kHz & 13.56MHZ . Reader, Wiegand Interface, Second Edition with pigtail as Impro or equal and approved equivaleent",
+          "unit": "No",
+          "quantity": "16",
+          "sort_order": 17,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.20",
+          "description": "Door Exit switch",
+          "unit": "No",
+          "quantity": "16",
+          "sort_order": 18,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.21",
+          "description": "Override Key switch",
+          "unit": "No",
+          "quantity": "16",
+          "sort_order": 19,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.22",
+          "description": "Emergency Break Glass . ELECTOMAGNETIC LOCK",
+          "unit": "No",
+          "quantity": "16",
+          "sort_order": 20,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.23",
+          "description": "An Electromagnetic Lock of 600Kg Force . complete with installation accessories, door closure & power supply as described in particular specification or equal and approved equivalent. CARDS AND CABLES",
+          "unit": "No",
+          "quantity": "16",
+          "sort_order": 21,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.24",
+          "description": "Proximity Cards with the individual employee's . name as specified in Particular Specifications",
+          "unit": "No",
+          "quantity": "50",
+          "sort_order": 22,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.25",
+          "description": "Mylair cable for access control system . (approximately 100m). This is provisional length",
+          "unit": "Lm",
+          "quantity": "800",
+          "sort_order": 23,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.26",
+          "description": "1mm2 cable for wiring door exit switches . WORKSTATION",
+          "unit": "Lm",
+          "quantity": "40",
+          "sort_order": 24,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.27",
+          "description": "Specifications:- Processor: Intel i7 8th Gen",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 25,
+          "schedule": 7
+        },
+        {
+          "bill_ref": "7/7.28",
+          "description": "Programming, testing and commissioning",
+          "unit": "Lot",
+          "quantity": "1",
+          "sort_order": 26,
+          "schedule": 7
+        }
+      ]
+    },
+    {
+      "code": "CCTV",
+      "title": "CCTV Works",
+      "sort_order": 3,
+      "lines": [
+        {
+          "bill_ref": "5/5.01",
+          "description": "Type A Indoor Camera with installation Accessories . and as described in the particular specifications of this document",
+          "unit": "No",
+          "quantity": "24",
+          "sort_order": 1,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.02",
+          "description": "Type B Outdoor Camera with installation Accessories . and as described in the particular specifications of this document",
+          "unit": "No",
+          "quantity": "10",
+          "sort_order": 2,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.03",
+          "description": "Type C Outdoor PTZ Camera with installation . Accessories and as described in the particular specifications of this document",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 3,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.04",
+          "description": "4 Pair Cat6E Outdoor UTP Cables for Cameras . CABINET AND ACCESSORIES",
+          "unit": "Lm",
+          "quantity": "2880",
+          "sort_order": 4,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.05",
+          "description": "32 channels Intelligent Network video recorder with . 8-ch IP cameras input, Up to 8 Megapixels resolution recording HDMI and VGA output at up to 4K resolution",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 5,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.06",
+          "description": "8 Port SFP Switch with 2xGE SFP as described in . the particular specification of the tender document as Cisco CBS350-8SE-2G-EU or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 6,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.07",
+          "description": "48 Port POE+ Switch with 2 x 1GE SFP as described . in the particular specification of the tender document as Cisco CBS220-48P-4G or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 7,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.08",
+          "description": "10TB Surveillance Hard Disk",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 8,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.09",
+          "description": "Cable managers as Siemon or Approved Equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 9,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.10",
+          "description": "24 Port fibre optic patch panel",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 10,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.11",
+          "description": "LC-LC fibre patch cord Complete with connectors",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 11,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.12",
+          "description": "24 port RJ45 cat 6 patch panel for UTP termination",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 12,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.13",
+          "description": "1M RJ45-RJ45 Cat 6 UTP factory terminated patch . cord as Siemon or approved equivalent to be used in cabinet",
+          "unit": "No",
+          "quantity": "36",
+          "sort_order": 13,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.14",
+          "description": "Rack mount, 230V ,50Hz 1KVA, as APC smart UPS . with USB and serial port or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 14,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.15",
+          "description": "LED panel display 50\u201d,HDMI input,4K, Component",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 15,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "5/5.17",
+          "description": "Fittings, Accessories and Consumables",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 16,
+          "schedule": 5
+        },
+        {
+          "bill_ref": "14/14.01",
+          "description": "Type A Indoor Camera with installation Accessories . and as described in the particular specifications of this document",
+          "unit": "No",
+          "quantity": "18",
+          "sort_order": 17,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.02",
+          "description": "Type B Outdoor Camera with installation Accessories . and as described in the particular specifications of this document",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 18,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.03",
+          "description": "Type C Outdoor PTZ Camera with installation . Accessories and as described in the particular specifications of this document",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 19,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.04",
+          "description": "4 Pair Cat6E Outdoor UTP Cables for Cameras . CABINET AND ACCESSORIES",
+          "unit": "Lm",
+          "quantity": "1920",
+          "sort_order": 20,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.05",
+          "description": "9U 600x800mm wall/ground mount Cabinet to house . the Network Switch as described in particular specification",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 21,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.06",
+          "description": "32 channels Intelligent Network video recorder with . 8-ch IP cameras input, Up to 8 Megapixels resolution recording HDMI and VGA output at up to 4K resolution",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 22,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.07",
+          "description": "24 Port POE+ Switch with 2 x 1GE SFP as described . in the particular specification of the tender document as Cisco CBS220-24P-4G or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 23,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.09",
+          "description": "Cable managers as Siemon or Approved Equivalent",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 24,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.10",
+          "description": "24 Port fibre optic patch panel",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 25,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.11",
+          "description": "LC-LC fibre patch cord Complete with connectors",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 26,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.12",
+          "description": "24 port RJ45 cat 6 patch panel for UTP termination . as Siemon",
+          "unit": "No",
+          "quantity": "4",
+          "sort_order": 27,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.14",
+          "description": "Rack mount, 230V ,50Hz 1KVA, as APC smart UPS . with USB and serial port or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "5",
+          "sort_order": 28,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.15",
+          "description": "LED panel display 50\u201d,HDMI input,4K, Component",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 29,
+          "schedule": 14
+        },
+        {
+          "bill_ref": "14/14.17",
+          "description": "Fittings, Accessories and Consumables",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 30,
+          "schedule": 14
+        }
+      ]
+    },
+    {
+      "code": "SOLAR",
+      "title": "Solar Installation Works",
+      "sort_order": 4,
+      "lines": [
+        {
+          "bill_ref": "6/6.02",
+          "description": "Single phase 8KW hybrid inverter as Victron . Growatt, Jinko or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 1,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.03",
+          "description": "5.12 Kwh Ferro Lithium battery as Weco or equal . and approved equivalent complete with all wiring to inverter and accessories",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 2,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.04",
+          "description": "6mm2 Solar DC cables",
+          "unit": "Lm",
+          "quantity": "25",
+          "sort_order": 3,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.05",
+          "description": "PV Disconnect 1000-40-5",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 4,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.06",
+          "description": "Outgoing 32A TPN MCB",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 5,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.07",
+          "description": "Aluminium mounting frames, brackets and all",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 6,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.08",
+          "description": "IP66 well-ventilated enclouse with sufficient capacity . to house the isolator and disconnect switch",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 7,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.09",
+          "description": "Fittings, Accessories and Consumables",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 8,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.10",
+          "description": "9 ways 100A SP&N Consumer Unit complete with . 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 9,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.11",
+          "description": "MCBs to fit in the above i) 32A SP MCB",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 10,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.12",
+          "description": "3core 6mm2 PVC non-armored cables in 32mm HG",
+          "unit": "Lm",
+          "quantity": "20",
+          "sort_order": 11,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.13",
+          "description": "3core 4mm2 PVC non-armored cables in 32mm HG . PVC conduits to the Floor Consumer Unit",
+          "unit": "Lm",
+          "quantity": "30",
+          "sort_order": 12,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "6/6.14",
+          "description": "Manual Bypass Switch",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 13,
+          "schedule": 6
+        },
+        {
+          "bill_ref": "15/15.02",
+          "description": "Single phase 8KW hybrid inverter as Victron . Growatt, Jinko or equal and approved equivalent",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 14,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.03",
+          "description": "5.12 Kwh Ferro Lithium battery as Weco or equal and . approved equivalent complete with all wiring to inverter and accessories",
+          "unit": "No",
+          "quantity": "2",
+          "sort_order": 15,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.04",
+          "description": "6mm2 Solar DC cables",
+          "unit": "Lm",
+          "quantity": "25",
+          "sort_order": 16,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.05",
+          "description": "PV Disconnect 1000-40-5",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 17,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.06",
+          "description": "Outgoing 32A TPN MCB",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 18,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.07",
+          "description": "Aluminium mounting frames, brackets and all",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 19,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.08",
+          "description": "IP66 well-ventilated enclouse with sufficient capacity . to house the isolator and disconnect switch",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 20,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.09",
+          "description": "Fittings, Accessories and Consumables",
+          "unit": "Item",
+          "quantity": "1",
+          "sort_order": 21,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.10",
+          "description": "9 ways 100A SP&N Consumer Unit complete with . 100A SPN integral isolator ,but excluding the MCBs as Merlin Gerin",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 22,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.11",
+          "description": "MCBs to fit in the above i) 32A SP MCB",
+          "unit": "No",
+          "quantity": "3",
+          "sort_order": 23,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.12",
+          "description": "3core 6mm2 PVC non-armored cables in 32mm HG",
+          "unit": "Lm",
+          "quantity": "20",
+          "sort_order": 24,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.13",
+          "description": "3core 4mm2 PVC non-armored cables in 32mm HG PVC conduits to the Floor Consumer Unit . 650",
+          "unit": "Lm",
+          "quantity": "30",
+          "sort_order": 25,
+          "schedule": 15
+        },
+        {
+          "bill_ref": "15/15.14",
+          "description": "Manual Bypass Switch . 5,000",
+          "unit": "No",
+          "quantity": "1",
+          "sort_order": 26,
+          "schedule": 15
+        }
+      ]
+    }
+  ]
+}

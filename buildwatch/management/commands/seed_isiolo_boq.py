@@ -1,38 +1,29 @@
 from decimal import Decimal
+from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
 from buildwatch.models import TenderBoqLine, TenderBoqPackage, TenderListing, WorkspaceBillPrice
 
-ISIOLO_PACKAGES = [
-    ("ELEC", "Electrical Works", 1, [
-        ("ELEC-01", "Main LV switchboard and distribution boards"),
-        ("ELEC-02", "Power reticulation - cable trays, conduits and wiring"),
-        ("ELEC-03", "High-mast floodlighting installation"),
-        ("ELEC-04", "Testing, commissioning and as-built documentation"),
-    ]),
-    ("CABLING", "Structured Cabling", 2, [
-        ("CAB-01", "Horizontal and backbone structured cabling"),
-        ("CAB-02", "Network cabinets, patch panels and fibre terminations"),
-        ("CAB-03", "Testing, labelling and certification"),
-    ]),
-    ("CCTV", "CCTV Works", 3, [
-        ("CCTV-01", "IP cameras, mounts and field cabling"),
-        ("CCTV-02", "NVR / recording and monitoring workstation"),
-        ("CCTV-03", "Configuration, viewing client and handover"),
-    ]),
-    ("SOLAR", "Solar Installation Works", 4, [
-        ("SOL-01", "Solar PV modules, mounting structure and DC cabling"),
-        ("SOL-02", "Inverters, AC interconnection and protection"),
-        ("SOL-03", "Commissioning, training and documentation"),
-    ]),
+# Prefer packaged JSON next to this command, else scripts/
+_CANDIDATES = [
+    Path(__file__).resolve().parents[3] / "scripts" / "isiolo_boq_lines.json",
+    Path(__file__).resolve().parent / "isiolo_boq_lines.json",
 ]
 
 
 class Command(BaseCommand):
-    help = "Seed Isiolo BOQ packages (Electrical, Cabling, CCTV, Solar)"
+    help = "Seed Isiolo BOQ packages from RFQ/tender measured quantities"
 
     def handle(self, *args, **options):
+        data_path = next((p for p in _CANDIDATES if p.exists()), None)
+        if not data_path:
+            self.stderr.write("isiolo_boq_lines.json not found — run scripts/parse_isiolo_boq.py")
+            return
+
+        import json
+
+        payload = json.loads(data_path.read_text(encoding="utf-8"))
         listing = TenderListing.objects.filter(
             event__ref="SK/004/2025-2026"
         ).first() or TenderListing.objects.filter(pk=1).first()
@@ -40,42 +31,57 @@ class Command(BaseCommand):
             self.stderr.write("Isiolo tender listing not found")
             return
 
-        for code, title, order, lines in ISIOLO_PACKAGES:
-            pkg, created = TenderBoqPackage.objects.get_or_create(
+        keep_codes = set()
+        for pkg_data in payload["packages"]:
+            code = pkg_data["code"]
+            keep_codes.add(code)
+            pkg, _ = TenderBoqPackage.objects.update_or_create(
                 tender=listing,
                 code=code,
-                defaults={"title": title, "sort_order": order},
+                defaults={
+                    "title": pkg_data["title"],
+                    "sort_order": pkg_data["sort_order"],
+                },
             )
-            if not created:
-                pkg.title = title
-                pkg.sort_order = order
-                pkg.save(update_fields=["title", "sort_order"])
-            for i, (ref, desc) in enumerate(lines, 1):
+            keep_refs = set()
+            for line in pkg_data["lines"]:
+                ref = line["bill_ref"]
+                keep_refs.add(ref)
                 TenderBoqLine.objects.update_or_create(
                     package=pkg,
                     bill_ref=ref,
                     defaults={
-                        "description": desc,
-                        "unit": "Unit",
-                        "quantity": Decimal("1"),
-                        "sort_order": i,
+                        "description": line["description"],
+                        "unit": line["unit"],
+                        "quantity": Decimal(str(line["quantity"])),
+                        "sort_order": line["sort_order"],
                     },
                 )
+            deleted, _ = pkg.lines.exclude(bill_ref__in=keep_refs).delete()
             self.stdout.write(self.style.SUCCESS(
-                f"  {code}: {pkg.lines.count()} lines (qty=1 Unit)"
+                f"  {code}: {pkg.lines.count()} lines (removed {deleted} stale)"
             ))
 
-        # Normalize any already-saved contractor prices to qty 1 Unit
-        updated = WorkspaceBillPrice.objects.filter(
-            workspace__tender=listing
-        ).exclude(quantity=Decimal("1"), unit="Unit").update(
-            quantity=Decimal("1"),
-            unit="Unit",
-        )
-        # Recalc amounts
+        # Drop packages not in the RFQ set
+        TenderBoqPackage.objects.filter(tender=listing).exclude(code__in=keep_codes).delete()
+
+        # Align saved contractor prices to master qty/unit where refs still exist
+        master = {
+            ln.bill_ref: ln
+            for ln in TenderBoqLine.objects.filter(package__tender=listing)
+        }
+        synced = 0
         for bp in WorkspaceBillPrice.objects.filter(workspace__tender=listing):
-            bp.save()
+            ln = master.get(bp.bill_ref)
+            if not ln:
+                continue
+            if bp.quantity != ln.quantity or bp.unit != ln.unit:
+                bp.quantity = ln.quantity
+                bp.unit = ln.unit
+                bp.save()
+                synced += 1
 
         self.stdout.write(self.style.SUCCESS(
-            f"Isiolo BOQ packages ready for listing id={listing.pk} (normalized {updated} priced rows)"
+            f"Isiolo BOQ seeded from {data_path.name} "
+            f"listing_id={listing.pk} synced_prices={synced}"
         ))
