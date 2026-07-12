@@ -659,7 +659,7 @@ def fin_mgmt_ops_view(request):
     task_panel = _ops_task_panel_context(active_task)
 
     context = {
-        'page_title': 'Pioneer Financial Ops',
+        'page_title': 'Close Tender - Financial Dashboard',
         'tasks': tasks,
         'active_task': active_task,
         'task_panel': task_panel,

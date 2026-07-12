@@ -97,14 +97,14 @@
         {% if is_platform_main_admin %}
 		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
 		<div class="tab" onclick="showSection('platform-tenants')">Building Contractors</div>
-		<div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
+		<a href="{% url 'tender-list' %}" class="tab">Public Procurement Bid Dashboard</a>
 		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
-        <a href="{% url 'ops_dashboard' %}" class="tab">Financial Ops Dashboard</a>
+        <a href="{% url 'ops_dashboard' %}" class="tab">Close Tender - Financial Dashboard</a>
         {% else %}
 		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
-		<div class="tab" onclick="showSection('procurement')">Ops: Procurement</div>
+		<a href="{% url 'tender-list' %}" class="tab">Public Procurement Bid Dashboard</a>
 		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
-        <a href="{% url 'ops_dashboard' %}" class="tab">Financial Ops Dashboard</a>
+        <a href="{% url 'ops_dashboard' %}" class="tab">Close Tender - Financial Dashboard</a>
         {% endif %}
 	</div>
 

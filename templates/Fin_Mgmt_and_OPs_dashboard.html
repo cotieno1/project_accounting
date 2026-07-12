@@ -1,13 +1,13 @@
 {% extends "layouts/cockpit.html" %}
 {% load static %}
-{% block title %}Pioneer | Financial Ops & Supply Chain{% endblock %}
+{% block title %}Pioneer | Close Tender - Financial Dashboard{% endblock %}
 {% block body_class %}ops-dashboard{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/fin-mgmt-ops-dashboard.css' %}?v=2">
 {% endblock %}
-{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Main Menu" process="Financial Ops & Supply Chain" only %}{% endblock %}
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Main Menu" process="Close Tender - Financial Dashboard" only %}{% endblock %}
 {% block sidebar %}
-    {% include "includes/cockpit_sidebar_brand.html" with lane="Main Menu" process="Financial Ops & Supply Chain" brand_class="ops-brand" only %}
+    {% include "includes/cockpit_sidebar_brand.html" with lane="Main Menu" process="Close Tender - Financial Dashboard" brand_class="ops-brand" only %}
 
     <div class="nav-section nav-section--adhoc">
         <span class="nav-label">⚡ AD-HOC PROCUREMENT</span>
@@ -81,7 +81,7 @@
 
     <div class="ops-header">
         <div>
-            <h1>Ops & Financial Dashboard</h1>
+            <h1>Close Tender - Financial Dashboard</h1>
             <p>Project Director View: Task-Linked Budgeting & Actuals</p>
         </div>
         <button type="button" class="btn-action btn-success">Export UN Audit Pack</button>
