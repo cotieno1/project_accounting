@@ -97,19 +97,19 @@
                     <input type="hidden" name="bill_ref" value="{{ row.line.bill_ref }}">
                     <input type="hidden" name="pkg_{{ row.line.bill_ref }}" value="{{ section.package.code }}">
                     <input type="hidden" name="desc_{{ row.line.bill_ref }}" value="{{ row.line.description }}">
-                    <input type="hidden" name="unit_{{ row.line.bill_ref }}" value="{{ row.line.unit }}">
-                    <input type="hidden" name="qty_{{ row.line.bill_ref }}" value="{{ row.line.quantity }}">
+                    <input type="hidden" name="unit_{{ row.line.bill_ref }}" value="Unit">
+                    <input type="hidden" name="qty_{{ row.line.bill_ref }}" value="1">
                     <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);">{{ row.line.bill_ref }}</span>
                   </td>
                   <td style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
-                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
-                  <td style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:0 }}</td>
+                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">Unit</td>
+                  <td style="padding:10px 14px;text-align:right;color:var(--bw-mid);">1</td>
                   <td style="padding:10px 14px;">
                     {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
                     <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
                            step="0.01" min="0" class="bw-input"
                            style="text-align:right;padding:7px 8px;"
-                           data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
+                           data-ref="{{ row.line.bill_ref }}" data-qty="1"
                            onchange="recalcRow(this)">
                     {% else %}
                     <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
