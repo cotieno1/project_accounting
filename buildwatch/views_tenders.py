@@ -621,6 +621,39 @@ def tender_boq_download(request, listing_id):
 
 
 @login_required
+
+def _apply_boq_input_mode(listing, mode: str) -> dict:
+    """Switch listing BOQ data source; keep the same bid form (packages/lines)."""
+    from buildwatch.boq_ingest.persist import apply_standard_boq
+    from buildwatch.boq_ingest.sources import load_hardwired_boq, load_pdf_auto_boq
+    from buildwatch.models import BidWorkspace, WorkspaceBillPrice
+
+    mode = (mode or "").strip().upper()
+    if mode == TenderListing.BOQ_HARDWIRED:
+        doc = load_hardwired_boq()
+    elif mode == TenderListing.BOQ_PDF_AUTO:
+        doc = load_pdf_auto_boq(listing)
+    else:
+        raise ValueError("Unknown BOQ mode")
+
+    stats = apply_standard_boq(listing, doc)
+    listing.boq_input_mode = mode
+    listing.save(update_fields=["boq_input_mode"])
+
+    # Clear package selections / prices so contractors re-select under new source
+    for ws in BidWorkspace.objects.filter(tender=listing).exclude(
+        status=BidWorkspace.SUBMITTED
+    ):
+        WorkspaceBillPrice.objects.filter(workspace=ws).delete()
+        ws.selected_package_codes = []
+        ws.pricing_complete = False
+        ws.save(update_fields=["selected_package_codes", "pricing_complete"])
+
+    stats["mode"] = mode
+    stats["warnings"] = list(getattr(doc, "warnings", []) or [])
+    stats["source_name"] = getattr(doc, "source_name", "")
+    return stats
+
 def bid_workspace(request, listing_id):
     """
     GET/POST /tenders/<listing_id>/bid/
@@ -661,6 +694,45 @@ def bid_workspace(request, listing_id):
 
     if request.method == 'POST' and listing.event.is_open and workspace.status != BidWorkspace.SUBMITTED:
         action = (request.POST.get('action') or 'save_prices').strip()
+
+        if action == 'set_boq_mode':
+            can_switch = (
+                getattr(request.user, 'is_staff', False)
+                or (ua and listing.created_by_id == getattr(ua, 'pk', None))
+                or (
+                    org
+                    and getattr(listing.event, 'project', None)
+                    and listing.event.project.owner_org_id == org.pk
+                )
+            )
+            if not can_switch:
+                messages.error(
+                    request,
+                    'Only the employer (or staff) can switch BOQ input source.',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+            mode = (request.POST.get('boq_input_mode') or '').strip().upper()
+            try:
+                stats = _apply_boq_input_mode(listing, mode)
+            except Exception as exc:
+                messages.error(request, f'Could not switch BOQ source: {exc}')
+                return redirect('bid-workspace', listing_id=listing_id)
+            label = 'A (Hardwired)' if mode == TenderListing.BOQ_HARDWIRED else 'B (RFQ PDF auto)'
+            messages.success(
+                request,
+                f'Switched to {label}: {stats["categories"]} categories, '
+                f'{stats["lines"]} lines. Re-select categories to price.',
+            )
+            for wmsg in stats.get('warnings') or []:
+                messages.warning(request, wmsg)
+            return redirect('bid-workspace', listing_id=listing_id)
+
+        # refresh packages after possible prior mode change in same process
+        packages = list(
+            TenderBoqPackage.objects.filter(tender=listing)
+            .prefetch_related('lines')
+            .order_by('sort_order', 'code')
+        )
 
         if action == 'select_packages':
             selected = [
@@ -801,11 +873,24 @@ def bid_workspace(request, listing_id):
             'line_count': pkg.lines.count(),
         })
 
+    can_switch_boq_mode = (
+        getattr(request.user, 'is_staff', False)
+        or (ua and listing.created_by_id == getattr(ua, 'pk', None))
+        or (
+            org
+            and getattr(listing.event, 'project', None)
+            and listing.event.project.owner_org_id == org.pk
+        )
+    )
+
     ctx = {
         'listing': listing,
         'workspace': workspace,
         'packages': packages,
         'selected_codes': selected,
+        'boq_input_mode': listing.boq_input_mode,
+        'boq_mode_choices': TenderListing.BOQ_INPUT_MODE_CHOICES,
+        'can_switch_boq_mode': can_switch_boq_mode,
         'package_sections': package_sections,
         'category_summary': category_summary,
         'category_grand_total': grand_total,
