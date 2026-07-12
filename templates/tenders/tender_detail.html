@@ -157,15 +157,19 @@
                 </div>
                 <form method="POST" action="{% url 'tender-detail' listing.pk %}"
                       enctype="multipart/form-data"
-                      style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                      class="bw-mr-upload"
+                      style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                   {% csrf_token %}
                   <input type="hidden" name="mr_code" value="{{ row.req.code }}">
                   <input type="file" name="document"
                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                          required
-                         class="bw-input" style="flex:1;min-width:180px;padding:6px 10px;font-size:.78rem;">
-                  <button type="submit" class="bw-btn bw-btn--teal bw-btn--sm">
-                    {% if row.check and row.check.document_uploaded %}Replace{% else %}Upload{% endif %}
+                         class="bw-input"
+                         style="flex:1 1 220px;min-width:200px;padding:8px 10px;font-size:.8rem;">
+                  <button type="submit"
+                          class="bw-btn bw-btn--teal"
+                          style="flex:0 0 auto;min-width:110px;justify-content:center;">
+                    Save
                   </button>
                 </form>
               </div>
