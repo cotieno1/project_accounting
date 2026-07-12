@@ -325,11 +325,11 @@
       <span class="bw-topnav__mark" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </span>
-      BuildWatch
+      {{ bw_brand_title|default:"BuildWatch" }}
     </a>
     <div class="bw-topnav__links">
       {% if user.is_authenticated %}
-      <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">â† Main dashboard</a>
+      <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">← Main dashboard</a>
       <span class="bw-tag" style="align-self:center;">{{ bw_persona_label|default:"Tender exchange" }}</span>
       {% endif %}
       <a href="{% url 'tender-list' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-list' %}is-active{% endif %}">Tenders</a>
@@ -339,10 +339,9 @@
           <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal bw-btn--sm">Publish tender</a>
           <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">Bidder activity</a>
         {% else %}
+          {# Contractor orgs (e.g. Pioneer Contracting Limited) bid only — no publish #}
           <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">My Bids</a>
           <a href="{% url 'tender-alerts' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-alerts' %}is-active{% endif %}">Alerts</a>
-          <a href="{% url 'infra-project-list' %}" class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}is-active{% endif %}">Projects</a>
-          <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--ghost bw-btn--sm">Publish tender</a>
         {% endif %}
       {% else %}
       <a href="{% url 'login' %}?next={% url 'tender-list' %}" class="bw-topnav__link">Sign in</a>
@@ -366,7 +365,7 @@
   </main>
 
   <footer class="bw-footer">
-    <span>BuildWatch</span>
+    <span>{{ bw_brand_title|default:"BuildWatch" }}</span>
     <span>
       <a href="{% url 'tender-list' %}">Tenders</a>
       &nbsp;Â·&nbsp;

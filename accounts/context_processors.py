@@ -60,22 +60,28 @@ def branding(request):
             "app_tagline": app.app_tagline,
             "app_support_email": app.support_email,
             "app_vendor_name": app.vendor_name,
-            "org": org,
-            "org_name": org.name if org else "",
-            "org_short_name": org.short_name if org else "",
-            "org_code": org.org_code if org else "",
-            "org_registered_address": org.registered_address if org else "",
-            "org_contact_address": org.contact_address if org else "",
+            "org": org if request.user.is_authenticated else None,
+            "org_name": org.name if org and request.user.is_authenticated else "",
+            "org_short_name": org.short_name if org and request.user.is_authenticated else "",
+            "org_code": org.org_code if org and request.user.is_authenticated else "",
+            "org_registered_address": org.registered_address if org and request.user.is_authenticated else "",
+            "org_contact_address": org.contact_address if org and request.user.is_authenticated else "",
             "org_address": (
-                org.contact_address or org.registered_address if org else ""
+                (org.contact_address or org.registered_address)
+                if org and request.user.is_authenticated
+                else ""
             ),
-            "org_phone": org.phone if org else "",
-            "org_email": org.email if org else "",
-            "org_tax_pin": org.tax_pin if org else "",
-            "org_tagline": org.document_tagline if org else "",
+            "org_phone": org.phone if org and request.user.is_authenticated else "",
+            "org_email": org.email if org and request.user.is_authenticated else "",
+            "org_tax_pin": org.tax_pin if org and request.user.is_authenticated else "",
+            "org_tagline": org.document_tagline if org and request.user.is_authenticated else "",
             "tenant_count": org_count,
             "main_dashboard_url": _main_dashboard_url(request),
-            **exchange_persona_context(request, org),
+            # Persona only for signed-in staff of their organisation (never default tenant for guests)
+            **exchange_persona_context(
+                request,
+                org if request.user.is_authenticated else None,
+            ),
             **currency_context(),
         }
     except Exception:
