@@ -72,86 +72,111 @@ def branding_template_context(request=None):
 
 
 # BuildWatch tender exchange — two marketplace sides
+# Persona is set at organisation registration and applies to every
+# authorised staff member under that organisation (e.g. all Pioneer staff).
 EMPLOYER_ORG_TYPES = {
-    'GOV_NATIONAL',
-    'GOV_COUNTY',
-    'PARASTATAL',
-    'FINANCIER',
-    'DEVELOPER',
-    'NGO',
-    'CLIENT',
-    'INSTITUTION',
-    'PRIVATE',
-    'INDIVIDUAL',
+    "GOV_NATIONAL",
+    "GOV_COUNTY",
+    "PARASTATAL",
+    "FINANCIER",
+    "DEVELOPER",
+    "NGO",
+    "CLIENT",
+    "INSTITUTION",
+    "PRIVATE",
+    "INDIVIDUAL",
+    "OTHER",
 }
 CONTRACTOR_ORG_TYPES = {
-    'CONTRACTOR',
-    'CONSULTANT',
-    'BUILDING',
-    'ROADS',
-    'SPECIALIST',
-    'GENERAL',
+    "CONTRACTOR",
+    "CONSULTANT",
+    "BUILDING",
+    "ROADS",
+    "SPECIALIST",
+    "GENERAL",
 }
 
 
 def get_exchange_persona(org=None, request=None):
-    """Return contractor | employer | guest for BuildWatch UI customisation."""
+    """Return contractor | employer | guest for BuildWatch UI customisation.
+
+    Organisation-level: every authorised user under the org shares the same face.
+    Example: Pioneer Construction Co Ltd staff all see the contractor exchange.
+    """
     if org is None and request is not None:
+        user = getattr(request, "user", None)
+        if not user or not user.is_authenticated:
+            return "guest"
         org = get_active_organization(request)
     if org is None:
-        return 'guest'
+        return "guest"
 
-    org_type = (getattr(org, 'organization_type', '') or '').strip().upper()
+    org_type = (getattr(org, "organization_type", "") or "").strip().upper()
     if org_type in EMPLOYER_ORG_TYPES:
-        return 'employer'
+        return "employer"
     if org_type in CONTRACTOR_ORG_TYPES:
-        return 'contractor'
+        return "contractor"
+    if org_type in {"QS", "ARCHITECT", "STRUCTURAL", "CIVIL", "MEP", "PM"}:
+        return "contractor"
 
-    ctype = (getattr(org, 'contractor_type', '') or '').strip().upper()
-    if ctype in {'BUILDING', 'ROADS', 'CONSULTANT'}:
-        return 'contractor'
-    return 'contractor'
+    ctype = (getattr(org, "contractor_type", "") or "").strip().upper()
+    if ctype in {"BUILDING", "ROADS", "CONSULTANT"}:
+        return "contractor"
+    return "contractor"
 
 
 def exchange_persona_context(request=None, org=None):
+    if org is None and request is not None:
+        user = getattr(request, "user", None)
+        if user and user.is_authenticated:
+            org = get_active_organization(request)
     persona = get_exchange_persona(org=org, request=request)
+    org_name = ""
+    if org is not None:
+        org_name = (getattr(org, "short_name", None) or getattr(org, "name", None) or "").strip()
+
     labels = {
-        'guest': {
-            'bw_persona': 'guest',
-            'bw_persona_label': 'Tender exchange',
-            'bw_persona_kicker': 'Public procurement exchange',
-            'bw_persona_title': 'Open tenders',
-            'bw_persona_lead': (
-                'One exchange for both sides: contractors bid on works; '
-                'government departments, DFIs and private institutions publish and manage tenders.'
+        "guest": {
+            "bw_persona": "guest",
+            "bw_persona_label": "Tender exchange",
+            "bw_persona_kicker": "Public procurement exchange",
+            "bw_persona_title": "Open tenders",
+            "bw_persona_lead": (
+                "One exchange for both sides: contractors bid on works; "
+                "government departments, DFIs and private institutions publish and manage tenders."
             ),
-            'bw_primary_cta_label': 'Browse tenders',
-            'bw_secondary_cta_label': 'Publish a tender',
+            "bw_primary_cta_label": "Browse tenders",
+            "bw_secondary_cta_label": "Publish a tender",
+            "bw_org_display": "",
         },
-        'contractor': {
-            'bw_persona': 'contractor',
-            'bw_persona_label': 'Contractor workspace',
-            'bw_persona_kicker': 'Contractor · building & infrastructure',
-            'bw_persona_title': 'Tenders you can bid',
-            'bw_persona_lead': (
-                'Browse published works, register interest, download BOQ packages '
-                'and submit bids from your contractor organisation.'
+        "contractor": {
+            "bw_persona": "contractor",
+            "bw_persona_label": (f"{org_name} · Contractor" if org_name else "Contractor workspace"),
+            "bw_persona_kicker": "Contractor · building & infrastructure",
+            "bw_persona_title": "Tenders you can bid",
+            "bw_persona_lead": (
+                (f"Working as {org_name}. " if org_name else "")
+                + "Browse published works, register interest, download BOQ packages "
+                + "and submit bids for your organisation."
             ),
-            'bw_primary_cta_label': 'My bids',
-            'bw_secondary_cta_label': 'Set alerts',
+            "bw_primary_cta_label": "My bids",
+            "bw_secondary_cta_label": "Set alerts",
+            "bw_org_display": org_name,
         },
-        'employer': {
-            'bw_persona': 'employer',
-            'bw_persona_label': 'Employer / institution workspace',
-            'bw_persona_kicker': 'Employer · government · DFI · private',
-            'bw_persona_title': 'Tenders you publish',
-            'bw_persona_lead': (
-                'Publish and manage open procurement for works and services — '
-                'for government departments, World Bank / AfDB programmes, '
-                'and private institutions or companies.'
+        "employer": {
+            "bw_persona": "employer",
+            "bw_persona_label": (f"{org_name} · Employer" if org_name else "Employer / institution workspace"),
+            "bw_persona_kicker": "Employer · government · DFI · private",
+            "bw_persona_title": "Tenders you publish",
+            "bw_persona_lead": (
+                (f"Working as {org_name}. " if org_name else "")
+                + "Publish and manage open procurement for works and services — "
+                + "government departments, World Bank / AfDB programmes, "
+                + "and private institutions or companies."
             ),
-            'bw_primary_cta_label': 'Publish tender',
-            'bw_secondary_cta_label': 'Manage projects',
+            "bw_primary_cta_label": "Publish tender",
+            "bw_secondary_cta_label": "Manage projects",
+            "bw_org_display": org_name,
         },
     }
     return labels[persona]

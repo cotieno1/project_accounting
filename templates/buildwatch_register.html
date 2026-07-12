@@ -851,17 +851,23 @@ html, body {
 
         <div class="bw-field">
           <label class="bw-label" for="org_type">Organisation type <span class="bw-req">*</span></label>
+          <div class="bw-hint">This sets the BuildWatch face for everyone authorised under this organisation.</div>
           <select class="bw-select" id="org_type" name="org_type" required>
             <option value="" disabled selected>Select type…</option>
-            <option value="GOV_NATIONAL">National Government — Ministry / Department / Agency</option>
-            <option value="GOV_COUNTY">County Government</option>
-            <option value="PARASTATAL">State Corporation / Parastatal</option>
-            <option value="CONTRACTOR">Contractor (Civil, Electrical, Mechanical…)</option>
-            <option value="CONSULTANT">Consulting Engineer / Architect / QS</option>
-            <option value="DEVELOPER">Private Developer / PPP Consortium</option>
-            <option value="FINANCIER">Development Bank / Financier / DFI</option>
-            <option value="NGO">NGO / International Organisation</option>
-            <option value="OTHER">Other</option>
+            <optgroup label="Contractors (bid on tenders)">
+              <option value="CONTRACTOR">Building / civil / specialist contractor</option>
+              <option value="CONSULTANT">Consulting engineer / architect / QS</option>
+            </optgroup>
+            <optgroup label="Employers &amp; institutions (publish tenders)">
+              <option value="GOV_NATIONAL">National government — ministry / department / agency</option>
+              <option value="GOV_COUNTY">County government</option>
+              <option value="PARASTATAL">State corporation / parastatal</option>
+              <option value="FINANCIER">Development bank / DFI (e.g. World Bank, AfDB)</option>
+              <option value="DEVELOPER">Private developer / PPP consortium</option>
+              <option value="NGO">NGO / international organisation</option>
+              <option value="PRIVATE">Private company / individual client</option>
+              <option value="OTHER">Other employer / institution</option>
+            </optgroup>
           </select>
           <div class="bw-error-msg" id="err-org_type">Please select an organisation type.</div>
         </div>

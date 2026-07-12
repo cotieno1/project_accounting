@@ -1783,7 +1783,10 @@ def buildwatch_register(request):
             contractor_type=_buildwatch_contractor_type_from_registration(
                 org_type, contractor_category, consultant_discipline
             ),
-            organization_type=contractor_category or consultant_discipline or org_type,
+            # Marketplace side for all authorised staff of this organisation.
+            # Keep the registration org_type (CONTRACTOR / GOV_NATIONAL / FINANCIER…),
+            # not the contractor subcategory (BUILDING / QS), so exchange UI stays correct.
+            organization_type=org_type,
             registration_status=Organization.STATUS_PENDING,
             is_default=False,
         )
