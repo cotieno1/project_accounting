@@ -107,8 +107,6 @@
             item results in disqualification.
             {% if can_upload_mr %}
               Upload each certificate inline — BOQ workspace stays available in parallel.
-            {% elif user.is_authenticated and bw_persona == 'contractor' and not bidder_reg %}
-              Register interest to upload certificates against each item.
             {% elif user.is_authenticated and bw_persona != 'contractor' %}
               Document upload is available to contractor organisations only.
             {% elif not user.is_authenticated %}

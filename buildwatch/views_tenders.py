@@ -352,11 +352,11 @@ def tender_detail(request, listing_id):
             tender=listing, organisation=org
         ).exists()
 
-        # Uploads only once contractor has registered interest
+        # Signed-in contractors can upload while the tender is open.
+        # First upload also registers interest + creates the bid workspace.
         can_upload_mr = (
             persona == 'contractor'
             and listing.event.is_open
-            and bidder_reg is not None
         )
 
         # Inline single-MR upload (or legacy bulk save)
