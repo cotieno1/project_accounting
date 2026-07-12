@@ -38,10 +38,106 @@ from .models import (
     InfraProject,
 )
 from accounts.models import Organization, UserAccount
-from accounts.tenant import get_active_organization, branding_template_context
+from accounts.tenant import (
+    get_active_organization,
+    branding_template_context,
+    get_exchange_persona,
+)
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
+
+def _procurement_requirements(listing=None):
+    """Active procurement MRs, preferably matching the tender country."""
+    qs = MandatoryRequirement.objects.filter(
+        context__in=[
+            MandatoryRequirement.PROCUREMENT,
+            MandatoryRequirement.ALL,
+        ],
+        is_active=True,
+    )
+    country = getattr(listing, 'country', None) if listing else None
+    if country is not None:
+        scoped = qs.filter(Q(country=country) | Q(country__isnull=True))
+        if scoped.exists():
+            return scoped.order_by('order', 'code')
+    return qs.order_by('order', 'code')
+
+
+def _ensure_bidder_workspace(request, listing):
+    """
+    Ensure contractor org has interest registration + private bid workspace.
+    Returns (org, ua, registration, workspace) or raises PermissionError.
+    """
+    org = get_active_organization(request)
+    ua = _get_user_account(request)
+    if org is None or ua is None:
+        raise PermissionError('Organisation account required to upload documents.')
+    if get_exchange_persona(org=org, request=request) != 'contractor':
+        raise PermissionError(
+            'Only contractor organisations can upload mandatory requirement documents.'
+        )
+    reg, _ = BidderRegistration.objects.get_or_create(
+        tender=listing,
+        organisation=org,
+        defaults={'registered_by': ua},
+    )
+    workspace, _ = BidWorkspace.objects.get_or_create(
+        tender=listing,
+        organisation=org,
+        defaults={'prepared_by': ua},
+    )
+    return org, ua, reg, workspace
+
+
+def _sync_self_assessment_checks(workspace, requirements):
+    """Create missing SelfAssessmentCheck rows for each MR."""
+    for req in requirements:
+        SelfAssessmentCheck.objects.get_or_create(
+            workspace=workspace,
+            mr_ref=req.code,
+            defaults={
+                'requirement': req,
+                'description': req.description,
+                'self_result': SelfAssessmentCheck.PENDING,
+            },
+        )
+
+
+def _save_self_assessment_uploads(request, workspace, requirements):
+    """Persist pass/fail + certificate files from POST; update workspace gate."""
+    for req in requirements:
+        result = request.POST.get(
+            f'result_{req.code}', SelfAssessmentCheck.PENDING
+        )
+        notes = request.POST.get(f'notes_{req.code}', '')
+        doc = request.FILES.get(f'doc_{req.code}')
+        check = SelfAssessmentCheck.objects.get(
+            workspace=workspace, mr_ref=req.code
+        )
+        # Uploading a certificate implies the contractor asserts compliance
+        if doc and result == SelfAssessmentCheck.PENDING:
+            result = SelfAssessmentCheck.PASS
+        check.self_result = result
+        check.notes = notes
+        if doc:
+            check.document = doc
+            check.document_uploaded = True
+        check.save()
+
+    all_checks = workspace.self_checks.all()
+    has_fail = all_checks.filter(
+        self_result=SelfAssessmentCheck.FAIL
+    ).exists()
+    has_pending = all_checks.filter(
+        self_result=SelfAssessmentCheck.PENDING
+    ).exists()
+    workspace.self_assessment_passed = not has_fail and not has_pending
+    if workspace.self_assessment_passed:
+        workspace.status = BidWorkspace.SELF_CHECKED
+    workspace.save(update_fields=['self_assessment_passed', 'status'])
+    return all_checks
+
 
 def _get_user_account(request):
     """Returns UserAccount for logged-in user, or None."""
@@ -165,7 +261,8 @@ def tender_detail(request, listing_id):
     """
     GET /tenders/<listing_id>/
     Tender detail page — public. BOQ download and bid workspace require login.
-    Increments view_count.
+    Contractors may POST certificate uploads against mandatory requirements.
+    Increments view_count on GET.
     """
     listing = get_object_or_404(
         TenderListing,
@@ -179,21 +276,22 @@ def tender_detail(request, listing_id):
             'Contact the procuring entity to request an invitation.')
         return redirect('tender-list')
 
-    # Increment view count
-    TenderListing.objects.filter(pk=listing_id).update(
-        view_count=listing.view_count + 1
-    )
-
-    # Addenda
-    addenda = listing.addenda.order_by('addendum_no')
+    requirements = list(_procurement_requirements(listing))
 
     # Registration status for logged-in bidder
-    bidder_reg      = None
-    workspace       = None
-    is_invited      = False
+    bidder_reg = None
+    workspace = None
+    is_invited = False
+    can_upload_mr = False
+    mr_rows = []
 
     if request.user.is_authenticated:
         org = get_active_organization(request)
+        persona = get_exchange_persona(org=org, request=request)
+        can_upload_mr = (
+            persona == 'contractor'
+            and listing.event.is_open
+        )
         try:
             bidder_reg = BidderRegistration.objects.get(
                 tender=listing, organisation=org
@@ -210,13 +308,95 @@ def tender_detail(request, listing_id):
             tender=listing, organisation=org
         ).exists()
 
+        # Contractor POST: upload certificates / save MR self-assessment
+        if request.method == 'POST' and can_upload_mr:
+            try:
+                _, _, bidder_reg, workspace = _ensure_bidder_workspace(
+                    request, listing
+                )
+            except PermissionError as exc:
+                messages.error(request, str(exc))
+                return redirect('tender-detail', listing_id=listing_id)
+
+            _sync_self_assessment_checks(workspace, requirements)
+            all_checks = _save_self_assessment_uploads(
+                request, workspace, requirements
+            )
+            uploaded = sum(
+                1 for req in requirements
+                if request.FILES.get(f'doc_{req.code}')
+            )
+            if workspace.self_assessment_passed:
+                messages.success(
+                    request,
+                    'Mandatory documents saved. All requirements marked complete.',
+                )
+            elif uploaded:
+                messages.success(
+                    request,
+                    f'{uploaded} document(s) uploaded. '
+                    'Continue until every requirement has a certificate.',
+                )
+            else:
+                pending = all_checks.filter(
+                    self_result__in=[
+                        SelfAssessmentCheck.FAIL,
+                        SelfAssessmentCheck.PENDING,
+                    ]
+                ).count()
+                messages.warning(
+                    request,
+                    f'Saved. {pending} requirement(s) still pending or failing.',
+                )
+            return redirect('tender-detail', listing_id=listing_id)
+
+        if workspace is not None and requirements:
+            _sync_self_assessment_checks(workspace, requirements)
+            checks = {
+                c.mr_ref: c
+                for c in workspace.self_checks.filter(
+                    mr_ref__in=[r.code for r in requirements]
+                )
+            }
+            for i, req in enumerate(requirements, 1):
+                mr_rows.append({
+                    'index': i,
+                    'req': req,
+                    'check': checks.get(req.code),
+                })
+        else:
+            for i, req in enumerate(requirements, 1):
+                mr_rows.append({
+                    'index': i,
+                    'req': req,
+                    'check': None,
+                })
+    else:
+        for i, req in enumerate(requirements, 1):
+            mr_rows.append({
+                'index': i,
+                'req': req,
+                'check': None,
+            })
+
+    # Increment view count on GET only
+    if request.method == 'GET':
+        TenderListing.objects.filter(pk=listing_id).update(
+            view_count=listing.view_count + 1
+        )
+
+    addenda = listing.addenda.order_by('addendum_no')
+
     ctx = {
-        'listing':      listing,
-        'addenda':      addenda,
-        'bidder_reg':   bidder_reg,
-        'workspace':    workspace,
-        'is_invited':   is_invited,
-        'can_bid':      listing.event.is_open,
+        'listing': listing,
+        'addenda': addenda,
+        'bidder_reg': bidder_reg,
+        'workspace': workspace,
+        'is_invited': is_invited,
+        'can_bid': listing.event.is_open,
+        'requirements': requirements,
+        'mr_rows': mr_rows,
+        'can_upload_mr': can_upload_mr,
     }
     if request.user.is_authenticated:
         ctx.update(branding_template_context(request))
@@ -363,59 +543,21 @@ def bid_self_assess(request, listing_id):
     GET/POST /tenders/<listing_id>/bid/self-assess/
     Contractor self-assesses against mandatory requirements before submitting.
     """
-    listing   = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
-    org       = get_active_organization(request)
-    ua        = _get_user_account(request)
-    workspace = get_object_or_404(BidWorkspace, tender=listing, organisation=org)
+    listing = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
+    requirements = list(_procurement_requirements(listing))
 
-    # Load MR requirements relevant to this tender context
-    requirements = MandatoryRequirement.objects.filter(
-        context__in=['PROCUREMENT', 'ALL'],
-        is_active=True,
-    ).order_by('order')
+    try:
+        _, _, _, workspace = _ensure_bidder_workspace(request, listing)
+    except PermissionError as exc:
+        messages.error(request, str(exc))
+        return redirect('tender-detail', listing_id=listing_id)
 
-    # Ensure self-check records exist for all requirements
-    for req in requirements:
-        SelfAssessmentCheck.objects.get_or_create(
-            workspace=workspace,
-            mr_ref=req.code,
-            defaults={
-                'requirement':  req,
-                'description':  req.description,
-                'self_result':  SelfAssessmentCheck.PENDING,
-            }
-        )
+    _sync_self_assessment_checks(workspace, requirements)
 
     if request.method == 'POST':
-        for req in requirements:
-            result = request.POST.get(f'result_{req.code}',
-                                       SelfAssessmentCheck.PENDING)
-            notes  = request.POST.get(f'notes_{req.code}', '')
-            doc    = request.FILES.get(f'doc_{req.code}')
-            check  = SelfAssessmentCheck.objects.get(
-                workspace=workspace, mr_ref=req.code
-            )
-            check.self_result = result
-            check.notes       = notes
-            if doc:
-                check.document          = doc
-                check.document_uploaded = True
-            check.save()
-
-        # Compute overall pass/fail
-        all_checks = workspace.self_checks.all()
-        has_fail   = all_checks.filter(
-            self_result=SelfAssessmentCheck.FAIL
-        ).exists()
-        has_pending = all_checks.filter(
-            self_result=SelfAssessmentCheck.PENDING
-        ).exists()
-
-        workspace.self_assessment_passed = not has_fail and not has_pending
-        if workspace.self_assessment_passed:
-            workspace.status = BidWorkspace.SELF_CHECKED
-        workspace.save(update_fields=['self_assessment_passed', 'status'])
-
+        all_checks = _save_self_assessment_uploads(
+            request, workspace, requirements
+        )
         if workspace.self_assessment_passed:
             messages.success(request,
                 'Self-assessment complete. All mandatory requirements satisfied. '
@@ -428,13 +570,16 @@ def bid_self_assess(request, listing_id):
             messages.warning(request,
                 f'{fails} requirement(s) still failing or pending. '
                 f'Resolve these before submitting.')
+        next_target = request.POST.get('next') or request.GET.get('next')
+        if next_target == 'detail':
+            return redirect('tender-detail', listing_id=listing_id)
         return redirect('bid-self-assess', listing_id=listing_id)
 
     checks = workspace.self_checks.order_by('mr_ref')
     ctx = {
-        'listing':    listing,
-        'workspace':  workspace,
-        'checks':     checks,
+        'listing': listing,
+        'workspace': workspace,
+        'checks': checks,
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_self_assess.html', ctx)

@@ -98,29 +98,92 @@
           <p style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:14px;">
             Bidders must satisfy all mandatory requirements. Failure on any single
             item results in disqualification.
+            {% if can_upload_mr %}
+              Upload your certificates and supporting documents below.
+            {% elif user.is_authenticated and bw_persona != 'contractor' %}
+              Document upload is available to contractor organisations only.
+            {% elif not user.is_authenticated %}
+              Sign in as a contractor to upload certificates against each item.
+            {% endif %}
           </p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            {% for req in listing.event.project.owner_org.tender_alerts.all %}
-              {# placeholder — actual MR list comes from MandatoryRequirement queryset #}
+
+          {% if can_upload_mr %}
+          <form method="POST" action="{% url 'tender-detail' listing.pk %}"
+                enctype="multipart/form-data">
+            {% csrf_token %}
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              {% for row in mr_rows %}
+              <div style="border:1px solid var(--bw-mgrey);border-radius:8px;padding:12px 14px;
+                background:{% if row.check and row.check.document_uploaded %}#f0fdf9{% else %}#fff{% endif %};">
+                <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+                  <div style="flex:1;min-width:200px;">
+                    <div style="font-family:monospace;font-size:.72rem;color:var(--bw-dgrey);margin-bottom:2px;">
+                      MR{{ row.index }} · {{ row.req.code }}
+                    </div>
+                    <div style="font-size:.86rem;font-weight:600;color:var(--bw-navy);">
+                      {{ row.req.description }}
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:flex-start;">
+                    {% if row.check and row.check.document_uploaded %}
+                      <span class="bw-pill bw-pill--blue">Uploaded</span>
+                      {% if row.check.document %}
+                        <a href="{{ row.check.document.url }}" target="_blank" rel="noopener"
+                           class="bw-btn bw-btn--ghost bw-btn--sm">View</a>
+                      {% endif %}
+                    {% else %}
+                      <span class="bw-pill bw-pill--amber">Needed</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 140px;gap:10px;align-items:end;">
+                  <div>
+                    <label class="bw-label" style="font-size:.72rem;">
+                      {% if row.check and row.check.document_uploaded %}Replace document{% else %}Upload certificate / supporting doc{% endif %}
+                    </label>
+                    <input type="file" name="doc_{{ row.req.code }}"
+                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                           class="bw-input" style="padding:6px 10px;font-size:.78rem;">
+                  </div>
+                  <div>
+                    <label class="bw-label" style="font-size:.72rem;">Status</label>
+                    <select name="result_{{ row.req.code }}" class="bw-select" style="font-size:.78rem;">
+                      <option value="PENDING" {% if not row.check or row.check.self_result == 'PENDING' %}selected{% endif %}>Pending</option>
+                      <option value="PASS" {% if row.check and row.check.self_result == 'PASS' %}selected{% endif %}>Pass</option>
+                      <option value="FAIL" {% if row.check and row.check.self_result == 'FAIL' %}selected{% endif %}>Fail</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <div style="font-size:.82rem;color:var(--bw-dgrey);">
+                No mandatory requirements loaded yet for this tender.
+              </div>
+              {% endfor %}
+            </div>
+            {% if mr_rows %}
+            <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+              <button type="submit" class="bw-btn bw-btn--teal">
+                Save uploads
+              </button>
+            </div>
+            {% endif %}
+          </form>
+          {% else %}
+          <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+            {% for row in mr_rows %}
+              <div style="font-size:.82rem;color:var(--bw-navy);padding:6px 0;border-bottom:1px solid var(--bw-lgrey);">
+                <span style="font-family:monospace;font-size:.72rem;color:var(--bw-dgrey);margin-right:8px;">MR{{ row.index }}</span>
+                {{ row.req.description }}
+              </div>
             {% empty %}
-              <div style="font-size:.82rem;color:var(--bw-dgrey);grid-column:1/-1;">
-                MR1 — Certificate of Incorporation<br>
-                MR2 — Valid Tax Compliance Certificate (KRA)<br>
-                MR3 — EPRA Licence (Class B Electrical)<br>
-                MR4 — EPRA Licence (Class T2 Solar)<br>
-                MR5 — NCA Certificate (Electrical, Grade 6+)<br>
-                MR6 — Valid NCA Practising Licence<br>
-                MR7 — NCA Certificate (CCTV/Cabling, Grade 8+)<br>
-                MR8 — Valid NCA Practising Licence (Cabling)<br>
-                MR9 — CAK Registration Licence<br>
-                MR10 — CAK Compliance Certificate<br>
-                MR11 — Manufacturer Authorisation (NVRs/Switches)<br>
-                MR12 — Valid Single Business Permit<br>
-                MR13 — CR12 Form (within 12 months)<br>
-                MR14 — Sub-Contractor Agreement (if applicable)
+              <div style="font-size:.82rem;color:var(--bw-dgrey);">
+                No mandatory requirements loaded yet for this tender.
               </div>
             {% endfor %}
           </div>
+          {% endif %}
+
           {% if user.is_authenticated and workspace %}
             <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -129,7 +192,7 @@
                 <strong style="color:var(--bw-green);">All requirements satisfied ✓</strong>
               {% else %}
                 <a href="{% url 'bid-self-assess' listing.pk %}"
-                   style="color:var(--bw-blue);">Check your compliance status →</a>
+                   style="color:var(--bw-blue);">Open full self-assessment →</a>
               {% endif %}
             </div>
           {% endif %}
