@@ -162,12 +162,17 @@ def exchange_persona_context(request=None, org=None):
         "contractor": {
             "bw_persona": "contractor",
             "bw_persona_label": (f"{org_name} · Contractor" if org_name else "Contractor workspace"),
-            "bw_persona_kicker": "Contractor · building & infrastructure",
-            "bw_persona_title": "Tenders you can bid",
+            "bw_persona_kicker": "Bidding as contractor",
+            "bw_persona_title": "Open tenders",
             "bw_persona_lead": (
-                (f"Working under {org_name}. " if org_name else "")
-                + "Browse published works, register interest, download BOQ packages "
-                + "and submit bids for your organisation. Contractors do not publish tenders here."
+                (
+                    f"Bidding as {org_name}. "
+                    if org_name else
+                    "You are signed in as a contractor. "
+                )
+                + "Browse works published by employers, register interest, "
+                + "download BOQ packages and submit bids. "
+                + "Publishing tenders is for employers only — not available here."
             ),
             "bw_primary_cta_label": "My bids",
             "bw_secondary_cta_label": "Set alerts",
@@ -177,10 +182,14 @@ def exchange_persona_context(request=None, org=None):
         "employer": {
             "bw_persona": "employer",
             "bw_persona_label": (f"{org_name} · Employer" if org_name else "Employer / institution workspace"),
-            "bw_persona_kicker": "Employer · government · DFI · private",
+            "bw_persona_kicker": "Publishing as employer",
             "bw_persona_title": "Tenders you publish",
             "bw_persona_lead": (
-                (f"Working under {org_name}. " if org_name else "")
+                (
+                    f"Publishing as {org_name}. "
+                    if org_name else
+                    "You are signed in as an employer. "
+                )
                 + "Publish and manage open procurement for works and services — "
                 + "government departments, World Bank / AfDB programmes, "
                 + "and private institutions or companies."
