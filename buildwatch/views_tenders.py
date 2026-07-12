@@ -70,9 +70,12 @@ def _ensure_bidder_workspace(request, listing):
     Returns (org, ua, registration, workspace) or raises PermissionError.
     """
     org = get_active_organization(request)
-    ua = _get_user_account(request)
-    if org is None or ua is None:
+    if org is None:
         raise PermissionError('Organisation account required to upload documents.')
+    try:
+        ua = _ensure_user_account(request, org)
+    except Exception as exc:
+        raise PermissionError(f'User profile required: {exc}') from exc
     if get_exchange_persona(org=org, request=request) != 'contractor':
         raise PermissionError(
             'Only contractor organisations can upload mandatory requirement documents.'
@@ -192,7 +195,55 @@ def _get_user_account(request):
     try:
         return request.user.useraccount
     except Exception:
+        pass
+    user = getattr(request, 'user', None)
+    if not user or not user.is_authenticated:
         return None
+    # Fallback: match by email and link the login
+    email = (getattr(user, 'email', '') or '').strip()
+    if email:
+        ua = UserAccount.objects.filter(email__iexact=email).first()
+        if ua is not None:
+            if ua.user_id is None:
+                ua.user = user
+                ua.save(update_fields=['user'])
+            return ua
+    return None
+
+
+def _ensure_user_account(request, org):
+    """
+    Resolve or create a UserAccount so bidder FKs (registered_by / prepared_by)
+    never receive NULL.
+    """
+    ua = _get_user_account(request)
+    if ua is not None:
+        if org is not None and ua.organization_id is None:
+            ua.organization = org
+            ua.save(update_fields=['organization'])
+        return ua
+
+    user = request.user
+    email = (getattr(user, 'email', '') or f'{user.username}@pioneer.local').strip()
+    base_staff = f"USR-{user.id}"
+    staff_no = base_staff
+    n = 1
+    while UserAccount.objects.filter(staff_no=staff_no).exists():
+        n += 1
+        staff_no = f"{base_staff}-{n}"
+
+    ua = UserAccount.objects.create(
+        user=user,
+        staff_no=staff_no,
+        first_name=getattr(user, 'first_name', '') or user.username,
+        last_name=getattr(user, 'last_name', '') or '',
+        designation='Authorised user',
+        contact_address='',
+        phone='',
+        email=email,
+        organization=org,
+    )
+    return ua
 
 
 def _tender_visible_to(listing, request):
@@ -497,11 +548,12 @@ def tender_register(request, listing_id):
         )
         return redirect('tender-detail', listing_id=listing_id)
 
-    if ua is None:
+    try:
+        ua = _ensure_user_account(request, org)
+    except Exception as exc:
         messages.error(
             request,
-            'Your user profile (UserAccount) is missing. '
-            'Ask an administrator to link your login before registering interest.',
+            f'Could not resolve your user profile: {exc}',
         )
         return redirect('tender-detail', listing_id=listing_id)
 
