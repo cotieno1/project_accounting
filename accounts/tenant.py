@@ -164,16 +164,7 @@ def exchange_persona_context(request=None, org=None):
             "bw_persona_label": (f"{org_name} · Contractor" if org_name else "Contractor workspace"),
             "bw_persona_kicker": "Bidding as contractor",
             "bw_persona_title": "Open tenders",
-            "bw_persona_lead": (
-                (
-                    f"Bidding as {org_name}. "
-                    if org_name else
-                    "You are signed in as a contractor. "
-                )
-                + "Browse works published by employers, register interest, "
-                + "download BOQ packages and submit bids. "
-                + "Publishing tenders is for employers only — not available here."
-            ),
+            "bw_persona_lead": "",
             "bw_primary_cta_label": "My bids",
             "bw_secondary_cta_label": "Set alerts",
             "bw_org_display": org_name,
