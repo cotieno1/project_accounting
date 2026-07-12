@@ -125,6 +125,37 @@ def _save_self_assessment_uploads(request, workspace, requirements):
             check.document_uploaded = True
         check.save()
 
+    return _refresh_self_assessment_gate(workspace)
+
+
+def _save_single_mr_upload(request, workspace, req):
+    """Save one MR certificate from an inline upload form."""
+    check, _ = SelfAssessmentCheck.objects.get_or_create(
+        workspace=workspace,
+        mr_ref=req.code,
+        defaults={
+            'requirement': req,
+            'description': req.description,
+            'self_result': SelfAssessmentCheck.PENDING,
+        },
+    )
+    doc = (
+        request.FILES.get('document')
+        or request.FILES.get(f'doc_{req.code}')
+    )
+    if not doc:
+        raise ValueError('Choose a certificate file to upload.')
+    check.document = doc
+    check.document_uploaded = True
+    check.self_result = SelfAssessmentCheck.PASS
+    check.requirement = req
+    check.description = req.description
+    check.save()
+    _refresh_self_assessment_gate(workspace)
+    return check
+
+
+def _refresh_self_assessment_gate(workspace):
     all_checks = workspace.self_checks.all()
     has_fail = all_checks.filter(
         self_result=SelfAssessmentCheck.FAIL
@@ -132,11 +163,28 @@ def _save_self_assessment_uploads(request, workspace, requirements):
     has_pending = all_checks.filter(
         self_result=SelfAssessmentCheck.PENDING
     ).exists()
-    workspace.self_assessment_passed = not has_fail and not has_pending
+    workspace.self_assessment_passed = (
+        all_checks.exists() and not has_fail and not has_pending
+    )
     if workspace.self_assessment_passed:
         workspace.status = BidWorkspace.SELF_CHECKED
     workspace.save(update_fields=['self_assessment_passed', 'status'])
     return all_checks
+
+
+def _mr_progress(workspace, requirements):
+    """Return (done, total) for uploaded MR certificates — never gates BOQ."""
+    total = len(requirements)
+    if total == 0:
+        return 0, 0
+    if workspace is None:
+        return 0, total
+    codes = [r.code for r in requirements]
+    done = workspace.self_checks.filter(
+        mr_ref__in=codes,
+        document_uploaded=True,
+    ).count()
+    return done, total
 
 
 def _get_user_account(request):
@@ -288,10 +336,6 @@ def tender_detail(request, listing_id):
     if request.user.is_authenticated:
         org = get_active_organization(request)
         persona = get_exchange_persona(org=org, request=request)
-        can_upload_mr = (
-            persona == 'contractor'
-            and listing.event.is_open
-        )
         try:
             bidder_reg = BidderRegistration.objects.get(
                 tender=listing, organisation=org
@@ -308,7 +352,14 @@ def tender_detail(request, listing_id):
             tender=listing, organisation=org
         ).exists()
 
-        # Contractor POST: upload certificates / save MR self-assessment
+        # Uploads only once contractor has registered interest
+        can_upload_mr = (
+            persona == 'contractor'
+            and listing.event.is_open
+            and bidder_reg is not None
+        )
+
+        # Inline single-MR upload (or legacy bulk save)
         if request.method == 'POST' and can_upload_mr:
             try:
                 _, _, bidder_reg, workspace = _ensure_bidder_workspace(
@@ -319,6 +370,22 @@ def tender_detail(request, listing_id):
                 return redirect('tender-detail', listing_id=listing_id)
 
             _sync_self_assessment_checks(workspace, requirements)
+            mr_code = (request.POST.get('mr_code') or '').strip()
+            if mr_code:
+                req = next((r for r in requirements if r.code == mr_code), None)
+                if req is None:
+                    messages.error(request, 'Unknown mandatory requirement.')
+                    return redirect('tender-detail', listing_id=listing_id)
+                try:
+                    check = _save_single_mr_upload(request, workspace, req)
+                    messages.success(
+                        request,
+                        f'{check.mr_ref} certificate saved.',
+                    )
+                except ValueError as exc:
+                    messages.error(request, str(exc))
+                return redirect('tender-detail', listing_id=listing_id)
+
             all_checks = _save_self_assessment_uploads(
                 request, workspace, requirements
             )
@@ -334,8 +401,7 @@ def tender_detail(request, listing_id):
             elif uploaded:
                 messages.success(
                     request,
-                    f'{uploaded} document(s) uploaded. '
-                    'Continue until every requirement has a certificate.',
+                    f'{uploaded} document(s) uploaded.',
                 )
             else:
                 pending = all_checks.filter(
@@ -386,6 +452,7 @@ def tender_detail(request, listing_id):
         )
 
     addenda = listing.addenda.order_by('addendum_no')
+    mr_done, mr_total = _mr_progress(workspace, requirements)
 
     ctx = {
         'listing': listing,
@@ -397,6 +464,9 @@ def tender_detail(request, listing_id):
         'requirements': requirements,
         'mr_rows': mr_rows,
         'can_upload_mr': can_upload_mr,
+        'mr_done_count': mr_done,
+        'mr_total': mr_total,
+        'mr_progress_pct': int((mr_done * 100) / mr_total) if mr_total else 0,
     }
     if request.user.is_authenticated:
         ctx.update(branding_template_context(request))

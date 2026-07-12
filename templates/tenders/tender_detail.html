@@ -93,13 +93,22 @@
 
       <!-- Mandatory requirements -->
       <div class="bw-card" style="margin-bottom:20px;">
-        <div class="bw-card-header">Mandatory Requirements</div>
+        <div class="bw-card-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span>Mandatory Requirements</span>
+          {% if can_upload_mr and mr_total %}
+          <span style="font-size:.75rem;font-weight:600;color:var(--bw-navy);">
+            {{ mr_done_count }} / {{ mr_total }} uploaded
+          </span>
+          {% endif %}
+        </div>
         <div class="bw-card-body">
           <p style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:14px;">
             Bidders must satisfy all mandatory requirements. Failure on any single
             item results in disqualification.
             {% if can_upload_mr %}
-              Upload your certificates and supporting documents below.
+              Upload each certificate inline — BOQ workspace stays available in parallel.
+            {% elif user.is_authenticated and bw_persona == 'contractor' and not bidder_reg %}
+              Register interest to upload certificates against each item.
             {% elif user.is_authenticated and bw_persona != 'contractor' %}
               Document upload is available to contractor organisations only.
             {% elif not user.is_authenticated %}
@@ -107,15 +116,27 @@
             {% endif %}
           </p>
 
+          {% if can_upload_mr and mr_total %}
+          <div style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--bw-dgrey);margin-bottom:6px;">
+              <span>Certificate progress</span>
+              <span>{{ mr_progress_pct }}%</span>
+            </div>
+            <div style="height:8px;background:var(--bw-mist);border-radius:999px;overflow:hidden;">
+              <div style="height:100%;width:{{ mr_progress_pct }}%;background:var(--bw-teal);border-radius:999px;"></div>
+            </div>
+            <div style="font-size:.72rem;color:var(--bw-dgrey);margin-top:6px;">
+              Progress is informational only — it never locks the BOQ workspace.
+            </div>
+          </div>
+          {% endif %}
+
           {% if can_upload_mr %}
-          <form method="POST" action="{% url 'tender-detail' listing.pk %}"
-                enctype="multipart/form-data">
-            {% csrf_token %}
             <div style="display:flex;flex-direction:column;gap:10px;">
               {% for row in mr_rows %}
               <div style="border:1px solid var(--bw-mgrey);border-radius:8px;padding:12px 14px;
                 background:{% if row.check and row.check.document_uploaded %}#f0fdf9{% else %}#fff{% endif %};">
-                <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
                   <div style="flex:1;min-width:200px;">
                     <div style="font-family:monospace;font-size:.72rem;color:var(--bw-dgrey);margin-bottom:2px;">
                       MR{{ row.index }} · {{ row.req.code }}
@@ -136,24 +157,19 @@
                     {% endif %}
                   </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 140px;gap:10px;align-items:end;">
-                  <div>
-                    <label class="bw-label" style="font-size:.72rem;">
-                      {% if row.check and row.check.document_uploaded %}Replace document{% else %}Upload certificate / supporting doc{% endif %}
-                    </label>
-                    <input type="file" name="doc_{{ row.req.code }}"
-                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                           class="bw-input" style="padding:6px 10px;font-size:.78rem;">
-                  </div>
-                  <div>
-                    <label class="bw-label" style="font-size:.72rem;">Status</label>
-                    <select name="result_{{ row.req.code }}" class="bw-select" style="font-size:.78rem;">
-                      <option value="PENDING" {% if not row.check or row.check.self_result == 'PENDING' %}selected{% endif %}>Pending</option>
-                      <option value="PASS" {% if row.check and row.check.self_result == 'PASS' %}selected{% endif %}>Pass</option>
-                      <option value="FAIL" {% if row.check and row.check.self_result == 'FAIL' %}selected{% endif %}>Fail</option>
-                    </select>
-                  </div>
-                </div>
+                <form method="POST" action="{% url 'tender-detail' listing.pk %}"
+                      enctype="multipart/form-data"
+                      style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  {% csrf_token %}
+                  <input type="hidden" name="mr_code" value="{{ row.req.code }}">
+                  <input type="file" name="document"
+                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                         required
+                         class="bw-input" style="flex:1;min-width:180px;padding:6px 10px;font-size:.78rem;">
+                  <button type="submit" class="bw-btn bw-btn--teal bw-btn--sm">
+                    {% if row.check and row.check.document_uploaded %}Replace{% else %}Upload{% endif %}
+                  </button>
+                </form>
               </div>
               {% empty %}
               <div style="font-size:.82rem;color:var(--bw-dgrey);">
@@ -161,14 +177,6 @@
               </div>
               {% endfor %}
             </div>
-            {% if mr_rows %}
-            <div style="display:flex;justify-content:flex-end;margin-top:16px;">
-              <button type="submit" class="bw-btn bw-btn--teal">
-                Save uploads
-              </button>
-            </div>
-            {% endif %}
-          </form>
           {% else %}
           <div style="display:grid;grid-template-columns:1fr;gap:8px;">
             {% for row in mr_rows %}
@@ -182,19 +190,6 @@
               </div>
             {% endfor %}
           </div>
-          {% endif %}
-
-          {% if user.is_authenticated and workspace %}
-            <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              Your self-assessment:
-              {% if workspace.self_assessment_passed %}
-                <strong style="color:var(--bw-green);">All requirements satisfied ✓</strong>
-              {% else %}
-                <a href="{% url 'bid-self-assess' listing.pk %}"
-                   style="color:var(--bw-blue);">Open full self-assessment →</a>
-              {% endif %}
-            </div>
           {% endif %}
         </div>
       </div>
@@ -329,7 +324,7 @@
                 Required before downloading BOQ or bidding
               </div>
             {% else %}
-              <!-- Gate indicators -->
+              <!-- Progress (informational — never locks BOQ) -->
               <div style="margin-bottom:14px;">
                 <div class="bw-gate">
                   <div class="bw-gate__dot bw-gate__dot--green"></div>
@@ -337,19 +332,11 @@
                   <div class="bw-gate__status" style="color:var(--bw-green);">✓</div>
                 </div>
                 <div class="bw-gate">
-                  <div class="bw-gate__dot bw-gate__dot--{% if bidder_reg.has_downloaded_boq %}green{% else %}amber{% endif %}"></div>
-                  <div class="bw-gate__label">BOQ downloaded</div>
+                  <div class="bw-gate__dot bw-gate__dot--{% if mr_done_count == mr_total and mr_total %}green{% else %}amber{% endif %}"></div>
+                  <div class="bw-gate__label">Certificates</div>
                   <div class="bw-gate__status"
-                    style="color:{% if bidder_reg.has_downloaded_boq %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
-                    {% if bidder_reg.has_downloaded_boq %}✓{% else %}Pending{% endif %}
-                  </div>
-                </div>
-                <div class="bw-gate">
-                  <div class="bw-gate__dot bw-gate__dot--{% if workspace and workspace.self_assessment_passed %}green{% else %}amber{% endif %}"></div>
-                  <div class="bw-gate__label">Self-assessment</div>
-                  <div class="bw-gate__status"
-                    style="color:{% if workspace and workspace.self_assessment_passed %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
-                    {% if workspace and workspace.self_assessment_passed %}✓{% else %}Pending{% endif %}
+                    style="color:{% if mr_done_count == mr_total and mr_total %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
+                    {{ mr_done_count }}/{{ mr_total }}
                   </div>
                 </div>
                 <div class="bw-gate">
@@ -357,32 +344,28 @@
                   <div class="bw-gate__label">BOQ priced</div>
                   <div class="bw-gate__status"
                     style="color:{% if workspace and workspace.pricing_complete %}var(--bw-green){% else %}var(--bw-amber){% endif %};">
-                    {% if workspace and workspace.pricing_complete %}✓{% else %}Pending{% endif %}
+                    {% if workspace and workspace.pricing_complete %}✓{% else %}Open{% endif %}
                   </div>
                 </div>
               </div>
 
-              <!-- Action buttons -->
+              <a href="{% url 'bid-workspace' listing.pk %}"
+                 class="bw-btn bw-btn--primary"
+                 style="width:100%;justify-content:center;margin-bottom:8px;">
+                Open BOQ Workspace
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </a>
+              <div style="font-size:.72rem;color:var(--bw-dgrey);text-align:center;margin-bottom:10px;">
+                Available now — not blocked by certificate progress.
+              </div>
+
               {% if listing.boq_document %}
                 <a href="{% url 'tender-boq-download' listing.pk %}"
                    class="bw-btn bw-btn--ghost"
-                   style="width:100%;justify-content:center;margin-bottom:8px;">
-                  📥 Download BOQ
+                   style="width:100%;justify-content:center;">
+                  Download BOQ file
                 </a>
               {% endif %}
-
-              <a href="{% url 'bid-self-assess' listing.pk %}"
-                 class="bw-btn bw-btn--ghost"
-                 style="width:100%;justify-content:center;margin-bottom:8px;">
-                ✓ Self-Assessment
-              </a>
-
-              <a href="{% url 'bid-workspace' listing.pk %}"
-                 class="bw-btn bw-btn--primary"
-                 style="width:100%;justify-content:center;">
-                Open Bid Workspace
-                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-              </a>
             {% endif %}
           {% endif %}
         </div>
