@@ -71,12 +71,23 @@
 
   {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
   <div class="bw-card" style="margin-bottom:16px;" id="filter2-subcontract">
-    <div class="bw-card-header">Filter 2 · Subcontracting (MR14)</div>
+    <div class="bw-card-header">Step 1 · Subcontracting first (MR14)</div>
     <div class="bw-card-body">
       <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        Separate from pricing above. Choose whether a domestic/nominated sub is required,
-        then Process — pricing and BOQ selection stay as they were.
+        Start here. Select categories to subcontract (BOM for the sub), invite them,
+        then price your remaining main BOQ below (subcontracted categories are removed from your bid).
       </p>
+      {% if subcontracted_codes %}
+      <div class="bw-alert bw-alert--info" style="margin-bottom:12px;">
+        Already subcontracted: <strong>{{ subcontracted_codes|join:", " }}</strong>
+        {% if subcontract_arrangements %}
+        —
+        {% for a in subcontract_arrangements %}
+        <a href="{% url 'bid-subcontract-detail' listing.pk a.pk %}">{{ a.sub_company_name }}</a>{% if not forloop.last %}; {% endif %}
+        {% endfor %}
+        {% endif %}
+      </div>
+      {% endif %}
       <form method="POST" action="{% url 'bid-workspace' listing.pk %}" id="subcontract-filter-form">
         {% csrf_token %}
         <input type="hidden" name="action" value="begin_subcontract" id="sub-filter-action">
@@ -97,7 +108,7 @@
 
         <div id="sub-type-block" style="display:none;margin-bottom:12px;">
           <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">Type</div>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
             <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
               <input type="radio" name="arrangement_type" value="A" checked>
               <span><strong>Type A</strong> — Domestic</span>
@@ -107,26 +118,44 @@
               <span><strong>Type B</strong> — Nominated</span>
             </label>
           </div>
-          <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin:12px 0 8px;">BOQ categories to subcontract</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:180px;overflow:auto;border:1px solid var(--bw-rule);border-radius:8px;padding:10px;background:var(--bw-mist);">
+          <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">BOQ categories for sub (BOM)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:180px;overflow:auto;border:1px solid var(--bw-rule);border-radius:8px;padding:10px;background:var(--bw-mist);margin-bottom:12px;">
             {% for pkg in packages %}
-            <label style="display:flex;gap:8px;align-items:flex-start;font-size:.82rem;">
-              <input type="checkbox" name="sub_package_code" value="{{ pkg.code }}">
-              <span><strong>{{ pkg.code }}</strong> — {{ pkg.title }}</span>
+            <label style="display:flex;gap:8px;align-items:flex-start;font-size:.82rem;{% if pkg.code|upper in subcontracted_codes %}opacity:.45;{% endif %}">
+              <input type="checkbox" name="sub_package_code" value="{{ pkg.code }}"
+                     {% if pkg.code|upper in subcontracted_codes %}disabled{% endif %}>
+              <span><strong>{{ pkg.code }}</strong> — {{ pkg.title }}{% if pkg.code|upper in subcontracted_codes %} (done){% endif %}</span>
             </label>
             {% empty %}
             <p style="margin:0;color:var(--bw-mid);font-size:.82rem;">No packages loaded.</p>
             {% endfor %}
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_company">Sub company *</label>
+              <input id="ws_sub_company" name="sub_company_name" maxlength="200"
+                     style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_email">Invite email *</label>
+              <input type="email" id="ws_sub_email" name="sub_email"
+                     style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_contact">Contact</label>
+              <input id="ws_sub_contact" name="sub_contact_name" maxlength="120"
+                     style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_phone">Phone</label>
+              <input id="ws_sub_phone" name="sub_phone" maxlength="40"
+                     style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+            </div>
+          </div>
         </div>
 
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;">
           <button type="submit" class="bw-btn bw-btn--primary" id="subcontract-process-btn" disabled>Process</button>
-          {% if subcontract_count %}
-          <a href="{% url 'bid-subcontract' listing.pk %}" class="bw-btn bw-btn--ghost bw-btn--sm">
-            View active ({{ subcontract_count }})
-          </a>
-          {% endif %}
         </div>
       </form>
     </div>
@@ -135,19 +164,18 @@
 
   <div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;">
     <div>
-      {% if packages %}
+      {% if main_packages %}
       <div class="bw-card" style="margin-bottom:16px;">
-        <div class="bw-card-header">Select BOQ categories</div>
+        <div class="bw-card-header">Step 2 · Main BOQ categories (excludes subcontracted)</div>
         <div class="bw-card-body">
           <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 14px;">
-            Bid on any combination of RFQ bill categories (or Select all).
-            Each selected category is priced separately; your submission covers only those you select.
+            Price only what remains after subcontracting. Subcontracted bills are not shown here.
           </p>
           <form method="POST" action="{% url 'bid-workspace' listing.pk %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="select_packages">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-              {% for pkg in packages %}
+              {% for pkg in main_packages %}
               <label style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;
                 border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;
                 background:{% if pkg.code in selected_codes %}#f0fdf9{% else %}var(--bw-white){% endif %};">
@@ -165,12 +193,16 @@
             {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
             <div style="display:flex;justify-content:flex-end;gap:8px;">
               <button type="button" class="bw-btn bw-btn--ghost bw-btn--sm"
-                      onclick="document.querySelectorAll('input[name=package_code]').forEach(c=>c.checked=true)">Select all</button>
+                      onclick="document.querySelectorAll('input[name=package_code]').forEach(c=>{if(!c.disabled)c.checked=true})">Select all remaining</button>
               <button type="submit" class="bw-btn bw-btn--teal">Apply selection</button>
             </div>
             {% endif %}
           </form>
         </div>
+      </div>
+      {% elif packages %}
+      <div class="bw-alert bw-alert--info" style="margin-bottom:16px;">
+        All BOQ categories are currently subcontracted. Complete the sub portal / MR14 agreement, or cancel an arrangement to price main categories.
       </div>
       {% endif %}
 
@@ -301,7 +333,7 @@
           <div class="bw-gate">
             <div class="bw-gate__dot bw-gate__dot--{% if selected_codes %}green{% else %}amber{% endif %}"></div>
             <div class="bw-gate__label">Categories</div>
-            <div class="bw-gate__status">{{ selected_codes|length }}/{{ packages|length }}</div>
+            <div class="bw-gate__status">{{ selected_codes|length }}/{{ main_packages|length }}</div>
           </div>
           <div class="bw-gate">
             <div class="bw-gate__dot bw-gate__dot--{% if workspace.pricing_complete %}green{% else %}amber{% endif %}"></div>
@@ -339,11 +371,10 @@
         <div class="bw-card-body">
           <div style="font-size:.78rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
             <strong style="color:var(--bw-navy);">Bid process</strong><br>
-            1) Certificates &amp; support docs ·
-            2) Select categories &amp; price BOQ ·
-            3) Filter 2 subcontract if needed ·
-            4) Download draft bid PDF ·
-            5) Submit selected categories
+            1) Step 1 subcontract categories ·
+            2) Step 2 price remaining BOQ ·
+            3) Certificates ·
+            4) Draft PDF · Submit
           </div>
           <a href="{% url 'bid-draft-pdf' listing.pk %}" class="bw-btn bw-btn--ghost"
              style="width:100%;justify-content:center;margin-bottom:10px;"
@@ -390,14 +421,16 @@ function toggleSubcontractFilter() {
   const no = document.getElementById('sub-req-no');
   const typeBlock = document.getElementById('sub-type-block');
   const btn = document.getElementById('subcontract-process-btn');
-  const action = document.getElementById('sub-filter-action');
+  const company = document.getElementById('ws_sub_company');
+  const email = document.getElementById('ws_sub_email');
   if (!yes || !no || !btn) return;
   const isYes = yes.checked;
   const isNo = no.checked;
   if (typeBlock) typeBlock.style.display = isYes ? '' : 'none';
   btn.disabled = !(isYes || isNo);
-  if (action) action.value = 'begin_subcontract';
-  btn.textContent = isNo ? 'Process — mark MR14 N/A' : (isYes ? 'Process — continue to invite' : 'Process');
+  if (company) company.required = isYes;
+  if (email) email.required = isYes;
+  btn.textContent = isNo ? 'Process — mark MR14 N/A' : (isYes ? 'Process — invite sub & lock categories' : 'Process');
 }
 function recalcTotals() {
   const byPkg = {};

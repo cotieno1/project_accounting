@@ -268,6 +268,23 @@ def _mr_progress(workspace, requirements):
     return done, total
 
 
+def _active_subcontracted_codes(listing, org):
+    """BOQ package codes already committed to an active subcontract on this bid."""
+    codes = set()
+    if listing is None or org is None:
+        return codes
+    try:
+        qs = SubcontractArrangement.objects.filter(
+            tender=listing,
+            main_organisation=org,
+        ).exclude(status=SubcontractArrangement.CANCELLED)
+        for arr in qs.only("package_codes"):
+            codes.update(arr.selected_codes())
+    except Exception:
+        return set()
+    return codes
+
+
 def _get_user_account(request):
     """Returns UserAccount for logged-in user, or None."""
     try:
@@ -953,15 +970,16 @@ def bid_workspace(request, listing_id):
         )
 
         if action == 'select_packages':
+            subcontracted = _active_subcontracted_codes(listing, org)
             selected = [
                 c.strip().upper()
                 for c in request.POST.getlist('package_code')
                 if c.strip()
             ]
-            valid = {p.code.upper() for p in packages}
+            valid = {p.code.upper() for p in packages} - subcontracted
             selected = [c for c in selected if c in valid]
-            if not selected and packages:
-                messages.error(request, 'Select at least one BOQ component to bid.')
+            if not selected and packages and (len(packages) > len(subcontracted)):
+                messages.error(request, 'Select at least one remaining BOQ component to bid.')
                 return redirect('bid-workspace', listing_id=listing_id)
             workspace.selected_package_codes = selected
             # Drop priced lines for deselected packages
@@ -974,23 +992,25 @@ def bid_workspace(request, listing_id):
             ])
             messages.success(
                 request,
-                f'{len(selected)} component(s) selected. Enter unit rates below.',
+                f'{len(selected)} component(s) selected for main BOQ. Enter unit rates below.',
             )
             return redirect('bid-workspace', listing_id=listing_id)
 
         if action == 'begin_subcontract':
-            # Filter 2 only — does not touch BOQ pricing / package selection.
+            # Step 1: subcontract first — create invite here (fixes Process 500 redirect).
+            import secrets
+
             required = (request.POST.get('subcontract_required') or '').strip().upper()
             if required == 'NO':
                 try:
                     _mark_mr14_not_applicable(workspace)
+                    messages.success(
+                        request,
+                        'Subcontracting not required — MR14 marked N/A. '
+                        'Continue with main BOQ categories below.',
+                    )
                 except Exception as exc:
                     messages.error(request, f'Could not update MR14: {exc}')
-                    return redirect('bid-workspace', listing_id=listing_id)
-                messages.success(
-                    request,
-                    'Subcontracting not required — MR14 marked N/A.',
-                )
                 return redirect('bid-workspace', listing_id=listing_id)
 
             if required != 'YES':
@@ -999,17 +1019,110 @@ def bid_workspace(request, listing_id):
 
             arr_type = (request.POST.get('arrangement_type') or 'A').strip().upper()
             if arr_type in {'B', 'TYPE_B', 'NOMINATED'}:
-                type_q = 'B'
+                arr_type = SubcontractArrangement.NOMINATED
             else:
-                type_q = 'A'
-            packages_q = [
+                arr_type = SubcontractArrangement.DOMESTIC
+
+            selected_sub = [
                 c.strip().upper()
                 for c in request.POST.getlist('sub_package_code')
                 if c.strip()
             ]
-            from urllib.parse import urlencode
-            qs = urlencode([('type', type_q)] + [('pkg', p) for p in packages_q])
-            return redirect(f"{reverse('bid-subcontract', kwargs={'listing_id': listing_id})}?{qs}")
+            valid = {p.code.upper() for p in packages}
+            already = _active_subcontracted_codes(listing, org)
+            selected_sub = [c for c in selected_sub if c in valid and c not in already]
+            company = (request.POST.get('sub_company_name') or '').strip()
+            email = (request.POST.get('sub_email') or '').strip().lower()
+            contact = (request.POST.get('sub_contact_name') or '').strip()
+            phone = (request.POST.get('sub_phone') or '').strip()
+            notes = (request.POST.get('notes') or '').strip()
+
+            if not selected_sub:
+                messages.error(
+                    request,
+                    'Select at least one available BOQ category to subcontract '
+                    '(already-subcontracted categories are excluded).',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+            if not company:
+                messages.error(request, 'Sub-contractor company name is required.')
+                return redirect('bid-workspace', listing_id=listing_id)
+            if not email or '@' not in email:
+                messages.error(request, 'A valid sub-contractor invite email is required.')
+                return redirect('bid-workspace', listing_id=listing_id)
+
+            try:
+                arrangement = SubcontractArrangement.objects.create(
+                    tender=listing,
+                    workspace=workspace,
+                    main_organisation=org,
+                    arrangement_type=arr_type,
+                    status=SubcontractArrangement.INVITED,
+                    package_codes=selected_sub,
+                    sub_company_name=company,
+                    sub_contact_name=contact,
+                    sub_email=email,
+                    sub_phone=phone,
+                    notes=notes,
+                    payment_via_main=True,
+                    approval_by_consultant=(
+                        arr_type == SubcontractArrangement.NOMINATED
+                    ),
+                    invite_token=secrets.token_urlsafe(32),
+                    invited_by=ua,
+                    invited_at=timezone.now(),
+                )
+            except Exception as exc:
+                messages.error(
+                    request,
+                    'Could not start subcontract (database may need migrate). '
+                    f'Detail: {exc}',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+
+            kept = [
+                c for c in workspace.selected_codes() if c not in set(selected_sub)
+            ]
+            workspace.selected_package_codes = kept
+            WorkspaceBillPrice.objects.filter(
+                workspace=workspace, package_code__in=selected_sub
+            ).delete()
+            workspace.pricing_complete = False
+            workspace.save(
+                update_fields=['selected_package_codes', 'pricing_complete']
+            )
+
+            try:
+                ok, err = _send_subcontract_invite_email(arrangement, request)
+            except Exception as exc:
+                ok, err = False, str(exc)
+            arrangement.invite_email_sent = bool(ok)
+            arrangement.invite_email_error = (err or '')[:400]
+            try:
+                arrangement.save(
+                    update_fields=[
+                        'invite_email_sent',
+                        'invite_email_error',
+                        'updated_at',
+                    ]
+                )
+            except Exception:
+                pass
+
+            if ok:
+                messages.success(
+                    request,
+                    f'Subcontract invite sent to {email} for '
+                    f'{", ".join(selected_sub)}. Those categories are off your main BOQ — '
+                    f'price the remainder next.',
+                )
+            else:
+                messages.warning(
+                    request,
+                    f'Subcontract saved for {", ".join(selected_sub)}, but email '
+                    f'failed: {err}. Resend from the arrangement page.',
+                )
+            return redirect('bid-workspace', listing_id=listing_id)
 
         if action != 'save_prices':
             return redirect('bid-workspace', listing_id=listing_id)
@@ -1079,8 +1192,20 @@ def bid_workspace(request, listing_id):
         return redirect('bid-workspace', listing_id=listing_id)
 
     selected = workspace.selected_codes()
+    subcontracted_codes = sorted(_active_subcontracted_codes(listing, org))
+    subcontracted_set = set(subcontracted_codes)
+    # Keep main selection free of subcontracted categories
+    if subcontracted_set and any(c in subcontracted_set for c in selected):
+        selected = [c for c in selected if c not in subcontracted_set]
+        workspace.selected_package_codes = selected
+        WorkspaceBillPrice.objects.filter(
+            workspace=workspace, package_code__in=list(subcontracted_set)
+        ).delete()
+        workspace.save(update_fields=['selected_package_codes'])
+
+    main_packages = [p for p in packages if p.code.upper() not in subcontracted_set]
     # Default: if packages exist and none selected yet, leave empty so UI prompts
-    selected_packages = [p for p in packages if p.code.upper() in selected]
+    selected_packages = [p for p in main_packages if p.code.upper() in selected]
     price_map = {
         bp.bill_ref: bp
         for bp in workspace.bill_prices.all()
@@ -1116,8 +1241,8 @@ def bid_workspace(request, listing_id):
             'line_count': len(rows),
         })
 
-    # Also show unselected categories in summary as zero / not bidding
-    for pkg in packages:
+    # Also show unselected main categories in summary (exclude already subcontracted)
+    for pkg in main_packages:
         if pkg.code.upper() in selected:
             continue
         category_summary.append({
@@ -1125,6 +1250,16 @@ def bid_workspace(request, listing_id):
             'title': pkg.title,
             'subtotal': None,  # not selected
             'line_count': pkg.lines.count(),
+        })
+    for pkg in packages:
+        if pkg.code.upper() not in subcontracted_set:
+            continue
+        category_summary.append({
+            'code': pkg.code,
+            'title': pkg.title + ' (subcontracted)',
+            'subtotal': None,
+            'line_count': pkg.lines.count(),
+            'subcontracted': True,
         })
 
     can_switch_boq_mode = (
@@ -1138,19 +1273,26 @@ def bid_workspace(request, listing_id):
     )
 
     subcontract_count = 0
+    subcontract_arrangements = []
     if org is not None:
         try:
-            subcontract_count = SubcontractArrangement.objects.filter(
-                tender=listing,
-                main_organisation=org,
-            ).exclude(status=SubcontractArrangement.CANCELLED).count()
+            subcontract_arrangements = list(
+                SubcontractArrangement.objects.filter(
+                    tender=listing,
+                    main_organisation=org,
+                ).exclude(status=SubcontractArrangement.CANCELLED).order_by('-created_at')[:8]
+            )
+            subcontract_count = len(subcontract_arrangements)
         except Exception:
             subcontract_count = 0
+            subcontract_arrangements = []
 
     ctx = {
         'listing': listing,
         'workspace': workspace,
         'packages': packages,
+        'main_packages': main_packages,
+        'subcontracted_codes': subcontracted_codes,
         'selected_codes': selected,
         'boq_input_mode': listing.boq_input_mode,
         'boq_mode_choices': TenderListing.BOQ_INPUT_MODE_CHOICES,
@@ -1161,6 +1303,7 @@ def bid_workspace(request, listing_id):
         'bill_prices': workspace.bill_prices.order_by('bill_ref'),
         'self_checks': workspace.self_checks.order_by('mr_ref'),
         'subcontract_count': subcontract_count,
+        'subcontract_arrangements': subcontract_arrangements,
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_workspace.html', ctx)
