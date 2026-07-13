@@ -109,6 +109,12 @@ h1{font-size:1.6rem;font-weight:600;color:var(--navy);letter-spacing:-.03em;marg
       <span class="detail-key">Reference</span>
       <span class="detail-val">{{ staff_no }}</span>
     </div>
+    {% if project_id %}
+    <div class="detail-row">
+      <span class="detail-key">Project registered</span>
+      <span class="detail-val">{{ project_id }}{% if project_name %} — {{ project_name }}{% endif %}</span>
+    </div>
+    {% endif %}
     <div class="detail-row">
       <span class="detail-key">Email sent to</span>
       <span class="detail-val">{{ email }}</span>

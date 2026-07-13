@@ -384,6 +384,7 @@ def home(request):
             "roads_contractors": roads_contractors,
             "contractor_categories": BUILDWATCH_CONTRACTOR_CATEGORIES,
             "consultant_disciplines": BUILDWATCH_CONSULTANT_DISCIPLINES,
+            "sponsor_types": BUILDWATCH_SPONSOR_TYPES,
             "tenant_count": tenant_count,
         },
     )
@@ -1564,7 +1565,10 @@ ORG_TYPE_TO_CONTRACTOR = {
     "PARASTATAL": Organization.CONTRACTOR_ROADS,
     "DEVELOPER": Organization.CONTRACTOR_BUILDING,
     "FINANCIER": Organization.CONTRACTOR_BUILDING,
+    "PRIVATE": Organization.CONTRACTOR_BUILDING,
     "NGO": Organization.CONTRACTOR_BUILDING,
+    "INSTITUTION": Organization.CONTRACTOR_BUILDING,
+    "CLIENT": Organization.CONTRACTOR_BUILDING,
     "OTHER": Organization.CONTRACTOR_BUILDING,
 }
 
@@ -1582,6 +1586,33 @@ BUILDWATCH_CONSULTANT_DISCIPLINES = [
     ("CIVIL", "Civil engineer"),
     ("MEP", "MEP consultant"),
     ("PM", "Project / contract manager"),
+]
+
+BUILDWATCH_SPONSOR_TYPES = [
+    ("GOV_NATIONAL", "National government — ministry / department / agency"),
+    ("GOV_COUNTY", "County government"),
+    ("PARASTATAL", "Parastatal / state corporation"),
+    ("FINANCIER", "Development financier (World Bank, AfDB, IFC, etc.)"),
+    ("DEVELOPER", "Private developer / PPP consortium (local or international)"),
+    ("PRIVATE", "Private company / corporate project owner"),
+    ("NGO", "NGO / international development partner"),
+    ("INSTITUTION", "Institution (university, hospital, faith-based)"),
+    ("CLIENT", "Other project client / employer / sponsor"),
+]
+
+BUILDWATCH_PROJECT_SECTORS = [
+    ("BUILDINGS", "Buildings"),
+    ("ROADS", "Roads & bridges"),
+    ("WATER", "Water & sanitation"),
+    ("ENERGY", "Energy"),
+    ("ICT", "ICT infrastructure"),
+    ("OTHER", "Other"),
+]
+
+BUILDWATCH_PROJECT_TYPES = [
+    ("GOV", "Government"),
+    ("PPP", "Public-Private Partnership"),
+    ("PRIVATE", "Private"),
 ]
 
 
@@ -1634,6 +1665,9 @@ def _buildwatch_register_context(request, post=None):
         "pioneer_org": pioneer,
         "contractor_categories": BUILDWATCH_CONTRACTOR_CATEGORIES,
         "consultant_disciplines": BUILDWATCH_CONSULTANT_DISCIPLINES,
+        "sponsor_types": BUILDWATCH_SPONSOR_TYPES,
+        "project_sectors": BUILDWATCH_PROJECT_SECTORS,
+        "project_types": BUILDWATCH_PROJECT_TYPES,
     }
 
 
@@ -1667,21 +1701,18 @@ def buildwatch_register(request):
             post["org_type"] = "CONSULTANT"
             if discipline:
                 post["consultant_discipline"] = discipline
+        elif track == "SPONSOR":
+            sponsor = (request.GET.get("sponsor_type") or "").strip().upper()
+            if sponsor in {c for c, _ in BUILDWATCH_SPONSOR_TYPES}:
+                post["org_type"] = sponsor
+            else:
+                post["org_type"] = "GOV_NATIONAL"
+            post["registration_track"] = "SPONSOR"
         elif reg_type in ("BUILDING", "CONTRACTOR"):
             post["org_type"] = "CONTRACTOR"
-        elif reg_type in (
-            "GOV_NATIONAL",
-            "GOV_COUNTY",
-            "PARASTATAL",
-            "FINANCIER",
-            "DEVELOPER",
-            "NGO",
-            "CLIENT",
-            "INSTITUTION",
-            "PRIVATE",
-            "INDIVIDUAL",
-        ):
+        elif reg_type in {c for c, _ in BUILDWATCH_SPONSOR_TYPES} | {"INDIVIDUAL"}:
             post["org_type"] = reg_type
+            post["registration_track"] = "SPONSOR"
         if post.get("org_type"):
             ctx["post"] = post
             ctx["prefill_json"] = json.dumps(post)
@@ -1741,7 +1772,26 @@ def buildwatch_register(request):
         errors.append("Mobile number is required.")
     if not buildwatch_role:
         errors.append("Please select your role.")
-    if not licence_body:
+    sponsor_types = {c for c, _ in BUILDWATCH_SPONSOR_TYPES}
+    is_sponsor = org_type in sponsor_types
+    project_name = (p.get("project_name") or "").strip()
+    project_code = (p.get("project_code") or "").strip().upper()
+    project_sector = (p.get("project_sector") or "").strip().upper()
+    project_type = (p.get("project_type") or "").strip().upper()
+    project_county = (p.get("project_county") or "").strip()
+    project_value_raw = (p.get("project_value") or "").strip().replace(",", "")
+    if is_sponsor:
+        if not project_name:
+            errors.append("Project name is required for project owner / sponsor registration.")
+        if not project_sector:
+            errors.append("Please select the project sector.")
+        if not project_type:
+            errors.append("Please select the project funding type (Government / PPP / Private).")
+        if not licence_body:
+            licence_body = "INSTITUTIONAL"
+        if not licence_no:
+            licence_no = org_pin or project_code or "PENDING"
+    elif not licence_body:
         errors.append("Please select your licensing body.")
     if tos_agreed != "1":
         errors.append("You must agree to the Terms of Use.")
@@ -1828,6 +1878,45 @@ def buildwatch_register(request):
         except ValueError as exc:
             invite_error = str(exc)
 
+    project_created_id = ""
+    if is_sponsor and project_name and org_created:
+        from decimal import Decimal, InvalidOperation
+        from buildwatch.models import Country, InfraProject
+        from accounts.models import ProjectTask
+
+        code = re.sub(r"[^A-Z0-9_-]", "", (project_code or project_name).upper())[:40]
+        if not code:
+            code = "PRJ"
+        base = code
+        n = 1
+        while ProjectTask.objects.filter(project_id=base).exists():
+            base = f"{code[:36]}-{n}"
+            n += 1
+        task = ProjectTask.objects.create(
+            project_id=base,
+            description=project_name[:200],
+        )
+        try:
+            value = Decimal(project_value_raw) if project_value_raw else Decimal("0")
+        except (InvalidOperation, ValueError):
+            value = Decimal("0")
+        country = Country.objects.filter(code__iexact=org_country).first()
+        if country is None:
+            country = Country.objects.filter(code__iexact="KE").first()
+        ptype = project_type if project_type in {"GOV", "PPP", "PRIVATE"} else "GOV"
+        sector = project_sector if project_sector in {c for c, _ in BUILDWATCH_PROJECT_SECTORS} else "OTHER"
+        InfraProject.objects.create(
+            task=task,
+            owner_org=org,
+            country=country,
+            sector=sector,
+            project_type=ptype,
+            county=project_county or org_county,
+            contract_value=value,
+            is_active=True,
+        )
+        project_created_id = task.project_id
+
     request.session["bw_reg_name"] = f"{user_first} {user_last}"
     request.session["bw_reg_email"] = user_email
     request.session["bw_reg_org"] = org.name
@@ -1836,6 +1925,8 @@ def buildwatch_register(request):
     request.session["bw_reg_auto_activated"] = auto_activate_user and invite_sent
     request.session["bw_reg_org_created"] = org_created
     request.session["bw_reg_invite_error"] = invite_error
+    request.session["bw_reg_project_id"] = project_created_id
+    request.session["bw_reg_project_name"] = project_name if is_sponsor else ""
 
     return redirect("buildwatch-register-pending")
 
@@ -1845,6 +1936,8 @@ def buildwatch_register_pending(request):
     context = {
         "name": request.session.get("bw_reg_name", "Applicant"),
         "email": request.session.get("bw_reg_email", ""),
+        "project_id": request.session.get("bw_reg_project_id", ""),
+        "project_name": request.session.get("bw_reg_project_name", ""),
         "org": request.session.get("bw_reg_org", ""),
         "role": request.session.get("bw_reg_role", ""),
         "staff_no": request.session.get("bw_reg_staff_no", ""),

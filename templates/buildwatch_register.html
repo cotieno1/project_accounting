@@ -858,14 +858,16 @@ html, body {
               <option value="CONTRACTOR">Building / civil / specialist contractor</option>
               <option value="CONSULTANT">Consulting engineer / architect / QS</option>
             </optgroup>
-            <optgroup label="Employers &amp; institutions (publish tenders)">
+            <optgroup label="Employers &amp; sponsors (publish tenders)">
               <option value="GOV_NATIONAL">National government — ministry / department / agency</option>
               <option value="GOV_COUNTY">County government</option>
               <option value="PARASTATAL">State corporation / parastatal</option>
-              <option value="FINANCIER">Development bank / DFI (e.g. World Bank, AfDB)</option>
-              <option value="DEVELOPER">Private developer / PPP consortium</option>
-              <option value="NGO">NGO / international organisation</option>
-              <option value="PRIVATE">Private company / individual client</option>
+              <option value="FINANCIER">Development financier (World Bank, AfDB, IFC, etc.)</option>
+              <option value="DEVELOPER">Private developer / PPP consortium (local or international)</option>
+              <option value="PRIVATE">Private company / corporate project owner</option>
+              <option value="NGO">NGO / international development partner</option>
+              <option value="INSTITUTION">Institution (university, hospital, faith-based)</option>
+              <option value="CLIENT">Other project client / employer / sponsor</option>
               <option value="OTHER">Other employer / institution</option>
             </optgroup>
           </select>
@@ -892,6 +894,62 @@ html, body {
             {% endfor %}
           </select>
           <div class="bw-error-msg" id="err-consultant_discipline">Please select your consultant discipline.</div>
+        </div>
+
+        <div id="field-sponsor-project" style="display:none">
+          <div class="bw-field" style="margin-top:8px;">
+            <div class="bw-hint" style="margin-bottom:10px;">
+              Register the project this organisation owns or sponsors. You can publish tenders against it after admin approval.
+            </div>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="project_name">Project name <span class="bw-req">*</span></label>
+            <input class="bw-input" type="text" id="project_name" name="project_name"
+                   placeholder="e.g. Proposed Completion of Isiolo Stadium" maxlength="200"
+                   value="{{ post.project_name|default:'' }}">
+            <div class="bw-error-msg" id="err-project_name">Project name is required.</div>
+          </div>
+          <div class="bw-field-row">
+            <div class="bw-field">
+              <label class="bw-label" for="project_code">Project / tender ref code</label>
+              <input class="bw-input" type="text" id="project_code" name="project_code"
+                     placeholder="e.g. SK_004_2025" maxlength="40"
+                     value="{{ post.project_code|default:'' }}">
+            </div>
+            <div class="bw-field">
+              <label class="bw-label" for="project_county">Project county / location</label>
+              <input class="bw-input" type="text" id="project_county" name="project_county"
+                     placeholder="e.g. Isiolo" maxlength="100"
+                     value="{{ post.project_county|default:'' }}">
+            </div>
+          </div>
+          <div class="bw-field-row">
+            <div class="bw-field">
+              <label class="bw-label" for="project_sector">Sector <span class="bw-req">*</span></label>
+              <select class="bw-select" id="project_sector" name="project_sector">
+                <option value="" disabled selected>Select sector…</option>
+                {% for code, label in project_sectors %}
+                <option value="{{ code }}" {% if post.project_sector == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="bw-error-msg" id="err-project_sector">Please select the project sector.</div>
+            </div>
+            <div class="bw-field">
+              <label class="bw-label" for="project_type">Funding / project type <span class="bw-req">*</span></label>
+              <select class="bw-select" id="project_type" name="project_type">
+                <option value="" disabled selected>Select type…</option>
+                {% for code, label in project_types %}
+                <option value="{{ code }}" {% if post.project_type == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="bw-error-msg" id="err-project_type">Please select Government, PPP, or Private.</div>
+            </div>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label" for="project_value">Estimated contract value (optional)</label>
+            <input class="bw-input" type="text" id="project_value" name="project_value"
+                   placeholder="e.g. 250000000" value="{{ post.project_value|default:'' }}">
+          </div>
         </div>
 
         <div class="bw-field-row">
@@ -1279,6 +1337,12 @@ html, body {
         <input type="hidden" name="org_type"           id="hid-org_type">
         <input type="hidden" name="contractor_category" id="hid-contractor_category">
         <input type="hidden" name="consultant_discipline" id="hid-consultant_discipline">
+        <input type="hidden" name="project_name" id="hid-project_name">
+        <input type="hidden" name="project_code" id="hid-project_code">
+        <input type="hidden" name="project_county" id="hid-project_county">
+        <input type="hidden" name="project_sector" id="hid-project_sector">
+        <input type="hidden" name="project_type" id="hid-project_type">
+        <input type="hidden" name="project_value" id="hid-project_value">
         <input type="hidden" name="org_country"        id="hid-org_country">
         <input type="hidden" name="org_county"         id="hid-org_county">
         <input type="hidden" name="org_pin"            id="hid-org_pin">
@@ -1385,6 +1449,17 @@ function validateStep(step) {
       showErr('consultant_discipline', empty);
       if (empty) ok = false;
     }
+    const sponsorTypes = {
+      GOV_NATIONAL:1, GOV_COUNTY:1, PARASTATAL:1, FINANCIER:1, DEVELOPER:1,
+      PRIVATE:1, NGO:1, INSTITUTION:1, CLIENT:1, OTHER:1
+    };
+    if (sponsorTypes[orgType]) {
+      ['project_name', 'project_sector', 'project_type'].forEach(f => {
+        const empty = !val(f);
+        showErr(f, empty);
+        if (empty) ok = false;
+      });
+    }
   }
 
   if (step === 2) {
@@ -1412,19 +1487,32 @@ function validateStep(step) {
   }
 
   if (step === 3) {
-    const body = val('licence_body');
-    showErr('licence_body', !body);
-    if (!body) ok = false;
+    const sponsorTypes = {
+      GOV_NATIONAL:1, GOV_COUNTY:1, PARASTATAL:1, FINANCIER:1, DEVELOPER:1,
+      PRIVATE:1, NGO:1, INSTITUTION:1, CLIENT:1, OTHER:1
+    };
+    // Project owners / sponsors are institutional — licence step is optional.
+    if (sponsorTypes[val('org_type')]) {
+      const bodyEl = document.getElementById('licence_body');
+      if (bodyEl && !bodyEl.value) bodyEl.value = 'NONE';
+      showErr('licence_body', false);
+      showErr('licence_no', false);
+      showErr('licence_expiry', false);
+    } else {
+      const body = val('licence_body');
+      showErr('licence_body', !body);
+      if (!body) ok = false;
 
-    if (body && body !== 'NONE') {
-      const licNo = val('licence_no');
-      showErr('licence_no', !licNo);
-      if (!licNo) ok = false;
+      if (body && body !== 'NONE') {
+        const licNo = val('licence_no');
+        showErr('licence_no', !licNo);
+        if (!licNo) ok = false;
 
-      const expiry = val('licence_expiry');
-      const expiryOk = expiry && new Date(expiry) > new Date();
-      showErr('licence_expiry', !expiryOk);
-      if (!expiryOk) ok = false;
+        const expiry = val('licence_expiry');
+        const expiryOk = expiry && new Date(expiry) > new Date();
+        showErr('licence_expiry', !expiryOk);
+        if (!expiryOk) ok = false;
+      }
     }
   }
 
@@ -1445,10 +1533,17 @@ function toggleOrgCategoryFields() {
   const orgType = val('org_type');
   const contractorField = document.getElementById('field-contractor-category');
   const consultantField = document.getElementById('field-consultant-discipline');
+  const sponsorField = document.getElementById('field-sponsor-project');
   const contractorSelect = document.getElementById('contractor_category');
   const consultantSelect = document.getElementById('consultant_discipline');
+  const sponsorTypes = {
+    GOV_NATIONAL:1, GOV_COUNTY:1, PARASTATAL:1, FINANCIER:1, DEVELOPER:1,
+    PRIVATE:1, NGO:1, INSTITUTION:1, CLIENT:1, OTHER:1
+  };
+  const isSponsor = !!sponsorTypes[orgType];
   if (contractorField) contractorField.style.display = orgType === 'CONTRACTOR' ? '' : 'none';
   if (consultantField) consultantField.style.display = orgType === 'CONSULTANT' ? '' : 'none';
+  if (sponsorField) sponsorField.style.display = isSponsor ? '' : 'none';
   if (contractorSelect) contractorSelect.required = orgType === 'CONTRACTOR';
   if (consultantSelect) consultantSelect.required = orgType === 'CONSULTANT';
 }
@@ -1478,8 +1573,11 @@ function populateSummary() {
     CONTRACTOR:   'Contractor',
     CONSULTANT:   'Consulting Engineer / Architect / QS',
     DEVELOPER:    'Private Developer / PPP',
-    FINANCIER:    'Development Bank / DFI',
+    FINANCIER:    'Development financier (World Bank / DFI)',
+    PRIVATE:      'Private company / corporate owner',
     NGO:          'NGO / International Organisation',
+    INSTITUTION:  'Institution',
+    CLIENT:       'Project client / employer / sponsor',
     OTHER:        'Other',
   };
 
@@ -1528,7 +1626,9 @@ function toggleSubmit() {
 // ── On final submit: copy all values to hidden form ──────────────────────────
 document.getElementById('final-form').addEventListener('submit', () => {
   const fields = [
-    'org_name','org_short','org_type','contractor_category','consultant_discipline','org_country','org_county',
+    'org_name','org_short','org_type','contractor_category','consultant_discipline',
+    'project_name','project_code','project_county','project_sector','project_type','project_value',
+    'org_country','org_county',
     'org_pin','org_phone','org_address',
     'user_first','user_last','user_email','user_phone','user_designation',
     'licence_body','licence_no','licence_expiry','licence_class',
@@ -1548,7 +1648,9 @@ document.getElementById('submit-btn').addEventListener('click', function(e) {
   e.preventDefault();
   // Copy fields then submit
   const fields = [
-    'org_name','org_short','org_type','contractor_category','consultant_discipline','org_country','org_county',
+    'org_name','org_short','org_type','contractor_category','consultant_discipline',
+    'project_name','project_code','project_county','project_sector','project_type','project_value',
+    'org_country','org_county',
     'org_pin','org_phone','org_address',
     'user_first','user_last','user_email','user_phone','user_designation',
     'licence_body','licence_no','licence_expiry','licence_class',
