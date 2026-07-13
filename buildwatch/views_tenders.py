@@ -36,7 +36,7 @@ from .models import (
     TenderListing, TenderInvitation, TenderAddendum, TenderAlert,
     BidderRegistration, BidWorkspace, SelfAssessmentCheck, WorkspaceBillPrice,
     EvaluationEvent, MandatoryRequirement, Submission, AuditLedger, Country,
-    InfraProject, TenderBoqPackage, TenderBoqLine,
+    InfraProject, TenderBoqPackage, TenderBoqLine, SubcontractArrangement,
 )
 from accounts.models import Organization, UserAccount
 from accounts.tenant import (
@@ -1024,6 +1024,13 @@ def bid_workspace(request, listing_id):
         )
     )
 
+    subcontract_count = 0
+    if org is not None:
+        subcontract_count = SubcontractArrangement.objects.filter(
+            tender=listing,
+            main_organisation=org,
+        ).exclude(status=SubcontractArrangement.CANCELLED).count()
+
     ctx = {
         'listing': listing,
         'workspace': workspace,
@@ -1037,6 +1044,7 @@ def bid_workspace(request, listing_id):
         'category_grand_total': grand_total,
         'bill_prices': workspace.bill_prices.order_by('bill_ref'),
         'self_checks': workspace.self_checks.order_by('mr_ref'),
+        'subcontract_count': subcontract_count,
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_workspace.html', ctx)
@@ -1484,3 +1492,380 @@ def tender_publish_toggle(request, listing_id):
         messages.success(request, f'{listing.event.ref} published to exchange.')
 
     return redirect('tender-manage', listing_id=listing_id)
+
+
+def _bid_subcontract_context(request, listing_id):
+    """Shared access gate for main-contractor subcontract screens."""
+    listing = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
+    org = get_active_organization(request)
+    try:
+        ua = _ensure_user_account(request, org)
+    except Exception:
+        ua = _get_user_account(request)
+    if org is None or ua is None:
+        messages.error(request, "Sign in as a contractor organisation to manage subcontracts.")
+        return None
+    if not BidderRegistration.objects.filter(tender=listing, organisation=org).exists():
+        messages.warning(request, "Register interest before starting a subcontract.")
+        return None
+    workspace, _ = BidWorkspace.objects.get_or_create(
+        tender=listing,
+        organisation=org,
+        defaults={"prepared_by": ua},
+    )
+    packages = list(
+        TenderBoqPackage.objects.filter(tender=listing).order_by("sort_order", "code")
+    )
+    arrangements = list(
+        SubcontractArrangement.objects.filter(
+            tender=listing,
+            main_organisation=org,
+        ).exclude(status=SubcontractArrangement.CANCELLED)
+    )
+    return {
+        "listing": listing,
+        "org": org,
+        "ua": ua,
+        "workspace": workspace,
+        "packages": packages,
+        "arrangements": arrangements,
+    }
+
+
+def _send_subcontract_invite_email(arrangement, request=None):
+    """Email the sub-contractor invite link. Returns (ok, error)."""
+    from accounts.emails import send_system_email, _site_base_url
+
+    base = _site_base_url(request)
+    accept_url = f"{base}/tenders/subcontract/accept/{arrangement.invite_token}/"
+    main_name = arrangement.main_organisation.name or arrangement.main_organisation.short_name
+    ref = arrangement.tender.event.ref
+    title = arrangement.tender.event.description or ref
+    type_label = arrangement.get_arrangement_type_display()
+    packages = ", ".join(arrangement.selected_codes()) or "To be confirmed"
+    pay_note = (
+        "Payment will be made through the main contractor's certificates "
+        "(RFQ domestic sub-contract rule), unless direct payment is later agreed."
+        if arrangement.payment_via_main
+        else "Direct payment terms may apply if agreed with the employer."
+    )
+    approval_note = ""
+    if arrangement.approval_by_consultant:
+        approval_note = (
+            "\nInspection and approval of your work will be by the project owner's "
+            "contracted consultant (QS / Project Manager) before valuation."
+        )
+    subject = f"BuildWatch — {type_label} invitation · {ref}"
+    text_body = (
+        f"Dear {arrangement.sub_contact_name or arrangement.sub_company_name},\n\n"
+        f"{main_name} invites {arrangement.sub_company_name} to join as a {type_label.lower()} "
+        f"on tender {ref}:\n{title}\n\n"
+        f"BOQ packages: {packages}\n"
+        f"{pay_note}{approval_note}\n\n"
+        f"Accept the invitation (and review the agreement path for MR14):\n{accept_url}\n\n"
+        f"Notes from main contractor:\n{(arrangement.notes or '—').strip()}\n\n"
+        f"— BuildWatch\n"
+    )
+    html_body = (
+        f"<p>Dear {arrangement.sub_contact_name or arrangement.sub_company_name},</p>"
+        f"<p><strong>{main_name}</strong> invites <strong>{arrangement.sub_company_name}</strong> "
+        f"to join as a <strong>{type_label.lower()}</strong> on tender "
+        f"<strong>{ref}</strong>.</p>"
+        f"<p>{title}</p>"
+        f"<p><strong>BOQ packages:</strong> {packages}</p>"
+        f"<p>{pay_note}{approval_note}</p>"
+        f"<p><a href=\"{accept_url}\">Accept invitation</a></p>"
+        f"<p style=\"color:#64748b;font-size:0.9rem;\">Notes: "
+        f"{(arrangement.notes or '—').strip()}</p>"
+    )
+    return send_system_email(
+        subject=subject,
+        to=arrangement.sub_email,
+        text_body=text_body,
+        html_body=html_body,
+        include_ceo_cc=False,
+    )
+
+
+def _send_subcontract_sponsor_notice(arrangement, request=None):
+    """Notify project owner / sponsor that a signed subcontract agreement was shared."""
+    from accounts.emails import send_system_email, _site_base_url
+
+    project = getattr(arrangement.tender.event, "project", None)
+    owner = getattr(project, "owner_org", None) if project else None
+    to_email = (getattr(owner, "email", None) or "").strip() if owner else ""
+    if not to_email:
+        return False, "Sponsor organisation has no email on file."
+
+    base = _site_base_url(request)
+    detail_url = f"{base}/tenders/{arrangement.tender_id}/bid/subcontract/{arrangement.pk}/"
+    main_name = arrangement.main_organisation.name or arrangement.main_organisation.short_name
+    ref = arrangement.tender.event.ref
+    subject = f"BuildWatch — Subcontract agreement shared · {ref}"
+    text_body = (
+        f"A {arrangement.get_arrangement_type_display().lower()} agreement has been lodged "
+        f"by {main_name} for tender {ref}.\n\n"
+        f"Sub-contractor: {arrangement.sub_company_name}\n"
+        f"Contact: {arrangement.sub_email}\n"
+        f"Packages: {', '.join(arrangement.selected_codes()) or '—'}\n"
+        f"Payment via main contractor: {'Yes' if arrangement.payment_via_main else 'No'}\n"
+        f"Consultant approval path: {'Yes' if arrangement.approval_by_consultant else 'No'}\n\n"
+        f"View on BuildWatch:\n{detail_url}\n"
+    )
+    ok, err = send_system_email(
+        subject=subject,
+        to=to_email,
+        text_body=text_body,
+        include_ceo_cc=False,
+    )
+    return ok, err
+
+
+@login_required
+def bid_subcontract(request, listing_id):
+    """
+    GET/POST /tenders/<id>/bid/subcontract/
+    Main contractor jump-starts domestic or nominated subcontract onboarding.
+    """
+    import secrets
+
+    ctx = _bid_subcontract_context(request, listing_id)
+    if ctx is None:
+        return redirect("tender-detail", listing_id=listing_id)
+
+    listing = ctx["listing"]
+    org = ctx["org"]
+    ua = ctx["ua"]
+    workspace = ctx["workspace"]
+    packages = ctx["packages"]
+
+    if request.method == "POST":
+        if not listing.event.is_open:
+            messages.error(request, "This tender has closed.")
+            return redirect("bid-subcontract", listing_id=listing_id)
+
+        arr_type = (request.POST.get("arrangement_type") or "").strip().upper()
+        if arr_type not in {
+            SubcontractArrangement.DOMESTIC,
+            SubcontractArrangement.NOMINATED,
+        }:
+            messages.error(request, "Select Domestic or Nominated sub-contractor.")
+            return redirect("bid-subcontract", listing_id=listing_id)
+
+        company = (request.POST.get("sub_company_name") or "").strip()
+        email = (request.POST.get("sub_email") or "").strip().lower()
+        contact = (request.POST.get("sub_contact_name") or "").strip()
+        phone = (request.POST.get("sub_phone") or "").strip()
+        notes = (request.POST.get("notes") or "").strip()
+        selected = [
+            c.strip().upper()
+            for c in request.POST.getlist("package_code")
+            if c.strip()
+        ]
+        valid = {p.code.upper() for p in packages}
+        selected = [c for c in selected if c in valid]
+
+        if not company:
+            messages.error(request, "Sub-contractor company name is required.")
+            return redirect("bid-subcontract", listing_id=listing_id)
+        if not email or "@" not in email:
+            messages.error(request, "A valid sub-contractor email is required.")
+            return redirect("bid-subcontract", listing_id=listing_id)
+        if not selected:
+            messages.error(request, "Select at least one BOQ package to subcontract.")
+            return redirect("bid-subcontract", listing_id=listing_id)
+
+        is_nominated = arr_type == SubcontractArrangement.NOMINATED
+        arrangement = SubcontractArrangement.objects.create(
+            tender=listing,
+            workspace=workspace,
+            main_organisation=org,
+            arrangement_type=arr_type,
+            status=SubcontractArrangement.INVITED,
+            package_codes=selected,
+            sub_company_name=company,
+            sub_contact_name=contact,
+            sub_email=email,
+            sub_phone=phone,
+            notes=notes,
+            payment_via_main=True,
+            approval_by_consultant=is_nominated,
+            invite_token=secrets.token_urlsafe(32),
+            invited_by=ua,
+            invited_at=timezone.now(),
+        )
+        ok, err = _send_subcontract_invite_email(arrangement, request)
+        arrangement.invite_email_sent = ok
+        arrangement.invite_email_error = (err or "")[:400]
+        arrangement.save(
+            update_fields=["invite_email_sent", "invite_email_error", "updated_at"]
+        )
+        if ok:
+            messages.success(
+                request,
+                f"Invitation sent to {email}. Upload the signed agreement when ready "
+                f"(RFQ MR14), then share it with the sponsor.",
+            )
+        else:
+            messages.warning(
+                request,
+                f"Arrangement created, but email could not be sent: {err}. "
+                f"You can resend from the arrangement page.",
+            )
+        return redirect("bid-subcontract-detail", listing_id=listing_id, pk=arrangement.pk)
+
+    return render(
+        request,
+        "tenders/bid_subcontract.html",
+        {
+            "listing": listing,
+            "workspace": workspace,
+            "packages": packages,
+            "arrangements": ctx["arrangements"],
+            "selected_codes": workspace.selected_codes(),
+            "DOMESTIC": SubcontractArrangement.DOMESTIC,
+            "NOMINATED": SubcontractArrangement.NOMINATED,
+        },
+    )
+
+
+@login_required
+def bid_subcontract_detail(request, listing_id, pk):
+    """Manage one subcontract: resend invite, upload agreement, share with sponsor."""
+    ctx = _bid_subcontract_context(request, listing_id)
+    if ctx is None:
+        return redirect("tender-detail", listing_id=listing_id)
+
+    listing = ctx["listing"]
+    org = ctx["org"]
+    arrangement = get_object_or_404(
+        SubcontractArrangement,
+        pk=pk,
+        tender=listing,
+        main_organisation=org,
+    )
+
+    if request.method == "POST":
+        action = (request.POST.get("action") or "").strip()
+        if action == "resend_invite":
+            ok, err = _send_subcontract_invite_email(arrangement, request)
+            arrangement.invite_email_sent = ok
+            arrangement.invite_email_error = (err or "")[:400]
+            arrangement.invited_at = timezone.now()
+            if arrangement.status == SubcontractArrangement.DRAFT:
+                arrangement.status = SubcontractArrangement.INVITED
+            arrangement.save(
+                update_fields=[
+                    "invite_email_sent",
+                    "invite_email_error",
+                    "invited_at",
+                    "status",
+                    "updated_at",
+                ]
+            )
+            if ok:
+                messages.success(request, f"Invitation resent to {arrangement.sub_email}.")
+            else:
+                messages.error(request, f"Could not send email: {err}")
+        elif action == "upload_agreement":
+            f = request.FILES.get("agreement_file")
+            if not f:
+                messages.error(request, "Choose a signed agreement PDF to upload.")
+            else:
+                arrangement.agreement_file = f
+                arrangement.agreement_uploaded_at = timezone.now()
+                if arrangement.status in {
+                    SubcontractArrangement.INVITED,
+                    SubcontractArrangement.ACCEPTED,
+                    SubcontractArrangement.DRAFT,
+                }:
+                    arrangement.status = SubcontractArrangement.AGREEMENT_UPLOADED
+                arrangement.save(
+                    update_fields=[
+                        "agreement_file",
+                        "agreement_uploaded_at",
+                        "status",
+                        "updated_at",
+                    ]
+                )
+                messages.success(
+                    request,
+                    "Agreement uploaded. Share it with the project sponsor when ready.",
+                )
+        elif action == "share_sponsor":
+            if not arrangement.agreement_file:
+                messages.error(request, "Upload the signed agreement before sharing with the sponsor.")
+            else:
+                ok, err = _send_subcontract_sponsor_notice(arrangement, request)
+                arrangement.shared_with_sponsor_at = timezone.now()
+                arrangement.status = SubcontractArrangement.SHARED_WITH_SPONSOR
+                arrangement.sponsor_notified = ok
+                arrangement.save(
+                    update_fields=[
+                        "shared_with_sponsor_at",
+                        "status",
+                        "sponsor_notified",
+                        "updated_at",
+                    ]
+                )
+                if ok:
+                    messages.success(request, "Agreement shared with the project sponsor.")
+                else:
+                    messages.warning(
+                        request,
+                        f"Marked as shared on BuildWatch. Sponsor email notice: {err}",
+                    )
+        elif action == "cancel":
+            arrangement.status = SubcontractArrangement.CANCELLED
+            arrangement.save(update_fields=["status", "updated_at"])
+            messages.info(request, "Subcontract arrangement cancelled.")
+            return redirect("bid-subcontract", listing_id=listing_id)
+        return redirect("bid-subcontract-detail", listing_id=listing_id, pk=pk)
+
+    package_labels = {
+        p.code.upper(): p.title
+        for p in ctx["packages"]
+        if p.code.upper() in set(arrangement.selected_codes())
+    }
+    return render(
+        request,
+        "tenders/bid_subcontract_detail.html",
+        {
+            "listing": listing,
+            "arrangement": arrangement,
+            "package_labels": package_labels,
+            "accept_path": f"/tenders/subcontract/accept/{arrangement.invite_token}/",
+        },
+    )
+
+
+def subcontract_accept(request, token):
+    """Public token page — sub-contractor acknowledges the invitation."""
+    arrangement = get_object_or_404(SubcontractArrangement, invite_token=token)
+    if arrangement.status == SubcontractArrangement.CANCELLED:
+        messages.error(request, "This invitation has been cancelled.")
+        return redirect("tender-detail", listing_id=arrangement.tender_id)
+
+    if request.method == "POST":
+        if arrangement.status in {
+            SubcontractArrangement.INVITED,
+            SubcontractArrangement.DRAFT,
+        }:
+            arrangement.status = SubcontractArrangement.ACCEPTED
+            arrangement.accepted_at = timezone.now()
+            arrangement.save(update_fields=["status", "accepted_at", "updated_at"])
+            messages.success(
+                request,
+                "Invitation accepted. The main contractor will lodge the signed "
+                "agreement (MR14) and share it with the project sponsor.",
+            )
+        return redirect("subcontract-accept", token=token)
+
+    return render(
+        request,
+        "tenders/subcontract_accept.html",
+        {
+            "arrangement": arrangement,
+            "listing": arrangement.tender,
+        },
+    )

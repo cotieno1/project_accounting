@@ -1,0 +1,67 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Accept subcontract — {{ listing.event.ref }}{% endblock %}
+
+{% block bw_content %}
+<div class="bw-wrap" style="max-width:640px;">
+
+  <header style="margin-bottom:22px;">
+    <div class="bw-kicker">BuildWatch · Subcontract invitation</div>
+    <h1 class="bw-title">{{ arrangement.get_arrangement_type_display }}</h1>
+    <p class="bw-lead">
+      {{ arrangement.main_organisation.name|default:arrangement.main_organisation.short_name }}
+      invites <strong>{{ arrangement.sub_company_name }}</strong> on tender
+      <strong>{{ listing.event.ref }}</strong>.
+    </p>
+  </header>
+
+  <div class="bw-card" style="margin-bottom:16px;">
+    <div class="bw-card-body" style="font-size:.9rem;line-height:1.55;">
+      <p style="margin:0 0 10px;">{{ listing.event.description }}</p>
+      <p style="margin:0 0 8px;"><strong>Packages:</strong> {{ arrangement.selected_codes|join:", "|default:"—" }}</p>
+      <p style="margin:0 0 8px;">
+        <strong>Payment:</strong>
+        {% if arrangement.payment_via_main %}
+        Through the main contractor's certificates (RFQ default).
+        {% else %}
+        Direct payment terms may apply if agreed.
+        {% endif %}
+      </p>
+      {% if arrangement.approval_by_consultant %}
+      <p style="margin:0 0 8px;">
+        <strong>Approval:</strong> Owner's contracted consultant (QS / Project Manager) inspects and approves before valuation.
+      </p>
+      {% endif %}
+      {% if arrangement.notes %}
+      <p style="margin:0;"><strong>Notes:</strong> {{ arrangement.notes }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if arrangement.status == 'ACCEPTED' or arrangement.status == 'AGREEMENT_UPLOADED' or arrangement.status == 'SHARED_WITH_SPONSOR' %}
+  <div class="bw-alert bw-alert--success">
+    Invitation already accepted
+    {% if arrangement.accepted_at %} on {{ arrangement.accepted_at|date:"d M Y" }}{% endif %}.
+    Await the signed agreement from the main contractor.
+  </div>
+  {% elif arrangement.status == 'CANCELLED' %}
+  <div class="bw-alert bw-alert--warning">This invitation was cancelled.</div>
+  {% else %}
+  <form method="POST">
+    {% csrf_token %}
+    <button type="submit" class="bw-btn bw-btn--primary" style="width:100%;justify-content:center;">
+      Accept invitation
+    </button>
+  </form>
+  <p style="font-size:.8rem;color:var(--bw-mid);margin-top:12px;line-height:1.45;">
+    Accepting confirms intent to enter a domestic / nominated sub-contract if the main contractor is awarded.
+    A signed agreement (MR14) will be lodged by the main contractor and shared with the project sponsor.
+  </p>
+  {% endif %}
+
+  <p style="margin-top:20px;">
+    <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">View tender</a>
+  </p>
+
+</div>
+{% endblock %}

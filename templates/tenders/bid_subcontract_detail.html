@@ -1,0 +1,111 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}{{ arrangement.sub_company_name }} — Subcontract{% endblock %}
+
+{% block bw_content %}
+<div class="bw-wrap" style="max-width:720px;">
+
+  <div class="bw-ref" style="margin-bottom:18px;">
+    <a href="{% url 'bid-workspace' listing.pk %}">BOQ Workspace</a>
+    &nbsp;/&nbsp;
+    <a href="{% url 'bid-subcontract' listing.pk %}">Subcontract</a>
+    &nbsp;/&nbsp;
+    {{ arrangement.sub_company_name }}
+  </div>
+
+  <header style="margin-bottom:20px;">
+    <div class="bw-kicker">{{ listing.event.ref }} · {{ arrangement.get_arrangement_type_display }}</div>
+    <h1 class="bw-title">{{ arrangement.sub_company_name }}</h1>
+    <p class="bw-lead" style="margin-bottom:0;">
+      Status: <strong>{{ arrangement.get_status_display }}</strong>
+      {% if arrangement.invite_email_sent %} · Invite emailed{% elif arrangement.invite_email_error %} · Email failed{% endif %}
+    </p>
+  </header>
+
+  <div class="bw-card" style="margin-bottom:14px;">
+    <div class="bw-card-header">Arrangement</div>
+    <div class="bw-card-body" style="font-size:.9rem;line-height:1.55;">
+      <p style="margin:0 0 8px;"><strong>Contact:</strong> {{ arrangement.sub_contact_name|default:"—" }} · {{ arrangement.sub_email }}{% if arrangement.sub_phone %} · {{ arrangement.sub_phone }}{% endif %}</p>
+      <p style="margin:0 0 8px;"><strong>Packages:</strong>
+        {% for code, title in package_labels.items %}
+          {{ code }}{% if not forloop.last %}, {% endif %}
+        {% empty %}—{% endfor %}
+      </p>
+      <p style="margin:0 0 8px;"><strong>Payment via main contractor:</strong> {% if arrangement.payment_via_main %}Yes{% else %}No{% endif %}</p>
+      <p style="margin:0 0 8px;"><strong>Consultant / QS approval path:</strong> {% if arrangement.approval_by_consultant %}Yes (nominated){% else %}Via main ? QS certificate{% endif %}</p>
+      {% if arrangement.notes %}<p style="margin:0;"><strong>Notes:</strong> {{ arrangement.notes }}</p>{% endif %}
+      {% if arrangement.invite_email_error %}
+      <p style="margin:10px 0 0;color:var(--bw-danger);font-size:.82rem;">Last email error: {{ arrangement.invite_email_error }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="bw-card" style="margin-bottom:14px;">
+    <div class="bw-card-header">1 · Invitation</div>
+    <div class="bw-card-body">
+      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;">
+        Accept link (share if email failed):
+        <code style="font-size:.78rem;word-break:break-all;">{{ accept_path }}</code>
+      </p>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="resend_invite">
+        <button type="submit" class="bw-btn bw-btn--ghost">Resend invitation email</button>
+      </form>
+      {% if arrangement.accepted_at %}
+      <p style="font-size:.82rem;color:var(--bw-ok);margin:12px 0 0;">Accepted {{ arrangement.accepted_at|date:"d M Y H:i" }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="bw-card" style="margin-bottom:14px;">
+    <div class="bw-card-header">2 · Signed agreement (MR14)</div>
+    <div class="bw-card-body">
+      {% if arrangement.agreement_file %}
+      <p style="margin:0 0 10px;font-size:.86rem;">
+        Uploaded {{ arrangement.agreement_uploaded_at|date:"d M Y H:i" }} —
+        <a href="{{ arrangement.agreement_file.url }}" target="_blank" rel="noopener">Download agreement</a>
+      </p>
+      {% endif %}
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload_agreement">
+        <input type="file" name="agreement_file" accept=".pdf,.doc,.docx,image/*" required
+               style="margin-bottom:10px;display:block;font-size:.86rem;">
+        <button type="submit" class="bw-btn bw-btn--primary">Upload signed agreement</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="bw-card" style="margin-bottom:14px;">
+    <div class="bw-card-header">3 · Share with sponsor</div>
+    <div class="bw-card-body">
+      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
+        Lodges the agreement with the project owner / sponsor record (RFQ visibility).
+        Nominated path: consultant inspects; payment still through main.
+      </p>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="share_sponsor">
+        <button type="submit" class="bw-btn bw-btn--primary"
+                {% if not arrangement.agreement_file %}disabled title="Upload agreement first"{% endif %}>
+          Share agreement with sponsor
+        </button>
+      </form>
+      {% if arrangement.shared_with_sponsor_at %}
+      <p style="font-size:.82rem;color:var(--bw-ok);margin:12px 0 0;">
+        Shared {{ arrangement.shared_with_sponsor_at|date:"d M Y H:i" }}
+        {% if arrangement.sponsor_notified %} · email sent{% else %} · recorded (sponsor email may be missing){% endif %}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="POST" onsubmit="return confirm('Cancel this subcontract arrangement?');">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="cancel">
+    <button type="submit" class="bw-btn bw-btn--ghost" style="color:var(--bw-danger);">Cancel arrangement</button>
+  </form>
+
+</div>
+{% endblock %}

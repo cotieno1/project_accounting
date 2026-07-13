@@ -71,6 +71,18 @@ tender_patterns = [
          t.bid_submit,
          name='bid-submit'),
 
+    path('<int:listing_id>/bid/subcontract/',
+         t.bid_subcontract,
+         name='bid-subcontract'),
+
+    path('<int:listing_id>/bid/subcontract/<int:pk>/',
+         t.bid_subcontract_detail,
+         name='bid-subcontract-detail'),
+
+    path('subcontract/accept/<str:token>/',
+         t.subcontract_accept,
+         name='subcontract-accept'),
+
     # ── Bidder dashboard ──────────────────────────────────────────────────
     path('my-bids/',
          t.my_bids,

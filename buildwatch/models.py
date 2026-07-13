@@ -1005,3 +1005,128 @@ class WorkspaceBillPrice(models.Model):
 
     def __str__(self):
         return f"Bill {self.bill_ref}: {self.amount:,.2f}"
+
+
+class SubcontractArrangement(models.Model):
+    """
+    Main-contractor → sub-contractor arrangement for a tender bid.
+
+    Domestic (RFQ MR14): main invites a domestic sub for selected BOQ packages;
+    signed agreement is lodged with the bid pack and shared with the sponsor.
+    Payment runs through the main contractor's certificates unless direct pay is agreed.
+
+    Nominated: owner's / sponsor's nominated firm; inspection & approval by the
+    contracted consultant (QS / PM), but payment still through the main contractor.
+    """
+    DOMESTIC = "DOMESTIC"
+    NOMINATED = "NOMINATED"
+    TYPE_CHOICES = [
+        (DOMESTIC, "Domestic sub-contractor"),
+        (NOMINATED, "Nominated sub-contractor"),
+    ]
+
+    DRAFT = "DRAFT"
+    INVITED = "INVITED"
+    ACCEPTED = "ACCEPTED"
+    AGREEMENT_UPLOADED = "AGREEMENT_UPLOADED"
+    SHARED_WITH_SPONSOR = "SHARED_WITH_SPONSOR"
+    CANCELLED = "CANCELLED"
+    STATUS_CHOICES = [
+        (DRAFT, "Draft"),
+        (INVITED, "Invitation sent"),
+        (ACCEPTED, "Sub-contractor accepted"),
+        (AGREEMENT_UPLOADED, "Agreement uploaded"),
+        (SHARED_WITH_SPONSOR, "Shared with sponsor"),
+        (CANCELLED, "Cancelled"),
+    ]
+
+    tender = models.ForeignKey(
+        TenderListing,
+        on_delete=models.CASCADE,
+        related_name="subcontracts",
+    )
+    workspace = models.ForeignKey(
+        BidWorkspace,
+        on_delete=models.CASCADE,
+        related_name="subcontracts",
+        null=True,
+        blank=True,
+    )
+    main_organisation = models.ForeignKey(
+        "accounts.Organization",
+        on_delete=models.PROTECT,
+        related_name="main_subcontracts",
+    )
+    sub_organisation = models.ForeignKey(
+        "accounts.Organization",
+        on_delete=models.PROTECT,
+        related_name="as_subcontracts",
+        null=True,
+        blank=True,
+        help_text="Filled when the invitee is linked to an existing BuildWatch org.",
+    )
+    arrangement_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default=DOMESTIC,
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default=DRAFT,
+    )
+    package_codes = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="TenderBoqPackage.code values covered by this subcontract.",
+    )
+    sub_company_name = models.CharField(max_length=200)
+    sub_contact_name = models.CharField(max_length=120, blank=True)
+    sub_email = models.EmailField()
+    sub_phone = models.CharField(max_length=40, blank=True)
+    notes = models.TextField(
+        blank=True,
+        help_text="Scope notes for the sub (packages, hold-points, etc.).",
+    )
+    payment_via_main = models.BooleanField(
+        default=True,
+        help_text="RFQ default: payment through main contractor certificates.",
+    )
+    approval_by_consultant = models.BooleanField(
+        default=False,
+        help_text="Nominated path: work inspected/approved by owner's consultant before valuation.",
+    )
+    invite_token = models.CharField(max_length=64, unique=True, db_index=True)
+    invited_by = models.ForeignKey(
+        "accounts.UserAccount",
+        on_delete=models.PROTECT,
+        related_name="subcontract_invites_sent",
+    )
+    invited_at = models.DateTimeField(null=True, blank=True)
+    invite_email_sent = models.BooleanField(default=False)
+    invite_email_error = models.CharField(max_length=400, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    agreement_file = models.FileField(
+        upload_to="tenders/subcontracts/%Y/%m/",
+        null=True,
+        blank=True,
+        help_text="Signed domestic / nominated sub-contractor agreement (MR14).",
+    )
+    agreement_uploaded_at = models.DateTimeField(null=True, blank=True)
+    shared_with_sponsor_at = models.DateTimeField(null=True, blank=True)
+    sponsor_notified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (
+            f"{self.tender.event.ref} · {self.get_arrangement_type_display()} · "
+            f"{self.sub_company_name} [{self.status}]"
+        )
+
+    def selected_codes(self):
+        codes = self.package_codes or []
+        return [str(c).strip().upper() for c in codes if str(c).strip()]
