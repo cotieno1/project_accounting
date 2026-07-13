@@ -14,15 +14,17 @@
   </div>
 
   <header style="margin-bottom:22px;">
-    <div class="bw-kicker">Mandatory requirements</div>
+    <div class="bw-kicker">Mandatory requirements · bid preparation</div>
     <h1 class="bw-title">Certificate uploads</h1>
     <p class="bw-lead">
-      Upload certificates against each requirement. Progress is informational —
-      the BOQ workspace stays available in parallel.
+      Complete MR1–MR14 before bid submit. MR14 (Domestic Sub-Contractor Agreement)
+      is prepared during this bid stage — invite the electrical sub, lodge the signed
+      agreement, or mark N/A if the main contractor is registered for all Electrical Services Works.
     </p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
       <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
       <a href="{% url 'bid-workspace' listing.pk %}" class="bw-btn bw-btn--teal">Open BOQ Workspace</a>
+      <a href="{% url 'bid-subcontract' listing.pk %}" class="bw-btn bw-btn--primary">MR14 · Start subcontracting</a>
     </div>
   </header>
 
@@ -69,19 +71,19 @@
       <div style="display:flex;flex-direction:column;gap:10px;">
         {% for row in mr_rows %}
         <div style="border:1px solid var(--bw-rule);border-radius:8px;padding:12px 14px;
-          background:{% if row.check and row.check.document_uploaded %}#f0fdf9{% else %}var(--bw-white){% endif %};">
+          background:{% if row.mr14_satisfied or row.check and row.check.document_uploaded %}#f0fdf9{% else %}var(--bw-white){% endif %};">
           <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
             <div style="flex:1;min-width:200px;">
               <div style="font-family:var(--bw-mono);font-size:.72rem;color:var(--bw-mid);margin-bottom:2px;">
                 MR{{ row.index }} · {{ row.req.code }}
               </div>
               <div style="font-size:.86rem;font-weight:600;color:var(--bw-navy);">
-                {{ row.req.description }}
+                {{ row.display_description }}
               </div>
             </div>
             <div style="display:flex;gap:6px;align-items:flex-start;">
-              {% if row.check and row.check.document_uploaded %}
-                <span class="bw-pill bw-pill--blue">Uploaded</span>
+              {% if row.mr14_satisfied or row.check and row.check.document_uploaded %}
+                <span class="bw-pill bw-pill--blue">{% if row.mr14_is_na %}N/A{% else %}Uploaded{% endif %}</span>
                 {% if row.check.document %}
                   <a href="{{ row.check.document.url }}" target="_blank" rel="noopener"
                      class="bw-btn bw-btn--ghost bw-btn--sm">View</a>
@@ -91,6 +93,39 @@
               {% endif %}
             </div>
           </div>
+
+          {% if row.is_mr14 %}
+          <div style="background:var(--bw-mist);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:.82rem;color:var(--bw-mid);line-height:1.5;">
+            <strong style="color:var(--bw-navy);">Bid preparation (RFQ p.2)</strong> —
+            Main contractor (e.g. Pioneer) must lodge a signed &amp; stamped Domestic Sub-Contractor
+            Agreement not older than 1 month with the Electrical Services sub-contractor before
+            submitting this bid — unless the main is already registered for all Electrical Services Works.
+            {% if mr14_arrangements %}
+            <div style="margin-top:8px;">
+              Active arrangements:
+              {% for a in mr14_arrangements %}
+              <a href="{% url 'bid-subcontract-detail' listing.pk a.pk %}">{{ a.sub_company_name }} ({{ a.get_status_display }})</a>{% if not forloop.last %}; {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+              <a href="{% url 'bid-subcontract' listing.pk %}" class="bw-btn bw-btn--primary bw-btn--sm">
+                Invite domestic sub &amp; lodge agreement
+              </a>
+              {% if not row.mr14_satisfied %}
+              <form method="POST" action="{% url 'bid-self-assess' listing.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mr14_not_applicable">
+                <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm"
+                        onclick="return confirm('Confirm Pioneer (main) is registered for all Electrical Services Works so MR14 is not required?')">
+                  Mark N/A — main covers all electrical works
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
           <form method="POST" action="{% url 'bid-self-assess' listing.pk %}"
                 enctype="multipart/form-data"
                 style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -104,9 +139,12 @@
             <button type="submit"
                     class="bw-btn bw-btn--teal"
                     style="flex:0 0 auto;min-width:110px;justify-content:center;">
-              Save
+              {% if row.is_mr14 %}Upload signed agreement{% else %}Save{% endif %}
             </button>
           </form>
+          {% if row.is_mr14 and row.check.notes %}
+          <p style="font-size:.75rem;color:var(--bw-mid);margin:8px 0 0;">{{ row.check.notes }}</p>
+          {% endif %}
         </div>
         {% empty %}
         <div style="font-size:.86rem;color:var(--bw-mid);">

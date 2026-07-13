@@ -54,7 +54,7 @@ KENYA_PROC_MR = [
     ('MR-PROC-KE-11',  'Manufacturer\'s Authorisation Letters for NVRs and Network Switches offered'),
     ('MR-PROC-KE-12',  'Valid Single Business Permit (current year)'),
     ('MR-PROC-KE-13',  'CR12 Form (within last 12 months) or National ID(s) for Sole Proprietorship'),
-    ('MR-PROC-KE-14',  'Signed Domestic Sub-Contractor Agreement with Main Contractor (if applicable)'),
+    ('MR-PROC-KE-14',  'MR14 Domestic Contractor\'s Agreement — duly signed and stamped (not earlier than 1 month) between Electrical Services Sub-Contractor and main contractor; N/A if main is registered for all Electrical Services Works'),
 ]
 
 # Inspection mandatory checks (used for site inspection events)
@@ -220,11 +220,8 @@ class Command(BaseCommand):
                 organization=org
             ).order_by('id').first()
 
-            # Public /tenders/ only lists published listings with status OPEN.
-            isiolo_closing = timezone.now() + timezone.timedelta(days=45)
-            existing = EvaluationEvent.objects.filter(ref='SK/004/2025-2026').first()
-
-            if ua and not existing:
+            if ua and not EvaluationEvent.objects.filter(
+                    ref='SK/004/2025-2026').exists():
                 event = EvaluationEvent.objects.create(
                     project=project,
                     context=EvaluationEvent.PROCUREMENT,
@@ -233,9 +230,9 @@ class Command(BaseCommand):
                         'Proposed Completion of Isiolo Stadium — '
                         'Electrical, Structured Cabling, CCTV and Solar Installation Works'
                     ),
-                    issue_date=timezone.now().date(),
-                    closing_date=isiolo_closing,
-                    status=EvaluationEvent.STATUS_OPEN,
+                    issue_date='2025-06-01',
+                    closing_date='2025-07-10 11:00:00',
+                    status=EvaluationEvent.STATUS_CLOSED,
                     min_pass_score=Decimal('70'),
                     outlier_pct=Decimal('15'),
                     created_by=ua,
@@ -264,28 +261,8 @@ class Command(BaseCommand):
                     f'  + TenderListing created: SK/004/2025-2026 '
                     f'(id={listing.pk}) — visible at /tenders/{listing.pk}/'
                 ))
-            elif existing:
-                # Re-open / republish so the pilot tender stays on the public exchange.
-                existing.status = EvaluationEvent.STATUS_OPEN
-                existing.closing_date = isiolo_closing
-                existing.save(update_fields=['status', 'closing_date'])
-                listing = TenderListing.objects.filter(event=existing).first()
-                if listing:
-                    listing.is_published = True
-                    listing.visibility = TenderListing.PUBLIC
-                    if not listing.published_at:
-                        listing.published_at = timezone.now()
-                    listing.save(update_fields=[
-                        'is_published', 'visibility', 'published_at',
-                    ])
-                    self.stdout.write(self.style.SUCCESS(
-                        f'  [ok] Tender SK/004/2025-2026 reopened '
-                        f'(id={listing.pk}, closes {isiolo_closing:%Y-%m-%d})'
-                    ))
-                else:
-                    self.stdout.write(self.style.WARNING(
-                        '  [!] Event SK/004/2025-2026 exists but has no TenderListing.'
-                    ))
+            elif EvaluationEvent.objects.filter(ref='SK/004/2025-2026').exists():
+                self.stdout.write('  [ok] Tender SK/004/2025-2026 already exists.')
             else:
                 self.stdout.write(self.style.WARNING(
                     '  [!] No UserAccount found — tender not created. '

@@ -176,8 +176,83 @@ def _refresh_self_assessment_gate(workspace):
     return all_checks
 
 
+MR14_CODE = "MR-PROC-KE-14"
+MR14_RFQ_TEXT = (
+    "Domestic Contractor's Agreement — A duly signed and stamped Agreement not earlier than "
+    "1 month between the Electrical Services Sub-Contractor and the main contractor stating "
+    "that if the Main Contractor is awarded the contract, they shall work with the firm as "
+    "their domestic sub-contractor (Not necessary if Main Contractor is also registered for "
+    "all Electrical Services Works)."
+)
+
+
+def _mr14_requirement():
+    return MandatoryRequirement.objects.filter(code=MR14_CODE).first()
+
+
+def _link_mr14_from_subcontract(workspace, arrangement):
+    """
+    Bid-prep: lodging the signed domestic agreement satisfies MR14 on the
+    certificate checklist (same workspace gate used before bid submit).
+    """
+    if not arrangement or not arrangement.agreement_file:
+        return None
+    req = _mr14_requirement()
+    check, _ = SelfAssessmentCheck.objects.get_or_create(
+        workspace=workspace,
+        mr_ref=MR14_CODE,
+        defaults={
+            "requirement": req,
+            "description": (req.description if req else MR14_RFQ_TEXT)[:500],
+            "self_result": SelfAssessmentCheck.PENDING,
+        },
+    )
+    # Point at the same stored file path used for the subcontract record
+    check.document = arrangement.agreement_file
+    check.document_uploaded = True
+    check.self_result = SelfAssessmentCheck.PASS
+    if req is not None:
+        check.requirement = req
+        check.description = (req.description or MR14_RFQ_TEXT)[:500]
+    check.notes = (
+        f"Bid-prep MR14 · {arrangement.get_arrangement_type_display()} with "
+        f"{arrangement.sub_company_name} · packages: "
+        f"{', '.join(arrangement.selected_codes()) or '—'}"
+    )[:300]
+    check.save()
+    _refresh_self_assessment_gate(workspace)
+    return check
+
+
+def _mark_mr14_not_applicable(workspace, reason=""):
+    """RFQ exception: main contractor registered for all Electrical Services Works."""
+    req = _mr14_requirement()
+    check, _ = SelfAssessmentCheck.objects.get_or_create(
+        workspace=workspace,
+        mr_ref=MR14_CODE,
+        defaults={
+            "requirement": req,
+            "description": (req.description if req else MR14_RFQ_TEXT)[:500],
+            "self_result": SelfAssessmentCheck.PENDING,
+        },
+    )
+    note = (
+        reason.strip()
+        or "N/A — Main Contractor registered for all Electrical Services Works (RFQ MR14 exception)"
+    )
+    check.self_result = SelfAssessmentCheck.PASS
+    check.document_uploaded = True
+    check.notes = note[:300]
+    if req is not None:
+        check.requirement = req
+        check.description = (req.description or MR14_RFQ_TEXT)[:500]
+    check.save()
+    _refresh_self_assessment_gate(workspace)
+    return check
+
+
 def _mr_progress(workspace, requirements):
-    """Return (done, total) for uploaded MR certificates — never gates BOQ."""
+    """Return (done, total) for uploaded / satisfied MR certificates — never gates BOQ."""
     total = len(requirements)
     if total == 0:
         return 0, 0
@@ -186,8 +261,9 @@ def _mr_progress(workspace, requirements):
     codes = [r.code for r in requirements]
     done = workspace.self_checks.filter(
         mr_ref__in=codes,
-        document_uploaded=True,
-    ).count()
+    ).filter(
+        Q(document_uploaded=True) | Q(self_result=SelfAssessmentCheck.PASS)
+    ).distinct().count()
     return done, total
 
 
@@ -1068,6 +1144,16 @@ def bid_self_assess(request, listing_id):
     _sync_self_assessment_checks(workspace, requirements)
 
     if request.method == 'POST':
+        action = (request.POST.get('action') or '').strip()
+        if action == 'mr14_not_applicable':
+            _mark_mr14_not_applicable(workspace)
+            messages.success(
+                request,
+                'MR14 marked not applicable — main contractor registered for all '
+                'Electrical Services Works (RFQ exception).',
+            )
+            return redirect('bid-self-assess', listing_id=listing_id)
+
         mr_code = (request.POST.get('mr_code') or '').strip()
         if mr_code:
             req = next((r for r in requirements if r.code == mr_code), None)
@@ -1105,12 +1191,33 @@ def bid_self_assess(request, listing_id):
         mr_ref__in=[r.code for r in requirements]
     )
     checks_map = {c.mr_ref: c for c in checks_qs}
+    org = workspace.organisation
+    mr14_arrangements = list(
+        SubcontractArrangement.objects.filter(
+            tender=listing,
+            main_organisation=org,
+        ).exclude(status=SubcontractArrangement.CANCELLED).order_by('-created_at')[:5]
+    )
     mr_rows = []
     for i, req in enumerate(requirements, 1):
+        is_mr14 = req.code == MR14_CODE
+        check = checks_map.get(req.code)
         mr_rows.append({
             'index': i,
             'req': req,
-            'check': checks_map.get(req.code),
+            'check': check,
+            'is_mr14': is_mr14,
+            'mr14_satisfied': bool(
+                check
+                and (
+                    check.self_result == SelfAssessmentCheck.PASS
+                    or check.document_uploaded
+                )
+            ),
+            'mr14_is_na': bool(
+                check and (check.notes or '').startswith('N/A')
+            ),
+            'display_description': MR14_RFQ_TEXT if is_mr14 else req.description,
         })
     mr_done, mr_total = _mr_progress(workspace, requirements)
 
@@ -1122,6 +1229,8 @@ def bid_self_assess(request, listing_id):
         'mr_done_count': mr_done,
         'mr_total': mr_total,
         'mr_progress_pct': int((mr_done * 100) / mr_total) if mr_total else 0,
+        'mr14_arrangements': mr14_arrangements,
+        'mr14_rfq_text': MR14_RFQ_TEXT,
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_self_assess.html', ctx)
@@ -1703,8 +1812,9 @@ def bid_subcontract(request, listing_id):
         if ok:
             messages.success(
                 request,
-                f"Invitation sent to {email}. Upload the signed agreement when ready "
-                f"(RFQ MR14), then share it with the sponsor.",
+                f"Invitation sent to {email}. When the signed & stamped agreement "
+                f"is ready (not older than 1 month — RFQ MR14), upload it here to "
+                f"satisfy the bid certificate checklist before submit.",
             )
         else:
             messages.warning(
@@ -1788,9 +1898,13 @@ def bid_subcontract_detail(request, listing_id, pk):
                         "updated_at",
                     ]
                 )
+                workspace = ctx["workspace"]
+                _link_mr14_from_subcontract(workspace, arrangement)
                 messages.success(
                     request,
-                    "Agreement uploaded. Share it with the project sponsor when ready.",
+                    "Signed agreement lodged for bid preparation — MR14 on your "
+                    "certificate checklist is now satisfied. You can still share "
+                    "a copy with the sponsor after award notice if required.",
                 )
         elif action == "share_sponsor":
             if not arrangement.agreement_file:

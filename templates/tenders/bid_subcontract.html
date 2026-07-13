@@ -1,6 +1,6 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}Subcontract ù {{ listing.event.ref }}{% endblock %}
+{% block title %}Subcontract ó {{ listing.event.ref }}{% endblock %}
 
 {% block bw_content %}
 <div class="bw-wrap">
@@ -16,14 +16,16 @@
   </div>
 
   <header style="margin-bottom:22px;">
-    <div class="bw-kicker">{{ listing.event.ref }}</div>
-    <h1 class="bw-title">Subcontract BOQ packages</h1>
+    <div class="bw-kicker">{{ listing.event.ref }} ∑ Bid preparation</div>
+    <h1 class="bw-title">MR14 ó Domestic sub-contractor</h1>
     <p class="bw-lead">
-      Invite a domestic or nominated sub-contractor for part of this tender.
-      Aligns with RFQ MR14 (signed Domestic Sub-Contractor Agreement) and payment through the main contractor.
+      Prerequisite for this bid (RFQ mandatory requirement MR14): invite the Electrical Services
+      sub-contractor, obtain a signed &amp; stamped agreement not older than 1 month stating that
+      if the main contractor is awarded, they shall work together as domestic sub-contractor.
+      Not required if the main contractor is registered for all Electrical Services Works.
     </p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-      <a href="{% url 'bid-workspace' listing.pk %}" class="bw-btn bw-btn--ghost">? BOQ workspace</a>
+      <a href="{% url 'bid-workspace' listing.pk %}" class="bw-btn bw-btn--ghost">&larr; BOQ workspace</a>
       <a href="{% url 'bid-self-assess' listing.pk %}" class="bw-btn bw-btn--ghost">Certificates (MR14)</a>
     </div>
   </header>
@@ -80,7 +82,7 @@
               </div>
               <div>
                 <label class="bw-label" for="sub_phone">Phone</label>
-                <input class="bw-input" id="sub_phone" name="sub_phone" placeholder="+254 ù" maxlength="40">
+                <input class="bw-input" id="sub_phone" name="sub_phone" placeholder="+254 Ö" maxlength="40">
               </div>
             </div>
 
@@ -90,7 +92,7 @@
               <label style="display:flex;gap:8px;align-items:flex-start;font-size:.86rem;">
                 <input type="checkbox" name="package_code" value="{{ pkg.code }}"
                        {% if pkg.code in selected_codes %}checked{% endif %}>
-                <span><strong>{{ pkg.code }}</strong> ù {{ pkg.title }}</span>
+                <span><strong>{{ pkg.code }}</strong> ó {{ pkg.title }}</span>
               </label>
               {% empty %}
               <p style="margin:0;color:var(--bw-mid);font-size:.86rem;">No BOQ packages on this tender yet.</p>
@@ -99,7 +101,7 @@
 
             <label class="bw-label" for="notes">Scope notes (optional)</label>
             <textarea class="bw-input" id="notes" name="notes" rows="3"
-                      placeholder="Hold-points, programme windows, or interface with main worksù"
+                      placeholder="Hold-points, programme windows, or interface with main worksÖ"
                       style="margin-bottom:14px;"></textarea>
 
             <button type="submit" class="bw-btn bw-btn--primary">Send invitation by email</button>
@@ -110,14 +112,18 @@
 
     <aside>
       <div class="bw-card" style="margin-bottom:14px;">
-        <div class="bw-card-header">RFQ rules (Isiolo electrical)</div>
+        <div class="bw-card-header">RFQ MR14 (bid preparation)</div>
         <div class="bw-card-body" style="font-size:.82rem;color:var(--bw-mid);line-height:1.5;">
-          <p style="margin:0 0 10px;"><strong style="color:var(--bw-navy);">MR14</strong> ù
-            Signed Domestic Sub-Contractor Agreement (not older than 1 month) between main and sub,
-            stating they will work together if the main is awarded.</p>
-          <p style="margin:0 0 10px;"><strong style="color:var(--bw-navy);">Payment</strong> ù
-            Through the main contractor's certificates unless direct payment is agreed.</p>
-          <p style="margin:0;">After invite acceptance, upload the signed PDF and share it with the project sponsor.</p>
+          <p style="margin:0 0 10px;"><strong style="color:var(--bw-navy);">When</strong> -
+            During bid prep, before submit - not after award.</p>
+          <p style="margin:0 0 10px;"><strong style="color:var(--bw-navy);">Document</strong> -
+            Duly signed and stamped Domestic Sub-Contractor Agreement, not earlier than 1 month,
+            between the Electrical Services sub and the main contractor.</p>
+          <p style="margin:0 0 10px;"><strong style="color:var(--bw-navy);">Effect</strong> -
+            Lodging the PDF marks MR14 complete on the certificate checklist.</p>
+          <p style="margin:0;"><strong style="color:var(--bw-navy);">Exception</strong> -
+            N/A if the main contractor is registered for all Electrical Services Works
+            (set on the Certificates page).</p>
         </div>
       </div>
 
@@ -129,7 +135,7 @@
              style="display:block;padding:12px 16px;border-bottom:1px solid var(--bw-rule);text-decoration:none;">
             <div style="font-weight:600;color:var(--bw-navy);">{{ a.sub_company_name }}</div>
             <div style="font-size:.78rem;color:var(--bw-mid);margin-top:2px;">
-              {{ a.get_arrangement_type_display }} ù {{ a.get_status_display }}
+              {{ a.get_arrangement_type_display }} ∑ {{ a.get_status_display }}
             </div>
           </a>
           {% empty %}

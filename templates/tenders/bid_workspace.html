@@ -21,7 +21,7 @@
       <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
       <a href="{% url 'bid-self-assess' listing.pk %}" class="bw-btn bw-btn--ghost">Certificates</a>
       <a href="{% url 'bid-subcontract' listing.pk %}" class="bw-btn bw-btn--primary">
-        {% if subcontract_count %}Manage subcontracts ({{ subcontract_count }}){% else %}Start subcontracting{% endif %}
+        {% if subcontract_count %}MR14 subcontracts ({{ subcontract_count }}){% else %}MR14 · Start subcontracting{% endif %}
       </a>
     </div>
   </header>
@@ -280,13 +280,13 @@
             <strong style="color:var(--bw-navy);">Bid process</strong><br>
             1) Certificates &amp; support docs ·
             2) Select categories &amp; price BOQ ·
-            3) Subcontract packages (domestic / nominated) if needed ·
+            3) MR14 domestic agreement (bid prep, if applicable) ·
             4) Download draft bid PDF ·
             5) Submit selected categories
           </div>
           <a href="{% url 'bid-subcontract' listing.pk %}" class="bw-btn bw-btn--ghost"
              style="width:100%;justify-content:center;margin-bottom:10px;">
-            {% if subcontract_count %}Manage subcontracts ({{ subcontract_count }}){% else %}Start subcontracting{% endif %}
+            {% if subcontract_count %}MR14 subcontracts ({{ subcontract_count }}){% else %}MR14 · Start subcontracting{% endif %}
           </a>
           <a href="{% url 'bid-draft-pdf' listing.pk %}" class="bw-btn bw-btn--ghost"
              style="width:100%;justify-content:center;margin-bottom:10px;"
