@@ -54,6 +54,14 @@ class PlatformRoutingTests(TestCase):
         )
         self.assertRedirects(response, reverse("platform_admin"), fetch_redirect_response=False)
 
+    def test_login_honours_next_to_bid_workspace(self):
+        next_url = "/tenders/1/bid/"
+        response = self.client.post(
+            reverse("login") + f"?next={next_url}",
+            {"username": "mainadmin", "password": "test-pass-123"},
+        )
+        self.assertRedirects(response, next_url, fetch_redirect_response=False)
+
     def test_pioneer_staff_login_redirects_to_dashboard(self):
         response = self.client.post(
             reverse("login"),

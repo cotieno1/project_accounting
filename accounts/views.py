@@ -245,6 +245,11 @@ class CustomLoginView(LoginView):
                 return reverse("password_change_required")
         except Exception:
             pass
+        # Honour ?next= / POST next so BuildWatch deep links (e.g. /tenders/1/bid/)
+        # are not discarded after Sign in.
+        redirect_to = self.get_redirect_url()
+        if redirect_to:
+            return redirect_to
         if _is_platform_main_admin(self.request.user):
             return reverse("platform_admin")
         return reverse("dashboard")
