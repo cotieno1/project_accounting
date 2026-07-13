@@ -1115,17 +1115,86 @@ def bid_workspace(request, listing_id):
             )
             return redirect('bid-workspace', listing_id=listing_id)
 
+        if action == 'set_planned_subcontractors':
+            raw_n = (request.POST.get('planned_subcontractor_count') or '').strip()
+            try:
+                planned_n = int(raw_n)
+            except (TypeError, ValueError):
+                messages.error(
+                    request,
+                    'Enter how many sub-contractors you need (0 if none).',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+            if planned_n < 0 or planned_n > 50:
+                messages.error(request, 'Sub-contractor count must be between 0 and 50.')
+                return redirect('bid-workspace', listing_id=listing_id)
+
+            active_n = len(_active_subcontracts(listing, org))
+            if planned_n < active_n:
+                messages.error(
+                    request,
+                    f'You already have {active_n} active sub-contractor(s). '
+                    f'Set N to at least {active_n}, or cancel an arrangement first.',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+
+            workspace.planned_subcontractor_count = planned_n
+            workspace.save(update_fields=['planned_subcontractor_count'])
+            if planned_n == 0:
+                try:
+                    _mark_mr14_not_applicable(workspace)
+                except Exception as exc:
+                    messages.warning(request, f'N set to 0, but MR14 N/A note failed: {exc}')
+                    return redirect('bid-workspace', listing_id=listing_id)
+                messages.success(
+                    request,
+                    'Planned sub-contractors = 0. MR14 marked N/A. '
+                    'Subcontracting controls stay locked. Continue with main BOQ.',
+                )
+            else:
+                remaining = planned_n - active_n
+                messages.success(
+                    request,
+                    f'Planned sub-contractors set to {planned_n}. '
+                    f'Invite {remaining} more, then the form locks.',
+                )
+            return redirect('bid-workspace', listing_id=listing_id)
+
         if action == 'begin_subcontract':
             # Step 1: subcontract first — create invite here (fixes Process 500 redirect).
             import secrets
 
+            active_subs = _active_subcontracts(listing, org)
+            planned_n = workspace.planned_subcontractor_count
+            if planned_n is None:
+                messages.error(
+                    request,
+                    'Set how many sub-contractors you need (N) first, then invite.',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+            if planned_n == 0:
+                messages.warning(
+                    request,
+                    'Planned sub-contractors is 0 — subcontracting is locked (MR14 N/A).',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+            if len(active_subs) >= planned_n:
+                messages.warning(
+                    request,
+                    f'Sub-contractor quota filled ({len(active_subs)}/{planned_n}). '
+                    'Subcontracting controls are locked.',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+
             required = (request.POST.get('subcontract_required') or '').strip().upper()
             if required == 'NO':
                 try:
+                    workspace.planned_subcontractor_count = 0
+                    workspace.save(update_fields=['planned_subcontractor_count'])
                     _mark_mr14_not_applicable(workspace)
                     messages.success(
                         request,
-                        'Subcontracting not required — MR14 marked N/A. '
+                        'Subcontracting not required — N set to 0, MR14 marked N/A. '
                         'Continue with main BOQ categories below.',
                     )
                 except Exception as exc:
@@ -1228,18 +1297,23 @@ def bid_workspace(request, listing_id):
             except Exception:
                 pass
 
+            filled = len(active_subs) + 1
+            slot_msg = f'Slots {filled}/{planned_n} filled.'
+            if filled >= planned_n:
+                slot_msg += ' Subcontracting controls are now locked.'
+
             if ok:
                 messages.success(
                     request,
                     f'Subcontract invite sent to {email} for '
-                    f'{", ".join(selected_sub)}. Those categories are off your main BOQ — '
-                    f'price the remainder next.',
+                    f'{", ".join(selected_sub)}. {slot_msg} '
+                    f'Those categories are off your main BOQ — price the remainder next.',
                 )
             else:
                 messages.warning(
                     request,
                     f'Subcontract saved for {", ".join(selected_sub)}, but email '
-                    f'failed: {err}. Resend from the arrangement page.',
+                    f'failed: {err}. {slot_msg} Resend from the arrangement page.',
                 )
             return redirect('bid-workspace', listing_id=listing_id)
 
@@ -1395,12 +1469,31 @@ def bid_workspace(request, listing_id):
     subcontract_arrangements = []
     pending_sub_quotes = []
     can_print_draft_bid = True
+    planned_sub_n = None
+    try:
+        planned_sub_n = workspace.planned_subcontractor_count
+    except Exception:
+        planned_sub_n = None
+    subcontract_quota_full = False
+    subcontract_slots_remaining = None
     if org is not None:
         try:
-            subcontract_arrangements = _active_subcontracts(listing, org)[:8]
-            subcontract_count = len(subcontract_arrangements)
+            all_active = _active_subcontracts(listing, org)
+            subcontract_arrangements = all_active[:8]
+            subcontract_count = len(all_active)
+            # If Pioneer already invited subs before N existed, lock to that count.
+            if planned_sub_n is None and subcontract_count > 0:
+                workspace.planned_subcontractor_count = subcontract_count
+                try:
+                    workspace.save(update_fields=['planned_subcontractor_count'])
+                    planned_sub_n = subcontract_count
+                except Exception:
+                    planned_sub_n = subcontract_count
             pending_sub_quotes = _pending_subcontract_quotes(listing, org)
             can_print_draft_bid = _can_print_draft_for_approval(listing, org)
+            if planned_sub_n is not None:
+                subcontract_quota_full = subcontract_count >= planned_sub_n
+                subcontract_slots_remaining = max(planned_sub_n - subcontract_count, 0)
         except Exception:
             subcontract_count = 0
             subcontract_arrangements = []
@@ -1426,6 +1519,9 @@ def bid_workspace(request, listing_id):
         'subcontract_arrangements': subcontract_arrangements,
         'pending_sub_quotes': pending_sub_quotes,
         'can_print_draft_bid': can_print_draft_bid,
+        'planned_subcontractor_count': planned_sub_n,
+        'subcontract_quota_full': subcontract_quota_full,
+        'subcontract_slots_remaining': subcontract_slots_remaining,
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_workspace.html', ctx)

@@ -788,6 +788,14 @@ class BidWorkspace(models.Model):
         blank=True,
         help_text='TenderBoqPackage.code values selected for this bid',
     )
+    planned_subcontractor_count = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            'How many sub-contractors this main contractor needs on this bid '
+            '(0 = none / MR14 N/A). Invite form locks when active invites reach N.'
+        ),
+    )
 
     class Meta:
         unique_together = [['tender', 'organisation']]

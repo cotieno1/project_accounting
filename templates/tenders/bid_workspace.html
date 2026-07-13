@@ -81,10 +81,23 @@
     <div class="bw-card-header" style="background:#f0fdf9;">Step 1 · Apply Sub Contracting (MR14) — start here</div>
     <div class="bw-card-body">
       <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        Choose <strong>Yes</strong> or <strong>No</strong> below — that enables the
-        <strong>Apply Sub Contracting</strong> button. Yes → Type A/B → pick BOQ categories → company + email → Apply.
-        Then those categories leave your main BOQ.
+        First set <strong>N = how many sub-contractors</strong> you need for this tender
+        (e.g. Isiolo = <strong>1</strong> for Lanbase). Invite until slots are full —
+        then every subcontracting control is locked/grayed out.
       </p>
+
+      {% if planned_subcontractor_count != None %}
+      <div class="bw-alert {% if subcontract_quota_full %}bw-alert--success{% else %}bw-alert--info{% endif %}" style="margin-bottom:12px;">
+        Planned sub-contractors: <strong>{{ planned_subcontractor_count }}</strong>
+        · Active: <strong>{{ subcontract_count }}</strong>
+        {% if subcontract_quota_full %}
+        — quota filled. Subcontracting form is locked.
+        {% else %}
+        — remaining slots: <strong>{{ subcontract_slots_remaining }}</strong>
+        {% endif %}
+      </div>
+      {% endif %}
+
       {% if subcontracted_codes %}
       <div class="bw-alert bw-alert--info" style="margin-bottom:12px;">
         Already subcontracted: <strong>{{ subcontracted_codes|join:", " }}</strong>
@@ -96,6 +109,41 @@
         {% endif %}
       </div>
       {% endif %}
+
+      <form method="POST" action="{% url 'bid-workspace' listing.pk %}"
+            style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bw-rule);">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="set_planned_subcontractors">
+        <div>
+          <label for="planned_sub_n" style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;">
+            Number of sub-contractors (N)
+          </label>
+          <input type="number" id="planned_sub_n" name="planned_subcontractor_count"
+                 min="0" max="50" step="1"
+                 value="{% if planned_subcontractor_count != None %}{{ planned_subcontractor_count }}{% else %}1{% endif %}"
+                 {% if subcontract_quota_full %}disabled{% endif %}
+                 style="width:120px;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+        </div>
+        <button type="submit" class="bw-btn bw-btn--teal"
+                {% if subcontract_quota_full %}disabled style="opacity:.5;cursor:not-allowed;"{% endif %}>
+          Set N
+        </button>
+        <div style="font-size:.75rem;color:var(--bw-mid);max-width:320px;line-height:1.35;">
+          Use <strong>0</strong> if no sub-contractor (MR14 N/A). Raise N later only if you need extra slots.
+        </div>
+      </form>
+
+      <div id="subcontract-invite-panel" style="{% if subcontract_quota_full or planned_subcontractor_count == 0 %}opacity:.45;pointer-events:none;filter:grayscale(.35);{% elif planned_subcontractor_count == None %}opacity:.55;{% endif %}">
+      {% if planned_subcontractor_count == None %}
+      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 10px;">Set N above before inviting a sub-contractor.</p>
+      {% elif planned_subcontractor_count == 0 %}
+      <p style="font-size:.84rem;color:var(--bw-mid);margin:0;">N = 0 — subcontracting locked. Price the full main BOQ in Step 2.</p>
+      {% elif subcontract_quota_full %}
+      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 10px;">
+        All {{ planned_subcontractor_count }} sub-contractor slot(s) filled. Invite form locked.
+      </p>
+      {% endif %}
+
       <form method="POST" action="{% url 'bid-workspace' listing.pk %}" id="subcontract-filter-form">
         {% csrf_token %}
         <input type="hidden" name="action" value="begin_subcontract" id="sub-filter-action">
@@ -104,12 +152,16 @@
           <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">Is subcontracting required?</div>
           <div style="display:flex;flex-wrap:wrap;gap:10px;">
             <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
-              <input type="radio" name="subcontract_required" value="YES" id="sub-req-yes" checked onchange="toggleSubcontractFilter()">
+              <input type="radio" name="subcontract_required" value="YES" id="sub-req-yes" checked
+                     onchange="toggleSubcontractFilter()"
+                     {% if subcontract_quota_full or planned_subcontractor_count == None or planned_subcontractor_count == 0 %}disabled{% endif %}>
               <span><strong>Yes</strong> — subcontract part of the BOQ</span>
             </label>
             <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
-              <input type="radio" name="subcontract_required" value="NO" id="sub-req-no" onchange="toggleSubcontractFilter()">
-              <span><strong>No</strong> — mark MR14 N/A</span>
+              <input type="radio" name="subcontract_required" value="NO" id="sub-req-no"
+                     onchange="toggleSubcontractFilter()"
+                     {% if subcontract_quota_full or planned_subcontractor_count == None or planned_subcontractor_count == 0 %}disabled{% endif %}>
+              <span><strong>No</strong> — mark MR14 N/A (sets N = 0)</span>
             </label>
           </div>
         </div>
@@ -118,11 +170,13 @@
           <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">Type</div>
           <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
             <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
-              <input type="radio" name="arrangement_type" value="A" checked>
+              <input type="radio" name="arrangement_type" value="A" checked
+                     {% if subcontract_quota_full %}disabled{% endif %}>
               <span><strong>Type A</strong> — Domestic</span>
             </label>
             <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
-              <input type="radio" name="arrangement_type" value="B">
+              <input type="radio" name="arrangement_type" value="B"
+                     {% if subcontract_quota_full %}disabled{% endif %}>
               <span><strong>Type B</strong> — Nominated</span>
             </label>
           </div>
@@ -131,7 +185,7 @@
             {% for pkg in packages %}
             <label style="display:flex;gap:8px;align-items:flex-start;font-size:.82rem;{% if pkg.code|upper in subcontracted_codes %}opacity:.45;{% endif %}">
               <input type="checkbox" name="sub_package_code" value="{{ pkg.code }}"
-                     {% if pkg.code|upper in subcontracted_codes %}disabled{% endif %}>
+                     {% if pkg.code|upper in subcontracted_codes or subcontract_quota_full %}disabled{% endif %}>
               <span><strong>{{ pkg.code }}</strong> — {{ pkg.title }}{% if pkg.code|upper in subcontracted_codes %} (done){% endif %}</span>
             </label>
             {% empty %}
@@ -142,30 +196,38 @@
             <div>
               <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_company">Sub company *</label>
               <input id="ws_sub_company" name="sub_company_name" maxlength="200"
+                     {% if subcontract_quota_full %}disabled{% endif %}
                      style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
             </div>
             <div>
               <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_email">Invite email *</label>
               <input type="email" id="ws_sub_email" name="sub_email"
+                     {% if subcontract_quota_full %}disabled{% endif %}
                      style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
             </div>
             <div>
               <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_contact">Contact</label>
               <input id="ws_sub_contact" name="sub_contact_name" maxlength="120"
+                     {% if subcontract_quota_full %}disabled{% endif %}
                      style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
             </div>
             <div>
               <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_phone">Phone</label>
               <input id="ws_sub_phone" name="sub_phone" maxlength="40"
+                     {% if subcontract_quota_full %}disabled{% endif %}
                      style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
             </div>
           </div>
         </div>
 
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;">
-          <button type="submit" class="bw-btn bw-btn--primary" id="subcontract-process-btn" disabled>Apply Sub Contracting</button>
+          <button type="submit" class="bw-btn bw-btn--primary" id="subcontract-process-btn"
+                  {% if subcontract_quota_full or planned_subcontractor_count == None or planned_subcontractor_count == 0 %}disabled{% endif %}>
+            Apply Sub Contracting
+          </button>
         </div>
       </form>
+      </div>
     </div>
   </div>
   {% endif %}
@@ -449,15 +511,16 @@ function toggleSubcontractFilter() {
   const company = document.getElementById('ws_sub_company');
   const email = document.getElementById('ws_sub_email');
   if (!yes || !no || !btn) return;
+  const locked = yes.disabled || no.disabled;
   const isYes = yes.checked;
   const isNo = no.checked;
-  if (typeBlock) typeBlock.style.display = isYes ? '' : 'none';
-  btn.disabled = !(isYes || isNo);
-  if (company) company.required = isYes;
-  if (email) email.required = isYes;
+  if (typeBlock) typeBlock.style.display = (!locked && isYes) ? '' : 'none';
+  btn.disabled = locked || !(isYes || isNo);
+  if (company) company.required = !locked && isYes;
+  if (email) email.required = !locked && isYes;
   btn.textContent = isNo
     ? 'Apply — mark MR14 N/A'
-    : (isYes ? 'Apply Sub Contracting' : 'Apply Sub Contracting');
+    : 'Apply Sub Contracting';
 }
 function recalcTotals() {
   const byPkg = {};
