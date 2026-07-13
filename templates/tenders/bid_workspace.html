@@ -20,9 +20,6 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
       <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
       <a href="{% url 'bid-self-assess' listing.pk %}" class="bw-btn bw-btn--ghost">Certificates</a>
-      <a href="{% url 'bid-subcontract' listing.pk %}" class="bw-btn bw-btn--primary">
-        {% if subcontract_count %}MR14 subcontracts ({{ subcontract_count }}){% else %}MR14 · Start subcontracting{% endif %}
-      </a>
     </div>
   </header>
 
@@ -32,7 +29,7 @@
 
   {% if listing.event.is_open and workspace.status != 'SUBMITTED' and can_switch_boq_mode %}
   <div class="bw-card" style="margin-bottom:16px;">
-    <div class="bw-card-header">BOQ input source</div>
+    <div class="bw-card-header">Filter 1 · BOQ input source</div>
     <div class="bw-card-body">
       <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;">
         Same bid form either way. Switch A uses the curated hardwired BOQ;
@@ -67,8 +64,117 @@
 
   {% if not can_switch_boq_mode %}
   <div class="bw-alert bw-alert--info" style="margin-bottom:16px;">
-    BOQ source: <strong>{{ boq_input_mode }}</strong>
+    Filter 1 · BOQ source: <strong>{{ boq_input_mode }}</strong>
     (employer/staff can switch A hardwired / B RFQ PDF)
+  </div>
+  {% endif %}
+
+  {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+  <div class="bw-card" style="margin-bottom:16px;" id="filter2-subcontract">
+    <div class="bw-card-header">Filter 2 · Subcontracting (MR14)</div>
+    <div class="bw-card-body">
+      <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 14px;line-height:1.45;">
+        If a domestic or nominated sub is required for part of this bid, choose Yes,
+        pick Type A or B, select the BOQ categories to subcontract, then Process.
+        That emails the sub a portal link to price those packages, draft PDF, and submit
+        their quote for your acknowledgement (RFQ MR14 bid preparation).
+      </p>
+      <form method="POST" action="{% url 'bid-workspace' listing.pk %}" id="subcontract-filter-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="start_subcontract">
+
+        <div style="margin-bottom:14px;">
+          <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">Is subcontracting required?</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
+              <input type="radio" name="subcontract_required" value="YES" id="sub-req-yes" onchange="toggleSubcontractFilter()">
+              <span><strong>Yes</strong> — invite sub for selected categories</span>
+            </label>
+            <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
+              <input type="radio" name="subcontract_required" value="NO" id="sub-req-no" onchange="toggleSubcontractFilter()">
+              <span><strong>No</strong> — main covers all Electrical Services Works (MR14 N/A)</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="sub-type-block" style="display:none;margin-bottom:14px;">
+          <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">Subcontract type</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <label style="display:flex;gap:8px;align-items:flex-start;padding:12px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;flex:1;min-width:200px;">
+              <input type="radio" name="arrangement_type" value="A" style="margin-top:3px;">
+              <span>
+                <strong>Type A — Domestic</strong><br>
+                <span style="font-size:.75rem;color:var(--bw-mid);">RFQ MR14 agreement; payment via main; QS/PM certificates</span>
+              </span>
+            </label>
+            <label style="display:flex;gap:8px;align-items:flex-start;padding:12px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;flex:1;min-width:200px;">
+              <input type="radio" name="arrangement_type" value="B" style="margin-top:3px;">
+              <span>
+                <strong>Type B — Nominated</strong><br>
+                <span style="font-size:.75rem;color:var(--bw-mid);">Owner/sponsor named firm; consultant inspects; payment via main</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div id="sub-details-block" style="display:none;">
+          <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">BOQ categories to subcontract</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:220px;overflow:auto;border:1px solid var(--bw-rule);border-radius:8px;padding:10px;margin-bottom:14px;background:var(--bw-mist);">
+            {% for pkg in packages %}
+            <label style="display:flex;gap:8px;align-items:flex-start;font-size:.84rem;">
+              <input type="checkbox" name="sub_package_code" value="{{ pkg.code }}">
+              <span><strong>{{ pkg.code }}</strong> — {{ pkg.title }}</span>
+            </label>
+            {% empty %}
+            <p style="margin:0;color:var(--bw-mid);font-size:.84rem;">No BOQ packages loaded yet.</p>
+            {% endfor %}
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="sub_company_name">Sub-contractor company *</label>
+              <input id="sub_company_name" name="sub_company_name" maxlength="200"
+                     placeholder="e.g. Electrical specialist Ltd"
+                     style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="sub_email">Invite email *</label>
+              <input type="email" id="sub_email" name="sub_email"
+                     placeholder="contracts@subfirm.co.ke"
+                     style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="sub_contact_name">Contact person</label>
+              <input id="sub_contact_name" name="sub_contact_name" maxlength="120"
+                     style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="sub_phone">Phone</label>
+              <input id="sub_phone" name="sub_phone" maxlength="40"
+                     style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;">
+            </div>
+          </div>
+          <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="sub_notes">Scope notes (optional)</label>
+          <textarea id="sub_notes" name="notes" rows="2"
+                    placeholder="Hold-points, programme windows…"
+                    style="width:100%;padding:10px 12px;border:1px solid var(--bw-rule);border-radius:8px;font:inherit;margin-bottom:14px;"></textarea>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+          <button type="submit" class="bw-btn bw-btn--primary" id="subcontract-process-btn" disabled>
+            Process
+          </button>
+          {% if subcontract_arrangements %}
+          <span style="font-size:.8rem;color:var(--bw-mid);">
+            Active:
+            {% for a in subcontract_arrangements %}
+            <a href="{% url 'bid-subcontract-detail' listing.pk a.pk %}">{{ a.sub_company_name }}</a>{% if not forloop.last %}; {% endif %}
+            {% endfor %}
+          </span>
+          {% endif %}
+        </div>
+      </form>
+    </div>
   </div>
   {% endif %}
 
@@ -278,16 +384,12 @@
         <div class="bw-card-body">
           <div style="font-size:.78rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
             <strong style="color:var(--bw-navy);">Bid process</strong><br>
-            1) Certificates &amp; support docs ·
-            2) Select categories &amp; price BOQ ·
-            3) MR14 domestic agreement (bid prep, if applicable) ·
-            4) Download draft bid PDF ·
-            5) Submit selected categories
+            1) Filter 1 BOQ source ·
+            2) Filter 2 subcontract (if required) ·
+            3) Select &amp; price categories ·
+            4) Certificates ·
+            5) Draft PDF · Submit
           </div>
-          <a href="{% url 'bid-subcontract' listing.pk %}" class="bw-btn bw-btn--ghost"
-             style="width:100%;justify-content:center;margin-bottom:10px;">
-            {% if subcontract_count %}MR14 subcontracts ({{ subcontract_count }}){% else %}MR14 · Start subcontracting{% endif %}
-          </a>
           <a href="{% url 'bid-draft-pdf' listing.pk %}" class="bw-btn bw-btn--ghost"
              style="width:100%;justify-content:center;margin-bottom:10px;"
              target="_blank" rel="noopener" download>
@@ -328,6 +430,26 @@
 function fmtMoney(n) {
   return n.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
+function toggleSubcontractFilter() {
+  const yes = document.getElementById('sub-req-yes');
+  const no = document.getElementById('sub-req-no');
+  const typeBlock = document.getElementById('sub-type-block');
+  const details = document.getElementById('sub-details-block');
+  const btn = document.getElementById('subcontract-process-btn');
+  if (!yes || !no || !btn) return;
+  const isYes = yes.checked;
+  const isNo = no.checked;
+  if (typeBlock) typeBlock.style.display = isYes ? '' : 'none';
+  if (details) details.style.display = isYes ? '' : 'none';
+  btn.disabled = !(isYes || isNo);
+  if (isNo) {
+    btn.textContent = 'Process — mark MR14 not applicable';
+  } else if (isYes) {
+    btn.textContent = 'Process — invite sub & open portal flow';
+  } else {
+    btn.textContent = 'Process';
+  }
+}
 function recalcTotals() {
   const byPkg = {};
   document.querySelectorAll('.boq-amount').forEach(el => {
@@ -358,5 +480,6 @@ function recalcRow(input) {
   if (amountEl) amountEl.textContent = fmtMoney(qty * rate);
   recalcTotals();
 }
+document.addEventListener('DOMContentLoaded', toggleSubcontractFilter);
 </script>
 {% endblock %}
