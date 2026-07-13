@@ -2,111 +2,174 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bid Draft — {{ listing.event.ref }}</title>
+  <title>Form of Tender / Bid — {{ listing.event.ref }}</title>
   <style>
-    @page { size: A4; margin: 16mm 14mm; }
-    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a2332; }
-    h1 { font-size: 16pt; margin: 0 0 4pt; color: #0b1f33; }
-    h2 { font-size: 12pt; margin: 16pt 0 6pt; color: #0b1f33; border-bottom: 1px solid #c5ced9; padding-bottom: 3pt; }
-    .muted { color: #5a6a7a; font-size: 9pt; }
-    .kicker { text-transform: uppercase; letter-spacing: 0.5pt; font-size: 8pt; color: #5a6a7a; margin-bottom: 2pt; }
-    .banner { background: #fff4e5; border: 1px solid #e0a86a; padding: 6pt 8pt; margin: 8pt 0 12pt; font-size: 9pt; }
-    .banner-final { background: #e8f7f1; border: 1px solid #2a9d7a; }
-    table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; }
-    th, td { border: 1px solid #c5ced9; padding: 4pt 5pt; vertical-align: top; }
-    th { background: #eef2f6; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.4pt; text-align: left; }
+    @page { size: A4; margin: 14mm 12mm; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #111; line-height: 1.35; }
+    h1 { font-size: 13pt; margin: 0 0 3pt; }
+    h2 { font-size: 11pt; margin: 12pt 0 5pt; border-bottom: 1px solid #333; padding-bottom: 2pt; }
+    h3 { font-size: 10pt; margin: 8pt 0 3pt; }
+    .muted { color: #444; font-size: 8.5pt; }
+    .center { text-align: center; }
+    .banner { border: 1px solid #333; padding: 5pt 7pt; margin: 6pt 0 10pt; font-size: 8.5pt; }
+    .draft { background: #fff8e8; }
+    .final { background: #eef8f2; }
+    table { width: 100%; border-collapse: collapse; margin: 4pt 0 8pt; }
+    th, td { border: 1px solid #555; padding: 3pt 4pt; vertical-align: top; }
+    th { background: #eee; font-size: 8pt; text-transform: uppercase; text-align: left; }
     td.num, th.num { text-align: right; }
     td.ctr, th.ctr { text-align: center; }
-    .mono { font-family: Courier, monospace; font-size: 9pt; }
-    .total-row td { font-weight: bold; background: #eef2f6; }
-    .sig { margin-top: 18pt; }
-    .sig td { border: none; padding: 10pt 4pt 0; height: 48pt; }
+    .mono { font-family: Courier, monospace; font-size: 8.5pt; }
+    .total-row td { font-weight: bold; background: #eee; }
+    .noborder td { border: none; padding: 6pt 2pt; }
+    .small { font-size: 8pt; }
   </style>
 </head>
 <body>
-  <div class="kicker">BuildWatch tender exchange</div>
-  <h1>Bid document — {{ listing.event.ref }}</h1>
-  <p class="muted">{{ listing.event.description }}</p>
+
+  <div class="center">
+    <div class="muted">DOMESTIC SUB-CONTRACTOR TENDER</div>
+    <h1>FORM OF TENDER / BID DOCUMENT</h1>
+    <div><strong>{{ tender_title }}</strong></div>
+    <div class="muted">Electrical, Structured Cabling, CCTV and Solar Installation Works</div>
+    <div class="mono" style="margin-top:4pt;">Tender Reference: {{ listing.event.ref }}</div>
+  </div>
 
   {% if is_draft %}
-  <div class="banner"><strong>DRAFT</strong> — for contractor review before final submission. Not yet lodged with the employer.</div>
+  <div class="banner draft"><strong>DRAFT — NOT YET LODGED.</strong>
+    Prepared for compliance review against the Tender / RFQ document
+    <em>Proposed Completion of Isiolo Stadium — Electrical Services Domestic Tender FINAL</em>
+    (SK/004/2025-2026). Complete all mandatory attachments before submission.</div>
   {% else %}
-  <div class="banner banner-final"><strong>SUBMITTED</strong> — lodged {{ workspace.submitted_at|date:"d M Y H:i" }} (submission #{{ workspace.submission_id }}).</div>
+  <div class="banner final"><strong>SUBMITTED</strong> — lodged {{ workspace.submitted_at|date:"d M Y H:i" }}
+    (submission #{{ workspace.submission_id }}).</div>
   {% endif %}
 
-  <h2>1. Parties and tender</h2>
+  <h2>A. Tender particulars (RFQ / Tender Document)</h2>
   <table>
-    <tr><th width="28%">Tender ref</th><td class="mono">{{ listing.event.ref }}</td></tr>
-    <tr><th>Employer / project</th><td>{{ listing.event.project|default:listing.event.description }}</td></tr>
-    <tr><th>Bidder organisation</th><td>{{ org.name|default:org.short_name }}</td></tr>
-    <tr><th>Prepared by</th><td>{{ prepared_by_name }}</td></tr>
-    <tr><th>Currency</th><td>{{ listing.currency }}</td></tr>
-    <tr><th>BOQ source mode</th><td class="mono">{{ listing.boq_input_mode }}</td></tr>
-    <tr><th>Closing</th><td>{{ listing.event.closing_date|date:"d M Y H:i"|default:"—" }}</td></tr>
+    <tr><th width="32%">Procuring Entity / Client</th><td>{{ employer_name }}</td></tr>
+    <tr><th>Address for submission</th><td class="small">{{ employer_address }}</td></tr>
+    <tr><th>Project</th><td>{{ tender_title }}</td></tr>
+    <tr><th>Tender No.</th><td class="mono">{{ listing.event.ref }}</td></tr>
+    <tr><th>Contract type</th><td>Domestic Sub-Contract (Electrical Services)</td></tr>
+    <tr><th>Closing date / time</th><td>{{ listing.event.closing_date|date:"d M Y H:i"|default:closing_note }}</td></tr>
+    <tr><th>Currency</th><td>{{ listing.currency }} — rates inclusive of 16% VAT and all applicable taxes/levies at time of tender (per RFQ)</td></tr>
+    <tr><th>BOQ basis</th><td class="small">Bills of Quantities prepared by the Chief Quantity Surveyor; quantities provisional and subject to remeasurement (RFQ cl. 8).</td></tr>
   </table>
 
-  <h2>2. Mandatory certificates and supporting documents</h2>
+  <h2>B. Form of Tender (RFQ Section 7 and 11)</h2>
+  <p class="small">
+    I/We the undersigned, having examined and understood the Tender Documents, including the Bills of Quantities,
+    Specifications, Drawings and Contract Conditions for the <strong>{{ tender_title }}</strong>
+    under Tender No. <strong class="mono">{{ listing.event.ref }}</strong>, hereby offer to complete the Works
+    described herein in conformity with the Tender Documents for the sum entered below.
+  </p>
+  <table>
+    <tr><th width="32%">Bidder (Company Name)</th><td>{{ org.name|default:org.short_name }}</td></tr>
+    <tr><th>Authorised signatory</th><td>{{ prepared_by_name|default:"________________________" }}</td></tr>
+    <tr><th>Designation</th><td>{{ signatory_designation|default:"________________________" }}</td></tr>
+    <tr><th>PIN Number</th><td class="mono">{{ org.tax_pin|default:"________________________" }}</td></tr>
+    <tr><th>VAT Certificate No.</th><td class="mono">{{ vat_certificate_no|default:org.tax_pin|default:"________________________" }}</td></tr>
+    <tr><th>Tender sum (figures)</th><td class="mono"><strong>{{ listing.currency }} {{ grand_total|floatformat:2 }}</strong></td></tr>
+    <tr><th>Tender sum (words)</th><td><strong>{{ grand_total_words }}</strong></td></tr>
+    <tr><th>Offer scope</th><td class="small">
+      {% if partial_offer %}
+      Partial offer — priced categories only (see Bill Summary). Unselected bills are <strong>not</strong> included in this tender sum.
+      {% else %}
+      Full offer against all published BOQ categories selected for this workspace.
+      {% endif %}
+    </td></tr>
+  </table>
+  <p class="small muted">
+    This Form of Tender grand total is the sum of the priced Bills of Quantities in Section F and must match
+    the Bill Summary carried forward below (RFQ: grand total of all bills carried to Form of Tender).
+  </p>
+
+  <h2>C. RFQ submission compliance checklist (Section 7)</h2>
   <table>
     <tr>
-      <th width="12%">Ref</th>
-      <th width="42%">Requirement</th>
-      <th width="12%" class="ctr">Result</th>
-      <th width="18%">Document</th>
-      <th width="16%">Expiry / notes</th>
+      <th width="8%" class="ctr">#</th>
+      <th width="62%">Required item (per RFQ)</th>
+      <th width="30%" class="ctr">Status in this pack</th>
+    </tr>
+    {% for item in rfq_checklist %}
+    <tr>
+      <td class="ctr mono">{{ forloop.counter }}</td>
+      <td>{{ item.label }}</td>
+      <td class="ctr">{{ item.status }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="small muted">
+    Physical submission (where required by the Procuring Entity): one original and two copies in a sealed envelope
+    clearly marked with Tender Reference {{ listing.event.ref }}, delivered to the address above.
+  </p>
+
+  <h2>D. Mandatory requirements MR1–MR14 (RFQ Section 4)</h2>
+  <p class="small">Non-compliance with any mandatory item results in disqualification. Certified copies must be attached.</p>
+  <table>
+    <tr>
+      <th width="10%">Ref</th>
+      <th width="44%">Requirement</th>
+      <th width="12%" class="ctr">Self-assess</th>
+      <th width="14%" class="ctr">Document</th>
+      <th width="20%">Expiry / notes</th>
     </tr>
     {% for c in self_checks %}
     <tr>
       <td class="mono">{{ c.mr_ref }}</td>
-      <td>{{ c.description }}</td>
+      <td class="small">{{ c.description }}</td>
       <td class="ctr">{{ c.self_result }}</td>
-      <td class="muted">{% if c.document %}Yes{% elif c.document_uploaded %}Uploaded{% else %}—{% endif %}</td>
-      <td class="muted">{% if c.expiry_date %}{{ c.expiry_date|date:"d M Y" }}{% endif %}{% if c.notes %} {{ c.notes }}{% endif %}</td>
+      <td class="ctr">{% if c.document or c.document_uploaded %}Attached{% else %}Missing{% endif %}</td>
+      <td class="small muted">{% if c.expiry_date %}{{ c.expiry_date|date:"d M Y" }}{% endif %}{% if c.notes %} {{ c.notes }}{% endif %}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="5" class="muted">No certificate checklist rows yet.</td></tr>
+    <tr><td colspan="5" class="muted">No MR checklist rows — complete Certificates in the bid workspace.</td></tr>
     {% endfor %}
   </table>
+  <p class="small"><strong>MR gate:</strong> {{ mr_summary }}</p>
 
-  <h2>3. Selected BOQ categories</h2>
+  <h2>E. Bill of Quantities — summary (carry to Form of Tender)</h2>
   <table>
     <tr>
-      <th width="14%">Code</th>
-      <th width="56%">Category</th>
+      <th width="12%">Bill</th>
+      <th width="48%">Description</th>
       <th width="12%" class="ctr">Lines</th>
-      <th width="18%" class="num">Sub-total</th>
+      <th width="14%" class="ctr">Included</th>
+      <th width="14%" class="num">Amount ({{ listing.currency }})</th>
     </tr>
-    {% for row in category_summary %}
+    {% for row in bill_summary %}
     <tr>
       <td class="mono">{{ row.code }}</td>
-      <td>{{ row.title }}</td>
+      <td class="small">{{ row.title }}</td>
       <td class="ctr">{{ row.line_count }}</td>
-      <td class="num mono">{{ listing.currency }} {{ row.subtotal|floatformat:2 }}</td>
+      <td class="ctr">{% if row.included %}Yes{% else %}No{% endif %}</td>
+      <td class="num mono">{% if row.included %}{{ row.subtotal|floatformat:2 }}{% else %}—{% endif %}</td>
     </tr>
-    {% empty %}
-    <tr><td colspan="4" class="muted">No categories selected.</td></tr>
     {% endfor %}
     <tr class="total-row">
-      <td colspan="3" class="num">Total bid (selected categories)</td>
+      <td colspan="4" class="num">Grand total carried to Form of Tender</td>
       <td class="num mono">{{ listing.currency }} {{ grand_total|floatformat:2 }}</td>
     </tr>
   </table>
 
-  <h2>4. Priced bill of quantities</h2>
+  <h2>F. Fully priced Bills of Quantities (RFQ: unit rates and amounts)</h2>
+  <p class="small muted">Columns align to the tender BOQ: ITEM / DESCRIPTION / UNIT / QTY / RATE / AMOUNT. Rates include VAT at 16%.</p>
   {% for section in package_sections %}
-  <p style="margin:10pt 0 4pt;"><strong>{{ section.package.code }}</strong> — {{ section.package.title }}</p>
+  <h3>{{ section.package.code }} — {{ section.package.title }}</h3>
   <table>
     <tr>
-      <th width="12%">Ref</th>
-      <th width="40%">Description</th>
+      <th width="11%">Item</th>
+      <th width="39%">Description</th>
       <th width="8%" class="ctr">Unit</th>
       <th width="10%" class="num">Qty</th>
-      <th width="15%" class="num">Rate</th>
-      <th width="15%" class="num">Amount</th>
+      <th width="16%" class="num">Rate</th>
+      <th width="16%" class="num">Amount</th>
     </tr>
     {% for row in section.rows %}
     <tr>
       <td class="mono">{{ row.line.bill_ref }}</td>
-      <td>{{ row.line.description }}</td>
+      <td class="small">{{ row.line.description }}</td>
       <td class="ctr">{{ row.line.unit }}</td>
       <td class="num">{{ row.line.quantity|floatformat:-3 }}</td>
       <td class="num mono">{{ row.rate|floatformat:2 }}</td>
@@ -114,26 +177,39 @@
     </tr>
     {% endfor %}
     <tr class="total-row">
-      <td colspan="5" class="num">Sub-total — {{ section.package.title }}</td>
+      <td colspan="5" class="num">Sub-total {{ section.package.code }}</td>
       <td class="num mono">{{ section.subtotal|floatformat:2 }}</td>
     </tr>
   </table>
   {% empty %}
-  <p class="muted">No priced lines in this draft.</p>
+  <p class="muted">No priced BOQ lines yet. Select categories and enter rates in the bid workspace.</p>
   {% endfor %}
 
-  <h2>5. Declaration</h2>
-  <p class="muted">
-    The bidder confirms that the rates and amounts above are inclusive of all applicable taxes
-    (including VAT where required), that supporting certificates listed in section 2 are true copies
-    of originals held by the bidder, and that this bid covers only the selected categories.
+  <h2>G. Bidder declaration and signature (RFQ Section 11)</h2>
+  <p class="small">
+    I/We confirm that: (i) this offer conforms to the Tender Documents and RFQ for Tender No. {{ listing.event.ref }};
+    (ii) all rates are inclusive of supply, labour, delivery, installation, testing, commissioning and applicable taxes including 16% VAT;
+    (iii) BOQ quantities are provisional and subject to measurement; (iv) supporting certificates listed in Section D are true copies of originals;
+    (v) this is a Domestic Sub-Contract offer payable through the Main Contractor's certificates unless otherwise agreed.
   </p>
-  <table class="sig" width="100%">
+  <table class="noborder" width="100%">
     <tr>
-      <td width="50%">_______________________________<br/><span class="muted">Authorised signatory / date</span></td>
-      <td width="50%">_______________________________<br/><span class="muted">Company stamp</span></td>
+      <td width="50%">Signature: ____________________________<br/><span class="muted">Authorised signatory</span></td>
+      <td width="50%">Date: ____________________________</td>
+    </tr>
+    <tr>
+      <td>Company stamp:</td>
+      <td>Witness name: ____________________________</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Witness signature / date: ____________________________</td>
     </tr>
   </table>
-  <p class="muted" style="margin-top:12pt;">Generated {{ generated_at|date:"d M Y H:i" }} · {{ listing.event.ref }} · {{ org.short_name }}</p>
+
+  <p class="small muted" style="margin-top:10pt;">
+    Generated {{ generated_at|date:"d M Y H:i" }} · {{ listing.event.ref }} · {{ org.short_name }} ·
+    Source: Proposed Completion of Isiolo Stadium Electrical Services Domestic Tender FINAL / RFQ SK/004/2025-2026.
+  </p>
 </body>
 </html>

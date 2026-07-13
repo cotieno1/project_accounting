@@ -625,7 +625,9 @@ def tender_boq_download(request, listing_id):
 
 
 def _bid_pack_context(request, listing, workspace, org, ua):
-    """Shared context for draft/submitted bid PDF pack."""
+    """Shared context for RFQ-compliant draft/submitted bid PDF pack."""
+    from buildwatch.amount_words import amount_in_words
+
     selected = workspace.selected_codes()
     packages = list(
         TenderBoqPackage.objects.filter(tender=listing)
@@ -637,28 +639,39 @@ def _bid_pack_context(request, listing, workspace, org, ua):
 
     package_sections = []
     category_summary = []
+    bill_summary = []
     grand_total = Decimal("0")
-    for pkg in selected_packages:
+    for pkg in packages:
+        included = pkg.code.upper() in selected
         rows = []
         subtotal = Decimal("0")
-        for line in pkg.lines.all():
-            bp = price_map.get(line.bill_ref)
-            amount = bp.amount if bp else Decimal("0")
-            rate = bp.unit_rate if bp else Decimal("0")
-            subtotal += amount
-            rows.append({"line": line, "rate": rate, "amount": amount})
-        grand_total += subtotal
-        package_sections.append({
-            "package": pkg,
-            "rows": rows,
-            "subtotal": subtotal,
-            "line_count": len(rows),
-        })
-        category_summary.append({
+        line_count = pkg.lines.count()
+        if included:
+            for line in pkg.lines.all():
+                bp = price_map.get(line.bill_ref)
+                amount = bp.amount if bp else Decimal("0")
+                rate = bp.unit_rate if bp else Decimal("0")
+                subtotal += amount
+                rows.append({"line": line, "rate": rate, "amount": amount})
+            grand_total += subtotal
+            package_sections.append({
+                "package": pkg,
+                "rows": rows,
+                "subtotal": subtotal,
+                "line_count": len(rows),
+            })
+            category_summary.append({
+                "code": pkg.code,
+                "title": pkg.title,
+                "subtotal": subtotal,
+                "line_count": len(rows),
+            })
+        bill_summary.append({
             "code": pkg.code,
             "title": pkg.title,
-            "subtotal": subtotal,
-            "line_count": len(rows),
+            "line_count": line_count,
+            "included": included,
+            "subtotal": subtotal if included else Decimal("0"),
         })
 
     prepared_by_name = ""
@@ -669,18 +682,82 @@ def _bid_pack_context(request, listing, workspace, org, ua):
             or str(ua)
         )
 
+    self_checks = list(workspace.self_checks.order_by("mr_ref"))
+    mr_pass = sum(1 for c in self_checks if c.self_result == SelfAssessmentCheck.PASS)
+    mr_docs = sum(1 for c in self_checks if c.document or c.document_uploaded)
+    mr_total = len(self_checks)
+    if mr_total == 0:
+        mr_summary = "No MR rows — complete Certificates before submit."
+    elif workspace.self_assessment_passed:
+        mr_summary = "Self-assessment PASSED (%s/%s) · documents attached %s/%s." % (
+            mr_pass, mr_total, mr_docs, mr_total,
+        )
+    else:
+        mr_summary = "Self-assessment incomplete (%s PASS of %s) · documents %s/%s." % (
+            mr_pass, mr_total, mr_docs, mr_total,
+        )
+
+    priced_lines = workspace.bill_prices.filter(amount__gt=0).count()
+    rfq_checklist = [
+        {
+            "label": "Completed Form of Tender with grand total (figures and words)",
+            "status": "Included (Section B)" if grand_total > 0 else "Incomplete — enter BOQ rates",
+        },
+        {
+            "label": "Fully priced Bills of Quantities with unit rates and amounts",
+            "status": "Included (Section F) — %s priced lines" % priced_lines
+            if priced_lines else "Incomplete — no priced lines yet",
+        },
+        {
+            "label": "Mandatory Requirement documents MR1–MR14 (certified copies)",
+            "status": "Checklist Section D — %s/%s docs attached" % (mr_docs, mr_total or 14),
+        },
+        {
+            "label": "Technical Schedules (Section III) — equipment make/model/catalogue",
+            "status": "Attach separately (not generated in this pack)",
+        },
+        {
+            "label": "Manufacturer brochures/catalogues (highlighted models)",
+            "status": "Attach separately (not generated in this pack)",
+        },
+        {
+            "label": "Personnel forms PER-1 and PER-2",
+            "status": "Attach separately (not generated in this pack)",
+        },
+        {
+            "label": "Experience forms EXP-3.4 / EXP-4.1 / EXP-4.2a / EXP-4.2b",
+            "status": "Attach separately (not generated in this pack)",
+        },
+        {
+            "label": "Form EQU — Equipment Schedule with evidence",
+            "status": "Attach separately (not generated in this pack)",
+        },
+    ]
+
     is_draft = workspace.status != BidWorkspace.SUBMITTED
+    currency_words = "Kenya Shillings" if (listing.currency or "").upper() in ("", "KES") else listing.currency
     ctx = {
         "listing": listing,
         "workspace": workspace,
         "org": org,
-        "self_checks": workspace.self_checks.order_by("mr_ref"),
+        "self_checks": self_checks,
         "package_sections": package_sections,
         "category_summary": category_summary,
+        "bill_summary": bill_summary,
         "grand_total": grand_total,
+        "grand_total_words": amount_in_words(grand_total, currency=currency_words),
         "is_draft": is_draft,
         "prepared_by_name": prepared_by_name,
+        "signatory_designation": "",
+        "vat_certificate_no": getattr(org, "tax_pin", "") or "",
         "generated_at": timezone.now(),
+        "tender_title": "Proposed Completion of Isiolo Stadium — Electrical Services",
+        "employer_name": "Sports Kenya Ltd (The Director General)",
+        "employer_address": "P.O. Box Private Bag, Kasarani, Nairobi, Kenya · Tel: +254 20 2390500/1",
+        "closing_note": "10th July 2025 at 11:00 HRS (per RFQ)",
+        "partial_offer": bool(packages) and len(selected_packages) < len(packages),
+        "rfq_checklist": rfq_checklist,
+        "mr_summary": mr_summary,
         **branding_template_context(request),
     }
     return ctx
