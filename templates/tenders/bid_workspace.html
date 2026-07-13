@@ -17,16 +17,37 @@
     <div class="bw-kicker">{{ listing.event.ref }} · Main contractor bid prep</div>
     <h1 class="bw-title">BOQ Workspace</h1>
     <p class="bw-lead">{{ listing.event.description }}</p>
-    <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;">
+    <div class="bw-alert {% if subcontract_quota_full or planned_subcontractor_count == 0 %}bw-alert--success{% else %}bw-alert--info{% endif %}" style="margin-top:14px;margin-bottom:0;">
+      {% if subcontract_quota_full %}
+      <strong>Step 1 complete.</strong>
+      Sub-contractor quota filled ({{ subcontract_count }}/{{ planned_subcontractor_count }})
+      {% if subcontract_arrangements %}
+      —
+      {% for a in subcontract_arrangements %}
+      {{ a.sub_company_name }}{% if not forloop.last %}; {% endif %}
+      {% endfor %}
+      {% endif %}
+      . Continue with Step 2 · Apply remaining main BOQ.
+      {% elif planned_subcontractor_count == 0 %}
+      <strong>No subcontracting on this bid</strong> (N = 0 / MR14 N/A). Continue with Step 2 · main BOQ.
+      {% else %}
       <strong>Updated bid process on this page:</strong>
       Step 1 — <strong>Apply Sub Contracting</strong> (or No / MR14 N/A) →
       Step 2 — <strong>Apply</strong> remaining main BOQ →
       wait for sub quote → <strong>Print draft bid for approval</strong>.
+      {% endif %}
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
       <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
       <a href="{% url 'bid-self-assess' listing.pk %}" class="bw-btn bw-btn--ghost">Certificates</a>
+      {% if subcontract_quota_full or planned_subcontractor_count == 0 %}
+      <span class="bw-btn bw-btn--ghost" style="opacity:.45;cursor:not-allowed;pointer-events:none;"
+            title="Step 1 complete — sub-contractor quota already filled">
+        Go to Step 1 · Apply Sub Contracting
+      </span>
+      {% else %}
       <a href="#filter2-subcontract" class="bw-btn bw-btn--teal">Go to Step 1 · Apply Sub Contracting</a>
+      {% endif %}
     </div>
   </header>
 
