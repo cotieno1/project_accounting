@@ -285,6 +285,44 @@ def _active_subcontracted_codes(listing, org):
     return codes
 
 
+# Sub has updated / lodged their authorised BOQ slice with the main contractor.
+_SUB_QUOTE_READY = frozenset({
+    SubcontractArrangement.QUOTE_SUBMITTED,
+    SubcontractArrangement.QUOTE_ACKNOWLEDGED,
+    SubcontractArrangement.QUOTE_INCLUDED,
+})
+
+
+def _active_subcontracts(listing, org):
+    if listing is None or org is None:
+        return []
+    try:
+        return list(
+            SubcontractArrangement.objects.filter(
+                tender=listing,
+                main_organisation=org,
+            ).exclude(status=SubcontractArrangement.CANCELLED).order_by("-created_at")
+        )
+    except Exception:
+        return []
+
+
+def _pending_subcontract_quotes(listing, org):
+    """Arrangements still waiting for the sub to submit priced BOQ."""
+    return [
+        arr for arr in _active_subcontracts(listing, org)
+        if (arr.quote_status or "") not in _SUB_QUOTE_READY
+    ]
+
+
+def _can_print_draft_for_approval(listing, org):
+    """
+    Draft bid price for approval is available only after every active
+    subcontract has submitted an updated BOQ quote (or there is no sub).
+    """
+    return len(_pending_subcontract_quotes(listing, org)) == 0
+
+
 def _get_user_account(request):
     """Returns UserAccount for logged-in user, or None."""
     try:
@@ -731,16 +769,34 @@ def _bid_pack_context(request, listing, workspace, org, ua):
     selected_packages = [p for p in packages if p.code.upper() in selected]
     price_map = {bp.bill_ref: bp for bp in workspace.bill_prices.all()}
 
+    # Subcontract quotes that the main can carry into the approval draft.
+    subcontract_arrangements = _active_subcontracts(listing, org)
+    sub_ready = [
+        arr for arr in subcontract_arrangements
+        if (arr.quote_status or "") in _SUB_QUOTE_READY
+    ]
+    sub_price_by_ref = {}
+    sub_pkg_codes = set()
+    subcontract_sections = []
+    subcontract_quote_total = Decimal("0")
+    for arr in sub_ready:
+        sub_pkg_codes.update(arr.selected_codes())
+        subcontract_quote_total += arr.quote_total or Decimal("0")
+        for ql in arr.quote_lines.all():
+            sub_price_by_ref[ql.bill_ref] = ql
+
     package_sections = []
     category_summary = []
     bill_summary = []
     grand_total = Decimal("0")
     for pkg in packages:
-        included = pkg.code.upper() in selected
+        code_u = pkg.code.upper()
+        included_main = code_u in selected
+        included_sub = code_u in sub_pkg_codes and code_u not in selected
         rows = []
         subtotal = Decimal("0")
         line_count = pkg.lines.count()
-        if included:
+        if included_main:
             for line in pkg.lines.all():
                 bp = price_map.get(line.bill_ref)
                 amount = bp.amount if bp else Decimal("0")
@@ -753,6 +809,7 @@ def _bid_pack_context(request, listing, workspace, org, ua):
                 "rows": rows,
                 "subtotal": subtotal,
                 "line_count": len(rows),
+                "source": "main",
             })
             category_summary.append({
                 "code": pkg.code,
@@ -760,12 +817,36 @@ def _bid_pack_context(request, listing, workspace, org, ua):
                 "subtotal": subtotal,
                 "line_count": len(rows),
             })
+        elif included_sub:
+            for line in pkg.lines.all():
+                ql = sub_price_by_ref.get(line.bill_ref)
+                amount = ql.amount if ql else Decimal("0")
+                rate = ql.unit_rate if ql else Decimal("0")
+                subtotal += amount
+                rows.append({"line": line, "rate": rate, "amount": amount})
+            grand_total += subtotal
+            section = {
+                "package": pkg,
+                "rows": rows,
+                "subtotal": subtotal,
+                "line_count": len(rows),
+                "source": "subcontract",
+            }
+            package_sections.append(section)
+            subcontract_sections.append(section)
+            category_summary.append({
+                "code": pkg.code,
+                "title": pkg.title + " (subcontract)",
+                "subtotal": subtotal,
+                "line_count": len(rows),
+            })
         bill_summary.append({
             "code": pkg.code,
-            "title": pkg.title,
+            "title": pkg.title + (" (subcontract)" if included_sub else ""),
             "line_count": line_count,
-            "included": included,
-            "subtotal": subtotal if included else Decimal("0"),
+            "included": included_main or included_sub,
+            "subtotal": subtotal if (included_main or included_sub) else Decimal("0"),
+            "source": "subcontract" if included_sub else ("main" if included_main else ""),
         })
 
     prepared_by_name = ""
@@ -852,6 +933,10 @@ def _bid_pack_context(request, listing, workspace, org, ua):
         "partial_offer": bool(packages) and len(selected_packages) < len(packages),
         "rfq_checklist": rfq_checklist,
         "mr_summary": mr_summary,
+        "subcontract_arrangements": sub_ready,
+        "subcontract_sections": subcontract_sections,
+        "subcontract_quote_total": subcontract_quote_total,
+        "has_subcontract_quotes": bool(sub_ready),
         **branding_template_context(request),
     }
     return ctx
@@ -1274,18 +1359,19 @@ def bid_workspace(request, listing_id):
 
     subcontract_count = 0
     subcontract_arrangements = []
+    pending_sub_quotes = []
+    can_print_draft_bid = True
     if org is not None:
         try:
-            subcontract_arrangements = list(
-                SubcontractArrangement.objects.filter(
-                    tender=listing,
-                    main_organisation=org,
-                ).exclude(status=SubcontractArrangement.CANCELLED).order_by('-created_at')[:8]
-            )
+            subcontract_arrangements = _active_subcontracts(listing, org)[:8]
             subcontract_count = len(subcontract_arrangements)
+            pending_sub_quotes = _pending_subcontract_quotes(listing, org)
+            can_print_draft_bid = _can_print_draft_for_approval(listing, org)
         except Exception:
             subcontract_count = 0
             subcontract_arrangements = []
+            pending_sub_quotes = []
+            can_print_draft_bid = True
 
     ctx = {
         'listing': listing,
@@ -1304,6 +1390,8 @@ def bid_workspace(request, listing_id):
         'self_checks': workspace.self_checks.order_by('mr_ref'),
         'subcontract_count': subcontract_count,
         'subcontract_arrangements': subcontract_arrangements,
+        'pending_sub_quotes': pending_sub_quotes,
+        'can_print_draft_bid': can_print_draft_bid,
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_workspace.html', ctx)
@@ -1466,6 +1554,19 @@ def bid_draft_pdf(request, listing_id):
         return redirect("bid-workspace", listing_id=listing_id)
 
     org = workspace.organisation
+    pending_subs = _pending_subcontract_quotes(listing, org)
+    if pending_subs and workspace.status != BidWorkspace.SUBMITTED:
+        names = ", ".join(
+            f"{a.sub_company_name} ({', '.join(a.selected_codes()) or 'packages'})"
+            for a in pending_subs
+        )
+        messages.warning(
+            request,
+            "Draft bid for approval unlocks after the sub-contractor updates "
+            f"their BOQ quote. Waiting on: {names}.",
+        )
+        return redirect("bid-workspace", listing_id=listing_id)
+
     try:
         ctx = _bid_pack_context(request, listing, workspace, org, ua)
         pdf = build_pdf_bytes("tenders/bid_draft_print.html", ctx)

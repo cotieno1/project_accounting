@@ -143,7 +143,7 @@
       <td class="mono">{{ row.code }}</td>
       <td class="small">{{ row.title }}</td>
       <td class="ctr">{{ row.line_count }}</td>
-      <td class="ctr">{% if row.included %}Yes{% else %}No{% endif %}</td>
+      <td class="ctr">{% if row.included %}{% if row.source == 'subcontract' %}Sub{% else %}Yes{% endif %}{% else %}No{% endif %}</td>
       <td class="num mono">{% if row.included %}{{ row.subtotal|floatformat:2 }}{% else %}—{% endif %}</td>
     </tr>
     {% endfor %}
@@ -154,9 +154,11 @@
   </table>
 
   <h2>F. Fully priced Bills of Quantities (RFQ: unit rates and amounts)</h2>
-  <p class="small muted">Columns align to the tender BOQ: ITEM / DESCRIPTION / UNIT / QTY / RATE / AMOUNT. Rates include VAT at 16%.</p>
+  <p class="small muted">Columns align to the tender BOQ: ITEM / DESCRIPTION / UNIT / QTY / RATE / AMOUNT. Rates include VAT at 16%.
+    {% if has_subcontract_quotes %}Subcontracted bills carry the sub-contractor quote after they updated their BOQ.{% endif %}
+  </p>
   {% for section in package_sections %}
-  <h3>{{ section.package.code }} — {{ section.package.title }}</h3>
+  <h3>{{ section.package.code }} — {{ section.package.title }}{% if section.source == 'subcontract' %} (subcontract){% endif %}</h3>
   <table>
     <tr>
       <th width="11%">Item</th>

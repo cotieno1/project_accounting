@@ -155,7 +155,7 @@
         </div>
 
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;">
-          <button type="submit" class="bw-btn bw-btn--primary" id="subcontract-process-btn" disabled>Process</button>
+          <button type="submit" class="bw-btn bw-btn--primary" id="subcontract-process-btn" disabled>Apply Sub Contracting</button>
         </div>
       </form>
     </div>
@@ -194,7 +194,7 @@
             <div style="display:flex;justify-content:flex-end;gap:8px;">
               <button type="button" class="bw-btn bw-btn--ghost bw-btn--sm"
                       onclick="document.querySelectorAll('input[name=package_code]').forEach(c=>{if(!c.disabled)c.checked=true})">Select all remaining</button>
-              <button type="submit" class="bw-btn bw-btn--teal">Apply selection</button>
+              <button type="submit" class="bw-btn bw-btn--teal">Apply</button>
             </div>
             {% endif %}
           </form>
@@ -371,20 +371,38 @@
         <div class="bw-card-body">
           <div style="font-size:.78rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
             <strong style="color:var(--bw-navy);">Bid process</strong><br>
-            1) Step 1 subcontract categories ·
-            2) Step 2 price remaining BOQ ·
-            3) Certificates ·
-            4) Draft PDF · Submit
+            1) <strong>Apply Sub Contracting</strong> (or No → MR14 N/A) ·
+            2) <strong>Apply</strong> remaining main BOQ · price ·
+            3) Wait for sub BOQ update ·
+            4) Print draft bid for approval · Certificates · Submit
           </div>
-          <a href="{% url 'bid-draft-pdf' listing.pk %}" class="bw-btn bw-btn--ghost"
+          {% if pending_sub_quotes %}
+          <div class="bw-alert bw-alert--warning" style="margin-bottom:12px;font-size:.78rem;line-height:1.4;">
+            Waiting for sub-contractor BOQ update before draft approval print:
+            {% for a in pending_sub_quotes %}
+            <strong>{{ a.sub_company_name }}</strong>
+            ({{ a.get_quote_status_display|default:"No quote yet" }}){% if not forloop.last %}; {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if can_print_draft_bid %}
+          <a href="{% url 'bid-draft-pdf' listing.pk %}" class="bw-btn bw-btn--primary"
              style="width:100%;justify-content:center;margin-bottom:10px;"
              target="_blank" rel="noopener" download>
-            Download draft bid PDF
+            Print draft bid for approval
           </a>
+          {% else %}
+          <button type="button" class="bw-btn bw-btn--ghost" style="width:100%;justify-content:center;margin-bottom:10px;opacity:.55;cursor:not-allowed;" disabled>
+            Print draft bid for approval
+          </button>
+          <p style="font-size:.75rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.4;">
+            Unlocks when every subcontracted BOQ has been updated by the sub-contractor.
+          </p>
+          {% endif %}
           {% if workspace.self_assessment_passed and workspace.pricing_complete and selected_codes %}
           <form method="POST" action="{% url 'bid-submit' listing.pk %}">
             {% csrf_token %}
-            <button type="submit" class="bw-btn bw-btn--primary" style="width:100%;justify-content:center;"
+            <button type="submit" class="bw-btn bw-btn--teal" style="width:100%;justify-content:center;"
                     onclick="return confirm('Submit bid for selected categories on {{ listing.event.ref }}? Review the draft PDF first if you have not.')">
               Submit selected categories
             </button>
@@ -394,8 +412,7 @@
           </p>
           {% else %}
           <div style="font-size:.8rem;color:var(--bw-mid);">
-            Select categories, save prices, and complete certificates before submitting.
-            You can still download a draft PDF while work is in progress.
+            Apply remaining categories, save prices, and complete certificates before submitting.
           </div>
           {% endif %}
         </div>
@@ -430,7 +447,9 @@ function toggleSubcontractFilter() {
   btn.disabled = !(isYes || isNo);
   if (company) company.required = isYes;
   if (email) email.required = isYes;
-  btn.textContent = isNo ? 'Process — mark MR14 N/A' : (isYes ? 'Process — invite sub & lock categories' : 'Process');
+  btn.textContent = isNo
+    ? 'Apply — mark MR14 N/A'
+    : (isYes ? 'Apply Sub Contracting' : 'Apply Sub Contracting');
 }
 function recalcTotals() {
   const byPkg = {};
