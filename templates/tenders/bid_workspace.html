@@ -14,12 +14,19 @@
   </div>
 
   <header style="margin-bottom:22px;">
-    <div class="bw-kicker">{{ listing.event.ref }}</div>
+    <div class="bw-kicker">{{ listing.event.ref }} · Main contractor bid prep</div>
     <h1 class="bw-title">BOQ Workspace</h1>
     <p class="bw-lead">{{ listing.event.description }}</p>
+    <div class="bw-alert bw-alert--info" style="margin-top:14px;margin-bottom:0;">
+      <strong>Updated bid process on this page:</strong>
+      Step 1 — <strong>Apply Sub Contracting</strong> (or No / MR14 N/A) →
+      Step 2 — <strong>Apply</strong> remaining main BOQ →
+      wait for sub quote → <strong>Print draft bid for approval</strong>.
+    </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
       <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
       <a href="{% url 'bid-self-assess' listing.pk %}" class="bw-btn bw-btn--ghost">Certificates</a>
+      <a href="#filter2-subcontract" class="bw-btn bw-btn--teal">Go to Step 1 · Apply Sub Contracting</a>
     </div>
   </header>
 
@@ -70,12 +77,13 @@
   {% endif %}
 
   {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
-  <div class="bw-card" style="margin-bottom:16px;" id="filter2-subcontract">
-    <div class="bw-card-header">Step 1 · Subcontracting first (MR14)</div>
+  <div class="bw-card" style="margin-bottom:16px;border:2px solid var(--bw-teal);" id="filter2-subcontract">
+    <div class="bw-card-header" style="background:#f0fdf9;">Step 1 · Apply Sub Contracting (MR14) — start here</div>
     <div class="bw-card-body">
       <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        Start here. Select categories to subcontract (BOM for the sub), invite them,
-        then price your remaining main BOQ below (subcontracted categories are removed from your bid).
+        Choose <strong>Yes</strong> or <strong>No</strong> below — that enables the
+        <strong>Apply Sub Contracting</strong> button. Yes → Type A/B → pick BOQ categories → company + email → Apply.
+        Then those categories leave your main BOQ.
       </p>
       {% if subcontracted_codes %}
       <div class="bw-alert bw-alert--info" style="margin-bottom:12px;">
@@ -96,8 +104,8 @@
           <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">Is subcontracting required?</div>
           <div style="display:flex;flex-wrap:wrap;gap:10px;">
             <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
-              <input type="radio" name="subcontract_required" value="YES" id="sub-req-yes" onchange="toggleSubcontractFilter()">
-              <span><strong>Yes</strong></span>
+              <input type="radio" name="subcontract_required" value="YES" id="sub-req-yes" checked onchange="toggleSubcontractFilter()">
+              <span><strong>Yes</strong> — subcontract part of the BOQ</span>
             </label>
             <label style="display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
               <input type="radio" name="subcontract_required" value="NO" id="sub-req-no" onchange="toggleSubcontractFilter()">

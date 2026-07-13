@@ -974,6 +974,7 @@ def _apply_boq_input_mode(listing, mode: str) -> dict:
     stats["source_name"] = getattr(doc, "source_name", "")
     return stats
 
+@login_required
 def bid_workspace(request, listing_id):
     """
     GET/POST /tenders/<listing_id>/bid/
@@ -987,11 +988,44 @@ def bid_workspace(request, listing_id):
     except Exception:
         ua = _get_user_account(request)
 
+    if org is None:
+        messages.warning(
+            request,
+            'Select the Pioneer (contractor) organisation first, then open the BOQ workspace.',
+        )
+        return redirect('tender-detail', listing_id=listing_id)
+
     if not BidderRegistration.objects.filter(
             tender=listing, organisation=org).exists():
-        messages.warning(request,
-            'Register your interest before accessing the bid workspace.')
-        return redirect('tender-detail', listing_id=listing_id)
+        # Signed-in contractor: auto-register interest so /bid/ is reachable
+        # instead of silently bouncing back to the public tender page.
+        from accounts.tenant import get_exchange_persona
+        if get_exchange_persona(org=org, request=request) == 'contractor' and ua is not None:
+            BidderRegistration.objects.get_or_create(
+                tender=listing,
+                organisation=org,
+                defaults={'registered_by': ua},
+            )
+            BidWorkspace.objects.get_or_create(
+                tender=listing,
+                organisation=org,
+                defaults={'prepared_by': ua},
+            )
+            listing.registered_bidder_count = BidderRegistration.objects.filter(
+                tender=listing
+            ).count()
+            listing.save(update_fields=['registered_bidder_count'])
+            messages.success(
+                request,
+                f'{org.short_name or org.name} registered for {listing.event.ref}. '
+                'Continue with Step 1 — Apply Sub Contracting.',
+            )
+        else:
+            messages.warning(
+                request,
+                'Register your interest on the tender page before accessing the BOQ workspace.',
+            )
+            return redirect('tender-detail', listing_id=listing_id)
 
     if not listing.event.is_open:
         messages.error(request, 'This tender has closed. Bid workspace is read-only.')
