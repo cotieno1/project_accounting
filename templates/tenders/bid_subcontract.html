@@ -1,6 +1,6 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}Subcontract ó {{ listing.event.ref }}{% endblock %}
+{% block title %}Subcontract ù {{ listing.event.ref }}{% endblock %}
 
 {% block bw_content %}
 <div class="bw-wrap">
@@ -16,8 +16,8 @@
   </div>
 
   <header style="margin-bottom:22px;">
-    <div class="bw-kicker">{{ listing.event.ref }} ∑ Bid preparation</div>
-    <h1 class="bw-title">MR14 ó Domestic sub-contractor</h1>
+    <div class="bw-kicker">{{ listing.event.ref }} ù Bid preparation</div>
+    <h1 class="bw-title">MR14 ù Domestic sub-contractor</h1>
     <p class="bw-lead">
       Prerequisite for this bid (RFQ mandatory requirement MR14): invite the Electrical Services
       sub-contractor, obtain a signed &amp; stamped agreement not older than 1 month stating that
@@ -41,9 +41,10 @@
             <label class="bw-label" style="display:block;margin-bottom:8px;">Arrangement type</label>
             <div style="display:grid;gap:10px;margin-bottom:16px;">
               <label style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
-                <input type="radio" name="arrangement_type" value="{{ DOMESTIC }}" checked style="margin-top:3px;">
+                <input type="radio" name="arrangement_type" value="{{ DOMESTIC }}"
+                       {% if prefill_type != NOMINATED %}checked{% endif %} style="margin-top:3px;">
                 <span>
-                  <strong>Domestic sub-contractor</strong><br>
+                  <strong>Type A ó Domestic sub-contractor</strong><br>
                   <span style="font-size:.8rem;color:var(--bw-mid);line-height:1.4;">
                     Main contractor invites the firm for selected packages. Partial work is valued through the main;
                     QS / Project Manager approves payment certificates. Signed agreement required (MR14).
@@ -51,9 +52,10 @@
                 </span>
               </label>
               <label style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;">
-                <input type="radio" name="arrangement_type" value="{{ NOMINATED }}" style="margin-top:3px;">
+                <input type="radio" name="arrangement_type" value="{{ NOMINATED }}"
+                       {% if prefill_type == NOMINATED %}checked{% endif %} style="margin-top:3px;">
                 <span>
-                  <strong>Nominated sub-contractor</strong><br>
+                  <strong>Type B ó Nominated sub-contractor</strong><br>
                   <span style="font-size:.8rem;color:var(--bw-mid);line-height:1.4;">
                     Named by the project owner / sponsor. Work is inspected and approved by the owner's contracted consultant;
                     payment still flows through the main contractor.
@@ -82,7 +84,7 @@
               </div>
               <div>
                 <label class="bw-label" for="sub_phone">Phone</label>
-                <input class="bw-input" id="sub_phone" name="sub_phone" placeholder="+254 Ö" maxlength="40">
+                <input class="bw-input" id="sub_phone" name="sub_phone" placeholder="+254 ù" maxlength="40">
               </div>
             </div>
 
@@ -92,7 +94,7 @@
               <label style="display:flex;gap:8px;align-items:flex-start;font-size:.86rem;">
                 <input type="checkbox" name="package_code" value="{{ pkg.code }}"
                        {% if pkg.code in selected_codes %}checked{% endif %}>
-                <span><strong>{{ pkg.code }}</strong> ó {{ pkg.title }}</span>
+                <span><strong>{{ pkg.code }}</strong> ù {{ pkg.title }}</span>
               </label>
               {% empty %}
               <p style="margin:0;color:var(--bw-mid);font-size:.86rem;">No BOQ packages on this tender yet.</p>
@@ -101,7 +103,7 @@
 
             <label class="bw-label" for="notes">Scope notes (optional)</label>
             <textarea class="bw-input" id="notes" name="notes" rows="3"
-                      placeholder="Hold-points, programme windows, or interface with main worksÖ"
+                      placeholder="Hold-points, programme windows, or interface with main worksù"
                       style="margin-bottom:14px;"></textarea>
 
             <button type="submit" class="bw-btn bw-btn--primary">Send invitation by email</button>
@@ -135,7 +137,7 @@
              style="display:block;padding:12px 16px;border-bottom:1px solid var(--bw-rule);text-decoration:none;">
             <div style="font-weight:600;color:var(--bw-navy);">{{ a.sub_company_name }}</div>
             <div style="font-size:.78rem;color:var(--bw-mid);margin-top:2px;">
-              {{ a.get_arrangement_type_display }} ∑ {{ a.get_status_display }}
+              {{ a.get_arrangement_type_display }} ù {{ a.get_status_display }}
             </div>
           </a>
           {% empty %}

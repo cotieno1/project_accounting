@@ -27,6 +27,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, FileResponse, Http404
+from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Q, Count
 from django.views.decorators.http import require_POST
@@ -977,16 +978,18 @@ def bid_workspace(request, listing_id):
             )
             return redirect('bid-workspace', listing_id=listing_id)
 
-        if action == 'start_subcontract':
-            import secrets
-
+        if action == 'begin_subcontract':
+            # Filter 2 only — does not touch BOQ pricing / package selection.
             required = (request.POST.get('subcontract_required') or '').strip().upper()
             if required == 'NO':
-                _mark_mr14_not_applicable(workspace)
+                try:
+                    _mark_mr14_not_applicable(workspace)
+                except Exception as exc:
+                    messages.error(request, f'Could not update MR14: {exc}')
+                    return redirect('bid-workspace', listing_id=listing_id)
                 messages.success(
                     request,
-                    'Subcontracting not required — MR14 marked N/A '
-                    '(main contractor registered for all Electrical Services Works).',
+                    'Subcontracting not required — MR14 marked N/A.',
                 )
                 return redirect('bid-workspace', listing_id=listing_id)
 
@@ -994,84 +997,22 @@ def bid_workspace(request, listing_id):
                 messages.error(request, 'Choose whether subcontracting is required.')
                 return redirect('bid-workspace', listing_id=listing_id)
 
-            arr_type = (request.POST.get('arrangement_type') or '').strip().upper()
-            # Filter 2 Type A = domestic, Type B = nominated
-            if arr_type in {'A', 'TYPE_A', 'DOMESTIC'}:
-                arr_type = SubcontractArrangement.DOMESTIC
-            elif arr_type in {'B', 'TYPE_B', 'NOMINATED'}:
-                arr_type = SubcontractArrangement.NOMINATED
-            if arr_type not in {
-                SubcontractArrangement.DOMESTIC,
-                SubcontractArrangement.NOMINATED,
-            }:
-                messages.error(request, 'Select Type A (Domestic) or Type B (Nominated).')
-                return redirect('bid-workspace', listing_id=listing_id)
-
-            company = (request.POST.get('sub_company_name') or '').strip()
-            email = (request.POST.get('sub_email') or '').strip().lower()
-            contact = (request.POST.get('sub_contact_name') or '').strip()
-            phone = (request.POST.get('sub_phone') or '').strip()
-            notes = (request.POST.get('notes') or '').strip()
-            selected = [
+            arr_type = (request.POST.get('arrangement_type') or 'A').strip().upper()
+            if arr_type in {'B', 'TYPE_B', 'NOMINATED'}:
+                type_q = 'B'
+            else:
+                type_q = 'A'
+            packages_q = [
                 c.strip().upper()
                 for c in request.POST.getlist('sub_package_code')
                 if c.strip()
             ]
-            valid = {p.code.upper() for p in packages}
-            selected = [c for c in selected if c in valid]
-            if not company:
-                messages.error(request, 'Sub-contractor company name is required.')
-                return redirect('bid-workspace', listing_id=listing_id)
-            if not email or '@' not in email:
-                messages.error(request, 'A valid sub-contractor email is required.')
-                return redirect('bid-workspace', listing_id=listing_id)
-            if not selected:
-                messages.error(
-                    request,
-                    'Select at least one BOQ category to subcontract.',
-                )
-                return redirect('bid-workspace', listing_id=listing_id)
+            from urllib.parse import urlencode
+            qs = urlencode([('type', type_q)] + [('pkg', p) for p in packages_q])
+            return redirect(f"{reverse('bid-subcontract', kwargs={'listing_id': listing_id})}?{qs}")
 
-            is_nominated = arr_type == SubcontractArrangement.NOMINATED
-            arrangement = SubcontractArrangement.objects.create(
-                tender=listing,
-                workspace=workspace,
-                main_organisation=org,
-                arrangement_type=arr_type,
-                status=SubcontractArrangement.INVITED,
-                package_codes=selected,
-                sub_company_name=company,
-                sub_contact_name=contact,
-                sub_email=email,
-                sub_phone=phone,
-                notes=notes,
-                payment_via_main=True,
-                approval_by_consultant=is_nominated,
-                invite_token=secrets.token_urlsafe(32),
-                invited_by=ua,
-                invited_at=timezone.now(),
-            )
-            ok, err = _send_subcontract_invite_email(arrangement, request)
-            arrangement.invite_email_sent = ok
-            arrangement.invite_email_error = (err or '')[:400]
-            arrangement.save(
-                update_fields=['invite_email_sent', 'invite_email_error', 'updated_at']
-            )
-            if ok:
-                messages.success(
-                    request,
-                    f'Portal invitation sent to {email}. Sub can price the selected '
-                    f'categories, draft PDF, and submit their quote for your ack.',
-                )
-            else:
-                messages.warning(
-                    request,
-                    f'Arrangement created, but email could not be sent: {err}. '
-                    f'Resend from the arrangement page.',
-                )
-            return redirect(
-                'bid-subcontract-detail', listing_id=listing_id, pk=arrangement.pk
-            )
+        if action != 'save_prices':
+            return redirect('bid-workspace', listing_id=listing_id)
 
         # save_prices
         selected = workspace.selected_codes()
@@ -1196,15 +1137,15 @@ def bid_workspace(request, listing_id):
         )
     )
 
-    subcontract_arrangements = []
+    subcontract_count = 0
     if org is not None:
-        subcontract_arrangements = list(
-            SubcontractArrangement.objects.filter(
+        try:
+            subcontract_count = SubcontractArrangement.objects.filter(
                 tender=listing,
                 main_organisation=org,
-            ).exclude(status=SubcontractArrangement.CANCELLED).order_by('-created_at')[:8]
-        )
-    subcontract_count = len(subcontract_arrangements)
+            ).exclude(status=SubcontractArrangement.CANCELLED).count()
+        except Exception:
+            subcontract_count = 0
 
     ctx = {
         'listing': listing,
@@ -1220,9 +1161,6 @@ def bid_workspace(request, listing_id):
         'bill_prices': workspace.bill_prices.order_by('bill_ref'),
         'self_checks': workspace.self_checks.order_by('mr_ref'),
         'subcontract_count': subcontract_count,
-        'subcontract_arrangements': subcontract_arrangements,
-        'DOMESTIC': SubcontractArrangement.DOMESTIC,
-        'NOMINATED': SubcontractArrangement.NOMINATED,
         **branding_template_context(request),
     }
     return render(request, 'tenders/bid_workspace.html', ctx)
@@ -1880,6 +1818,18 @@ def bid_subcontract(request, listing_id):
             )
         return redirect("bid-subcontract-detail", listing_id=listing_id, pk=arrangement.pk)
 
+    # Prefill from Filter 2 on BOQ workspace (?type=A|B&pkg=...)
+    type_q = (request.GET.get("type") or "").strip().upper()
+    if type_q in {"B", "TYPE_B", "NOMINATED"}:
+        prefill_type = SubcontractArrangement.NOMINATED
+    else:
+        prefill_type = SubcontractArrangement.DOMESTIC
+    prefill_packages = [
+        c.strip().upper() for c in request.GET.getlist("pkg") if c.strip()
+    ]
+    if not prefill_packages:
+        prefill_packages = workspace.selected_codes()
+
     return render(
         request,
         "tenders/bid_subcontract.html",
@@ -1888,7 +1838,8 @@ def bid_subcontract(request, listing_id):
             "workspace": workspace,
             "packages": packages,
             "arrangements": ctx["arrangements"],
-            "selected_codes": workspace.selected_codes(),
+            "selected_codes": prefill_packages or workspace.selected_codes(),
+            "prefill_type": prefill_type,
             "DOMESTIC": SubcontractArrangement.DOMESTIC,
             "NOMINATED": SubcontractArrangement.NOMINATED,
         },
