@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                     ("QUOTE_SUBMITTED", "Quote submitted to main"),
                     ("QUOTE_ACKNOWLEDGED", "Acknowledged by main contractor"),
                     ("QUOTE_INCLUDED", "Included in main bid package"),
-                    ("AWARD_NOTED", "Main awarded — execution phase note sent"),
+                    ("AWARD_NOTED", "Main awarded - execution phase note sent"),
                 ],
                 default="",
                 max_length=30,
