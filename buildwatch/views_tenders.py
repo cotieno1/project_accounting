@@ -1317,6 +1317,8 @@ def bid_submit(request, listing_id):
 
     try:
         submission = workspace.submit(submitted_by=ua)
+        from buildwatch.views_subcontract_portal import mark_subcontracts_included_on_main_submit
+        mark_subcontracts_included_on_main_submit(workspace, request=request)
         messages.success(request,
             f'Bid submitted successfully. Reference: {listing.event.ref}. '
             f'Your submission ID is {submission.pk}. '
@@ -1642,58 +1644,10 @@ def _bid_subcontract_context(request, listing_id):
 
 
 def _send_subcontract_invite_email(arrangement, request=None):
-    """Email the sub-contractor invite link. Returns (ok, error)."""
-    from accounts.emails import send_system_email, _site_base_url
+    """Email the sub-contractor portal hyperlink for authorised BOQ pricing."""
+    from buildwatch.views_subcontract_portal import send_subcontract_portal_invite
 
-    base = _site_base_url(request)
-    accept_url = f"{base}/tenders/subcontract/accept/{arrangement.invite_token}/"
-    main_name = arrangement.main_organisation.name or arrangement.main_organisation.short_name
-    ref = arrangement.tender.event.ref
-    title = arrangement.tender.event.description or ref
-    type_label = arrangement.get_arrangement_type_display()
-    packages = ", ".join(arrangement.selected_codes()) or "To be confirmed"
-    pay_note = (
-        "Payment will be made through the main contractor's certificates "
-        "(RFQ domestic sub-contract rule), unless direct payment is later agreed."
-        if arrangement.payment_via_main
-        else "Direct payment terms may apply if agreed with the employer."
-    )
-    approval_note = ""
-    if arrangement.approval_by_consultant:
-        approval_note = (
-            "\nInspection and approval of your work will be by the project owner's "
-            "contracted consultant (QS / Project Manager) before valuation."
-        )
-    subject = f"BuildWatch — {type_label} invitation · {ref}"
-    text_body = (
-        f"Dear {arrangement.sub_contact_name or arrangement.sub_company_name},\n\n"
-        f"{main_name} invites {arrangement.sub_company_name} to join as a {type_label.lower()} "
-        f"on tender {ref}:\n{title}\n\n"
-        f"BOQ packages: {packages}\n"
-        f"{pay_note}{approval_note}\n\n"
-        f"Accept the invitation (and review the agreement path for MR14):\n{accept_url}\n\n"
-        f"Notes from main contractor:\n{(arrangement.notes or '—').strip()}\n\n"
-        f"— BuildWatch\n"
-    )
-    html_body = (
-        f"<p>Dear {arrangement.sub_contact_name or arrangement.sub_company_name},</p>"
-        f"<p><strong>{main_name}</strong> invites <strong>{arrangement.sub_company_name}</strong> "
-        f"to join as a <strong>{type_label.lower()}</strong> on tender "
-        f"<strong>{ref}</strong>.</p>"
-        f"<p>{title}</p>"
-        f"<p><strong>BOQ packages:</strong> {packages}</p>"
-        f"<p>{pay_note}{approval_note}</p>"
-        f"<p><a href=\"{accept_url}\">Accept invitation</a></p>"
-        f"<p style=\"color:#64748b;font-size:0.9rem;\">Notes: "
-        f"{(arrangement.notes or '—').strip()}</p>"
-    )
-    return send_system_email(
-        subject=subject,
-        to=arrangement.sub_email,
-        text_body=text_body,
-        html_body=html_body,
-        include_ceo_cc=False,
-    )
+    return send_subcontract_portal_invite(arrangement, request=request)
 
 
 def _send_subcontract_sponsor_notice(arrangement, request=None):
@@ -1812,9 +1766,9 @@ def bid_subcontract(request, listing_id):
         if ok:
             messages.success(
                 request,
-                f"Invitation sent to {email}. When the signed & stamped agreement "
-                f"is ready (not older than 1 month — RFQ MR14), upload it here to "
-                f"satisfy the bid certificate checklist before submit.",
+                f"Portal invitation sent to {email}. The sub-contractor can open the "
+                f"link to price authorised BOQ packages, download a draft PDF, and "
+                f"submit their quote to you for acknowledgement.",
             )
         else:
             messages.warning(
@@ -1948,38 +1902,12 @@ def bid_subcontract_detail(request, listing_id, pk):
             "listing": listing,
             "arrangement": arrangement,
             "package_labels": package_labels,
-            "accept_path": f"/tenders/subcontract/accept/{arrangement.invite_token}/",
+            "portal_path": f"/tenders/subcontract/portal/{arrangement.invite_token}/",
+            "accept_path": f"/tenders/subcontract/portal/{arrangement.invite_token}/",
         },
     )
 
 
 def subcontract_accept(request, token):
-    """Public token page — sub-contractor acknowledges the invitation."""
-    arrangement = get_object_or_404(SubcontractArrangement, invite_token=token)
-    if arrangement.status == SubcontractArrangement.CANCELLED:
-        messages.error(request, "This invitation has been cancelled.")
-        return redirect("tender-detail", listing_id=arrangement.tender_id)
-
-    if request.method == "POST":
-        if arrangement.status in {
-            SubcontractArrangement.INVITED,
-            SubcontractArrangement.DRAFT,
-        }:
-            arrangement.status = SubcontractArrangement.ACCEPTED
-            arrangement.accepted_at = timezone.now()
-            arrangement.save(update_fields=["status", "accepted_at", "updated_at"])
-            messages.success(
-                request,
-                "Invitation accepted. The main contractor will lodge the signed "
-                "agreement (MR14) and share it with the project sponsor.",
-            )
-        return redirect("subcontract-accept", token=token)
-
-    return render(
-        request,
-        "tenders/subcontract_accept.html",
-        {
-            "arrangement": arrangement,
-            "listing": arrangement.tender,
-        },
-    )
+    """Legacy URL — send invitees into the authorised pricing portal."""
+    return redirect("subcontract-portal", token=token)

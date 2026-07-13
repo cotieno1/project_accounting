@@ -1,6 +1,6 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}{{ arrangement.sub_company_name }} â€” Subcontract{% endblock %}
+{% block title %}{{ arrangement.sub_company_name }} — Subcontract{% endblock %}
 
 {% block bw_content %}
 <div class="bw-wrap" style="max-width:720px;">
@@ -14,25 +14,28 @@
   </div>
 
   <header style="margin-bottom:20px;">
-    <div class="bw-kicker">{{ listing.event.ref }} Â· {{ arrangement.get_arrangement_type_display }}</div>
+    <div class="bw-kicker">{{ listing.event.ref }} · {{ arrangement.get_arrangement_type_display }}</div>
     <h1 class="bw-title">{{ arrangement.sub_company_name }}</h1>
     <p class="bw-lead" style="margin-bottom:0;">
-      Status: <strong>{{ arrangement.get_status_display }}</strong>
-      {% if arrangement.invite_email_sent %} Â· Invite emailed{% elif arrangement.invite_email_error %} Â· Email failed{% endif %}
+      Arrangement: <strong>{{ arrangement.get_status_display }}</strong>
+      · Quote: <strong>{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
+      {% if arrangement.invite_email_sent %} · Portal invite emailed{% elif arrangement.invite_email_error %} · Email failed{% endif %}
     </p>
   </header>
 
   <div class="bw-card" style="margin-bottom:14px;">
     <div class="bw-card-header">Arrangement</div>
     <div class="bw-card-body" style="font-size:.9rem;line-height:1.55;">
-      <p style="margin:0 0 8px;"><strong>Contact:</strong> {{ arrangement.sub_contact_name|default:"â€”" }} Â· {{ arrangement.sub_email }}{% if arrangement.sub_phone %} Â· {{ arrangement.sub_phone }}{% endif %}</p>
+      <p style="margin:0 0 8px;"><strong>Contact:</strong> {{ arrangement.sub_contact_name|default:"—" }} · {{ arrangement.sub_email }}{% if arrangement.sub_phone %} · {{ arrangement.sub_phone }}{% endif %}</p>
       <p style="margin:0 0 8px;"><strong>Packages:</strong>
         {% for code, title in package_labels.items %}
           {{ code }}{% if not forloop.last %}, {% endif %}
-        {% empty %}â€”{% endfor %}
+        {% empty %}—{% endfor %}
       </p>
+      {% if arrangement.quote_total %}
+      <p style="margin:0 0 8px;"><strong>Quote total:</strong> KES {{ arrangement.quote_total|floatformat:2 }}</p>
+      {% endif %}
       <p style="margin:0 0 8px;"><strong>Payment via main contractor:</strong> {% if arrangement.payment_via_main %}Yes{% else %}No{% endif %}</p>
-      <p style="margin:0 0 8px;"><strong>Consultant / QS approval path:</strong> {% if arrangement.approval_by_consultant %}Yes (nominated){% else %}Via main ? QS certificate{% endif %}</p>
       {% if arrangement.notes %}<p style="margin:0;"><strong>Notes:</strong> {{ arrangement.notes }}</p>{% endif %}
       {% if arrangement.invite_email_error %}
       <p style="margin:10px 0 0;color:var(--bw-danger);font-size:.82rem;">Last email error: {{ arrangement.invite_email_error }}</p>
@@ -41,33 +44,70 @@
   </div>
 
   <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">1 Â· Invitation</div>
+    <div class="bw-card-header">1 · Portal invitation (email + hyperlink)</div>
     <div class="bw-card-body">
-      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;">
-        Accept link (share if email failed):
-        <code style="font-size:.78rem;word-break:break-all;">{{ accept_path }}</code>
+      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
+        The sub-contractor opens this private link to price authorised BOQ packages,
+        print a draft quote PDF, and submit to you:
+        <br><code style="font-size:.78rem;word-break:break-all;">{{ portal_path }}</code>
       </p>
-      <form method="POST">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="resend_invite">
-        <button type="submit" class="bw-btn bw-btn--ghost">Resend invitation email</button>
-      </form>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="resend_invite">
+          <button type="submit" class="bw-btn bw-btn--ghost">Resend portal email</button>
+        </form>
+        <a href="{{ portal_path }}" class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">Open portal</a>
+      </div>
       {% if arrangement.accepted_at %}
-      <p style="font-size:.82rem;color:var(--bw-ok);margin:12px 0 0;">Accepted {{ arrangement.accepted_at|date:"d M Y H:i" }}</p>
+      <p style="font-size:.82rem;color:var(--bw-ok);margin:12px 0 0;">Portal opened / accepted {{ arrangement.accepted_at|date:"d M Y H:i" }}</p>
       {% endif %}
     </div>
   </div>
 
   <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">2 Â· Signed agreement ? satisfies MR14</div>
+    <div class="bw-card-header">2 · Subcontractor quote</div>
+    <div class="bw-card-body">
+      {% if arrangement.quote_status == 'QUOTE_SUBMITTED' or arrangement.quote_status == 'QUOTE_ACKNOWLEDGED' or arrangement.quote_status == 'QUOTE_INCLUDED' or arrangement.quote_status == 'AWARD_NOTED' %}
+      <p style="font-size:.86rem;margin:0 0 12px;">
+        Submitted {{ arrangement.quote_submitted_at|date:"d M Y H:i"|default:"—" }}
+        · KES {{ arrangement.quote_total|floatformat:2 }}
+      </p>
+      {% if arrangement.quote_status == 'QUOTE_SUBMITTED' %}
+      <form method="POST" action="{% url 'subcontract-ack-quote' listing.pk arrangement.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="bw-btn bw-btn--primary"
+                onclick="return confirm('Acknowledge this quote and import rates into your BOQ workspace?');">
+          Acknowledge quote &amp; import rates
+        </button>
+      </form>
+      {% elif arrangement.quote_acknowledged_at %}
+      <p style="font-size:.82rem;color:var(--bw-ok);margin:0;">
+        Acknowledged {{ arrangement.quote_acknowledged_at|date:"d M Y H:i" }} — rates in your BOQ workspace.
+      </p>
+      {% endif %}
+      {% if arrangement.included_in_main_bid_at %}
+      <p style="font-size:.82rem;color:var(--bw-ok);margin:8px 0 0;">
+        Included in main bid package {{ arrangement.included_in_main_bid_at|date:"d M Y H:i" }} (sub notified).
+      </p>
+      {% endif %}
+      {% else %}
+      <p style="font-size:.84rem;color:var(--bw-mid);margin:0;">
+        Waiting for the sub-contractor to price packages and submit via the portal.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="bw-card" style="margin-bottom:14px;">
+    <div class="bw-card-header">3 · Signed agreement (MR14)</div>
     <div class="bw-card-body">
       <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        Upload the duly signed &amp; stamped agreement (not older than 1 month). This lodges
-        MR14 on your bid certificate checklist so you can submit.
+        Upload the duly signed and stamped agreement (not older than 1 month) to satisfy MR14 on your certificate checklist.
       </p>
       {% if arrangement.agreement_file %}
       <p style="margin:0 0 10px;font-size:.86rem;">
-        Uploaded {{ arrangement.agreement_uploaded_at|date:"d M Y H:i" }} â€”
+        Uploaded {{ arrangement.agreement_uploaded_at|date:"d M Y H:i" }} —
         <a href="{{ arrangement.agreement_file.url }}" target="_blank" rel="noopener">Download agreement</a>
       </p>
       {% endif %}
@@ -76,30 +116,28 @@
         <input type="hidden" name="action" value="upload_agreement">
         <input type="file" name="agreement_file" accept=".pdf,.doc,.docx,image/*" required
                style="margin-bottom:10px;display:block;font-size:.86rem;">
-        <button type="submit" class="bw-btn bw-btn--primary">Upload &amp; satisfy MR14</button>
+        <button type="submit" class="bw-btn bw-btn--primary">Upload and satisfy MR14</button>
       </form>
     </div>
   </div>
 
   <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">3 Â· Optional â€” notify sponsor</div>
+    <div class="bw-card-header">4 · Award / execution phase note</div>
     <div class="bw-card-body">
       <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        The RFQ requires the agreement in the bid pack. Sharing with the project sponsor
-        is optional at bid stage; recommended once the agreement is lodged.
+        When Pioneer (main) is awarded, notify the sub that phase 2 execution is starting.
       </p>
-      <form method="POST">
+      <form method="POST" action="{% url 'subcontract-notify-award' listing.pk arrangement.pk %}">
         {% csrf_token %}
-        <input type="hidden" name="action" value="share_sponsor">
-        <button type="submit" class="bw-btn bw-btn--primary"
-                {% if not arrangement.agreement_file %}disabled title="Upload agreement first"{% endif %}>
-          Share agreement with sponsor
+        <button type="submit" class="bw-btn bw-btn--ghost"
+                onclick="return confirm('Email the sub-contractor that the main contractor was awarded and execution is starting?');">
+          Notify sub — awarded / execution starting
         </button>
       </form>
-      {% if arrangement.shared_with_sponsor_at %}
+      {% if arrangement.award_noted_at %}
       <p style="font-size:.82rem;color:var(--bw-ok);margin:12px 0 0;">
-        Shared {{ arrangement.shared_with_sponsor_at|date:"d M Y H:i" }}
-        {% if arrangement.sponsor_notified %} Â· email sent{% else %} Â· recorded (sponsor email may be missing){% endif %}
+        Noted {{ arrangement.award_noted_at|date:"d M Y H:i" }}
+        {% if arrangement.award_note_sent %} · email sent{% endif %}
       </p>
       {% endif %}
     </div>

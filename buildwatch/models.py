@@ -1115,6 +1115,44 @@ class SubcontractArrangement(models.Model):
     agreement_uploaded_at = models.DateTimeField(null=True, blank=True)
     shared_with_sponsor_at = models.DateTimeField(null=True, blank=True)
     sponsor_notified = models.BooleanField(default=False)
+
+    # Subcontractor quote portal (bid preparation — authorised BOQ slice)
+    QUOTE_NONE = ""
+    QUOTE_DRAFT = "QUOTE_DRAFT"
+    QUOTE_SUBMITTED = "QUOTE_SUBMITTED"
+    QUOTE_ACKNOWLEDGED = "QUOTE_ACKNOWLEDGED"
+    QUOTE_INCLUDED = "QUOTE_INCLUDED"
+    AWARD_NOTED = "AWARD_NOTED"
+    QUOTE_STATUS_CHOICES = [
+        (QUOTE_NONE, "No quote yet"),
+        (QUOTE_DRAFT, "Pricing in progress"),
+        (QUOTE_SUBMITTED, "Quote submitted to main"),
+        (QUOTE_ACKNOWLEDGED, "Acknowledged by main contractor"),
+        (QUOTE_INCLUDED, "Included in main bid package"),
+        (AWARD_NOTED, "Main awarded — execution phase note sent"),
+    ]
+    quote_status = models.CharField(
+        max_length=30,
+        choices=QUOTE_STATUS_CHOICES,
+        default=QUOTE_NONE,
+        blank=True,
+    )
+    quote_total = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0")
+    )
+    quote_submitted_at = models.DateTimeField(null=True, blank=True)
+    quote_acknowledged_at = models.DateTimeField(null=True, blank=True)
+    quote_acknowledged_by = models.ForeignKey(
+        "accounts.UserAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subcontract_quotes_acked",
+    )
+    included_in_main_bid_at = models.DateTimeField(null=True, blank=True)
+    award_noted_at = models.DateTimeField(null=True, blank=True)
+    award_note_sent = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1130,3 +1168,42 @@ class SubcontractArrangement(models.Model):
     def selected_codes(self):
         codes = self.package_codes or []
         return [str(c).strip().upper() for c in codes if str(c).strip()]
+
+    def portal_open(self):
+        return self.status != self.CANCELLED
+
+
+class SubcontractQuoteLine(models.Model):
+    """
+    Sub-contractor priced BOQ line for packages authorised on the arrangement.
+    Independent of the main BidWorkspace until the main acknowledges / imports.
+    """
+    arrangement = models.ForeignKey(
+        SubcontractArrangement,
+        on_delete=models.CASCADE,
+        related_name="quote_lines",
+    )
+    package_code = models.CharField(max_length=20, blank=True, default="")
+    bill_ref = models.CharField(max_length=20)
+    description = models.CharField(max_length=255)
+    unit = models.CharField(max_length=30, blank=True)
+    quantity = models.DecimalField(
+        max_digits=12, decimal_places=3, default=Decimal("0")
+    )
+    unit_rate = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0")
+    )
+    amount = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0")
+    )
+
+    class Meta:
+        unique_together = [["arrangement", "bill_ref"]]
+        ordering = ["package_code", "bill_ref"]
+
+    def save(self, *args, **kwargs):
+        self.amount = (self.quantity * self.unit_rate).quantize(Decimal("0.01"))
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.bill_ref}: {self.amount:,.2f}"

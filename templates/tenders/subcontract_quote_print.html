@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Subcontract quote — {{ listing.event.ref }}</title>
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #0F1F33; }
+    h1 { font-size: 14pt; margin: 0 0 6px; }
+    h2 { font-size: 11pt; margin: 18px 0 8px; }
+    .muted { color: #64748b; font-size: 9pt; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    th, td { border: 1px solid #D4DDE8; padding: 4px 6px; vertical-align: top; }
+    th { background: #EEF3F8; text-align: left; font-size: 8.5pt; }
+    .num { text-align: right; font-family: Courier, monospace; }
+    .pkg { margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Domestic / Nominated Subcontract Quote</h1>
+  <p class="muted">{{ listing.event.ref }} · Generated {{ generated_at|date:"d M Y H:i" }}</p>
+  <p>
+    <strong>Sub-contractor:</strong> {{ arrangement.sub_company_name }}<br>
+    <strong>Main contractor:</strong> {{ main_name }}<br>
+    <strong>Tender:</strong> {{ listing.event.description }}
+  </p>
+
+  {% for section in package_sections %}
+  <div class="pkg">
+    <h2>{{ section.package.code }} — {{ section.package.title }}</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ref</th>
+          <th>Description</th>
+          <th>Unit</th>
+          <th class="num">Qty</th>
+          <th class="num">Rate</th>
+          <th class="num">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in section.rows %}
+        <tr>
+          <td>{{ row.line.bill_ref }}</td>
+          <td>{{ row.line.description }}</td>
+          <td>{{ row.line.unit }}</td>
+          <td class="num">{{ row.line.quantity }}</td>
+          <td class="num">{{ row.rate|floatformat:2 }}</td>
+          <td class="num">{{ row.amount|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="5"><strong>Subtotal</strong></td>
+          <td class="num"><strong>{{ section.subtotal|floatformat:2 }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+
+  <h2>Grand total</h2>
+  <p><strong>KES {{ grand_total|floatformat:2 }}</strong></p>
+  <p class="muted">In words: {{ amount_words }}</p>
+  <p class="muted">
+    This quote is for inclusion in the main contractor bid package. Payment through the main
+    contractor unless otherwise agreed. Not a direct offer to the employer.
+  </p>
+</body>
+</html>

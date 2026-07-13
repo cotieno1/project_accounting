@@ -14,6 +14,7 @@
 from django.urls import path
 from buildwatch import views_bw as bw
 from buildwatch import views_tenders as t
+from buildwatch import views_subcontract_portal as sub
 
 # ── BuildWatch core (Sprint 1) ────────────────────────────────────────────────
 buildwatch_patterns = [
@@ -79,8 +80,24 @@ tender_patterns = [
          t.bid_subcontract_detail,
          name='bid-subcontract-detail'),
 
+    path('<int:listing_id>/bid/subcontract/<int:pk>/ack/',
+         sub.subcontract_ack_quote,
+         name='subcontract-ack-quote'),
+
+    path('<int:listing_id>/bid/subcontract/<int:pk>/notify-award/',
+         sub.subcontract_notify_award,
+         name='subcontract-notify-award'),
+
+    path('subcontract/portal/<str:token>/',
+         sub.subcontract_portal,
+         name='subcontract-portal'),
+
+    path('subcontract/portal/<str:token>/draft.pdf/',
+         sub.subcontract_portal_draft_pdf,
+         name='subcontract-portal-draft-pdf'),
+
     path('subcontract/accept/<str:token>/',
-         t.subcontract_accept,
+         sub.subcontract_accept,
          name='subcontract-accept'),
 
     # ── Bidder dashboard ──────────────────────────────────────────────────

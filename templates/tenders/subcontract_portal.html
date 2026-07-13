@@ -1,0 +1,120 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Subcontract portal — {{ listing.event.ref }}{% endblock %}
+
+{% block bw_content %}
+<div class="bw-wrap">
+
+  <header style="margin-bottom:20px;">
+    <div class="bw-kicker">Authorised subcontract portal · {{ listing.event.ref }}</div>
+    <h1 class="bw-title">{{ arrangement.sub_company_name }}</h1>
+    <p class="bw-lead">
+      Main contractor:
+      <strong>{{ arrangement.main_organisation.name|default:arrangement.main_organisation.short_name }}</strong>.
+      Price only your authorised BOQ packages, download a draft quote PDF, then submit to the main contractor.
+    </p>
+    <div style="font-size:.84rem;color:var(--bw-mid);margin-top:8px;">
+      Quote status: <strong style="color:var(--bw-navy);">{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
+      {% if arrangement.quote_total %} · Total KES {{ arrangement.quote_total|floatformat:2 }}{% endif %}
+    </div>
+  </header>
+
+  {% if arrangement.quote_status == 'QUOTE_ACKNOWLEDGED' %}
+  <div class="bw-alert bw-alert--success">
+    Main contractor has acknowledged your quote. You will be notified when it is included in their bid package to the employer.
+  </div>
+  {% elif arrangement.quote_status == 'QUOTE_INCLUDED' %}
+  <div class="bw-alert bw-alert--success">
+    Your quote was included in the main bid package submitted to the employer.
+    If the main contractor is awarded, you will receive an execution-phase note.
+  </div>
+  {% elif arrangement.quote_status == 'AWARD_NOTED' %}
+  <div class="bw-alert bw-alert--info">
+    Main contractor awarded — execution (phase 2) is starting. Payment remains through the main contractor unless otherwise agreed.
+  </div>
+  {% elif arrangement.quote_status == 'QUOTE_SUBMITTED' %}
+  <div class="bw-alert bw-alert--info">
+    Quote submitted {{ arrangement.quote_submitted_at|date:"d M Y H:i" }}. Waiting for main contractor acknowledgement.
+  </div>
+  {% endif %}
+
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+    <a href="{% url 'subcontract-portal-draft-pdf' arrangement.invite_token %}"
+       class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">Download draft quote PDF</a>
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_prices">
+
+    {% for section in package_sections %}
+    <div class="bw-card" style="margin-bottom:14px;">
+      <div class="bw-card-header">{{ section.package.code }} — {{ section.package.title }}</div>
+      <div class="bw-card-body" style="padding:0;overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+          <thead>
+            <tr style="background:var(--bw-mist);text-align:left;">
+              <th style="padding:8px 10px;">Ref</th>
+              <th style="padding:8px 10px;">Description</th>
+              <th style="padding:8px 10px;">Unit</th>
+              <th style="padding:8px 10px;text-align:right;">Qty</th>
+              <th style="padding:8px 10px;text-align:right;">Unit rate</th>
+              <th style="padding:8px 10px;text-align:right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in section.rows %}
+            <tr style="border-top:1px solid var(--bw-rule);">
+              <td style="padding:8px 10px;font-family:var(--bw-mono);">{{ row.line.bill_ref }}</td>
+              <td style="padding:8px 10px;">{{ row.line.description }}</td>
+              <td style="padding:8px 10px;">{{ row.line.unit }}</td>
+              <td style="padding:8px 10px;text-align:right;font-family:var(--bw-mono);">{{ row.line.quantity }}</td>
+              <td style="padding:8px 10px;text-align:right;">
+                {% if can_edit %}
+                <input type="text" name="rate_{{ row.line.bill_ref }}"
+                       value="{% if row.rate %}{{ row.rate }}{% endif %}"
+                       inputmode="decimal"
+                       style="width:110px;padding:6px 8px;border:1px solid var(--bw-rule);border-radius:6px;text-align:right;font-family:var(--bw-mono);">
+                {% else %}
+                <span style="font-family:var(--bw-mono);">{{ row.rate|floatformat:2 }}</span>
+                {% endif %}
+              </td>
+              <td style="padding:8px 10px;text-align:right;font-family:var(--bw-mono);">{{ row.amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr style="border-top:2px solid var(--bw-navy);">
+              <td colspan="5" style="padding:10px;text-align:right;font-weight:600;">Package subtotal</td>
+              <td style="padding:10px;text-align:right;font-family:var(--bw-mono);font-weight:600;">{{ section.subtotal|floatformat:2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    {% empty %}
+    <div class="bw-alert bw-alert--warning">No BOQ packages were authorised on this invitation. Contact the main contractor.</div>
+    {% endfor %}
+
+    {% if package_sections %}
+    <div class="bw-card" style="margin-bottom:16px;">
+      <div class="bw-card-body" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <strong style="color:var(--bw-navy);">Grand total (your packages)</strong>
+        <strong style="font-family:var(--bw-mono);font-size:1.1rem;color:var(--bw-navy);">KES {{ grand_total|floatformat:2 }}</strong>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if can_edit %}
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <button type="submit" class="bw-btn bw-btn--primary">Save prices</button>
+      <button type="submit" class="bw-btn bw-btn--teal" name="action" value="submit_quote"
+              onclick="return confirm('Submit this quote to the main contractor?');">
+        Submit quote to main contractor
+      </button>
+    </div>
+    {% endif %}
+  </form>
+
+</div>
+{% endblock %}
