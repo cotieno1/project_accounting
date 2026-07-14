@@ -24,6 +24,16 @@ class MustChangePasswordMiddleware:
             if not any(path.startswith(p) for p in self.EXEMPT_PREFIXES):
                 try:
                     ua = request.user.useraccount
+                    if getattr(ua, "partial_bid_access_ended_at", None):
+                        from django.contrib import messages
+                        from django.contrib.auth import logout
+                        messages.warning(
+                            request,
+                            "Your partial bid access has ended. "
+                            "Contact the main contractor if you need changes.",
+                        )
+                        logout(request)
+                        return redirect(reverse("login"))
                     if ua.must_change_password:
                         return redirect(reverse("password_change_required"))
                 except Exception:

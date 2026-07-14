@@ -1801,6 +1801,9 @@ def my_subcontracts(request):
     ctx = {
         'organisation': org,
         'arrangements': arrangements,
+        'partial_bid_access_ended': bool(
+            ua and getattr(ua, 'partial_bid_access_ended_at', None)
+        ),
         **branding_template_context(request),
     }
     return render(request, 'tenders/my_subcontracts.html', ctx)

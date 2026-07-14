@@ -24,6 +24,13 @@ from .models import (
     WorkspaceBillPrice,
 )
 
+_PORTAL_LOCKED_QUOTE_STATUSES = {
+    SubcontractArrangement.QUOTE_SUBMITTED,
+    SubcontractArrangement.QUOTE_ACKNOWLEDGED,
+    SubcontractArrangement.QUOTE_INCLUDED,
+    SubcontractArrangement.AWARD_NOTED,
+}
+
 
 def _arrangement_by_token(token):
     return get_object_or_404(SubcontractArrangement, invite_token=token)
@@ -249,10 +256,7 @@ def subcontract_portal(request, token):
         arrangement.accepted_at = timezone.now()
         arrangement.save(update_fields=["status", "accepted_at", "updated_at"])
 
-    if request.method == "POST" and arrangement.quote_status not in {
-        SubcontractArrangement.QUOTE_INCLUDED,
-        SubcontractArrangement.AWARD_NOTED,
-    }:
+    if request.method == "POST" and arrangement.quote_status not in _PORTAL_LOCKED_QUOTE_STATUSES:
         action = (request.POST.get("action") or "save_prices").strip()
         codes = set(arrangement.selected_codes())
         packages = [
@@ -311,6 +315,19 @@ def subcontract_portal(request, token):
                     "updated_at",
                 ]
             )
+            from buildwatch.subcontract_orgs import expire_partial_bid_login
+            from django.contrib.auth import logout
+
+            revoked = expire_partial_bid_login(arrangement)
+            access_ended = bool(
+                revoked and getattr(revoked, "partial_bid_access_ended_at", None)
+            )
+            if access_ended and request.user.is_authenticated:
+                try:
+                    if request.user.useraccount_id == revoked.id:
+                        logout(request)
+                except Exception:
+                    pass
             # Notify main contractor contact email if available
             main_email = (arrangement.main_organisation.email or "").strip()
             if main_email:
@@ -331,16 +348,18 @@ def subcontract_portal(request, token):
                 )
             messages.success(
                 request,
-                "Quote submitted to the main contractor. You will receive an email "
-                "when they acknowledge it.",
+                "Quote submitted to the main contractor."
+                + (
+                    " Your login access has ended — contact the main contractor "
+                    "if you need changes."
+                    if access_ended
+                    else " You will receive an email when they acknowledge it."
+                ),
             )
             return redirect("subcontract-portal", token=token)
 
     sections, grand = _portal_sections(arrangement)
-    locked = arrangement.quote_status in {
-        SubcontractArrangement.QUOTE_INCLUDED,
-        SubcontractArrangement.AWARD_NOTED,
-    }
+    locked = arrangement.quote_status in _PORTAL_LOCKED_QUOTE_STATUSES
     return render(
         request,
         "tenders/subcontract_portal.html",
@@ -350,7 +369,7 @@ def subcontract_portal(request, token):
             "package_sections": sections,
             "grand_total": grand,
             "locked": locked,
-            "can_edit": not locked and arrangement.quote_status != SubcontractArrangement.QUOTE_INCLUDED,
+            "can_edit": not locked,
             **branding_template_context(request),
         },
     )

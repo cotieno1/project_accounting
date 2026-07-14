@@ -1,12 +1,12 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}Subcontract portal — {{ listing.event.ref }}{% endblock %}
+{% block title %}Subcontract portal ï¿½ {{ listing.event.ref }}{% endblock %}
 
 {% block bw_content %}
 <div class="bw-wrap">
 
   <header style="margin-bottom:20px;">
-    <div class="bw-kicker">Authorised subcontract portal · {{ listing.event.ref }}</div>
+    <div class="bw-kicker">Authorised subcontract portal ï¿½ {{ listing.event.ref }}</div>
     <h1 class="bw-title">{{ arrangement.sub_company_name }}</h1>
     <p class="bw-lead">
       Main contractor:
@@ -15,7 +15,7 @@
     </p>
     <div style="font-size:.84rem;color:var(--bw-mid);margin-top:8px;">
       Quote status: <strong style="color:var(--bw-navy);">{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
-      {% if arrangement.quote_total %} · Total KES {{ arrangement.quote_total|floatformat:2 }}{% endif %}
+      {% if arrangement.quote_total %} ï¿½ Total KES {{ arrangement.quote_total|floatformat:2 }}{% endif %}
     </div>
   </header>
 
@@ -30,11 +30,12 @@
   </div>
   {% elif arrangement.quote_status == 'AWARD_NOTED' %}
   <div class="bw-alert bw-alert--info">
-    Main contractor awarded — execution (phase 2) is starting. Payment remains through the main contractor unless otherwise agreed.
+    Main contractor awarded ï¿½ execution (phase 2) is starting. Payment remains through the main contractor unless otherwise agreed.
   </div>
   {% elif arrangement.quote_status == 'QUOTE_SUBMITTED' %}
   <div class="bw-alert bw-alert--info">
     Quote submitted {{ arrangement.quote_submitted_at|date:"d M Y H:i" }}. Waiting for main contractor acknowledgement.
+    Pricing is locked. If you signed in to submit, your login access has ended â€” use this portal link to view your quote read-only.
   </div>
   {% endif %}
 
@@ -49,7 +50,7 @@
 
     {% for section in package_sections %}
     <div class="bw-card" style="margin-bottom:14px;">
-      <div class="bw-card-header">{{ section.package.code }} — {{ section.package.title }}</div>
+      <div class="bw-card-header">{{ section.package.code }} ï¿½ {{ section.package.title }}</div>
       <div class="bw-card-body" style="padding:0;overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
           <thead>

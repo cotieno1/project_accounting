@@ -144,6 +144,13 @@ class UserAccount(models.Model):
         default=False,
         help_text="User must set password via onboarding link before full access.",
     )
+    partial_bid_access_ended_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=(
+            "When set, login is disabled after partial subcontract BOQ pricing is complete."
+        ),
+    )
     onboarded_at = models.DateTimeField(null=True, blank=True)
     onboarded_by = models.ForeignKey(
         "self",

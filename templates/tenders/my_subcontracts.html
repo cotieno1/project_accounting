@@ -1,6 +1,6 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}My subcontracts — {{ organisation.short_name }}{% endblock %}
+{% block title %}My subcontracts ï¿½ {{ organisation.short_name }}{% endblock %}
 
 {% block bw_content %}
 <div class="bw-wrap">
@@ -13,12 +13,19 @@
 
   <header style="margin-bottom:22px;">
     <div class="bw-kicker">Contractor ID {{ organisation.org_code }}</div>
-    <h1 class="bw-title">{{ organisation.short_name }} — subcontract work</h1>
+    <h1 class="bw-title">{{ organisation.short_name }} ï¿½ subcontract work</h1>
     <p class="bw-lead">
       Price authorised BOQ packages where you are the domestic / nominated sub-contractor.
       Your contractor ID stays active for the life of each project arrangement.
     </p>
   </header>
+
+  {% if partial_bid_access_ended %}
+  <div class="bw-alert bw-alert--info" style="margin-bottom:18px;">
+    Your partial bid access has ended. You can still open each portal link to view your submitted quote (read-only).
+    Contact the main contractor if you need changes.
+  </div>
+  {% endif %}
 
   {% if arrangements %}
   <div class="bw-card">
@@ -47,7 +54,11 @@
             <td style="padding:12px 14px;text-align:right;">
               <a class="bw-btn bw-btn--teal bw-btn--sm"
                  href="{% url 'subcontract-portal' a.invite_token %}">
+                {% if a.quote_status == 'QUOTE_SUBMITTED' or a.quote_status == 'QUOTE_ACKNOWLEDGED' or a.quote_status == 'QUOTE_INCLUDED' or a.quote_status == 'AWARD_NOTED' %}
+                View quote (read-only)
+                {% else %}
                 Open pricing portal
+                {% endif %}
               </a>
             </td>
           </tr>

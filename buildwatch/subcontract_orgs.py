@@ -215,3 +215,44 @@ def link_arrangement_to_contractor(arrangement, organization):
         fields.append("updated_at")
         arrangement.save(update_fields=fields)
     return arrangement
+
+
+def expire_partial_bid_login(arrangement):
+    """
+    After the sub submits their partial BOQ quote, end temporary login access.
+    Returns the UserAccount revoked, or None.
+    """
+    from django.utils import timezone
+
+    from accounts.models import UserAccount
+
+    if not arrangement:
+        return None
+    now = timezone.now()
+    ua = None
+    if arrangement.sub_organisation_id:
+        qs = UserAccount.objects.filter(
+            organization_id=arrangement.sub_organisation_id,
+        )
+        if arrangement.sub_email:
+            ua = qs.filter(email__iexact=arrangement.sub_email.strip()).first()
+        if ua is None:
+            ua = qs.order_by("id").first()
+    elif arrangement.sub_email:
+        ua = UserAccount.objects.filter(
+            email__iexact=arrangement.sub_email.strip()
+        ).first()
+
+    if ua is None or ua.partial_bid_access_ended_at:
+        return ua
+
+    ua.partial_bid_access_ended_at = now
+    ua.must_change_password = False
+    ua.save(update_fields=["partial_bid_access_ended_at", "must_change_password"])
+
+    if ua.user_id:
+        user = ua.user
+        user.set_unusable_password()
+        user.is_active = False
+        user.save(update_fields=["password", "is_active"])
+    return ua

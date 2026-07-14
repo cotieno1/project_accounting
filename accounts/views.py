@@ -238,6 +238,22 @@ class CustomLoginView(LoginView):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
+    def form_valid(self, form):
+        user = form.get_user()
+        try:
+            ua = user.useraccount
+            if getattr(ua, "partial_bid_access_ended_at", None):
+                from django.contrib import messages
+                messages.error(
+                    self.request,
+                    "Your partial bid access has ended. "
+                    "Contact the main contractor if you need changes.",
+                )
+                return self.form_invalid(form)
+        except Exception:
+            pass
+        return super().form_valid(form)
+
     def get_success_url(self):
         from django.urls import reverse
         try:
