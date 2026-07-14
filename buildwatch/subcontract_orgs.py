@@ -3,7 +3,7 @@ Resolve / create contractor organisations used as domestic or nominated subs.
 
 A BuildWatch contractor org (contractor ID = org_code) can act as:
 - main contractor on one tender / project, and
-- sub-contractor on another — the org ID outlives a single tender.
+- sub-contractor on another - the org ID outlives a single tender.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ def ensure_contractor_organisation(
     from accounts.models import Organization
 
     name = (company_name or "").strip() or "Sub-contractor"
-    short = name.split("—")[0].split("-")[0].strip()
+    short = name.split("-")[0].strip()
     if len(short) > 80:
         short = short[:80]
     upper = name.upper().replace(" ", "")
