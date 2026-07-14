@@ -1,73 +1,138 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}{{ arrangement.sub_company_name }} — Subcontract bid{% endblock %}
+{% block title %}{{ arrangement.sub_company_name }} · Subcontract bid{% endblock %}
 
 {% block bw_content %}
-<div class="bw-wrap" style="max-width:720px;">
+<style>
+  .sc-progress {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 18px;
+  }
+  @media (max-width: 900px) {
+    .sc-progress { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .sc-step {
+    border: 1px solid var(--bw-rule);
+    border-radius: 10px;
+    background: var(--bw-white);
+    padding: 12px 12px 10px;
+    min-height: 92px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sc-step__label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--bw-mid);
+  }
+  .sc-step__at {
+    font-family: var(--bw-mono);
+    font-size: .68rem;
+    color: var(--bw-mid);
+  }
+  .sc-step__detail {
+    font-size: .78rem;
+    color: var(--bw-ink);
+    line-height: 1.35;
+    margin-top: auto;
+  }
+  .sc-step--done { border-color: #99f6e4; background: #f0fdfa; }
+  .sc-step--done .sc-step__label { color: var(--bw-ok); }
+  .sc-step--current {
+    border-color: var(--bw-teal);
+    box-shadow: 0 0 0 2px rgba(26,122,110,.18);
+  }
+  .sc-step--current .sc-step__label { color: var(--bw-teal); }
+  .sc-step--pending { opacity: .72; background: var(--bw-mist); }
+  .sc-pending {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    margin-bottom: 18px;
+  }
+  .sc-pending__kicker {
+    font-family: var(--bw-mono);
+    font-size: .65rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--bw-warn);
+    margin-bottom: 4px;
+  }
+  .sc-pending__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #9a3412;
+    margin: 0;
+  }
+  .sc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .sc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+</style>
 
-  <header style="margin-bottom:20px;">
-    <div class="bw-kicker">{{ listing.event.ref }} · {{ arrangement.get_arrangement_type_display }}</div>
-    <h1 class="bw-title">{{ arrangement.sub_company_name }}</h1>
-    <p class="bw-lead" style="margin-bottom:0;">
-      Open subcontracting cycle (no password required while testing through execution).
-      Price authorised packages, submit to the main contractor, and view the Domestic
-      Contractor's Agreement (MR14).
-    </p>
-  </header>
+<div class="bw-wrap">
 
-  <div class="bw-alert bw-alert--info" style="margin-bottom:14px;">
-    Main contractor:
-    <strong>{{ arrangement.main_organisation.name|default:arrangement.main_organisation.short_name }}</strong>
-    · Quote status:
-    <strong>{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
-    {% if arrangement.quote_total %} · KES {{ arrangement.quote_total|floatformat:2 }}{% endif %}
-  </div>
-
-  <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">1 · Price packages &amp; submit to main</div>
-    <div class="bw-card-body">
-      <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        Open the pricing portal to enter unit rates, download a draft quote PDF, and
-        submit your partial bid to
-        {{ arrangement.main_organisation.short_name|default:arrangement.main_organisation.name }}.
-        No login password is required for this cycle.
-      </p>
-      <p style="font-size:.84rem;margin:0 0 12px;">
-        <strong>Packages:</strong>
-        {% for code, title in package_labels.items %}
-          {{ code }}{% if not forloop.last %}, {% endif %}
-        {% empty %}—{% endfor %}
-      </p>
-      <a href="{% url 'subcontract-portal' arrangement.invite_token %}"
-         class="bw-btn bw-btn--primary">
-        Open pricing portal · process &amp; submit
-      </a>
-    </div>
-  </div>
-
-  <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">2 · Domestic Contractor's Agreement (MR14)</div>
-    <div class="bw-card-body">
-      <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        {{ mr14_text }}
-      </p>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
-           class="bw-btn bw-btn--teal" target="_blank" rel="noopener">
-          View agreement
-        </a>
-        <a href="{% url 'bid-subcontract-agreement-pdf' listing.pk arrangement.pk %}"
-           class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">
-          Download PDF
-        </a>
-        {% if arrangement.agreement_file %}
-        <a href="{{ arrangement.agreement_file.url }}"
-           class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">
-          Signed upload on file
-        </a>
+  <header style="margin-bottom:16px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+    <div>
+      <div class="bw-kicker">{{ listing.event.ref }} · {{ arrangement.main_organisation.short_name|default:arrangement.main_organisation.name }}</div>
+      <h1 class="bw-title" style="margin-bottom:4px;">{{ arrangement.sub_company_name }}</h1>
+      <div class="sc-chips">
+        {% for code in package_labels.keys %}
+        <span class="bw-tag">{{ code }}</span>
+        {% endfor %}
+        {% if arrangement.quote_total %}
+        <span class="bw-tag bw-tag--ok">KES {{ arrangement.quote_total|floatformat:2 }}</span>
         {% endif %}
       </div>
     </div>
+    <div class="sc-actions">
+      <a href="{% url 'subcontract-portal' arrangement.invite_token %}"
+         class="bw-btn bw-btn--primary">Price &amp; submit</a>
+      <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
+         class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">Agreement</a>
+    </div>
+  </header>
+
+  {% if progress.pending_label %}
+  <div class="sc-pending">
+    <div>
+      <div class="sc-pending__kicker">Pending now</div>
+      <p class="sc-pending__title">{{ progress.pending_label }}</p>
+    </div>
+    {% if progress.pending_key == 'accepted' or progress.pending_key == 'quote' %}
+    <a href="{% url 'subcontract-portal' arrangement.invite_token %}"
+       class="bw-btn bw-btn--primary">Open pricing portal</a>
+    {% elif progress.pending_key == 'agreement' %}
+    <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
+       class="bw-btn bw-btn--primary" target="_blank" rel="noopener">Open agreement</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="sc-progress" role="list" aria-label="Subcontract progress">
+    {% for step in progress.steps %}
+    <div class="sc-step sc-step--{{ step.state }}" role="listitem">
+      <div class="sc-step__label">
+        {% if step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
+        {{ step.label }}
+      </div>
+      <div class="sc-step__at">{% if step.at %}{{ step.at }}{% else %}—{% endif %}</div>
+      <div class="sc-step__detail">
+        {% if step.state == 'done' %}{{ step.detail|default:"Complete" }}
+        {% elif step.state == 'current' %}{{ step.pending }}
+        {% else %}Waiting{% endif %}
+      </div>
+    </div>
+    {% endfor %}
   </div>
 
 </div>

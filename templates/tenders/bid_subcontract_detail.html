@@ -1,11 +1,99 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}{{ arrangement.sub_company_name }} � Subcontract{% endblock %}
+{% block title %}{{ arrangement.sub_company_name }} · Subcontract{% endblock %}
 
 {% block bw_content %}
-<div class="bw-wrap" style="max-width:720px;">
+<style>
+  .sc-progress {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 18px;
+  }
+  @media (max-width: 900px) {
+    .sc-progress { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .sc-step {
+    border: 1px solid var(--bw-rule);
+    border-radius: 10px;
+    background: var(--bw-white);
+    padding: 12px 12px 10px;
+    min-height: 92px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sc-step__label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--bw-mid);
+  }
+  .sc-step__at {
+    font-family: var(--bw-mono);
+    font-size: .68rem;
+    color: var(--bw-mid);
+  }
+  .sc-step__detail {
+    font-size: .78rem;
+    color: var(--bw-ink);
+    line-height: 1.35;
+    margin-top: auto;
+  }
+  .sc-step--done {
+    border-color: #99f6e4;
+    background: #f0fdfa;
+  }
+  .sc-step--done .sc-step__label { color: var(--bw-ok); }
+  .sc-step--current {
+    border-color: var(--bw-teal);
+    box-shadow: 0 0 0 2px rgba(26,122,110,.18);
+    background: #fff;
+  }
+  .sc-step--current .sc-step__label { color: var(--bw-teal); }
+  .sc-step--pending {
+    opacity: .72;
+    background: var(--bw-mist);
+  }
+  .sc-pending {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    margin-bottom: 18px;
+  }
+  .sc-pending__kicker {
+    font-family: var(--bw-mono);
+    font-size: .65rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--bw-warn);
+    margin-bottom: 4px;
+  }
+  .sc-pending__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #9a3412;
+    margin: 0;
+  }
+  .sc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .sc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sc-quiet {
+    font-size: .82rem;
+    color: var(--bw-mid);
+    margin: 0 0 10px;
+  }
+</style>
 
-  <div class="bw-ref" style="margin-bottom:18px;">
+<div class="bw-wrap">
+
+  <div class="bw-ref" style="margin-bottom:14px;">
     <a href="{% url 'bid-workspace' listing.pk %}">BOQ Workspace</a>
     &nbsp;/&nbsp;
     <a href="{% url 'bid-subcontract' listing.pk %}">Subcontract</a>
@@ -13,150 +101,145 @@
     {{ arrangement.sub_company_name }}
   </div>
 
-  <header style="margin-bottom:20px;">
-    <div class="bw-kicker">{{ listing.event.ref }} � {{ arrangement.get_arrangement_type_display }}</div>
-    <h1 class="bw-title">{{ arrangement.sub_company_name }}</h1>
-    <p class="bw-lead" style="margin-bottom:0;">
-      Arrangement: <strong>{{ arrangement.get_status_display }}</strong>
-      � Quote: <strong>{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
-      {% if arrangement.invite_email_sent %} � Portal invite emailed{% elif arrangement.invite_email_error %} � Email failed{% endif %}
-    </p>
+  <header style="margin-bottom:16px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+    <div>
+      <div class="bw-kicker">{{ listing.event.ref }} · Domestic sub-contractor</div>
+      <h1 class="bw-title" style="margin-bottom:4px;">{{ arrangement.sub_company_name }}</h1>
+      <div class="sc-chips">
+        {% for code in package_labels.keys %}
+        <span class="bw-tag">{{ code }}</span>
+        {% endfor %}
+        {% if arrangement.quote_total %}
+        <span class="bw-tag bw-tag--ok">KES {{ arrangement.quote_total|floatformat:2 }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="sc-actions">
+      <a href="{{ portal_path }}" class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">Open portal</a>
+      <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
+         class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">Agreement</a>
+    </div>
   </header>
 
-  <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">Arrangement</div>
-    <div class="bw-card-body" style="font-size:.9rem;line-height:1.55;">
-      <p style="margin:0 0 8px;"><strong>Contact:</strong> {{ arrangement.sub_contact_name|default:"�" }} � {{ arrangement.sub_email }}{% if arrangement.sub_phone %} � {{ arrangement.sub_phone }}{% endif %}</p>
-      <p style="margin:0 0 8px;"><strong>Packages:</strong>
-        {% for code, title in package_labels.items %}
-          {{ code }}{% if not forloop.last %}, {% endif %}
-        {% empty %}�{% endfor %}
-      </p>
-      {% if arrangement.quote_total %}
-      <p style="margin:0 0 8px;"><strong>Quote total:</strong> KES {{ arrangement.quote_total|floatformat:2 }}</p>
-      {% endif %}
-      <p style="margin:0 0 8px;"><strong>Payment via main contractor:</strong> {% if arrangement.payment_via_main %}Yes{% else %}No{% endif %}</p>
-      {% if arrangement.notes %}<p style="margin:0;"><strong>Notes:</strong> {{ arrangement.notes }}</p>{% endif %}
-      {% if arrangement.invite_email_error %}
-      <p style="margin:10px 0 0;color:var(--bw-danger);font-size:.82rem;">Last email error: {{ arrangement.invite_email_error }}</p>
-      {% endif %}
+  {% if progress.pending_label %}
+  <div class="sc-pending">
+    <div>
+      <div class="sc-pending__kicker">Pending now</div>
+      <p class="sc-pending__title">{{ progress.pending_label }}</p>
     </div>
-  </div>
-
-  <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">1 � Portal invitation (email + hyperlink)</div>
-    <div class="bw-card-body">
-      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        The sub-contractor opens this private link to price authorised BOQ packages,
-        print a draft quote PDF, and submit to you:
-        <br><code style="font-size:.78rem;word-break:break-all;">{{ portal_path }}</code>
-      </p>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        <form method="POST">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="resend_invite">
-          <button type="submit" class="bw-btn bw-btn--ghost">Resend portal email</button>
-        </form>
-        <a href="{{ portal_path }}" class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">Open portal</a>
-      </div>
-      {% if arrangement.accepted_at %}
-      <p style="font-size:.82rem;color:var(--bw-ok);margin:12px 0 0;">Portal opened / accepted {{ arrangement.accepted_at|date:"d M Y H:i" }}</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">2 � Subcontractor quote</div>
-    <div class="bw-card-body">
-      {% if arrangement.quote_status == 'QUOTE_SUBMITTED' or arrangement.quote_status == 'QUOTE_ACKNOWLEDGED' or arrangement.quote_status == 'QUOTE_INCLUDED' or arrangement.quote_status == 'AWARD_NOTED' %}
-      <p style="font-size:.86rem;margin:0 0 12px;">
-        Submitted {{ arrangement.quote_submitted_at|date:"d M Y H:i"|default:"�" }}
-        � KES {{ arrangement.quote_total|floatformat:2 }}
-      </p>
-      {% if arrangement.quote_status == 'QUOTE_SUBMITTED' %}
+    <div class="sc-actions">
+      {% if progress.pending_key == 'invite' %}
+      <form method="POST">{% csrf_token %}
+        <input type="hidden" name="action" value="resend_invite">
+        <button type="submit" class="bw-btn bw-btn--primary">Send invite</button>
+      </form>
+      {% elif progress.pending_key == 'accepted' or progress.pending_key == 'quote' %}
+      <a href="{{ portal_path }}" class="bw-btn bw-btn--primary" target="_blank" rel="noopener">Open pricing portal</a>
+      {% elif progress.pending_key == 'ack' and arrangement.quote_status == 'QUOTE_SUBMITTED' %}
       <form method="POST" action="{% url 'subcontract-ack-quote' listing.pk arrangement.pk %}">
         {% csrf_token %}
         <button type="submit" class="bw-btn bw-btn--primary"
                 onclick="return confirm('Acknowledge this quote and import rates into your BOQ workspace?');">
-          Acknowledge quote &amp; import rates
+          Acknowledge quote
         </button>
       </form>
-      {% elif arrangement.quote_acknowledged_at %}
-      <p style="font-size:.82rem;color:var(--bw-ok);margin:0;">
-        Acknowledged {{ arrangement.quote_acknowledged_at|date:"d M Y H:i" }} � rates in your BOQ workspace.
-      </p>
-      {% endif %}
-      {% if arrangement.included_in_main_bid_at %}
-      <p style="font-size:.82rem;color:var(--bw-ok);margin:8px 0 0;">
-        Included in main bid package {{ arrangement.included_in_main_bid_at|date:"d M Y H:i" }} (sub notified).
-      </p>
-      {% endif %}
-      {% else %}
-      <p style="font-size:.84rem;color:var(--bw-mid);margin:0;">
-        Waiting for the sub-contractor to price packages and submit via the portal.
-      </p>
+      {% elif progress.pending_key == 'agreement' %}
+      <a href="#sc-agree" class="bw-btn bw-btn--primary">Lodge agreement</a>
+      {% elif progress.pending_key == 'award' %}
+      <form method="POST" action="{% url 'subcontract-notify-award' listing.pk arrangement.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="bw-btn bw-btn--primary"
+                onclick="return confirm('Notify the sub that award / execution is starting?');">
+          Notify execution
+        </button>
+      </form>
       {% endif %}
     </div>
   </div>
+  {% elif progress.complete %}
+  <div class="bw-alert bw-alert--success" style="margin-bottom:18px;">
+    Subcontract cycle complete through execution note.
+  </div>
+  {% endif %}
 
-  <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">3 · Signed agreement (MR14)</div>
-    <div class="bw-card-body">
-      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        {{ mr14_text|default:"Domestic Contractor's Agreement between Main Contractor and Electrical Services Sub-Contractor." }}
-      </p>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-        <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
-           class="bw-btn bw-btn--teal" target="_blank" rel="noopener">
-          View Domestic Contractor Agreement
-        </a>
-        <a href="{% url 'bid-subcontract-agreement-pdf' listing.pk arrangement.pk %}"
-           class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">
-          Download agreement PDF
-        </a>
+  <div class="sc-progress" role="list" aria-label="Subcontract progress">
+    {% for step in progress.steps %}
+    <div class="sc-step sc-step--{{ step.state }}" role="listitem">
+      <div class="sc-step__label">
+        {% if step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
+        {{ step.label }}
       </div>
-      {% if arrangement.agreement_file %}
-      <p style="margin:0 0 10px;font-size:.86rem;">
-        Uploaded {{ arrangement.agreement_uploaded_at|date:"d M Y H:i" }} ·
-        <a href="{{ arrangement.agreement_file.url }}" target="_blank" rel="noopener">Download signed upload</a>
+      <div class="sc-step__at">{% if step.at %}{{ step.at }}{% else %}—{% endif %}</div>
+      <div class="sc-step__detail">
+        {% if step.state == 'done' %}{{ step.detail|default:"Complete" }}
+        {% elif step.state == 'current' %}{{ step.pending }}
+        {% else %}Waiting{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="bw-panel" style="margin-bottom:14px;">
+    <div class="bw-panel__hd">Actions</div>
+    <div class="bw-panel__bd">
+      <div class="sc-actions" style="margin-bottom:12px;">
+        <form method="POST">{% csrf_token %}
+          <input type="hidden" name="action" value="resend_invite">
+          <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Resend invite</button>
+        </form>
+        <a href="{{ portal_path }}" class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">Open portal</a>
+        {% if arrangement.quote_status == 'QUOTE_SUBMITTED' %}
+        <form method="POST" action="{% url 'subcontract-ack-quote' listing.pk arrangement.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="bw-btn bw-btn--teal bw-btn--sm"
+                  onclick="return confirm('Acknowledge this quote and import rates?');">
+            Acknowledge quote
+          </button>
+        </form>
+        {% endif %}
+        <form method="POST" action="{% url 'subcontract-notify-award' listing.pk arrangement.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm"
+                  onclick="return confirm('Notify sub that award / execution is starting?');">
+            Notify execution
+          </button>
+        </form>
+      </div>
+      <p class="sc-quiet" style="margin:0;">
+        Contact {{ arrangement.sub_email }}{% if arrangement.sub_phone %} · {{ arrangement.sub_phone }}{% endif %}
       </p>
-      {% endif %}
-      <form method="POST" enctype="multipart/form-data">
+    </div>
+  </div>
+
+  <div class="bw-panel" id="sc-agree" style="margin-bottom:14px;">
+    <div class="bw-panel__hd">Domestic Contractor Agreement</div>
+    <div class="bw-panel__bd">
+      <div class="sc-actions" style="margin-bottom:12px;">
+        <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
+           class="bw-btn bw-btn--teal bw-btn--sm" target="_blank" rel="noopener">View</a>
+        <a href="{% url 'bid-subcontract-agreement-pdf' listing.pk arrangement.pk %}"
+           class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">PDF</a>
+        {% if arrangement.agreement_file %}
+        <a href="{{ arrangement.agreement_file.url }}"
+           class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">
+          Signed upload · {{ arrangement.agreement_uploaded_at|date:"d M Y H:i" }}
+        </a>
+        {% endif %}
+      </div>
+      <form method="POST" enctype="multipart/form-data" class="sc-actions" style="align-items:center;">
         {% csrf_token %}
         <input type="hidden" name="action" value="upload_agreement">
         <input type="file" name="agreement_file" accept=".pdf,.doc,.docx,image/*" required
-               style="margin-bottom:10px;display:block;font-size:.86rem;">
-        <button type="submit" class="bw-btn bw-btn--primary">Upload signed &amp; stamped copy · satisfy MR14</button>
+               style="font-size:.82rem;max-width:260px;">
+        <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Upload signed copy</button>
       </form>
-    </div>
-  </div>
-
-  <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">4 � Award / execution phase note</div>
-    <div class="bw-card-body">
-      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        When Pioneer (main) is awarded, notify the sub that phase 2 execution is starting.
-      </p>
-      <form method="POST" action="{% url 'subcontract-notify-award' listing.pk arrangement.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="bw-btn bw-btn--ghost"
-                onclick="return confirm('Email the sub-contractor that the main contractor was awarded and execution is starting?');">
-          Notify sub � awarded / execution starting
-        </button>
-      </form>
-      {% if arrangement.award_noted_at %}
-      <p style="font-size:.82rem;color:var(--bw-ok);margin:12px 0 0;">
-        Noted {{ arrangement.award_noted_at|date:"d M Y H:i" }}
-        {% if arrangement.award_note_sent %} � email sent{% endif %}
-      </p>
-      {% endif %}
     </div>
   </div>
 
   <form method="POST" onsubmit="return confirm('Cancel this subcontract arrangement?');">
     {% csrf_token %}
     <input type="hidden" name="action" value="cancel">
-    <button type="submit" class="bw-btn bw-btn--ghost" style="color:var(--bw-danger);">Cancel arrangement</button>
+    <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm" style="color:var(--bw-danger);">Cancel arrangement</button>
   </form>
 
 </div>

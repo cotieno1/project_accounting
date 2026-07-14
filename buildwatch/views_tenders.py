@@ -2313,6 +2313,152 @@ def _subcontract_package_labels(listing, arrangement):
     }
 
 
+def _fmt_dt(dt):
+    if not dt:
+        return ""
+    return timezone.localtime(dt).strftime("%d %b %Y - %H:%M")
+
+
+def _subcontract_progress(arrangement):
+    """
+    Build progress steps for the subcontract lifecycle UI.
+    Each step: key, label, state (done|current|pending), at, detail, pending.
+    """
+    qs = arrangement.quote_status or ""
+    invited = bool(arrangement.invited_at or arrangement.invite_email_sent)
+    accepted = bool(
+        arrangement.accepted_at
+        or arrangement.status
+        in {
+            SubcontractArrangement.ACCEPTED,
+            SubcontractArrangement.AGREEMENT_UPLOADED,
+            SubcontractArrangement.SHARED_WITH_SPONSOR,
+        }
+    )
+    quote_draft = qs == SubcontractArrangement.QUOTE_DRAFT
+    quote_in = qs in {
+        SubcontractArrangement.QUOTE_SUBMITTED,
+        SubcontractArrangement.QUOTE_ACKNOWLEDGED,
+        SubcontractArrangement.QUOTE_INCLUDED,
+        SubcontractArrangement.AWARD_NOTED,
+    }
+    quote_acked = qs in {
+        SubcontractArrangement.QUOTE_ACKNOWLEDGED,
+        SubcontractArrangement.QUOTE_INCLUDED,
+        SubcontractArrangement.AWARD_NOTED,
+    }
+    agreement_ok = bool(arrangement.agreement_file)
+    included = bool(
+        arrangement.included_in_main_bid_at
+        or qs in {SubcontractArrangement.QUOTE_INCLUDED, SubcontractArrangement.AWARD_NOTED}
+    )
+    award_ok = bool(
+        arrangement.award_noted_at or qs == SubcontractArrangement.AWARD_NOTED
+    )
+
+    steps = [
+        {
+            "key": "invite",
+            "label": "Invite sent",
+            "done": invited,
+            "at": _fmt_dt(arrangement.invited_at),
+            "detail": (
+                "Portal invitation emailed"
+                if arrangement.invite_email_sent
+                else (
+                    f"Email failed: {arrangement.invite_email_error}"
+                    if arrangement.invite_email_error
+                    else "Invite created"
+                )
+            ),
+            "pending": "Send portal invite to the sub-contractor",
+        },
+        {
+            "key": "accepted",
+            "label": "Portal opened",
+            "done": accepted,
+            "at": _fmt_dt(arrangement.accepted_at),
+            "detail": "Sub-contractor accepted / opened portal",
+            "pending": "Sub to open the pricing portal",
+        },
+        {
+            "key": "quote",
+            "label": "Quote submitted",
+            "done": quote_in,
+            "at": _fmt_dt(arrangement.quote_submitted_at),
+            "detail": (
+                f"KES {arrangement.quote_total:,.2f}"
+                if quote_in and arrangement.quote_total
+                else ("Pricing in progress" if quote_draft else "")
+            ),
+            "pending": "Sub to price packages and submit quote",
+        },
+        {
+            "key": "ack",
+            "label": "Quote acknowledged",
+            "done": quote_acked,
+            "at": _fmt_dt(arrangement.quote_acknowledged_at),
+            "detail": "Rates imported into main BOQ",
+            "pending": "Main contractor to acknowledge quote",
+        },
+        {
+            "key": "agreement",
+            "label": "Agreement lodged",
+            "done": agreement_ok,
+            "at": _fmt_dt(arrangement.agreement_uploaded_at),
+            "detail": "Signed & stamped agreement on file (MR14)",
+            "pending": "Lodge signed Domestic Contractor Agreement",
+        },
+        {
+            "key": "included",
+            "label": "In main bid",
+            "done": included,
+            "at": _fmt_dt(arrangement.included_in_main_bid_at),
+            "detail": "Included in main bid package to employer",
+            "pending": "Include when main bid is submitted",
+        },
+        {
+            "key": "award",
+            "label": "Execution",
+            "done": award_ok,
+            "at": _fmt_dt(arrangement.award_noted_at),
+            "detail": (
+                "Award noted · execution phase"
+                + (" · email sent" if arrangement.award_note_sent else "")
+            ),
+            "pending": "Notify sub when main is awarded",
+        },
+    ]
+
+    complete = all(s["done"] for s in steps)
+    found_current = False
+    for step in steps:
+        if complete or step["done"]:
+            step["state"] = "done"
+        elif not found_current:
+            step["state"] = "current"
+            found_current = True
+        else:
+            step["state"] = "pending"
+
+    current = next((s for s in steps if s["state"] == "current"), None)
+    if complete:
+        current = steps[-1] if steps else None
+        pending_label = ""
+        pending_key = ""
+    else:
+        pending_label = (current or {}).get("pending") or ""
+        pending_key = (current or {}).get("key") or ""
+
+    return {
+        "steps": steps,
+        "current": current,
+        "complete": complete,
+        "pending_label": pending_label,
+        "pending_key": pending_key,
+    }
+
+
 def _domestic_agreement_context(request, listing, arrangement):
     package_labels = _subcontract_package_labels(listing, arrangement)
     main = arrangement.main_organisation
@@ -2392,7 +2538,8 @@ def bid_subcontract_detail(request, listing_id, pk):
                 "listing": listing,
                 "arrangement": arrangement,
                 "package_labels": package_labels,
-                "mr14_text": MR14_RFQ_TEXT,
+                "progress": _subcontract_progress(arrangement),
+                "portal_path": portal_path,
                 **branding_template_context(request),
             },
         )
@@ -2491,7 +2638,7 @@ def bid_subcontract_detail(request, listing_id, pk):
             "package_labels": package_labels,
             "portal_path": portal_path,
             "accept_path": portal_path,
-            "mr14_text": MR14_RFQ_TEXT,
+            "progress": _subcontract_progress(arrangement),
             **branding_template_context(request),
         },
     )
