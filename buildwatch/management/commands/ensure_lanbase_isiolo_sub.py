@@ -82,7 +82,6 @@ class Command(BaseCommand):
             )
         )
 
-        # Pioneer workspace: keep N filled display showing LANBase
         pioneer = Organization.objects.filter(org_code="PIONEER").first()
         if pioneer:
             ws = BidWorkspace.objects.filter(tender=listing, organisation=pioneer).first()
@@ -90,9 +89,8 @@ class Command(BaseCommand):
                 ws.planned_subcontractor_count = 1
                 ws.save(update_fields=["planned_subcontractor_count"])
 
-        portal_path = f"/tenders/subcontract/portal/{arrangement.invite_token}/"
         my_subs = "/tenders/my-subcontracts/"
-        self.stdout.write(f"Portal path: {portal_path}")
+        self.stdout.write("Portal: /tenders/subcontract/portal/<token>/")
         self.stdout.write(f"My subcontracts: {my_subs}")
 
         factory = RequestFactory()
@@ -102,7 +100,7 @@ class Command(BaseCommand):
 
         if options["set_password"]:
             if not ua.user_id:
-                self.stderr.write("No Django user on account ù cannot set password")
+                self.stderr.write("No Django user on account - cannot set password")
             else:
                 ua.user.set_password(options["set_password"])
                 ua.user.save()
