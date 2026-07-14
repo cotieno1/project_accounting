@@ -42,6 +42,10 @@
   <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
     <a href="{% url 'subcontract-portal-draft-pdf' arrangement.invite_token %}"
        class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">Download draft quote PDF</a>
+    <a href="{% url 'bid-subcontract-agreement' arrangement.tender_id arrangement.pk %}"
+       class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">View Domestic Contractor Agreement (MR14)</a>
+    <a href="{% url 'bid-subcontract-detail' arrangement.tender_id arrangement.pk %}"
+       class="bw-btn bw-btn--ghost">Subcontract hub</a>
   </div>
 
   <form method="POST">

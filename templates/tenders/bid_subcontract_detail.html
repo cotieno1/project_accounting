@@ -1,6 +1,6 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}{{ arrangement.sub_company_name }} — Subcontract{% endblock %}
+{% block title %}{{ arrangement.sub_company_name }} ï¿½ Subcontract{% endblock %}
 
 {% block bw_content %}
 <div class="bw-wrap" style="max-width:720px;">
@@ -14,23 +14,23 @@
   </div>
 
   <header style="margin-bottom:20px;">
-    <div class="bw-kicker">{{ listing.event.ref }} · {{ arrangement.get_arrangement_type_display }}</div>
+    <div class="bw-kicker">{{ listing.event.ref }} ï¿½ {{ arrangement.get_arrangement_type_display }}</div>
     <h1 class="bw-title">{{ arrangement.sub_company_name }}</h1>
     <p class="bw-lead" style="margin-bottom:0;">
       Arrangement: <strong>{{ arrangement.get_status_display }}</strong>
-      · Quote: <strong>{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
-      {% if arrangement.invite_email_sent %} · Portal invite emailed{% elif arrangement.invite_email_error %} · Email failed{% endif %}
+      ï¿½ Quote: <strong>{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
+      {% if arrangement.invite_email_sent %} ï¿½ Portal invite emailed{% elif arrangement.invite_email_error %} ï¿½ Email failed{% endif %}
     </p>
   </header>
 
   <div class="bw-card" style="margin-bottom:14px;">
     <div class="bw-card-header">Arrangement</div>
     <div class="bw-card-body" style="font-size:.9rem;line-height:1.55;">
-      <p style="margin:0 0 8px;"><strong>Contact:</strong> {{ arrangement.sub_contact_name|default:"—" }} · {{ arrangement.sub_email }}{% if arrangement.sub_phone %} · {{ arrangement.sub_phone }}{% endif %}</p>
+      <p style="margin:0 0 8px;"><strong>Contact:</strong> {{ arrangement.sub_contact_name|default:"ï¿½" }} ï¿½ {{ arrangement.sub_email }}{% if arrangement.sub_phone %} ï¿½ {{ arrangement.sub_phone }}{% endif %}</p>
       <p style="margin:0 0 8px;"><strong>Packages:</strong>
         {% for code, title in package_labels.items %}
           {{ code }}{% if not forloop.last %}, {% endif %}
-        {% empty %}—{% endfor %}
+        {% empty %}ï¿½{% endfor %}
       </p>
       {% if arrangement.quote_total %}
       <p style="margin:0 0 8px;"><strong>Quote total:</strong> KES {{ arrangement.quote_total|floatformat:2 }}</p>
@@ -44,7 +44,7 @@
   </div>
 
   <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">1 · Portal invitation (email + hyperlink)</div>
+    <div class="bw-card-header">1 ï¿½ Portal invitation (email + hyperlink)</div>
     <div class="bw-card-body">
       <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
         The sub-contractor opens this private link to price authorised BOQ packages,
@@ -66,12 +66,12 @@
   </div>
 
   <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">2 · Subcontractor quote</div>
+    <div class="bw-card-header">2 ï¿½ Subcontractor quote</div>
     <div class="bw-card-body">
       {% if arrangement.quote_status == 'QUOTE_SUBMITTED' or arrangement.quote_status == 'QUOTE_ACKNOWLEDGED' or arrangement.quote_status == 'QUOTE_INCLUDED' or arrangement.quote_status == 'AWARD_NOTED' %}
       <p style="font-size:.86rem;margin:0 0 12px;">
-        Submitted {{ arrangement.quote_submitted_at|date:"d M Y H:i"|default:"—" }}
-        · KES {{ arrangement.quote_total|floatformat:2 }}
+        Submitted {{ arrangement.quote_submitted_at|date:"d M Y H:i"|default:"ï¿½" }}
+        ï¿½ KES {{ arrangement.quote_total|floatformat:2 }}
       </p>
       {% if arrangement.quote_status == 'QUOTE_SUBMITTED' %}
       <form method="POST" action="{% url 'subcontract-ack-quote' listing.pk arrangement.pk %}">
@@ -83,7 +83,7 @@
       </form>
       {% elif arrangement.quote_acknowledged_at %}
       <p style="font-size:.82rem;color:var(--bw-ok);margin:0;">
-        Acknowledged {{ arrangement.quote_acknowledged_at|date:"d M Y H:i" }} — rates in your BOQ workspace.
+        Acknowledged {{ arrangement.quote_acknowledged_at|date:"d M Y H:i" }} ï¿½ rates in your BOQ workspace.
       </p>
       {% endif %}
       {% if arrangement.included_in_main_bid_at %}
@@ -100,15 +100,25 @@
   </div>
 
   <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">3 · Signed agreement (MR14)</div>
+    <div class="bw-card-header">3 Â· Signed agreement (MR14)</div>
     <div class="bw-card-body">
       <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
-        Upload the duly signed and stamped agreement (not older than 1 month) to satisfy MR14 on your certificate checklist.
+        {{ mr14_text|default:"Domestic Contractor's Agreement between Main Contractor and Electrical Services Sub-Contractor." }}
       </p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
+           class="bw-btn bw-btn--teal" target="_blank" rel="noopener">
+          View Domestic Contractor Agreement
+        </a>
+        <a href="{% url 'bid-subcontract-agreement-pdf' listing.pk arrangement.pk %}"
+           class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">
+          Download agreement PDF
+        </a>
+      </div>
       {% if arrangement.agreement_file %}
       <p style="margin:0 0 10px;font-size:.86rem;">
-        Uploaded {{ arrangement.agreement_uploaded_at|date:"d M Y H:i" }} —
-        <a href="{{ arrangement.agreement_file.url }}" target="_blank" rel="noopener">Download agreement</a>
+        Uploaded {{ arrangement.agreement_uploaded_at|date:"d M Y H:i" }} Â·
+        <a href="{{ arrangement.agreement_file.url }}" target="_blank" rel="noopener">Download signed upload</a>
       </p>
       {% endif %}
       <form method="POST" enctype="multipart/form-data">
@@ -116,13 +126,13 @@
         <input type="hidden" name="action" value="upload_agreement">
         <input type="file" name="agreement_file" accept=".pdf,.doc,.docx,image/*" required
                style="margin-bottom:10px;display:block;font-size:.86rem;">
-        <button type="submit" class="bw-btn bw-btn--primary">Upload and satisfy MR14</button>
+        <button type="submit" class="bw-btn bw-btn--primary">Upload signed &amp; stamped copy Â· satisfy MR14</button>
       </form>
     </div>
   </div>
 
   <div class="bw-card" style="margin-bottom:14px;">
-    <div class="bw-card-header">4 · Award / execution phase note</div>
+    <div class="bw-card-header">4 ï¿½ Award / execution phase note</div>
     <div class="bw-card-body">
       <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
         When Pioneer (main) is awarded, notify the sub that phase 2 execution is starting.
@@ -131,13 +141,13 @@
         {% csrf_token %}
         <button type="submit" class="bw-btn bw-btn--ghost"
                 onclick="return confirm('Email the sub-contractor that the main contractor was awarded and execution is starting?');">
-          Notify sub — awarded / execution starting
+          Notify sub ï¿½ awarded / execution starting
         </button>
       </form>
       {% if arrangement.award_noted_at %}
       <p style="font-size:.82rem;color:var(--bw-ok);margin:12px 0 0;">
         Noted {{ arrangement.award_noted_at|date:"d M Y H:i" }}
-        {% if arrangement.award_note_sent %} · email sent{% endif %}
+        {% if arrangement.award_note_sent %} ï¿½ email sent{% endif %}
       </p>
       {% endif %}
     </div>

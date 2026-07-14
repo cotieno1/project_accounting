@@ -221,12 +221,16 @@ def expire_partial_bid_login(arrangement):
     """
     After the sub submits their partial BOQ quote, end temporary login access.
     Returns the UserAccount revoked, or None.
+    Skipped while SUBCONTRACT_OPEN_CYCLE is enabled (full-cycle testing).
     """
+    from django.conf import settings
     from django.utils import timezone
 
     from accounts.models import UserAccount
 
     if not arrangement:
+        return None
+    if getattr(settings, "SUBCONTRACT_OPEN_CYCLE", False):
         return None
     now = timezone.now()
     ua = None

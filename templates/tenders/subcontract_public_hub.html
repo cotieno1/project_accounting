@@ -1,0 +1,74 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}{{ arrangement.sub_company_name }} — Subcontract bid{% endblock %}
+
+{% block bw_content %}
+<div class="bw-wrap" style="max-width:720px;">
+
+  <header style="margin-bottom:20px;">
+    <div class="bw-kicker">{{ listing.event.ref }} · {{ arrangement.get_arrangement_type_display }}</div>
+    <h1 class="bw-title">{{ arrangement.sub_company_name }}</h1>
+    <p class="bw-lead" style="margin-bottom:0;">
+      Open subcontracting cycle (no password required while testing through execution).
+      Price authorised packages, submit to the main contractor, and view the Domestic
+      Contractor's Agreement (MR14).
+    </p>
+  </header>
+
+  <div class="bw-alert bw-alert--info" style="margin-bottom:14px;">
+    Main contractor:
+    <strong>{{ arrangement.main_organisation.name|default:arrangement.main_organisation.short_name }}</strong>
+    · Quote status:
+    <strong>{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
+    {% if arrangement.quote_total %} · KES {{ arrangement.quote_total|floatformat:2 }}{% endif %}
+  </div>
+
+  <div class="bw-card" style="margin-bottom:14px;">
+    <div class="bw-card-header">1 · Price packages &amp; submit to main</div>
+    <div class="bw-card-body">
+      <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
+        Open the pricing portal to enter unit rates, download a draft quote PDF, and
+        submit your partial bid to
+        {{ arrangement.main_organisation.short_name|default:arrangement.main_organisation.name }}.
+        No login password is required for this cycle.
+      </p>
+      <p style="font-size:.84rem;margin:0 0 12px;">
+        <strong>Packages:</strong>
+        {% for code, title in package_labels.items %}
+          {{ code }}{% if not forloop.last %}, {% endif %}
+        {% empty %}—{% endfor %}
+      </p>
+      <a href="{% url 'subcontract-portal' arrangement.invite_token %}"
+         class="bw-btn bw-btn--primary">
+        Open pricing portal · process &amp; submit
+      </a>
+    </div>
+  </div>
+
+  <div class="bw-card" style="margin-bottom:14px;">
+    <div class="bw-card-header">2 · Domestic Contractor's Agreement (MR14)</div>
+    <div class="bw-card-body">
+      <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.45;">
+        {{ mr14_text }}
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
+           class="bw-btn bw-btn--teal" target="_blank" rel="noopener">
+          View agreement
+        </a>
+        <a href="{% url 'bid-subcontract-agreement-pdf' listing.pk arrangement.pk %}"
+           class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">
+          Download PDF
+        </a>
+        {% if arrangement.agreement_file %}
+        <a href="{{ arrangement.agreement_file.url }}"
+           class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">
+          Signed upload on file
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

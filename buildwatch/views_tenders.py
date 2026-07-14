@@ -2285,21 +2285,121 @@ def bid_subcontract(request, listing_id):
     )
 
 
-@login_required
+def _arrangement_for_listing(listing_id, pk):
+    listing = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
+    arrangement = get_object_or_404(
+        SubcontractArrangement.objects.select_related(
+            "main_organisation",
+            "sub_organisation",
+            "tender",
+            "tender__event",
+        ),
+        pk=pk,
+        tender=listing,
+    )
+    if arrangement.status == SubcontractArrangement.CANCELLED:
+        return listing, arrangement, False
+    return listing, arrangement, True
+
+
+def _subcontract_package_labels(listing, arrangement):
+    codes = set(arrangement.selected_codes())
+    return {
+        p.code.upper(): p.title
+        for p in TenderBoqPackage.objects.filter(tender=listing).order_by(
+            "sort_order", "code"
+        )
+        if p.code.upper() in codes
+    }
+
+
+def _domestic_agreement_context(request, listing, arrangement):
+    package_labels = _subcontract_package_labels(listing, arrangement)
+    main = arrangement.main_organisation
+    sub_name = arrangement.sub_company_name
+    sub_code = ""
+    if arrangement.sub_organisation_id:
+        sub_name = (
+            arrangement.sub_organisation.name
+            or arrangement.sub_organisation.short_name
+            or sub_name
+        )
+        sub_code = arrangement.sub_organisation.org_code or ""
+    agreement_date = (
+        arrangement.agreement_uploaded_at
+        or arrangement.accepted_at
+        or arrangement.invited_at
+        or arrangement.created_at
+        or timezone.now()
+    )
+    if hasattr(agreement_date, "date"):
+        agreement_date = timezone.localtime(agreement_date).date()
+    return {
+        "listing": listing,
+        "arrangement": arrangement,
+        "package_labels": package_labels,
+        "main_name": main.name or main.short_name,
+        "main_code": main.org_code or "",
+        "sub_name": sub_name,
+        "sub_code": sub_code,
+        "agreement_date": agreement_date,
+        "generated_at": timezone.now(),
+        "mr14_text": MR14_RFQ_TEXT,
+        "hub_url": f"/tenders/{listing.pk}/bid/subcontract/{arrangement.pk}/",
+        "pdf_url": f"/tenders/{listing.pk}/bid/subcontract/{arrangement.pk}/agreement.pdf",
+        **branding_template_context(request),
+    }
+
+
 def bid_subcontract_detail(request, listing_id, pk):
-    """Manage one subcontract: resend invite, upload agreement, share with sponsor."""
+    """
+    Subcontract hub for one arrangement.
+
+    While SUBCONTRACT_OPEN_CYCLE is on, guests (no password) can open this URL to
+    view / process / submit via the portal and to open the Domestic Contractor
+    Agreement. Main-contractor admins who are signed in still get management tools.
+    """
+    from django.conf import settings
+
+    listing, arrangement, open_ok = _arrangement_for_listing(listing_id, pk)
+    if not open_ok:
+        messages.error(request, "This subcontract arrangement has been cancelled.")
+        return redirect("tender-detail", listing_id=listing_id)
+
+    package_labels = _subcontract_package_labels(listing, arrangement)
+    portal_path = f"/tenders/subcontract/portal/{arrangement.invite_token}/"
+    org = None
+    if request.user.is_authenticated:
+        org = get_active_organization(request)
+    is_main_admin = bool(
+        request.user.is_authenticated
+        and org
+        and org.org_code == arrangement.main_organisation_id
+    )
+
+    # Public / open-cycle hub: view process + agreement without login
+    if not is_main_admin:
+        if not getattr(settings, "SUBCONTRACT_OPEN_CYCLE", True):
+            messages.error(
+                request,
+                "Sign in as the main contractor to manage this subcontract.",
+            )
+            return redirect("login")
+        return render(
+            request,
+            "tenders/subcontract_public_hub.html",
+            {
+                "listing": listing,
+                "arrangement": arrangement,
+                "package_labels": package_labels,
+                "mr14_text": MR14_RFQ_TEXT,
+                **branding_template_context(request),
+            },
+        )
+
     ctx = _bid_subcontract_context(request, listing_id)
     if ctx is None:
         return redirect("tender-detail", listing_id=listing_id)
-
-    listing = ctx["listing"]
-    org = ctx["org"]
-    arrangement = get_object_or_404(
-        SubcontractArrangement,
-        pk=pk,
-        tender=listing,
-        main_organisation=org,
-    )
 
     if request.method == "POST":
         action = (request.POST.get("action") or "").strip()
@@ -2382,11 +2482,6 @@ def bid_subcontract_detail(request, listing_id, pk):
             return redirect("bid-subcontract", listing_id=listing_id)
         return redirect("bid-subcontract-detail", listing_id=listing_id, pk=pk)
 
-    package_labels = {
-        p.code.upper(): p.title
-        for p in ctx["packages"]
-        if p.code.upper() in set(arrangement.selected_codes())
-    }
     return render(
         request,
         "tenders/bid_subcontract_detail.html",
@@ -2394,9 +2489,47 @@ def bid_subcontract_detail(request, listing_id, pk):
             "listing": listing,
             "arrangement": arrangement,
             "package_labels": package_labels,
-            "portal_path": f"/tenders/subcontract/portal/{arrangement.invite_token}/",
-            "accept_path": f"/tenders/subcontract/portal/{arrangement.invite_token}/",
+            "portal_path": portal_path,
+            "accept_path": portal_path,
+            "mr14_text": MR14_RFQ_TEXT,
+            **branding_template_context(request),
         },
+    )
+
+
+def bid_subcontract_agreement(request, listing_id, pk):
+    """
+    GET /tenders/<id>/bid/subcontract/<pk>/agreement/
+    View the Domestic Contractor's Agreement (MR14) — no password required.
+    """
+    listing, arrangement, open_ok = _arrangement_for_listing(listing_id, pk)
+    if not open_ok:
+        messages.error(request, "This subcontract arrangement has been cancelled.")
+        return redirect("tender-detail", listing_id=listing_id)
+    return render(
+        request,
+        "tenders/domestic_contractor_agreement.html",
+        _domestic_agreement_context(request, listing, arrangement),
+    )
+
+
+def bid_subcontract_agreement_pdf(request, listing_id, pk):
+    """PDF download of the Domestic Contractor's Agreement (MR14)."""
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_attachment_response
+
+    listing, arrangement, open_ok = _arrangement_for_listing(listing_id, pk)
+    if not open_ok:
+        messages.error(request, "This subcontract arrangement has been cancelled.")
+        return redirect("tender-detail", listing_id=listing_id)
+    ctx = _domestic_agreement_context(request, listing, arrangement)
+    ctx["pdf_url"] = ""
+    pdf_bytes = build_pdf_bytes(
+        "tenders/domestic_contractor_agreement.html", ctx
+    )
+    ref = listing.event.ref.replace("/", "-")
+    return pdf_attachment_response(
+        pdf_bytes,
+        f"MR14_Domestic_Agreement_{ref}_arr{arrangement.pk}.pdf",
     )
 
 

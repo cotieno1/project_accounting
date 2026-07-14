@@ -228,6 +228,11 @@ BUILDWATCH_PLATFORM_URL = os.environ.get(
     'BUILDWATCH_PLATFORM_URL',
     'https://projectaccounting-production.up.railway.app',
 )
+# Temporary open subcontract cycle (no password on hub/portal; hold login expiry)
+# until domestic subcontract + contract execution is fully tested. Set env to 0 to lock.
+SUBCONTRACT_OPEN_CYCLE = os.environ.get('SUBCONTRACT_OPEN_CYCLE', '1').strip().lower() in (
+    '1', 'true', 'yes', 'on',
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -80,6 +80,14 @@ tender_patterns = [
          t.bid_subcontract_detail,
          name='bid-subcontract-detail'),
 
+    path('<int:listing_id>/bid/subcontract/<int:pk>/agreement/',
+         t.bid_subcontract_agreement,
+         name='bid-subcontract-agreement'),
+
+    path('<int:listing_id>/bid/subcontract/<int:pk>/agreement.pdf',
+         t.bid_subcontract_agreement_pdf,
+         name='bid-subcontract-agreement-pdf'),
+
     path('<int:listing_id>/bid/subcontract/<int:pk>/ack/',
          sub.subcontract_ack_quote,
          name='subcontract-ack-quote'),

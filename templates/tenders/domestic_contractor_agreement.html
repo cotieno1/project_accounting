@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Domestic Contractor's Agreement — {{ listing.event.ref }}</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11pt;
+      color: #111;
+      line-height: 1.45;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+    h1 { font-size: 16pt; text-align: center; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .02em; }
+    h2 { font-size: 12pt; margin: 18px 0 8px; }
+    .sub { text-align: center; font-size: 10pt; color: #333; margin: 0 0 18px; }
+    .meta { font-size: 10pt; margin-bottom: 16px; }
+    .clause { margin: 10px 0; text-align: justify; }
+    .rfq {
+      border: 1px solid #222;
+      padding: 10px 12px;
+      margin: 14px 0;
+      font-size: 10pt;
+      background: #fafafa;
+    }
+    table.pkgs { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 10pt; }
+    table.pkgs th, table.pkgs td { border: 1px solid #444; padding: 6px 8px; text-align: left; }
+    table.pkgs th { background: #eee; }
+    .sign { display: flex; gap: 24px; margin-top: 36px; page-break-inside: avoid; }
+    .sign-box { flex: 1; border-top: 1px solid #111; padding-top: 8px; min-height: 120px; }
+    .stamp {
+      margin-top: 28px;
+      border: 1.5px dashed #666;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-size: 9.5pt;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .muted { color: #555; font-size: 9.5pt; }
+    .actions { margin: 0 0 16px; font-family: Arial, sans-serif; font-size: 10pt; }
+    .actions a { margin-right: 12px; }
+    @media print { .actions { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="actions">
+    <a href="javascript:window.print()">Print / Save as PDF</a>
+    {% if pdf_url %}<a href="{{ pdf_url }}">Download PDF</a>{% endif %}
+    <a href="{{ hub_url }}">Back to subcontract</a>
+  </div>
+
+  <h1>Domestic Contractor's Agreement</h1>
+  <p class="sub">
+    Bid preparation document · RFQ Mandatory Requirement MR14<br>
+    Tender {{ listing.event.ref }}
+  </p>
+
+  <div class="meta">
+    <strong>Agreement date:</strong> {{ agreement_date|date:"d F Y" }}
+    <span class="muted">(not earlier than one month before bid lodging)</span><br>
+    <strong>Main contractor:</strong> {{ main_name }}
+    {% if main_code %} (ID {{ main_code }}){% endif %}<br>
+    <strong>Domestic / electrical services sub-contractor:</strong> {{ sub_name }}
+    {% if sub_code %} (ID {{ sub_code }}){% endif %}<br>
+    <strong>Project / tender:</strong> {{ listing.event.description|default:listing.event.ref }}
+  </div>
+
+  <div class="rfq">
+    <strong>RFQ requirement (MR14):</strong><br>
+    {{ mr14_text }}
+  </div>
+
+  <h2>1. Parties</h2>
+  <p class="clause">
+    This Agreement is made between <strong>{{ main_name }}</strong> ("Main Contractor")
+    and <strong>{{ sub_name }}</strong> ("Domestic Sub-Contractor") for the works comprised in
+    the authorised BOQ packages listed below under tender
+    <strong>{{ listing.event.ref }}</strong>.
+  </p>
+
+  <h2>2. Undertaking</h2>
+  <p class="clause">
+    The Main Contractor and the Domestic Sub-Contractor hereby agree and undertake that
+    <strong>if the Main Contractor is awarded the contract</strong> for
+    {{ listing.event.ref }}, the Main Contractor <strong>shall work with</strong>
+    {{ sub_name }} <strong>as their domestic sub-contractor</strong> for the Electrical
+    Services Works (and related packages) covered by this Agreement.
+  </p>
+  <p class="clause">
+    The Domestic Sub-Contractor confirms willingness and capacity to execute the
+    authorised packages in accordance with the tender documents, drawings, specifications,
+    and the Main Contractor's programme.
+  </p>
+
+  <h2>3. Authorised BOQ packages</h2>
+  <table class="pkgs">
+    <thead>
+      <tr>
+        <th style="width:18%;">Package</th>
+        <th>Title / scope</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for code, title in package_labels.items %}
+      <tr>
+        <td>{{ code }}</td>
+        <td>{{ title|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="2">Packages as authorised on the subcontract arrangement.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>4. Payment</h2>
+  <p class="clause">
+    {% if arrangement.payment_via_main %}
+    Payment for the Domestic Sub-Contractor's works shall be through the Main Contractor's
+    payment certificates (unless the parties agree otherwise in writing).
+    {% else %}
+    Payment terms may be agreed separately, subject to the Employer's / consultant's
+    requirements.
+    {% endif %}
+  </p>
+
+  <h2>5. Duration / freshness</h2>
+  <p class="clause">
+    This Agreement is executed for use in the Main Contractor's bid package and is
+    dated <strong>{{ agreement_date|date:"d F Y" }}</strong>, being not earlier than
+    one (1) month before lodgement of the bid (RFQ MR14).
+  </p>
+
+  <h2>6. Signatures and company stamps</h2>
+  <p class="muted">
+    Both parties shall sign and stamp below. A scanned copy may be lodged on BuildWatch
+    for the MR14 certificate checklist.
+  </p>
+
+  <div class="sign">
+    <div class="sign-box">
+      <strong>For the Main Contractor</strong><br>
+      {{ main_name }}<br><br>
+      Name: _______________________________<br><br>
+      Designation: _________________________<br><br>
+      Signature: ___________________________<br><br>
+      Date: {{ agreement_date|date:"d / m / Y" }}
+      <div class="stamp">Company stamp</div>
+    </div>
+    <div class="sign-box">
+      <strong>For the Domestic Sub-Contractor</strong><br>
+      {{ sub_name }}<br><br>
+      Name: _______________________________<br><br>
+      Designation: _________________________<br><br>
+      Signature: ___________________________<br><br>
+      Date: {{ agreement_date|date:"d / m / Y" }}
+      <div class="stamp">Company stamp</div>
+    </div>
+  </div>
+
+  <p class="muted" style="margin-top:24px;">
+    Generated on BuildWatch · {{ generated_at|date:"d M Y H:i" }} · Arrangement #{{ arrangement.pk }}
+    {% if arrangement.agreement_file %} · Signed upload also on file{% endif %}
+  </p>
+</body>
+</html>
