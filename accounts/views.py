@@ -250,6 +250,17 @@ class CustomLoginView(LoginView):
         redirect_to = self.get_redirect_url()
         if redirect_to:
             return redirect_to
+        # Sub-contractor employees land on their authorised packages first.
+        try:
+            from accounts.tenant import get_active_organization
+            from buildwatch.models import SubcontractArrangement
+            org = get_active_organization(self.request)
+            if org and SubcontractArrangement.objects.filter(
+                sub_organisation=org
+            ).exclude(status=SubcontractArrangement.CANCELLED).exists():
+                return reverse("my-subcontracts")
+        except Exception:
+            pass
         if _is_platform_main_admin(self.request.user):
             return reverse("platform_admin")
         return reverse("dashboard")

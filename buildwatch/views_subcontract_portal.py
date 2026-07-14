@@ -103,29 +103,33 @@ def send_subcontract_portal_invite(arrangement, request=None):
     title = arrangement.tender.event.description or ref
     packages = ", ".join(arrangement.selected_codes()) or "Authorised packages"
     type_label = arrangement.get_arrangement_type_display()
-    subject = f"BuildWatch  Price your subcontract BOQ  {ref}"
+    contractor_id = ""
+    if arrangement.sub_organisation_id:
+        contractor_id = arrangement.sub_organisation.org_code
+    subject = f"BuildWatch - Price your subcontract BOQ - {ref}"
     text_body = (
         f"Dear {arrangement.sub_contact_name or arrangement.sub_company_name},\n\n"
         f"{main_name} invites you as {type_label.lower()} on tender {ref}.\n"
         f"{title}\n\n"
+        f"Your contractor ID on BuildWatch: {contractor_id or '(being created)'}\n"
         f"Open your authorised portal to:\n"
         f"  1) View only your BOQ packages ({packages})\n"
         f"  2) Enter unit rates (BOM pricing)\n"
         f"  3) Download a draft quote PDF\n"
         f"  4) Submit your quote to the main contractor\n\n"
         f"Portal link (keep this private):\n{portal_url}\n\n"
-        f"After you submit, {main_name} will acknowledge your quote. When they lodge "
-        f"the main bid package with the employer, you will receive confirmation that "
-        f"your prices were included. If {main_name} is awarded, you will get a note "
-        f"that execution (phase 2) is starting.\n\n"
-        f"Notes:\n{(arrangement.notes or '').strip()}\n\n"
-        f" BuildWatch\n"
+        f"After you set your password, sign in and open My subcontracts "
+        f"({base}/tenders/my-subcontracts/) to return to this work anytime "
+        f"while the project is active.\n\n"
+        f"After you submit, {main_name} will acknowledge your quote.\n\n"
+        f"- BuildWatch\n"
     )
     html_body = (
         f"<p>Dear {arrangement.sub_contact_name or arrangement.sub_company_name},</p>"
         f"<p><strong>{main_name}</strong> invites you as "
         f"<strong>{type_label.lower()}</strong> on <strong>{ref}</strong>.</p>"
         f"<p>{title}</p>"
+        f"<p>Contractor ID: <strong>{contractor_id or 'pending'}</strong></p>"
         f"<p>Authorised BOQ packages: <strong>{packages}</strong></p>"
         f"<ol>"
         f"<li>Enter unit rates on your packages</li>"
@@ -136,6 +140,8 @@ def send_subcontract_portal_invite(arrangement, request=None):
         f"background:#1A7A6E;color:#fff;text-decoration:none;border-radius:8px;"
         f"font-weight:600;\">Open subcontract portal</a></p>"
         f"<p style=\"font-size:0.85rem;color:#64748b;\">Or paste: {portal_url}</p>"
+        f"<p style=\"font-size:0.85rem;color:#64748b;\">After onboarding, return via "
+        f"<a href=\"{base}/tenders/my-subcontracts/\">My subcontracts</a>.</p>"
     )
     return _send_sub_portal_email(
         arrangement, subject=subject, text_body=text_body, html_body=html_body, request=request

@@ -24,7 +24,7 @@
       {% if subcontract_arrangements %}
       —
       {% for a in subcontract_arrangements %}
-      {{ a.sub_company_name }}{% if not forloop.last %}; {% endif %}
+      {% if a.sub_organisation %}{{ a.sub_organisation.short_name }}{% else %}{{ a.sub_company_name }}{% endif %}{% if not forloop.last %}; {% endif %}
       {% endfor %}
       {% endif %}
       . Continue with Step 2 · Apply remaining main BOQ.
@@ -125,7 +125,11 @@
         {% if subcontract_arrangements %}
         —
         {% for a in subcontract_arrangements %}
-        <a href="{% url 'bid-subcontract-detail' listing.pk a.pk %}">{{ a.sub_company_name }}</a>{% if not forloop.last %}; {% endif %}
+        <a href="{% url 'bid-subcontract-detail' listing.pk a.pk %}">
+          {% if a.sub_organisation %}{{ a.sub_organisation.short_name }}
+          <span style="font-family:var(--bw-mono);font-size:.7rem;color:var(--bw-mid);">(ID {{ a.sub_organisation.org_code }})</span>
+          {% else %}{{ a.sub_company_name }}{% endif %}
+        </a>{% if not forloop.last %}; {% endif %}
         {% endfor %}
         {% endif %}
       </div>

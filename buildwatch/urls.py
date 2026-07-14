@@ -105,6 +105,10 @@ tender_patterns = [
          t.my_bids,
          name='my-bids'),
 
+    path('my-subcontracts/',
+         t.my_subcontracts,
+         name='my-subcontracts'),
+
     path('alerts/',
          t.tender_alerts,
          name='tender-alerts'),

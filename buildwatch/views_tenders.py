@@ -301,7 +301,9 @@ def _active_subcontracts(listing, org):
             SubcontractArrangement.objects.filter(
                 tender=listing,
                 main_organisation=org,
-            ).exclude(status=SubcontractArrangement.CANCELLED).order_by("-created_at")
+            ).exclude(status=SubcontractArrangement.CANCELLED)
+            .select_related("sub_organisation")
+            .order_by("-created_at")
         )
     except Exception:
         return []
@@ -1268,6 +1270,30 @@ def bid_workspace(request, listing_id):
                 )
                 return redirect('bid-workspace', listing_id=listing_id)
 
+            # Create / link contractor ID so the sub firm is a first-class BuildWatch org
+            # (same contractor can later be main on another project).
+            try:
+                from buildwatch.subcontract_orgs import (
+                    ensure_contractor_organisation,
+                    ensure_subcontractor_employee,
+                    link_arrangement_to_contractor,
+                )
+                sub_org, _ = ensure_contractor_organisation(
+                    company_name=company, email=email, phone=phone
+                )
+                link_arrangement_to_contractor(arrangement, sub_org)
+                ensure_subcontractor_employee(
+                    organization=sub_org,
+                    email=email,
+                    contact_name=contact or company,
+                    phone=phone,
+                )
+            except Exception as exc:
+                messages.warning(
+                    request,
+                    f'Subcontract invite saved, but contractor-ID link failed: {exc}',
+                )
+
             kept = [
                 c for c in workspace.selected_codes() if c not in set(selected_sub)
             ]
@@ -1742,6 +1768,42 @@ def bid_submit(request, listing_id):
         return redirect('bid-workspace', listing_id=listing_id)
 
     return redirect('my-bids')
+
+
+@login_required
+def my_subcontracts(request):
+    """
+    GET /tenders/my-subcontracts/
+    Sub-contractor login home: authorised BOQ work for this contractor ID
+    across tenders/projects (e.g. LANBase on Isiolo under Pioneer).
+    """
+    org = get_active_organization(request)
+    ua = _get_user_account(request)
+    if org is None:
+        messages.warning(request, 'Select your contractor organisation to see subcontract work.')
+        return redirect('tender-list')
+
+    arrangements = list(
+        SubcontractArrangement.objects.filter(sub_organisation=org)
+        .exclude(status=SubcontractArrangement.CANCELLED)
+        .select_related('tender', 'tender__event', 'main_organisation')
+        .order_by('-created_at')
+    )
+    # Also match by invitation email if org link is still catching up
+    if ua and ua.email and not arrangements:
+        arrangements = list(
+            SubcontractArrangement.objects.filter(sub_email__iexact=ua.email.strip())
+            .exclude(status=SubcontractArrangement.CANCELLED)
+            .select_related('tender', 'tender__event', 'main_organisation')
+            .order_by('-created_at')
+        )
+
+    ctx = {
+        'organisation': org,
+        'arrangements': arrangements,
+        **branding_template_context(request),
+    }
+    return render(request, 'tenders/my_subcontracts.html', ctx)
 
 
 @login_required

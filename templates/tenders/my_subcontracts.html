@@ -1,0 +1,67 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}My subcontracts — {{ organisation.short_name }}{% endblock %}
+
+{% block bw_content %}
+<div class="bw-wrap">
+
+  <div class="bw-ref" style="margin-bottom:18px;">
+    <a href="{% url 'tender-list' %}">Tenders</a>
+    &nbsp;/&nbsp;
+    My subcontracts
+  </div>
+
+  <header style="margin-bottom:22px;">
+    <div class="bw-kicker">Contractor ID {{ organisation.org_code }}</div>
+    <h1 class="bw-title">{{ organisation.short_name }} — subcontract work</h1>
+    <p class="bw-lead">
+      Price authorised BOQ packages where you are the domestic / nominated sub-contractor.
+      Your contractor ID stays active for the life of each project arrangement.
+    </p>
+  </header>
+
+  {% if arrangements %}
+  <div class="bw-card">
+    <div class="bw-card-header">Open subcontract packages</div>
+    <div class="bw-card-body" style="padding:0;">
+      <table style="width:100%;border-collapse:collapse;font-size:.86rem;">
+        <thead>
+          <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
+            <th style="padding:12px 14px;text-align:left;">Tender</th>
+            <th style="padding:12px 14px;text-align:left;">Main contractor</th>
+            <th style="padding:12px 14px;text-align:left;">Packages</th>
+            <th style="padding:12px 14px;text-align:left;">Quote status</th>
+            <th style="padding:12px 14px;text-align:right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in arrangements %}
+          <tr style="border-bottom:1px solid var(--bw-rule);">
+            <td style="padding:12px 14px;">
+              <strong style="color:var(--bw-navy);">{{ a.tender.event.ref }}</strong>
+              <div style="font-size:.75rem;color:var(--bw-mid);">{{ a.tender.event.description|truncatechars:80 }}</div>
+            </td>
+            <td style="padding:12px 14px;">{{ a.main_organisation.short_name|default:a.main_organisation.name }}</td>
+            <td style="padding:12px 14px;font-family:var(--bw-mono);font-size:.78rem;">{{ a.package_codes|join:", " }}</td>
+            <td style="padding:12px 14px;">{{ a.get_quote_status_display|default:"No quote yet" }}</td>
+            <td style="padding:12px 14px;text-align:right;">
+              <a class="bw-btn bw-btn--teal bw-btn--sm"
+                 href="{% url 'subcontract-portal' a.invite_token %}">
+                Open pricing portal
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="bw-alert bw-alert--info">
+    No subcontract packages are linked to <strong>{{ organisation.short_name }}</strong> yet.
+    When a main contractor invites you, the work will appear here for the life of that project.
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
