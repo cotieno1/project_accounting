@@ -2435,14 +2435,6 @@ def _subcontract_progress(arrangement):
             "pending": "Price Sub Contract Item's and submit quote",
         },
         {
-            "key": "ack",
-            "label": "Quote acknowledged",
-            "done": quote_acked,
-            "at": _fmt_dt(arrangement.quote_acknowledged_at),
-            "detail": "Rates imported into main BOQ",
-            "pending": "Main contractor to acknowledge quote",
-        },
-        {
             "key": "agreement",
             "label": "Sub Contract Signed and emailed to Main Contractor",
             "done": agreement_ok,
@@ -2461,6 +2453,14 @@ def _subcontract_progress(arrangement):
                 )
             ),
             "pending": "Upload Signed Copy Email to main contractor",
+        },
+        {
+            "key": "ack",
+            "label": "Quote acknowledged",
+            "done": quote_acked,
+            "at": _fmt_dt(arrangement.quote_acknowledged_at),
+            "detail": "Rates imported into main BOQ",
+            "pending": "Main contractor to acknowledge quote",
         },
         {
             "key": "included",
