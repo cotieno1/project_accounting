@@ -2411,11 +2411,15 @@ def _subcontract_progress(arrangement):
         },
         {
             "key": "agreement",
-            "label": "Agreement lodged",
+            "label": "Sub Contract Signed and emailed to Main Contractor",
             "done": agreement_ok,
-            "at": _fmt_dt(arrangement.agreement_uploaded_at),
-            "detail": "Signed & stamped agreement on file (MR14)",
-            "pending": "Lodge signed Domestic Contractor Agreement",
+            "at": "",
+            "detail": (
+                f"Done : {_fmt_dt(arrangement.agreement_uploaded_at)}"
+                if agreement_ok and arrangement.agreement_uploaded_at
+                else ("Done : complete" if agreement_ok else "")
+            ),
+            "pending": "Upload signed copy and email to main contractor",
         },
         {
             "key": "included",
