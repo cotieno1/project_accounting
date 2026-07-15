@@ -2399,7 +2399,7 @@ def _subcontract_progress(arrangement):
                 if quote_in and arrangement.quote_total
                 else ("Pricing in progress" if quote_draft else "")
             ),
-            "pending": "Sub to price packages and submit quote",
+            "pending": "Price Sub Contract Item's and submit quote",
         },
         {
             "key": "ack",
