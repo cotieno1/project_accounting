@@ -2391,7 +2391,7 @@ def _subcontract_progress(arrangement):
         },
         {
             "key": "quote",
-            "label": "Quote submitted",
+            "label": "Sub Contract Quotation submitted",
             "done": quote_in,
             "at": _fmt_dt(arrangement.quote_submitted_at),
             "detail": (
