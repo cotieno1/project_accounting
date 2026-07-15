@@ -173,7 +173,7 @@
       <div class="sc-step__detail">
         {% if step.state == 'done' %}{{ step.detail|default:"Complete" }}
         {% elif step.state == 'current' %}{{ step.pending }}
-        {% else %}Waiting{% endif %}
+        {% else %}Pending{% endif %}
       </div>
     </div>
     {% endfor %}

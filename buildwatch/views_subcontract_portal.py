@@ -376,7 +376,7 @@ def subcontract_portal(request, token):
 
 
 def subcontract_portal_draft_pdf(request, token):
-    """Draft quote PDF for the authorised packages only."""
+    """Draft sub contract quote PDF for the authorised packages only."""
     from accounts.misc_doc_pdf import build_pdf_bytes, pdf_attachment_response
     from buildwatch.amount_words import amount_in_words
 
@@ -385,21 +385,32 @@ def subcontract_portal_draft_pdf(request, token):
         messages.error(request, "This invitation has been cancelled.")
         return redirect("tender-detail", listing_id=arrangement.tender_id)
 
-    sections, grand = _portal_sections(arrangement)
-    listing = arrangement.tender
-    main_name = arrangement.main_organisation.name or arrangement.main_organisation.short_name
-    ctx = {
-        "arrangement": arrangement,
-        "listing": listing,
-        "package_sections": sections,
-        "grand_total": grand,
-        "amount_words": amount_in_words(grand),
-        "main_name": main_name,
-        "generated_at": timezone.now(),
-    }
-    pdf = build_pdf_bytes("tenders/subcontract_quote_print.html", ctx)
-    fname = f"Subcontract_Quote_{listing.event.ref}_{arrangement.pk}"
-    return pdf_attachment_response(pdf, fname)
+    try:
+        sections, grand = _portal_sections(arrangement)
+        listing = arrangement.tender
+        main_name = (
+            arrangement.main_organisation.name
+            or arrangement.main_organisation.short_name
+            or "Main contractor"
+        )
+        ctx = {
+            "arrangement": arrangement,
+            "listing": listing,
+            "package_sections": sections,
+            "grand_total": grand,
+            "amount_words": amount_in_words(grand),
+            "main_name": main_name,
+            "generated_at": timezone.now(),
+        }
+        pdf = build_pdf_bytes("tenders/subcontract_quote_print.html", ctx)
+        fname = f"Draft_Sub_Contract_Quote_{listing.event.ref}_{arrangement.pk}"
+        return pdf_attachment_response(pdf, fname)
+    except Exception as exc:
+        messages.error(
+            request,
+            f"Could not generate draft sub contract quote PDF ({exc}).",
+        )
+        return redirect("subcontract-portal", token=token)
 
 
 @login_required

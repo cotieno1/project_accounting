@@ -11,7 +11,7 @@
     <p class="bw-lead">
       Main contractor:
       <strong>{{ arrangement.main_organisation.name|default:arrangement.main_organisation.short_name }}</strong>.
-      Price only your authorised BOQ packages, download a draft quote PDF, then submit to the main contractor.
+      Price only your authorised BOQ packages, download a draft sub contract quote PDF, then submit to the main contractor.
     </p>
     <div style="font-size:.84rem;color:var(--bw-mid);margin-top:8px;">
       Quote status: <strong style="color:var(--bw-navy);">{{ arrangement.get_quote_status_display|default:"No quote yet" }}</strong>
@@ -41,9 +41,9 @@
 
   <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
     <a href="{% url 'subcontract-portal-draft-pdf' arrangement.invite_token %}"
-       class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">Download draft quote PDF</a>
+       class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">Download draft sub contract quote PDF</a>
     <a href="{% url 'bid-subcontract-agreement' arrangement.tender_id arrangement.pk %}"
-       class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">View Domestic Contractor Agreement (MR14)</a>
+       class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">View Domestic Sub Contract (MR14)</a>
     <a href="{% url 'bid-subcontract-detail' arrangement.tender_id arrangement.pk %}"
        class="bw-btn bw-btn--ghost">Subcontract hub</a>
   </div>

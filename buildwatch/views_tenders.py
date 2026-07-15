@@ -179,7 +179,7 @@ def _refresh_self_assessment_gate(workspace):
 
 MR14_CODE = "MR-PROC-KE-14"
 MR14_RFQ_TEXT = (
-    "Domestic Contractor's Agreement — A duly signed and stamped Agreement not earlier than "
+    "Domestic Contractor's Agreement - A duly signed and stamped Agreement not earlier than "
     "1 month between the Electrical Services Sub-Contractor and the main contractor stating "
     "that if the Main Contractor is awarded the contract, they shall work with the firm as "
     "their domestic sub-contractor (Not necessary if Main Contractor is also registered for "
@@ -2316,7 +2316,15 @@ def _subcontract_package_labels(listing, arrangement):
 def _fmt_dt(dt):
     if not dt:
         return ""
-    return timezone.localtime(dt).strftime("%d %b %Y - %H:%M")
+    try:
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt, timezone.get_current_timezone())
+        return timezone.localtime(dt).strftime("%d %b %Y - %H:%M")
+    except Exception:
+        try:
+            return dt.strftime("%d %b %Y - %H:%M")
+        except Exception:
+            return ""
 
 
 def _subcontract_progress(arrangement):
@@ -2459,33 +2467,52 @@ def _subcontract_progress(arrangement):
     }
 
 
+def _as_agreement_date(value):
+    """Coerce stored datetimes/dates to a local calendar date for the MR14 form."""
+    from datetime import date as date_cls
+    from datetime import datetime as datetime_cls
+
+    if value is None:
+        value = timezone.now()
+    if isinstance(value, date_cls) and not isinstance(value, datetime_cls):
+        return value
+    if isinstance(value, datetime_cls):
+        try:
+            if timezone.is_naive(value):
+                value = timezone.make_aware(value, timezone.get_current_timezone())
+            return timezone.localtime(value).date()
+        except Exception:
+            return value.date() if hasattr(value, "date") else timezone.localdate()
+    return timezone.localdate()
+
+
 def _domestic_agreement_context(request, listing, arrangement):
     package_labels = _subcontract_package_labels(listing, arrangement)
     main = arrangement.main_organisation
-    sub_name = arrangement.sub_company_name
+    sub_name = arrangement.sub_company_name or "Domestic Sub-Contractor"
     sub_code = ""
-    if arrangement.sub_organisation_id:
-        sub_name = (
-            arrangement.sub_organisation.name
-            or arrangement.sub_organisation.short_name
-            or sub_name
-        )
-        sub_code = arrangement.sub_organisation.org_code or ""
-    agreement_date = (
+    try:
+        if arrangement.sub_organisation_id and arrangement.sub_organisation:
+            sub_name = (
+                arrangement.sub_organisation.name
+                or arrangement.sub_organisation.short_name
+                or sub_name
+            )
+            sub_code = arrangement.sub_organisation.org_code or ""
+    except Exception:
+        pass
+    agreement_date = _as_agreement_date(
         arrangement.agreement_uploaded_at
         or arrangement.accepted_at
         or arrangement.invited_at
         or arrangement.created_at
-        or timezone.now()
     )
-    if hasattr(agreement_date, "date"):
-        agreement_date = timezone.localtime(agreement_date).date()
     return {
         "listing": listing,
         "arrangement": arrangement,
         "package_labels": package_labels,
-        "main_name": main.name or main.short_name,
-        "main_code": main.org_code or "",
+        "main_name": (main.name or main.short_name or "Main Contractor") if main else "Main Contractor",
+        "main_code": (main.org_code or "") if main else "",
         "sub_name": sub_name,
         "sub_code": sub_code,
         "agreement_date": agreement_date,
@@ -2647,37 +2674,45 @@ def bid_subcontract_detail(request, listing_id, pk):
 def bid_subcontract_agreement(request, listing_id, pk):
     """
     GET /tenders/<id>/bid/subcontract/<pk>/agreement/
-    View the Domestic Contractor's Agreement (MR14) — no password required.
+    View the Domestic Sub Contract Agreement (MR14) — no password required.
     """
     listing, arrangement, open_ok = _arrangement_for_listing(listing_id, pk)
     if not open_ok:
         messages.error(request, "This subcontract arrangement has been cancelled.")
         return redirect("tender-detail", listing_id=listing_id)
-    return render(
-        request,
-        "tenders/domestic_contractor_agreement.html",
-        _domestic_agreement_context(request, listing, arrangement),
-    )
+    try:
+        ctx = _domestic_agreement_context(request, listing, arrangement)
+        return render(request, "tenders/domestic_contractor_agreement.html", ctx)
+    except Exception as exc:
+        messages.error(request, f"Could not open the Domestic Sub Contract: {exc}")
+        return redirect("bid-subcontract-detail", listing_id=listing_id, pk=pk)
 
 
 def bid_subcontract_agreement_pdf(request, listing_id, pk):
-    """PDF download of the Domestic Contractor's Agreement (MR14)."""
+    """PDF download of the Domestic Sub Contract Agreement (MR14)."""
     from accounts.misc_doc_pdf import build_pdf_bytes, pdf_attachment_response
 
     listing, arrangement, open_ok = _arrangement_for_listing(listing_id, pk)
     if not open_ok:
         messages.error(request, "This subcontract arrangement has been cancelled.")
         return redirect("tender-detail", listing_id=listing_id)
-    ctx = _domestic_agreement_context(request, listing, arrangement)
-    ctx["pdf_url"] = ""
-    pdf_bytes = build_pdf_bytes(
-        "tenders/domestic_contractor_agreement.html", ctx
-    )
-    ref = listing.event.ref.replace("/", "-")
-    return pdf_attachment_response(
-        pdf_bytes,
-        f"MR14_Domestic_Agreement_{ref}_arr{arrangement.pk}.pdf",
-    )
+    try:
+        ctx = _domestic_agreement_context(request, listing, arrangement)
+        ctx["pdf_url"] = ""
+        pdf_bytes = build_pdf_bytes(
+            "tenders/domestic_contractor_agreement.html", ctx
+        )
+        ref = (listing.event.ref or "tender").replace("/", "-")
+        return pdf_attachment_response(
+            pdf_bytes,
+            f"MR14_Domestic_Sub_Contract_{ref}_arr{arrangement.pk}.pdf",
+        )
+    except Exception as exc:
+        messages.error(
+            request,
+            f"PDF export failed ({exc}). Opening the printable agreement page instead.",
+        )
+        return redirect("bid-subcontract-agreement", listing_id=listing_id, pk=pk)
 
 
 def subcontract_accept(request, token):

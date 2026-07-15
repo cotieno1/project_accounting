@@ -2,22 +2,22 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Subcontract quote — {{ listing.event.ref }}</title>
+  <title>Draft sub contract quote - {{ listing.event.ref }}</title>
   <style>
     body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #0F1F33; }
-    h1 { font-size: 14pt; margin: 0 0 6px; }
-    h2 { font-size: 11pt; margin: 18px 0 8px; }
+    h1 { font-size: 14pt; margin: 0 0 6px 0; }
+    h2 { font-size: 11pt; margin: 16px 0 8px 0; }
     .muted { color: #64748b; font-size: 9pt; }
     table { width: 100%; border-collapse: collapse; margin-top: 6px; }
     th, td { border: 1px solid #D4DDE8; padding: 4px 6px; vertical-align: top; }
     th { background: #EEF3F8; text-align: left; font-size: 8.5pt; }
     .num { text-align: right; font-family: Courier, monospace; }
-    .pkg { margin-top: 14px; }
+    .pkg { margin-top: 12px; }
   </style>
 </head>
 <body>
-  <h1>Domestic / Nominated Subcontract Quote</h1>
-  <p class="muted">{{ listing.event.ref }} · Generated {{ generated_at|date:"d M Y H:i" }}</p>
+  <h1>Draft Sub Contract Quote</h1>
+  <p class="muted">{{ listing.event.ref }} - Generated {{ generated_at|date:"d M Y H:i" }}</p>
   <p>
     <strong>Sub-contractor:</strong> {{ arrangement.sub_company_name }}<br>
     <strong>Main contractor:</strong> {{ main_name }}<br>
@@ -26,7 +26,7 @@
 
   {% for section in package_sections %}
   <div class="pkg">
-    <h2>{{ section.package.code }} — {{ section.package.title }}</h2>
+    <h2>{{ section.package.code }} - {{ section.package.title }}</h2>
     <table>
       <thead>
         <tr>
@@ -62,8 +62,8 @@
   <p><strong>KES {{ grand_total|floatformat:2 }}</strong></p>
   <p class="muted">In words: {{ amount_words }}</p>
   <p class="muted">
-    This quote is for inclusion in the main contractor bid package. Payment through the main
-    contractor unless otherwise agreed. Not a direct offer to the employer.
+    This draft quote is for inclusion in the main contractor bid package. Payment through the
+    main contractor unless otherwise agreed. Not a direct offer to the employer.
   </p>
 </body>
 </html>
