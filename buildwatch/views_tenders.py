@@ -2456,19 +2456,19 @@ def _subcontract_progress(arrangement):
         },
         {
             "key": "ack",
-            "label": "Quote acknowledged",
+            "label": "Main Contracter Submits Bid",
             "done": quote_acked,
             "at": _fmt_dt(arrangement.quote_acknowledged_at),
             "detail": "Rates imported into main BOQ",
-            "pending": "Main contractor to acknowledge quote",
+            "pending": "Main contractor to submit bid",
         },
         {
             "key": "included",
-            "label": "In main bid",
+            "label": "Waiting Final Bid Evaluation",
             "done": included,
             "at": _fmt_dt(arrangement.included_in_main_bid_at),
             "detail": "Included in main bid package to employer",
-            "pending": "Include when main bid is submitted",
+            "pending": "Waiting final bid evaluation",
         },
         {
             "key": "award",
