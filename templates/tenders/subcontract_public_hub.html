@@ -1,6 +1,6 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}{{ arrangement.sub_company_name }} � Subcontract bid{% endblock %}
+{% block title %}{{ arrangement.sub_company_name }} - Subcontract bid{% endblock %}
 
 {% block bw_content %}
 <style>
@@ -83,7 +83,7 @@
 
   <header style="margin-bottom:16px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end;">
     <div>
-      <div class="bw-kicker">{{ listing.event.ref }} � {{ arrangement.main_organisation.short_name|default:arrangement.main_organisation.name }}</div>
+      <div class="bw-kicker">{{ listing.event.ref }} - {{ arrangement.main_organisation.short_name|default:arrangement.main_organisation.name }}</div>
       <h1 class="bw-title" style="margin-bottom:4px;">{{ arrangement.sub_company_name }}</h1>
       <div class="sc-chips">
         {% for code in package_labels.keys %}
@@ -122,12 +122,15 @@
     {% for step in progress.steps %}
     <div class="sc-step sc-step--{{ step.state }}" role="listitem">
       <div class="sc-step__label">
-        {% if step.state == 'done' %}Done � {% elif step.state == 'current' %}Now � {% else %}Next � {% endif %}
-        {{ step.label }}
+        {% if step.key == 'agreement' %}
+          {{ step.label }}
+        {% elif step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
+        {% if step.key != 'agreement' %}{{ step.label }}{% endif %}
       </div>
-      <div class="sc-step__at">{% if step.at %}{{ step.at }}{% else %}�{% endif %}</div>
+      <div class="sc-step__at">{% if step.at %}{{ step.at }}{% else %}—{% endif %}</div>
       <div class="sc-step__detail">
-        {% if step.state == 'done' %}{{ step.detail|default:"Complete" }}
+        {% if step.key == 'agreement' and step.state == 'done' %}{{ step.detail }}
+        {% elif step.state == 'done' %}{{ step.detail|default:"Complete" }}
         {% elif step.state == 'current' %}{{ step.pending }}
         {% else %}Pending{% endif %}
       </div>

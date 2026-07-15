@@ -2129,6 +2129,39 @@ def _send_subcontract_invite_email(arrangement, request=None):
     return send_subcontract_portal_invite(arrangement, request=request)
 
 
+def _send_subcontract_main_signed_agreement(arrangement, request=None):
+    """Email the main contractor that the signed Domestic Sub Contract is on file."""
+    from accounts.emails import send_system_email, _site_base_url
+
+    main = arrangement.main_organisation
+    to_email = (getattr(main, "email", None) or "").strip()
+    if not to_email:
+        return False, "Main contractor organisation has no email on file."
+
+    base = _site_base_url(request)
+    detail_url = f"{base}/tenders/{arrangement.tender_id}/bid/subcontract/{arrangement.pk}/"
+    agree_url = f"{detail_url}agreement/"
+    main_name = main.name or main.short_name or "Main contractor"
+    ref = arrangement.tender.event.ref
+    subject = f"BuildWatch - Signed Domestic Sub Contract received - {ref}"
+    text_body = (
+        f"A signed Domestic Sub Contract (MR14) from {arrangement.sub_company_name} "
+        f"has been uploaded for tender {ref}.\n\n"
+        f"Main contractor: {main_name}\n"
+        f"Sub-contractor: {arrangement.sub_company_name}\n"
+        f"Contact: {arrangement.sub_email}\n"
+        f"Packages: {', '.join(arrangement.selected_codes()) or '-'}\n\n"
+        f"View agreement:\n{agree_url}\n"
+        f"Subcontract hub:\n{detail_url}\n"
+    )
+    return send_system_email(
+        subject=subject,
+        to=to_email,
+        text_body=text_body,
+        include_ceo_cc=False,
+    )
+
+
 def _send_subcontract_sponsor_notice(arrangement, request=None):
     """Notify project owner / sponsor that a signed subcontract agreement was shared."""
     from accounts.emails import send_system_email, _site_base_url
@@ -2413,13 +2446,21 @@ def _subcontract_progress(arrangement):
             "key": "agreement",
             "label": "Sub Contract Signed and emailed to Main Contractor",
             "done": agreement_ok,
-            "at": "",
+            "at": (
+                ""
+                if agreement_ok
+                else _fmt_dt(arrangement.agreement_uploaded_at)
+            ),
             "detail": (
                 f"Done : {_fmt_dt(arrangement.agreement_uploaded_at)}"
-                if agreement_ok and arrangement.agreement_uploaded_at
-                else ("Done : complete" if agreement_ok else "")
+                if agreement_ok and _fmt_dt(arrangement.agreement_uploaded_at)
+                else (
+                    "Done : —"
+                    if agreement_ok
+                    else "Signed and emailed to main contractor"
+                )
             ),
-            "pending": "Upload signed copy and email to main contractor",
+            "pending": "Upload Signed Copy Email to main contractor",
         },
         {
             "key": "included",
@@ -2624,12 +2665,19 @@ def bid_subcontract_detail(request, listing_id, pk):
                 )
                 workspace = ctx["workspace"]
                 _link_mr14_from_subcontract(workspace, arrangement)
-                messages.success(
-                    request,
-                    "Signed agreement lodged for bid preparation — MR14 on your "
-                    "certificate checklist is now satisfied. You can still share "
-                    "a copy with the sponsor after award notice if required.",
-                )
+                ok, err = _send_subcontract_main_signed_agreement(arrangement, request)
+                if ok:
+                    messages.success(
+                        request,
+                        "Signed copy uploaded and emailed to the main contractor. "
+                        "MR14 on your certificate checklist is now satisfied.",
+                    )
+                else:
+                    messages.warning(
+                        request,
+                        "Signed copy uploaded and MR14 satisfied, but email to main "
+                        f"contractor failed: {err}",
+                    )
         elif action == "share_sponsor":
             if not arrangement.agreement_file:
                 messages.error(request, "Upload the signed agreement before sharing with the sponsor.")

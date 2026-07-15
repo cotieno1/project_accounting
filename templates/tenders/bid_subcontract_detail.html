@@ -144,7 +144,7 @@
         </button>
       </form>
       {% elif progress.pending_key == 'agreement' %}
-      <a href="#sc-agree" class="bw-btn bw-btn--primary">Lodge agreement</a>
+      <a href="#sc-agree" class="bw-btn bw-btn--primary">Upload Signed Copy Email to main contractor</a>
       {% elif progress.pending_key == 'award' %}
       <form method="POST" action="{% url 'subcontract-notify-award' listing.pk arrangement.pk %}">
         {% csrf_token %}
@@ -166,12 +166,15 @@
     {% for step in progress.steps %}
     <div class="sc-step sc-step--{{ step.state }}" role="listitem">
       <div class="sc-step__label">
-        {% if step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
-        {{ step.label }}
+        {% if step.key == 'agreement' %}
+          {{ step.label }}
+        {% elif step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
+        {% if step.key != 'agreement' %}{{ step.label }}{% endif %}
       </div>
       <div class="sc-step__at">{% if step.at %}{{ step.at }}{% else %}—{% endif %}</div>
       <div class="sc-step__detail">
-        {% if step.state == 'done' %}{{ step.detail|default:"Complete" }}
+        {% if step.key == 'agreement' and step.state == 'done' %}{{ step.detail }}
+        {% elif step.state == 'done' %}{{ step.detail|default:"Complete" }}
         {% elif step.state == 'current' %}{{ step.pending }}
         {% else %}Pending{% endif %}
       </div>
