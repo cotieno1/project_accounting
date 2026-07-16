@@ -387,6 +387,49 @@
                 </tr>
               </thead>
               <tbody>
+                {% for group in section.bill_groups %}
+                {% for row in group.rows %}
+                <tr style="border-bottom:1px solid var(--bw-rule);">
+                  <td style="padding:10px 14px;">
+                    <input type="hidden" name="bill_ref" value="{{ row.line.bill_ref }}">
+                    <input type="hidden" name="pkg_{{ row.line.bill_ref }}" value="{{ section.package.code }}">
+                    <input type="hidden" name="desc_{{ row.line.bill_ref }}" value="{{ row.line.description }}">
+                    <input type="hidden" name="unit_{{ row.line.bill_ref }}" value="{{ row.line.unit }}">
+                    <input type="hidden" name="qty_{{ row.line.bill_ref }}" value="{{ row.line.quantity }}">
+                    <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);">{{ row.line.bill_ref }}</span>
+                  </td>
+                  <td style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
+                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
+                  <td style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:-3 }}</td>
+                  <td style="padding:10px 14px;">
+                    {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+                    <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
+                           step="0.01" min="0" class="bw-input"
+                           style="text-align:right;padding:7px 8px;"
+                           data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
+                           data-pkg="{{ section.package.code }}" data-bill="{{ group.bill_key }}"
+                           onchange="recalcRow(this)" oninput="recalcRow(this)">
+                    {% else %}
+                    <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
+                    {% endif %}
+                  </td>
+                  <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
+                      id="amount-{{ row.line.bill_ref }}" class="boq-amount"
+                      data-pkg="{{ section.package.code }}" data-bill="{{ group.bill_key }}">{{ row.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                <tr style="background:#f0f7ff;border-top:1px solid var(--bw-rule);">
+                  <td colspan="5" style="padding:10px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.82rem;">
+                    Cat sub-total — {{ group.bill_label }}
+                  </td>
+                  <td style="padding:10px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);"
+                      id="bill-subtotal-{{ section.package.code }}-{{ group.bill_key }}"
+                      class="boq-bill-subtotal"
+                      data-pkg="{{ section.package.code }}" data-bill="{{ group.bill_key }}">
+                    {{ group.subtotal|floatformat:2 }}
+                  </td>
+                </tr>
+                {% empty %}
                 {% for row in section.rows %}
                 <tr style="border-bottom:1px solid var(--bw-rule);">
                   <td style="padding:10px 14px;">
@@ -407,7 +450,7 @@
                            style="text-align:right;padding:7px 8px;"
                            data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
                            data-pkg="{{ section.package.code }}"
-                           onchange="recalcRow(this)">
+                           onchange="recalcRow(this)" oninput="recalcRow(this)">
                     {% else %}
                     <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
                     {% endif %}
@@ -416,9 +459,10 @@
                       id="amount-{{ row.line.bill_ref }}" class="boq-amount" data-pkg="{{ section.package.code }}">{{ row.amount|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
+                {% endfor %}
                 <tr style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
                   <td colspan="5" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;">
-                    Sub-total — {{ section.package.title }}
+                    Package sub-total — {{ section.package.title }}
                   </td>
                   <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);"
                       id="subtotal-{{ section.package.code }}">
@@ -462,6 +506,10 @@
                   <span style="display:block;font-size:.72rem;color:var(--bw-mid);margin-top:4px;">{{ row.sub_company }}{% if row.quote_status %} · {{ row.quote_status }}{% endif %}</span>
                   {% elif row.subtotal is None %}
                   <span style="display:inline-block;margin-left:8px;font-size:.72rem;color:var(--bw-mid);">Not selected</span>
+                  {% elif row.bill_groups and row.bill_groups|length > 1 %}
+                  <span style="display:block;font-size:.72rem;color:var(--bw-mid);margin-top:4px;font-family:var(--bw-mono);">
+                    {% for g in row.bill_groups %}{{ g.bill_label }}{% if not forloop.last %} · {% endif %}{% endfor %}
+                  </span>
                   {% endif %}
                 </td>
                 <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line_count }}</td>
@@ -470,6 +518,18 @@
                   {% if row.subtotal is None %}—{% else %}{{ row.subtotal|floatformat:2 }}{% endif %}
                 </td>
               </tr>
+              {% if row.bill_groups and row.bill_groups|length > 1 and not row.subcontracted and row.subtotal is not None %}
+              {% for g in row.bill_groups %}
+              <tr style="border-bottom:1px solid var(--bw-rule);background:#f8fbff;">
+                <td style="padding:6px 14px 6px 28px;font-size:.78rem;color:var(--bw-mid);">
+                  Cat sub-total · <span style="font-family:var(--bw-mono);">{{ g.bill_label }}</span>
+                </td>
+                <td style="padding:6px 14px;text-align:center;font-size:.78rem;color:var(--bw-mid);">{{ g.rows|length }}</td>
+                <td style="padding:6px 14px;text-align:right;font-family:var(--bw-mono);font-size:.78rem;color:var(--bw-navy);"
+                    id="summary-bill-{{ row.code }}-{{ g.bill_key }}">{{ g.subtotal|floatformat:2 }}</td>
+              </tr>
+              {% endfor %}
+              {% endif %}
               {% endfor %}
               {% if package_sections %}
               <tr style="background:var(--bw-mist);">
@@ -666,10 +726,16 @@ function toggleSubcontractFilter() {
 }
 function recalcTotals() {
   const byPkg = {};
+  const byBill = {};
   document.querySelectorAll('.boq-amount').forEach(el => {
     const pkg = el.dataset.pkg;
+    const bill = el.dataset.bill;
     const val = parseFloat(String(el.textContent).replace(/,/g, '')) || 0;
-    byPkg[pkg] = (byPkg[pkg] || 0) + val;
+    if (pkg) byPkg[pkg] = (byPkg[pkg] || 0) + val;
+    if (pkg && bill) {
+      const key = pkg + '::' + bill;
+      byBill[key] = (byBill[key] || 0) + val;
+    }
   });
   let grand = 0;
   Object.keys(byPkg).forEach(pkg => {
@@ -680,6 +746,15 @@ function recalcTotals() {
     if (sum) sum.textContent = fmtMoney(byPkg[pkg]);
     const aside = document.getElementById('aside-' + pkg);
     if (aside) aside.textContent = fmtMoney(byPkg[pkg]);
+  });
+  Object.keys(byBill).forEach(key => {
+    const parts = key.split('::');
+    const pkg = parts[0];
+    const bill = parts.slice(1).join('::');
+    const el = document.getElementById('bill-subtotal-' + pkg + '-' + bill);
+    if (el) el.textContent = fmtMoney(byBill[key]);
+    const sumBill = document.getElementById('summary-bill-' + pkg + '-' + bill);
+    if (sumBill) sumBill.textContent = fmtMoney(byBill[key]);
   });
   const totalEl = document.getElementById('grand-total');
   if (totalEl) totalEl.textContent = fmtMoney(grand);
@@ -697,6 +772,9 @@ function recalcRow(input) {
   if (amountEl) amountEl.textContent = fmtMoney(qty * rate);
   recalcTotals();
 }
-document.addEventListener('DOMContentLoaded', toggleSubcontractFilter);
+document.addEventListener('DOMContentLoaded', function () {
+  toggleSubcontractFilter();
+  recalcTotals();
+});
 </script>
 {% endblock %}

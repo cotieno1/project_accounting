@@ -310,6 +310,46 @@ def _active_subcontracts(listing, org):
         return []
 
 
+def _bill_category_key(bill_ref):
+    """
+    BOQ bill category from ref mask, e.g. '1/1.01' -> '1', '2/2.05' -> '2'.
+    Used for per-bill (cat) sub-totals on live main BOQ.
+    """
+    ref = (bill_ref or "").strip()
+    if "/" in ref:
+        return ref.split("/", 1)[0].strip() or ref
+    return ref or "?"
+
+
+def _bill_category_label(bill_key):
+    """Display mask for a bill category, e.g. '1' -> '1/x.xx'."""
+    key = (bill_key or "").strip() or "?"
+    return f"{key}/x.xx"
+
+
+def _group_rows_by_bill(rows):
+    """Group priced BOQ rows into bill categories with running subtotals."""
+    groups = []
+    current_key = None
+    current = None
+    for row in rows:
+        ref = getattr(row.get("line"), "bill_ref", None) or row.get("bill_ref") or ""
+        key = _bill_category_key(ref)
+        if key != current_key:
+            current = {
+                "bill_key": key,
+                "bill_label": _bill_category_label(key),
+                "rows": [],
+                "subtotal": Decimal("0"),
+            }
+            groups.append(current)
+            current_key = key
+        amount = row.get("amount") or Decimal("0")
+        current["rows"].append(row)
+        current["subtotal"] += amount
+    return groups
+
+
 def _subcontract_package_sections(listing, org, packages):
     """
     Read-only BOQ sections for packages assigned to sub-contractors.
@@ -1520,11 +1560,15 @@ def bid_workspace(request, listing_id):
                 'price': bp,
                 'rate': bp.unit_rate if bp else Decimal('0'),
                 'amount': amount,
+                'bill_key': _bill_category_key(line.bill_ref),
+                'bill_label': _bill_category_label(_bill_category_key(line.bill_ref)),
             })
+        bill_groups = _group_rows_by_bill(rows)
         grand_total += subtotal
         package_sections.append({
             'package': pkg,
             'rows': rows,
+            'bill_groups': bill_groups,
             'subtotal': subtotal,
             'line_count': len(rows),
         })
@@ -1533,6 +1577,7 @@ def bid_workspace(request, listing_id):
             'title': pkg.title,
             'subtotal': subtotal,
             'line_count': len(rows),
+            'bill_groups': bill_groups,
         })
 
     # Also show unselected main categories in summary (exclude already subcontracted)
