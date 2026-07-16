@@ -1489,6 +1489,25 @@ def bid_workspace(request, listing_id):
     package_sections = []
     category_summary = []
     grand_total = Decimal('0')
+
+    for pkg in packages:
+        if pkg.code.upper() not in subcontracted_set:
+            continue
+        sub_pkg_total = subcontract_subtotal_by_code.get(pkg.code.upper(), Decimal("0"))
+        arr = next(
+            (s["arrangement"] for s in subcontract_package_sections if s["package"].pk == pkg.pk),
+            None,
+        )
+        category_summary.append({
+            'code': pkg.code,
+            'title': pkg.title + ' (sub-contract)',
+            'subtotal': sub_pkg_total,
+            'line_count': pkg.lines.count(),
+            'subcontracted': True,
+            'sub_company': arr.sub_company_name if arr else '',
+            'quote_status': arr.get_quote_status_display() if arr else '',
+        })
+
     for pkg in selected_packages:
         rows = []
         subtotal = Decimal('0')
@@ -1526,24 +1545,6 @@ def bid_workspace(request, listing_id):
             'subtotal': None,  # not selected
             'line_count': pkg.lines.count(),
         })
-    for pkg in packages:
-        if pkg.code.upper() not in subcontracted_set:
-            continue
-        sub_pkg_total = subcontract_subtotal_by_code.get(pkg.code.upper(), Decimal("0"))
-        arr = next(
-            (s["arrangement"] for s in subcontract_package_sections if s["package"].pk == pkg.pk),
-            None,
-        )
-        category_summary.append({
-            'code': pkg.code,
-            'title': pkg.title + ' (sub-contract)',
-            'subtotal': sub_pkg_total,
-            'line_count': pkg.lines.count(),
-            'subcontracted': True,
-            'sub_company': arr.sub_company_name if arr else '',
-            'quote_status': arr.get_quote_status_display() if arr else '',
-        })
-
     can_switch_boq_mode = (
         getattr(request.user, 'is_staff', False)
         or (ua and listing.created_by_id == getattr(ua, 'pk', None))

@@ -431,78 +431,99 @@
         </div>
         {% endfor %}
 
+        {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
         <div class="bw-card" style="margin-bottom:14px;">
-          <div class="bw-card-header">Category summary</div>
-          <div class="bw-card-body" style="padding:0;">
-            <table style="width:100%;border-collapse:collapse;font-size:.84rem;">
-              <thead>
-                <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
-                  <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Category</th>
-                  <th style="padding:10px 14px;text-align:center;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:70px;">Lines</th>
-                  <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:140px;">Sub-total ({{ listing.currency }})</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for row in category_summary %}
-                <tr style="border-bottom:1px solid var(--bw-rule);{% if row.subcontracted %}background:#f8fafc;color:var(--bw-mid);opacity:.88;{% elif row.subtotal is None %}opacity:.55;{% endif %}">
-                  <td style="padding:10px 14px;">
-                    <strong>{% if row.subcontracted %}Sub-contract · {% endif %}{{ row.title }}</strong>
-                    <span style="font-family:var(--bw-mono);font-size:.72rem;color:var(--bw-mid);margin-left:8px;">{{ row.code }}</span>
-                    {% if row.subcontracted and row.sub_company %}
-                    <span style="display:block;font-size:.72rem;color:var(--bw-mid);margin-top:4px;">{{ row.sub_company }}{% if row.quote_status %} · {{ row.quote_status }}{% endif %}</span>
-                    {% elif row.subtotal is None %}
-                    <span style="display:inline-block;margin-left:8px;font-size:.72rem;color:var(--bw-mid);">Not selected</span>
-                    {% endif %}
-                  </td>
-                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line_count }}</td>
-                  <td style="padding:10px 14px;text-align:right;font-weight:600;font-family:var(--bw-mono);{% if row.subcontracted %}color:var(--bw-mid);{% else %}color:var(--bw-navy);{% endif %}"
-                      {% if row.subtotal is not None and not row.subcontracted %}id="summary-{{ row.code }}"{% endif %}>
-                    {% if row.subtotal is None %}—{% else %}{{ row.subtotal|floatformat:2 }}{% endif %}
-                  </td>
-                </tr>
-                {% endfor %}
-                <tr style="background:var(--bw-mist);">
-                  <td colspan="2" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);">
-                    Total main BOQ (selected categories)
-                  </td>
-                  <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);">
-                    {{ listing.currency }} <span id="grand-total">{{ category_grand_total|floatformat:2 }}</span>
-                  </td>
-                </tr>
-                {% if subcontract_package_sections %}
-                <tr style="background:#f8fafc;">
-                  <td colspan="2" style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-mid);">
-                    Total sub-contract BOQ
-                  </td>
-                  <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-mid);font-family:var(--bw-mono);">
-                    {{ listing.currency }} {{ subcontract_grand_total|floatformat:2 }}
-                  </td>
-                </tr>
-                <tr style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
-                  <td colspan="2" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);">
-                    Combined bid total
-                  </td>
-                  <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:1.05rem;font-family:var(--bw-mono);"
-                      id="combined-grand-total" data-sub-total="{{ subcontract_grand_total }}">
-                    {{ listing.currency }} {{ combined_grand_total|floatformat:2 }}
-                  </td>
-                </tr>
-                {% endif %}
-              </tbody>
-            </table>
-          </div>
-          {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
-          <div class="bw-card-body" style="display:flex;justify-content:flex-end;border-top:1px solid var(--bw-rule);">
+          <div class="bw-card-body" style="display:flex;justify-content:flex-end;">
             <button type="submit" class="bw-btn bw-btn--teal">Save prices</button>
           </div>
-          {% endif %}
         </div>
+        {% endif %}
       </form>
-      {% elif packages %}
+      {% endif %}
+      {% if category_summary %}
+      <div class="bw-card" style="margin-bottom:14px;">
+        <div class="bw-card-header">Category summary</div>
+        <div class="bw-card-body" style="padding:0;">
+          <table style="width:100%;border-collapse:collapse;font-size:.84rem;">
+            <thead>
+              <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
+                <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Category</th>
+                <th style="padding:10px 14px;text-align:center;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:70px;">Lines</th>
+                <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:140px;">Sub-total ({{ listing.currency }})</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in category_summary %}
+              <tr style="border-bottom:1px solid var(--bw-rule);{% if row.subcontracted %}background:#f8fafc;color:var(--bw-mid);opacity:.88;{% elif row.subtotal is None %}opacity:.55;{% endif %}">
+                <td style="padding:10px 14px;">
+                  <strong>{% if row.subcontracted %}Sub-contract · {% endif %}{{ row.title }}</strong>
+                  <span style="font-family:var(--bw-mono);font-size:.72rem;color:var(--bw-mid);margin-left:8px;">{{ row.code }}</span>
+                  {% if row.subcontracted and row.sub_company %}
+                  <span style="display:block;font-size:.72rem;color:var(--bw-mid);margin-top:4px;">{{ row.sub_company }}{% if row.quote_status %} · {{ row.quote_status }}{% endif %}</span>
+                  {% elif row.subtotal is None %}
+                  <span style="display:inline-block;margin-left:8px;font-size:.72rem;color:var(--bw-mid);">Not selected</span>
+                  {% endif %}
+                </td>
+                <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line_count }}</td>
+                <td style="padding:10px 14px;text-align:right;font-weight:600;font-family:var(--bw-mono);{% if row.subcontracted %}color:var(--bw-mid);{% else %}color:var(--bw-navy);{% endif %}"
+                    {% if row.subtotal is not None and not row.subcontracted %}id="summary-{{ row.code }}"{% endif %}>
+                  {% if row.subtotal is None %}—{% else %}{{ row.subtotal|floatformat:2 }}{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+              {% if package_sections %}
+              <tr style="background:var(--bw-mist);">
+                <td colspan="2" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);">
+                  Total main BOQ (selected categories)
+                </td>
+                <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);">
+                  {{ listing.currency }} <span id="grand-total">{{ category_grand_total|floatformat:2 }}</span>
+                </td>
+              </tr>
+              {% endif %}
+              {% if subcontract_package_sections %}
+              <tr style="background:#f8fafc;">
+                <td colspan="2" style="padding:12px 14px;text-align:right;font-weight:600;color:var(--bw-mid);">
+                  Total sub-contract BOQ
+                </td>
+                <td style="padding:12px 14px;text-align:right;font-weight:600;color:var(--bw-mid);font-family:var(--bw-mono);">
+                  {{ listing.currency }} {{ subcontract_grand_total|floatformat:2 }}
+                </td>
+              </tr>
+              <tr style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
+                <td colspan="2" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);">
+                  {% if package_sections %}Combined bid total{% else %}Bid total (sub-contract){% endif %}
+                </td>
+                <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:1.05rem;font-family:var(--bw-mono);"
+                    id="combined-grand-total" data-sub-total="{{ subcontract_grand_total }}">
+                  {{ listing.currency }} {{ combined_grand_total|floatformat:2 }}
+                </td>
+              </tr>
+              {% elif package_sections %}
+              <tr style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
+                <td colspan="2" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);">
+                  Bid total
+                </td>
+                <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:1.05rem;font-family:var(--bw-mono);"
+                    id="combined-grand-total" data-sub-total="0">
+                  {{ listing.currency }} {{ category_grand_total|floatformat:2 }}
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if not package_sections %}
+      {% if packages and not subcontract_package_sections %}
       <div class="bw-alert bw-alert--info">Select one or more categories above, then apply selection to open the BOQ lines.</div>
-      {% else %}
+      {% elif not packages %}
       <div class="bw-alert bw-alert--warning">No BOQ packages have been published for this tender yet.</div>
       {% endif %}
+      {% endif %}
+
     </div>
 
     <aside>
