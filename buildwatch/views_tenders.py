@@ -2360,12 +2360,59 @@ def _fmt_dt(dt):
             return ""
 
 
-def _subcontract_progress(arrangement):
+def _main_bid_workspace(arrangement):
+    """Main contractor BOQ workspace for this subcontract tender."""
+    if arrangement.workspace_id:
+        return arrangement.workspace
+    return BidWorkspace.objects.filter(
+        tender_id=arrangement.tender_id,
+        organisation_id=arrangement.main_organisation_id,
+    ).first()
+
+
+def _handle_subcontract_agreement_upload(arrangement, request, workspace=None):
+    """Sub or main uploads signed Domestic Sub Contract; email main contractor."""
+    f = request.FILES.get("agreement_file")
+    if not f:
+        return False, "Choose a signed agreement PDF to upload."
+
+    arrangement.agreement_file = f
+    arrangement.agreement_uploaded_at = timezone.now()
+    if arrangement.status in {
+        SubcontractArrangement.INVITED,
+        SubcontractArrangement.ACCEPTED,
+        SubcontractArrangement.DRAFT,
+    }:
+        arrangement.status = SubcontractArrangement.AGREEMENT_UPLOADED
+    arrangement.save(
+        update_fields=[
+            "agreement_file",
+            "agreement_uploaded_at",
+            "status",
+            "updated_at",
+        ]
+    )
+    ws = workspace or _main_bid_workspace(arrangement)
+    if ws:
+        _link_mr14_from_subcontract(ws, arrangement)
+    ok, err = _send_subcontract_main_signed_agreement(arrangement, request)
+    if ok:
+        return True, (
+            "Signed copy uploaded and emailed to the main contractor."
+        )
+    return True, (
+        "Signed copy uploaded. Email to main contractor failed: "
+        f"{err}"
+    )
+
+
+def _subcontract_progress(arrangement, workspace=None):
     """
-    Build progress steps for the subcontract lifecycle UI.
-    Each step: key, label, state (done|current|pending), at, detail, pending.
+    Progress steps driven by real activities (portal, upload, main bid submit, award).
     """
+    ws = workspace or _main_bid_workspace(arrangement)
     qs = arrangement.quote_status or ""
+
     invited = bool(arrangement.invited_at or arrangement.invite_email_sent)
     accepted = bool(
         arrangement.accepted_at
@@ -2376,26 +2423,25 @@ def _subcontract_progress(arrangement):
             SubcontractArrangement.SHARED_WITH_SPONSOR,
         }
     )
-    quote_draft = qs == SubcontractArrangement.QUOTE_DRAFT
-    quote_in = qs in {
+    quote_submitted = qs in {
         SubcontractArrangement.QUOTE_SUBMITTED,
         SubcontractArrangement.QUOTE_ACKNOWLEDGED,
         SubcontractArrangement.QUOTE_INCLUDED,
         SubcontractArrangement.AWARD_NOTED,
     }
-    quote_acked = qs in {
-        SubcontractArrangement.QUOTE_ACKNOWLEDGED,
+    quote_draft = qs == SubcontractArrangement.QUOTE_DRAFT
+    agreement_ok = bool(arrangement.agreement_file and arrangement.agreement_uploaded_at)
+    main_bid_submitted = bool(
+        ws and ws.status == BidWorkspace.SUBMITTED and ws.submitted_at
+    ) or qs in {
         SubcontractArrangement.QUOTE_INCLUDED,
         SubcontractArrangement.AWARD_NOTED,
     }
-    agreement_ok = bool(arrangement.agreement_file)
-    included = bool(
+    main_bid_at = _fmt_dt(ws.submitted_at) if ws and ws.submitted_at else _fmt_dt(
         arrangement.included_in_main_bid_at
-        or qs in {SubcontractArrangement.QUOTE_INCLUDED, SubcontractArrangement.AWARD_NOTED}
     )
-    award_ok = bool(
-        arrangement.award_noted_at or qs == SubcontractArrangement.AWARD_NOTED
-    )
+    evaluation_complete = qs == SubcontractArrangement.AWARD_NOTED
+    award_ok = bool(arrangement.award_noted_at or evaluation_complete)
 
     steps = [
         {
@@ -2413,73 +2459,91 @@ def _subcontract_progress(arrangement):
                 )
             ),
             "pending": "Send portal invite to the sub-contractor",
+            "action": "resend_invite",
         },
         {
             "key": "accepted",
             "label": "Portal opened",
             "done": accepted,
             "at": _fmt_dt(arrangement.accepted_at),
-            "detail": "Sub-contractor accepted / opened portal",
-            "pending": "Sub to open the pricing portal",
+            "detail": "Sub-contractor opened the pricing portal",
+            "pending": "Open pricing portal",
+            "action": "open_portal",
         },
         {
             "key": "quote",
             "label": "Sub Contract Quotation submitted",
-            "done": quote_in,
+            "done": quote_submitted,
             "at": _fmt_dt(arrangement.quote_submitted_at),
             "detail": (
-                f"KES {arrangement.quote_total:,.2f}"
-                if quote_in and arrangement.quote_total
-                else ("Pricing in progress" if quote_draft else "")
+                f"KES {arrangement.quote_total:,.2f} submitted to main contractor"
+                if quote_submitted and arrangement.quote_total
+                else "Quote submitted to main contractor"
             ),
-            "pending": "Price Sub Contract Item's and submit quote",
+            "pending": (
+                "Pricing in progress — save and submit in portal"
+                if quote_draft
+                else "Price Sub Contract Item's and submit quote"
+            ),
+            "action": "open_portal",
         },
         {
             "key": "agreement",
             "label": "Sub Contract Signed and emailed to Main Contractor",
             "done": agreement_ok,
-            "at": (
-                ""
-                if agreement_ok
-                else _fmt_dt(arrangement.agreement_uploaded_at)
-            ),
+            "at": _fmt_dt(arrangement.agreement_uploaded_at) if agreement_ok else "",
             "detail": (
                 f"Done : {_fmt_dt(arrangement.agreement_uploaded_at)}"
-                if agreement_ok and _fmt_dt(arrangement.agreement_uploaded_at)
-                else (
-                    "Done : —"
-                    if agreement_ok
-                    else "Signed and emailed to main contractor"
-                )
+                if agreement_ok
+                else ""
             ),
             "pending": "Upload Signed Copy Email to main contractor",
+            "action": "upload_agreement",
         },
         {
-            "key": "ack",
+            "key": "main_bid",
             "label": "Main Contracter Submits Bid",
-            "done": quote_acked,
-            "at": _fmt_dt(arrangement.quote_acknowledged_at),
-            "detail": "Rates imported into main BOQ",
-            "pending": "Main contractor to submit bid",
+            "done": main_bid_submitted,
+            "at": main_bid_at,
+            "detail": (
+                "Main bid submitted to employer"
+                + (
+                    f" · KES {ws.total_bid_amount:,.2f}"
+                    if ws and ws.total_bid_amount
+                    else ""
+                )
+            ),
+            "pending": "Main contractor to submit bid from BOQ workspace",
+            "action": "main_bid_workspace",
         },
         {
-            "key": "included",
+            "key": "evaluation",
             "label": "Waiting Final Bid Evaluation",
-            "done": included,
-            "at": _fmt_dt(arrangement.included_in_main_bid_at),
-            "detail": "Included in main bid package to employer",
-            "pending": "Waiting final bid evaluation",
+            "done": evaluation_complete,
+            "at": (
+                _fmt_dt(arrangement.included_in_main_bid_at)
+                if main_bid_submitted
+                else ""
+            ),
+            "detail": (
+                "Employer evaluation complete · main contractor awarded"
+                if evaluation_complete
+                else "Bid lodged with employer · awaiting evaluation outcome"
+            ),
+            "pending": "Waiting final bid evaluation by employer",
+            "action": "wait_evaluation",
         },
         {
-            "key": "award",
+            "key": "execution",
             "label": "Execution",
             "done": award_ok,
             "at": _fmt_dt(arrangement.award_noted_at),
             "detail": (
-                "Award noted · execution phase"
+                "Execution phase started"
                 + (" · email sent" if arrangement.award_note_sent else "")
             ),
-            "pending": "Notify sub when main is awarded",
+            "pending": "Notify sub when main contractor is awarded",
+            "action": "notify_award",
         },
     ]
 
@@ -2496,12 +2560,13 @@ def _subcontract_progress(arrangement):
 
     current = next((s for s in steps if s["state"] == "current"), None)
     if complete:
-        current = steps[-1] if steps else None
         pending_label = ""
         pending_key = ""
+        pending_action = ""
     else:
         pending_label = (current or {}).get("pending") or ""
         pending_key = (current or {}).get("key") or ""
+        pending_action = (current or {}).get("action") or ""
 
     return {
         "steps": steps,
@@ -2509,6 +2574,8 @@ def _subcontract_progress(arrangement):
         "complete": complete,
         "pending_label": pending_label,
         "pending_key": pending_key,
+        "pending_action": pending_action,
+        "workspace": ws,
     }
 
 
@@ -2586,6 +2653,7 @@ def bid_subcontract_detail(request, listing_id, pk):
 
     package_labels = _subcontract_package_labels(listing, arrangement)
     portal_path = f"/tenders/subcontract/portal/{arrangement.invite_token}/"
+    ws = _main_bid_workspace(arrangement)
     org = None
     if request.user.is_authenticated:
         org = get_active_organization(request)
@@ -2594,6 +2662,20 @@ def bid_subcontract_detail(request, listing_id, pk):
         and org
         and org.org_code == arrangement.main_organisation_id
     )
+
+    if request.method == "POST" and not is_main_admin:
+        action = (request.POST.get("action") or "").strip()
+        if action == "upload_agreement":
+            ok, msg = _handle_subcontract_agreement_upload(
+                arrangement, request, workspace=ws
+            )
+            if ok and "failed" not in msg.lower():
+                messages.success(request, msg)
+            elif ok:
+                messages.warning(request, msg)
+            else:
+                messages.error(request, msg)
+        return redirect("bid-subcontract-detail", listing_id=listing_id, pk=pk)
 
     # Public / open-cycle hub: view process + agreement without login
     if not is_main_admin:
@@ -2610,7 +2692,7 @@ def bid_subcontract_detail(request, listing_id, pk):
                 "listing": listing,
                 "arrangement": arrangement,
                 "package_labels": package_labels,
-                "progress": _subcontract_progress(arrangement),
+                "progress": _subcontract_progress(arrangement, workspace=ws),
                 "portal_path": portal_path,
                 **branding_template_context(request),
             },
@@ -2643,41 +2725,21 @@ def bid_subcontract_detail(request, listing_id, pk):
             else:
                 messages.error(request, f"Could not send email: {err}")
         elif action == "upload_agreement":
-            f = request.FILES.get("agreement_file")
-            if not f:
-                messages.error(request, "Choose a signed agreement PDF to upload.")
-            else:
-                arrangement.agreement_file = f
-                arrangement.agreement_uploaded_at = timezone.now()
-                if arrangement.status in {
-                    SubcontractArrangement.INVITED,
-                    SubcontractArrangement.ACCEPTED,
-                    SubcontractArrangement.DRAFT,
-                }:
-                    arrangement.status = SubcontractArrangement.AGREEMENT_UPLOADED
-                arrangement.save(
-                    update_fields=[
-                        "agreement_file",
-                        "agreement_uploaded_at",
-                        "status",
-                        "updated_at",
-                    ]
+            ok, msg = _handle_subcontract_agreement_upload(
+                arrangement, request, workspace=ctx["workspace"]
+            )
+            if ok and "failed" not in msg.lower():
+                messages.success(
+                    request,
+                    msg + " MR14 on your certificate checklist is now satisfied.",
                 )
-                workspace = ctx["workspace"]
-                _link_mr14_from_subcontract(workspace, arrangement)
-                ok, err = _send_subcontract_main_signed_agreement(arrangement, request)
-                if ok:
-                    messages.success(
-                        request,
-                        "Signed copy uploaded and emailed to the main contractor. "
-                        "MR14 on your certificate checklist is now satisfied.",
-                    )
-                else:
-                    messages.warning(
-                        request,
-                        "Signed copy uploaded and MR14 satisfied, but email to main "
-                        f"contractor failed: {err}",
-                    )
+            elif ok:
+                messages.warning(
+                    request,
+                    msg + " MR14 on your certificate checklist is now satisfied.",
+                )
+            else:
+                messages.error(request, msg)
         elif action == "share_sponsor":
             if not arrangement.agreement_file:
                 messages.error(request, "Upload the signed agreement before sharing with the sponsor.")
@@ -2717,7 +2779,7 @@ def bid_subcontract_detail(request, listing_id, pk):
             "package_labels": package_labels,
             "portal_path": portal_path,
             "accept_path": portal_path,
-            "progress": _subcontract_progress(arrangement),
+            "progress": _subcontract_progress(arrangement, workspace=ctx["workspace"]),
             **branding_template_context(request),
         },
     )

@@ -128,24 +128,18 @@
       <p class="sc-pending__title">{{ progress.pending_label }}</p>
     </div>
     <div class="sc-actions">
-      {% if progress.pending_key == 'invite' %}
+      {% if progress.pending_action == 'resend_invite' %}
       <form method="POST">{% csrf_token %}
         <input type="hidden" name="action" value="resend_invite">
         <button type="submit" class="bw-btn bw-btn--primary">Send invite</button>
       </form>
-      {% elif progress.pending_key == 'accepted' or progress.pending_key == 'quote' %}
+      {% elif progress.pending_action == 'open_portal' %}
       <a href="{{ portal_path }}" class="bw-btn bw-btn--primary" target="_blank" rel="noopener">Open pricing portal</a>
-      {% elif progress.pending_key == 'ack' and arrangement.quote_status == 'QUOTE_SUBMITTED' %}
-      <form method="POST" action="{% url 'subcontract-ack-quote' listing.pk arrangement.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="bw-btn bw-btn--primary"
-                onclick="return confirm('Acknowledge this quote and import rates into your BOQ workspace?');">
-          Acknowledge quote
-        </button>
-      </form>
-      {% elif progress.pending_key == 'agreement' %}
+      {% elif progress.pending_action == 'upload_agreement' %}
       <a href="#sc-agree" class="bw-btn bw-btn--primary">Upload Signed Copy Email to main contractor</a>
-      {% elif progress.pending_key == 'award' %}
+      {% elif progress.pending_action == 'main_bid_workspace' %}
+      <a href="{% url 'bid-workspace' listing.pk %}" class="bw-btn bw-btn--primary">Open BOQ workspace &amp; submit bid</a>
+      {% elif progress.pending_action == 'notify_award' %}
       <form method="POST" action="{% url 'subcontract-notify-award' listing.pk arrangement.pk %}">
         {% csrf_token %}
         <button type="submit" class="bw-btn bw-btn--primary"
@@ -153,6 +147,8 @@
           Notify execution
         </button>
       </form>
+      {% elif progress.pending_action == 'wait_evaluation' %}
+      <span class="bw-tag bw-tag--muted">Awaiting employer evaluation</span>
       {% endif %}
     </div>
   </div>
@@ -166,15 +162,12 @@
     {% for step in progress.steps %}
     <div class="sc-step sc-step--{{ step.state }}" role="listitem">
       <div class="sc-step__label">
-        {% if step.key == 'agreement' %}
-          {{ step.label }}
-        {% elif step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
-        {% if step.key != 'agreement' %}{{ step.label }}{% endif %}
+        {% if step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
+        {{ step.label }}
       </div>
       <div class="sc-step__at">{% if step.at %}{{ step.at }}{% else %}—{% endif %}</div>
       <div class="sc-step__detail">
-        {% if step.key == 'agreement' and step.state == 'done' %}{{ step.detail }}
-        {% elif step.state == 'done' %}{{ step.detail|default:"Complete" }}
+        {% if step.state == 'done' %}{{ step.detail|default:"Complete" }}
         {% elif step.state == 'current' %}{{ step.pending }}
         {% else %}Pending{% endif %}
       </div>
@@ -191,7 +184,7 @@
           <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Resend invite</button>
         </form>
         <a href="{{ portal_path }}" class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">Open portal</a>
-        {% if arrangement.quote_status == 'QUOTE_SUBMITTED' %}
+        {% if arrangement.quote_status == 'QUOTE_SUBMITTED' or arrangement.quote_status == 'QUOTE_ACKNOWLEDGED' %}
         <form method="POST" action="{% url 'subcontract-ack-quote' listing.pk arrangement.pk %}">
           {% csrf_token %}
           <button type="submit" class="bw-btn bw-btn--teal bw-btn--sm"
@@ -199,6 +192,9 @@
             Acknowledge quote
           </button>
         </form>
+        {% endif %}
+        {% if progress.workspace and progress.workspace.status != 'SUBMITTED' %}
+        <a href="{% url 'bid-workspace' listing.pk %}" class="bw-btn bw-btn--primary bw-btn--sm">Submit main bid</a>
         {% endif %}
         <form method="POST" action="{% url 'subcontract-notify-award' listing.pk arrangement.pk %}">
           {% csrf_token %}

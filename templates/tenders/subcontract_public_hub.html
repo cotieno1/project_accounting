@@ -29,6 +29,7 @@
     letter-spacing: .04em;
     text-transform: uppercase;
     color: var(--bw-mid);
+    line-height: 1.3;
   }
   .sc-step__at {
     font-family: var(--bw-mono);
@@ -76,7 +77,7 @@
     margin: 0;
   }
   .sc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .sc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sc-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 </style>
 
 <div class="bw-wrap">
@@ -108,13 +109,28 @@
       <div class="sc-pending__kicker">Pending</div>
       <p class="sc-pending__title">{{ progress.pending_label }}</p>
     </div>
-    {% if progress.pending_key == 'accepted' or progress.pending_key == 'quote' %}
-    <a href="{% url 'subcontract-portal' arrangement.invite_token %}"
-       class="bw-btn bw-btn--primary">Open pricing portal</a>
-    {% elif progress.pending_key == 'agreement' %}
-    <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
-       class="bw-btn bw-btn--primary" target="_blank" rel="noopener">Open agreement</a>
-    {% endif %}
+    <div class="sc-actions">
+      {% if progress.pending_action == 'open_portal' %}
+      <a href="{% url 'subcontract-portal' arrangement.invite_token %}"
+         class="bw-btn bw-btn--primary">Open pricing portal</a>
+      {% elif progress.pending_action == 'upload_agreement' %}
+      <form method="POST" enctype="multipart/form-data" class="sc-actions" id="sc-agree">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload_agreement">
+        <input type="file" name="agreement_file" accept=".pdf,.doc,.docx,image/*" required
+               style="font-size:.82rem;max-width:220px;">
+        <button type="submit" class="bw-btn bw-btn--primary">Upload Signed Copy Email to main contractor</button>
+      </form>
+      {% elif progress.pending_action == 'main_bid_workspace' %}
+      <span class="bw-tag bw-tag--warn">Waiting on {{ arrangement.main_organisation.short_name|default:"main contractor" }}</span>
+      {% elif progress.pending_action == 'wait_evaluation' %}
+      <span class="bw-tag bw-tag--muted">With employer for evaluation</span>
+      {% endif %}
+    </div>
+  </div>
+  {% elif progress.complete %}
+  <div class="bw-alert bw-alert--success" style="margin-bottom:18px;">
+    Subcontract cycle complete through execution phase.
   </div>
   {% endif %}
 
@@ -122,21 +138,35 @@
     {% for step in progress.steps %}
     <div class="sc-step sc-step--{{ step.state }}" role="listitem">
       <div class="sc-step__label">
-        {% if step.key == 'agreement' %}
-          {{ step.label }}
-        {% elif step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
-        {% if step.key != 'agreement' %}{{ step.label }}{% endif %}
+        {% if step.state == 'done' %}Done · {% elif step.state == 'current' %}Now · {% else %}Next · {% endif %}
+        {{ step.label }}
       </div>
       <div class="sc-step__at">{% if step.at %}{{ step.at }}{% else %}—{% endif %}</div>
       <div class="sc-step__detail">
-        {% if step.key == 'agreement' and step.state == 'done' %}{{ step.detail }}
-        {% elif step.state == 'done' %}{{ step.detail|default:"Complete" }}
+        {% if step.state == 'done' %}{{ step.detail|default:"Complete" }}
         {% elif step.state == 'current' %}{{ step.pending }}
         {% else %}Pending{% endif %}
       </div>
     </div>
     {% endfor %}
   </div>
+
+  {% if progress.pending_action == 'upload_agreement' and not arrangement.agreement_file %}
+  <div class="bw-panel" style="margin-top:14px;">
+    <div class="bw-panel__hd">Domestic Sub Contract (MR14)</div>
+    <div class="bw-panel__bd">
+      <p style="font-size:.84rem;color:var(--bw-mid);margin:0 0 12px;">
+        View the agreement, sign and stamp it, then upload a copy to email the main contractor.
+      </p>
+      <div class="sc-actions">
+        <a href="{% url 'bid-subcontract-agreement' listing.pk arrangement.pk %}"
+           class="bw-btn bw-btn--teal" target="_blank" rel="noopener">View agreement</a>
+        <a href="{% url 'bid-subcontract-agreement-pdf' listing.pk arrangement.pk %}"
+           class="bw-btn bw-btn--ghost" target="_blank" rel="noopener">Download PDF</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
 </div>
 {% endblock %}
