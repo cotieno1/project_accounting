@@ -303,10 +303,60 @@ def _active_subcontracts(listing, org):
                 main_organisation=org,
             ).exclude(status=SubcontractArrangement.CANCELLED)
             .select_related("sub_organisation")
+            .prefetch_related("quote_lines")
             .order_by("-created_at")
         )
     except Exception:
         return []
+
+
+def _subcontract_package_sections(listing, org, packages):
+    """
+    Read-only BOQ sections for packages assigned to sub-contractors.
+    Amounts come from the sub quote portal (qty x unit rate).
+    """
+    arrangements = _active_subcontracts(listing, org)
+    if not arrangements:
+        return [], Decimal("0")
+
+    pkg_to_arr = {}
+    for arr in arrangements:
+        for code in arr.selected_codes():
+            pkg_to_arr[code.upper()] = arr
+
+    sections = []
+    grand = Decimal("0")
+    for pkg in packages:
+        code_u = pkg.code.upper()
+        arr = pkg_to_arr.get(code_u)
+        if not arr:
+            continue
+        price_map = {ql.bill_ref: ql for ql in arr.quote_lines.all()}
+        rows = []
+        subtotal = Decimal("0")
+        for line in pkg.lines.all():
+            ql = price_map.get(line.bill_ref)
+            qty = line.quantity or Decimal("0")
+            rate = ql.unit_rate if ql else Decimal("0")
+            amount = (qty * rate).quantize(Decimal("0.01"))
+            subtotal += amount
+            rows.append({
+                "line": line,
+                "quote": ql,
+                "rate": rate,
+                "amount": amount,
+            })
+        grand += subtotal
+        sections.append({
+            "package": pkg,
+            "rows": rows,
+            "subtotal": subtotal,
+            "line_count": len(rows),
+            "arrangement": arr,
+            "sub_company": arr.sub_company_name,
+            "quote_status": arr.get_quote_status_display() or "No quote yet",
+        })
+    return sections, grand
 
 
 def _pending_subcontract_quotes(listing, org):
@@ -1423,6 +1473,12 @@ def bid_workspace(request, listing_id):
         workspace.save(update_fields=['selected_package_codes'])
 
     main_packages = [p for p in packages if p.code.upper() not in subcontracted_set]
+    subcontract_package_sections, subcontract_grand_total = _subcontract_package_sections(
+        listing, org, packages
+    )
+    subcontract_subtotal_by_code = {
+        s["package"].code.upper(): s["subtotal"] for s in subcontract_package_sections
+    }
     # Default: if packages exist and none selected yet, leave empty so UI prompts
     selected_packages = [p for p in main_packages if p.code.upper() in selected]
     price_map = {
@@ -1473,12 +1529,19 @@ def bid_workspace(request, listing_id):
     for pkg in packages:
         if pkg.code.upper() not in subcontracted_set:
             continue
+        sub_pkg_total = subcontract_subtotal_by_code.get(pkg.code.upper(), Decimal("0"))
+        arr = next(
+            (s["arrangement"] for s in subcontract_package_sections if s["package"].pk == pkg.pk),
+            None,
+        )
         category_summary.append({
             'code': pkg.code,
-            'title': pkg.title + ' (subcontracted)',
-            'subtotal': None,
+            'title': pkg.title + ' (sub-contract)',
+            'subtotal': sub_pkg_total,
             'line_count': pkg.lines.count(),
             'subcontracted': True,
+            'sub_company': arr.sub_company_name if arr else '',
+            'quote_status': arr.get_quote_status_display() if arr else '',
         })
 
     can_switch_boq_mode = (
@@ -1537,6 +1600,9 @@ def bid_workspace(request, listing_id):
         'boq_mode_choices': TenderListing.BOQ_INPUT_MODE_CHOICES,
         'can_switch_boq_mode': can_switch_boq_mode,
         'package_sections': package_sections,
+        'subcontract_package_sections': subcontract_package_sections,
+        'subcontract_grand_total': subcontract_grand_total,
+        'combined_grand_total': grand_total + subcontract_grand_total,
         'category_summary': category_summary,
         'category_grand_total': grand_total,
         'bill_prices': workspace.bill_prices.order_by('bill_ref'),
