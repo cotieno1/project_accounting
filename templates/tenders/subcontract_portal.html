@@ -79,19 +79,29 @@
                 <input type="text" name="rate_{{ row.line.bill_ref }}"
                        value="{% if row.rate %}{{ row.rate }}{% endif %}"
                        inputmode="decimal"
+                       data-ref="{{ row.line.bill_ref }}"
+                       data-qty="{{ row.line.quantity }}"
+                       data-pkg="{{ section.package.code }}"
+                       class="sc-rate-input"
+                       oninput="scRecalcRow(this)"
+                       onchange="scRecalcRow(this)"
                        style="width:110px;padding:6px 8px;border:1px solid var(--bw-rule);border-radius:6px;text-align:right;font-family:var(--bw-mono);">
                 {% else %}
                 <span style="font-family:var(--bw-mono);">{{ row.rate|floatformat:2 }}</span>
                 {% endif %}
               </td>
-              <td style="padding:8px 10px;text-align:right;font-family:var(--bw-mono);">{{ row.amount|floatformat:2 }}</td>
+              <td style="padding:8px 10px;text-align:right;font-family:var(--bw-mono);"
+                  id="amount-{{ row.ref_slug }}"
+                  class="sc-amount"
+                  data-pkg="{{ section.package.code }}">{{ row.amount|floatformat:2 }}</td>
             </tr>
             {% endfor %}
           </tbody>
           <tfoot>
             <tr style="border-top:2px solid var(--bw-navy);">
               <td colspan="5" style="padding:10px;text-align:right;font-weight:600;">Package subtotal</td>
-              <td style="padding:10px;text-align:right;font-family:var(--bw-mono);font-weight:600;">{{ section.subtotal|floatformat:2 }}</td>
+              <td style="padding:10px;text-align:right;font-family:var(--bw-mono);font-weight:600;"
+                  id="subtotal-{{ section.package.code }}">{{ section.subtotal|floatformat:2 }}</td>
             </tr>
           </tfoot>
         </table>
@@ -105,7 +115,8 @@
     <div class="bw-card" style="margin-bottom:16px;">
       <div class="bw-card-body" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
         <strong style="color:var(--bw-navy);">Grand total (your packages)</strong>
-        <strong style="font-family:var(--bw-mono);font-size:1.1rem;color:var(--bw-navy);">KES {{ grand_total|floatformat:2 }}</strong>
+        <strong style="font-family:var(--bw-mono);font-size:1.1rem;color:var(--bw-navy);"
+                id="sc-grand-total">KES {{ grand_total|floatformat:2 }}</strong>
       </div>
     </div>
     {% endif %}
@@ -122,4 +133,41 @@
   </form>
 
 </div>
+
+{% if can_edit %}
+<script>
+function scFmtMoney(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function scAmountId(ref) {
+  return 'amount-' + String(ref).toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function scRecalcTotals() {
+  const byPkg = {};
+  document.querySelectorAll('.sc-amount').forEach(el => {
+    const pkg = el.dataset.pkg;
+    const val = parseFloat(String(el.textContent).replace(/,/g, '')) || 0;
+    byPkg[pkg] = (byPkg[pkg] || 0) + val;
+  });
+  let grand = 0;
+  Object.keys(byPkg).forEach(pkg => {
+    grand += byPkg[pkg];
+    const sub = document.getElementById('subtotal-' + pkg);
+    if (sub) sub.textContent = scFmtMoney(byPkg[pkg]);
+  });
+  const totalEl = document.getElementById('sc-grand-total');
+  if (totalEl) totalEl.textContent = 'KES ' + scFmtMoney(grand);
+}
+function scRecalcRow(input) {
+  const ref = input.dataset.ref;
+  const qty = parseFloat(input.dataset.qty) || 0;
+  const rate = parseFloat(String(input.value).replace(/,/g, '')) || 0;
+  const amountEl = document.getElementById(scAmountId(ref));
+  if (amountEl) amountEl.textContent = scFmtMoney(qty * rate);
+  scRecalcTotals();
+}
+document.addEventListener('DOMContentLoaded', scRecalcTotals);
+</script>
+{% endif %}
 {% endblock %}

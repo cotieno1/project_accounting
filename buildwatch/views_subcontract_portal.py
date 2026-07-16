@@ -7,6 +7,7 @@
 # ============================================================================
 
 from decimal import Decimal, InvalidOperation
+import re
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -52,6 +53,11 @@ def _portal_packages(arrangement):
     )
 
 
+def _bill_ref_slug(bill_ref):
+    """HTML-safe id slug for BOQ refs like 5/5.01 (matches portal JS)."""
+    return re.sub(r"[^a-z0-9]", "", str(bill_ref).lower()) or "line"
+
+
 def _portal_sections(arrangement):
     codes = set(arrangement.selected_codes())
     packages = list(
@@ -68,14 +74,16 @@ def _portal_sections(arrangement):
         subtotal = Decimal("0")
         for line in pkg.lines.all():
             ql = price_map.get(line.bill_ref)
+            qty = line.quantity or Decimal("0")
             rate = ql.unit_rate if ql else Decimal("0")
-            amount = ql.amount if ql else Decimal("0")
+            amount = (qty * rate).quantize(Decimal("0.01"))
             subtotal += amount
             rows.append({
                 "line": line,
                 "quote": ql,
                 "rate": rate,
                 "amount": amount,
+                "ref_slug": _bill_ref_slug(line.bill_ref),
             })
         grand += subtotal
         sections.append({
@@ -85,6 +93,35 @@ def _portal_sections(arrangement):
             "line_count": len(rows),
         })
     return sections, grand
+
+
+def _save_portal_prices(arrangement, request, packages):
+    """Persist unit rates from POST; amount = qty x rate on each line."""
+    for pkg in packages:
+        for line in pkg.lines.all():
+            raw = (request.POST.get(f"rate_{line.bill_ref}") or "").strip().replace(",", "")
+            try:
+                rate = Decimal(raw) if raw else Decimal("0")
+            except (InvalidOperation, ValueError):
+                rate = Decimal("0")
+            qty = line.quantity or Decimal("0")
+            ql, _ = SubcontractQuoteLine.objects.update_or_create(
+                arrangement=arrangement,
+                bill_ref=line.bill_ref,
+                defaults={
+                    "package_code": pkg.code.upper(),
+                    "description": (line.description or "")[:255],
+                    "unit": line.unit or "",
+                    "quantity": qty,
+                    "unit_rate": rate,
+                    "amount": (qty * rate).quantize(Decimal("0.01")),
+                },
+            )
+            ql.quantity = qty
+            ql.unit_rate = rate
+            ql.save()
+    from django.db.models import Sum
+    return arrangement.quote_lines.aggregate(s=Sum("amount")).get("s") or Decimal("0")
 
 
 def _send_sub_portal_email(arrangement, *, subject, text_body, html_body=None, request=None):
@@ -264,27 +301,7 @@ def subcontract_portal(request, token):
             if p.code.upper() in codes
         ]
         if action == "save_prices":
-            for pkg in packages:
-                for line in pkg.lines.all():
-                    raw = (request.POST.get(f"rate_{line.bill_ref}") or "").strip().replace(",", "")
-                    try:
-                        rate = Decimal(raw) if raw else Decimal("0")
-                    except (InvalidOperation, ValueError):
-                        rate = Decimal("0")
-                    ql, _ = SubcontractQuoteLine.objects.update_or_create(
-                        arrangement=arrangement,
-                        bill_ref=line.bill_ref,
-                        defaults={
-                            "package_code": pkg.code.upper(),
-                            "description": (line.description or "")[:255],
-                            "unit": line.unit or "",
-                            "quantity": line.quantity or Decimal("0"),
-                            "unit_rate": rate,
-                        },
-                    )
-                    ql.save()
-            from django.db.models import Sum
-            total = arrangement.quote_lines.aggregate(s=Sum("amount")).get("s") or Decimal("0")
+            total = _save_portal_prices(arrangement, request, packages)
             arrangement.quote_total = total
             if arrangement.quote_status in {
                 "",
@@ -299,8 +316,7 @@ def subcontract_portal(request, token):
             return redirect("subcontract-portal", token=token)
 
         if action == "submit_quote":
-            from django.db.models import Sum
-            total = arrangement.quote_lines.aggregate(s=Sum("amount")).get("s") or Decimal("0")
+            total = _save_portal_prices(arrangement, request, packages)
             if total <= 0:
                 messages.error(request, "Enter and save unit rates before submitting your quote.")
                 return redirect("subcontract-portal", token=token)
