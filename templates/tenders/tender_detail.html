@@ -91,7 +91,8 @@
         </div>
       </div>
 
-      <!-- Mandatory requirements -->
+      <!-- Mandatory requirements (only when this tender has an explicit pack) -->
+      {% if mr_rows %}
       <div class="bw-card" style="margin-bottom:20px;">
         <div class="bw-card-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
           <span>Mandatory Requirements</span>
@@ -103,8 +104,8 @@
         </div>
         <div class="bw-card-body">
           <p style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:14px;">
-            Bidders must satisfy all mandatory requirements. Failure on any single
-            item results in disqualification.
+            Bidders must satisfy all mandatory requirements published for this tender.
+            Failure on any single item results in disqualification.
             {% if can_upload_mr %}
               Upload each certificate inline — BOQ workspace stays available in parallel.
             {% elif user.is_authenticated and bw_persona != 'contractor' %}
@@ -195,6 +196,7 @@
           {% endif %}
         </div>
       </div>
+      {% endif %}
 
       <!-- Addenda -->
       {% if addenda %}

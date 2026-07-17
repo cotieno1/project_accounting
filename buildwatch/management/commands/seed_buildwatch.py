@@ -256,6 +256,7 @@ class Command(BaseCommand):
                     is_published=True,
                     published_at=timezone.now(),
                     created_by=ua,
+                    mr_checklist=TenderListing.MR_CHECKLIST_KE_ELECTRICAL_RFQ,
                 )
                 self.stdout.write(self.style.SUCCESS(
                     f'  + TenderListing created: SK/004/2025-2026 '

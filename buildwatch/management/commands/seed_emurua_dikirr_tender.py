@@ -210,6 +210,7 @@ class Command(BaseCommand):
                 summary=summary,
                 created_by=ua,
                 boq_input_mode=TenderListing.BOQ_PDF_AUTO,
+                mr_checklist="",  # housing BOQ - do not inherit Isiolo electrical MRs
             )
             self.stdout.write(self.style.SUCCESS("  + TenderListing created"))
         else:
@@ -220,7 +221,13 @@ class Command(BaseCommand):
             listing.visibility = TenderListing.PUBLIC
             listing.funding_source = TenderListing.GOV
             listing.boq_input_mode = TenderListing.BOQ_PDF_AUTO
+            listing.mr_checklist = ""
             listing.save()
+
+        # Keep Isiolo electrical checklist scoped to SK/004 only
+        TenderListing.objects.filter(event__ref="SK/004/2025-2026").exclude(
+            mr_checklist=TenderListing.MR_CHECKLIST_KE_ELECTRICAL_RFQ
+        ).update(mr_checklist=TenderListing.MR_CHECKLIST_KE_ELECTRICAL_RFQ)
 
         with pdf_path.open("rb") as fh:
             listing.boq_document.save(

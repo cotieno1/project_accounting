@@ -524,6 +524,22 @@ class TenderListing(models.Model):
         help_text='Which BOQ source feeds the bid workspace form',
     )
 
+    # Explicit MR pack for this tender only (blank = do not inherit global library)
+    MR_CHECKLIST_NONE = ''
+    MR_CHECKLIST_KE_ELECTRICAL_RFQ = 'KE_ELECTRICAL_RFQ'
+    MR_CHECKLIST_CHOICES = [
+        (MR_CHECKLIST_NONE, 'None — no mandatory checklist published yet'),
+        (MR_CHECKLIST_KE_ELECTRICAL_RFQ, 'Kenya electrical RFQ pack (Isiolo / EPRA / CCTV / solar)'),
+    ]
+    mr_checklist = models.CharField(
+        max_length=40,
+        blank=True,
+        default=MR_CHECKLIST_NONE,
+        choices=MR_CHECKLIST_CHOICES,
+        help_text='Which mandatory-requirement pack applies to this tender. '
+                  'Blank means none — do not reuse another tender’s checklist.',
+    )
+
     boq_document    = models.FileField(upload_to='tenders/boq/%Y/%m/',
                           null=True, blank=True,
                           help_text='Structured BOQ PDF or XLSX')

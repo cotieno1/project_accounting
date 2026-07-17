@@ -50,8 +50,33 @@ from accounts.tenant import (
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
+# Explicit packs — never dump the full global library onto every Kenya tender.
+MR_CHECKLIST_CODES = {
+    TenderListing.MR_CHECKLIST_KE_ELECTRICAL_RFQ: [
+        'MR-PROC-KE-01',
+        'MR-PROC-KE-02',
+        'MR-PROC-KE-03',
+        'MR-PROC-KE-04',
+        'MR-PROC-KE-05',
+        'MR-PROC-KE-06',
+        'MR-PROC-KE-07',
+        'MR-PROC-KE-08',
+        'MR-PROC-KE-09',
+        'MR-PROC-KE-10',
+        'MR-PROC-KE-11',
+        'MR-PROC-KE-12',
+        'MR-PROC-KE-13',
+        'MR-PROC-KE-14',
+    ],
+}
+
+
 def _procurement_requirements(listing=None):
-    """Active procurement MRs, preferably matching the tender country."""
+    """
+    Active procurement MRs for this tender only.
+    Requires an explicit listing.mr_checklist pack — otherwise empty
+    (prevents Isiolo electrical MRs appearing on unrelated tenders like Emurua).
+    """
     qs = MandatoryRequirement.objects.filter(
         context__in=[
             MandatoryRequirement.PROCUREMENT,
@@ -59,7 +84,20 @@ def _procurement_requirements(listing=None):
         ],
         is_active=True,
     )
-    country = getattr(listing, 'country', None) if listing else None
+    if listing is None:
+        return qs.order_by('order', 'code')
+
+    checklist = (getattr(listing, 'mr_checklist', None) or '').strip()
+    if not checklist:
+        return MandatoryRequirement.objects.none()
+
+    codes = MR_CHECKLIST_CODES.get(checklist)
+    if codes:
+        qs = qs.filter(code__in=codes)
+    else:
+        return MandatoryRequirement.objects.none()
+
+    country = getattr(listing, 'country', None)
     if country is not None:
         scoped = qs.filter(Q(country=country) | Q(country__isnull=True))
         if scoped.exists():
