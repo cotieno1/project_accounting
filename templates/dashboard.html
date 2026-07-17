@@ -72,19 +72,11 @@
         </div>
     </div>
     <div class="header-meta">
-        {% if org_name %}
+        {% if not is_platform_main_admin and org_name %}
         <strong class="header-client">{{ org_name }}</strong>
         {% endif %}
+        {% if not is_platform_main_admin %}
         <small class="header-platform-note">Multi-tenant cloud platform{% if tenant_count > 1 %} · {{ tenant_count }} organizations{% endif %}</small>
-        {% if can_switch_organization and organization_options %}
-        <div class="org-switcher">
-            <label for="orgSwitcher">Platform admin — switch organization:</label>
-            <select id="orgSwitcher" class="master-input">
-                {% for o in organization_options %}
-                <option value="{{ o.org_code }}" {% if o.org_code == active_org_code %}selected{% endif %}>{{ o.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
         {% endif %}
     </div>
     <div class="header-mobile-backdrop" id="mobileHeaderBackdrop" aria-hidden="true"></div>
@@ -92,6 +84,66 @@
 
 	<!-- MAIN -->
 	<div class="container">
+
+    {% if is_platform_main_admin %}
+    <section class="platform-workspace" aria-labelledby="platformWorkspaceTitle">
+        <div class="platform-workspace-head">
+            <div>
+                <p class="platform-workspace-kicker">Platform administration</p>
+                <h2 id="platformWorkspaceTitle">Subscriber workspace</h2>
+                <p class="platform-workspace-lead">
+                    Select a building contractor, consultant, or project sponsor to administer their command center view.
+                </p>
+            </div>
+            {% if active_workspace_label %}
+            <div class="platform-workspace-active" id="platformWorkspaceActive">
+                <span class="platform-workspace-active-label">Currently viewing</span>
+                <strong>{{ active_workspace_label }}</strong>
+            </div>
+            {% endif %}
+        </div>
+        <div class="platform-workspace-grid">
+            <div class="platform-workspace-field">
+                <label for="workspaceContractor">Contractors</label>
+                <select id="workspaceContractor" class="master-input workspace-select" data-workspace-kind="contractor">
+                    <option value="">Select contractor…</option>
+                    {% for o in workspace_contractor_options %}
+                    <option value="contractor:{{ o.org_code }}" {% if active_workspace_kind == 'contractor' and o.org_code == active_org_code %}selected{% endif %}>{{ o.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="platform-workspace-field">
+                <label for="workspaceConsultant">Consultants</label>
+                <select id="workspaceConsultant" class="master-input workspace-select" data-workspace-kind="consultant">
+                    <option value="">Select consultant…</option>
+                    {% for o in workspace_consultant_options %}
+                    <option value="consultant:{{ o.org_code }}" {% if active_workspace_kind == 'consultant' and o.org_code == active_org_code %}selected{% endif %}>{{ o.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="platform-workspace-field">
+                <label for="workspaceProjectSponsor">Projects &amp; sponsors</label>
+                <select id="workspaceProjectSponsor" class="master-input workspace-select" data-workspace-kind="project">
+                    <option value="">Select project or sponsor…</option>
+                    {% if workspace_project_options %}
+                    <optgroup label="Projects">
+                        {% for p in workspace_project_options %}
+                        <option value="project:{{ p.id }}" {% if active_workspace_kind == 'project' and p.id|stringformat:'s' == active_project_id|stringformat:'s' %}selected{% endif %}>{{ p.label }}{% if p.owner_name %} · {{ p.owner_name }}{% endif %}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endif %}
+                    {% if workspace_sponsor_options %}
+                    <optgroup label="Project sponsors &amp; employers">
+                        {% for o in workspace_sponsor_options %}
+                        <option value="sponsor:{{ o.org_code }}" {% if active_workspace_kind == 'sponsor' and o.org_code == active_org_code %}selected{% endif %}>{{ o.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+    </section>
+    {% endif %}
 
 	   <div class="nav-tabs">
         {% if is_platform_main_admin %}
@@ -610,6 +662,28 @@ const MasterRegistry = (function () {
     function deleteRecord(pk) { if(!confirm("Delete this record permanently?")) return; fetch("/api/delete/"+activeEntityType+"/"+encodeURIComponent(pk)+"/",{method:"DELETE"}).then(function(r){return r.json();}).then(function(res){ if(res.status==="success"){toast(res.message);refresh();}else toast(res.message||"Delete failed","error"); }); }
     function toggleSetupMenu() { document.getElementById("setupDropdown").classList.toggle("is-open"); }
     function bindOrgSwitcher() {
+        var workspaceSelects = document.querySelectorAll(".workspace-select");
+        if (workspaceSelects.length) {
+            workspaceSelects.forEach(function(sel) {
+                sel.addEventListener("change", function() {
+                    var target = sel.value;
+                    if (!target) return;
+                    workspaceSelects.forEach(function(other) {
+                        if (other !== sel) other.value = "";
+                    });
+                    var fd = new FormData();
+                    fd.append("workspace_target", target);
+                    fetch("/api/switch-organization/", { method: "POST", body: fd, headers: { "X-CSRFToken": csrf() } })
+                        .then(function(r) { return r.json(); })
+                        .then(function(res) {
+                            if (res.status === "success") { toast(res.message); window.location.reload(); }
+                            else toast(res.message || "Switch failed", "error");
+                        })
+                        .catch(function() { toast("Switch failed", "error"); });
+                });
+            });
+            return;
+        }
         var sw = document.getElementById("orgSwitcher");
         if (!sw) return;
         sw.addEventListener("change", function() {

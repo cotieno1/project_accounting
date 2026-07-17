@@ -120,6 +120,122 @@ def _organizations_for_public_home(queryset):
     return _organizations_canonical_list(queryset)
 
 
+def _platform_workspace_contractors():
+    from .tenant import EMPLOYER_ORG_TYPES
+
+    return _organizations_canonical_list(
+        Organization.objects.filter(
+            contractor_type__in=[
+                Organization.CONTRACTOR_BUILDING,
+                Organization.CONTRACTOR_ROADS,
+            ]
+        ).exclude(organization_type__in=EMPLOYER_ORG_TYPES)
+    )
+
+
+def _platform_workspace_consultants():
+    return _organizations_canonical_list(
+        Organization.objects.filter(contractor_type=Organization.CONTRACTOR_CONSULTANT)
+    )
+
+
+def _platform_workspace_sponsors():
+    from .tenant import EMPLOYER_ORG_TYPES
+
+    return _organizations_canonical_list(
+        Organization.objects.filter(organization_type__in=EMPLOYER_ORG_TYPES)
+    )
+
+
+def _platform_workspace_projects():
+    try:
+        from buildwatch.models import InfraProject
+    except Exception:
+        return []
+    return list(
+        InfraProject.objects.select_related("owner_org", "task")
+        .filter(is_active=True)
+        .order_by("-created_at")[:80]
+    )
+
+
+def _platform_workspace_org_option(org):
+    return {
+        "org_code": org.org_code,
+        "name": _organization_display_name(org),
+        "short_name": _organization_display_short_name(org),
+    }
+
+
+def _platform_workspace_context(request, active_org):
+    """Workspace selector data for platform Main Admin."""
+    contractor_options = [
+        _platform_workspace_org_option(o) for o in _platform_workspace_contractors()
+    ]
+    consultant_options = [
+        _platform_workspace_org_option(o) for o in _platform_workspace_consultants()
+    ]
+    sponsor_options = [
+        _platform_workspace_org_option(o) for o in _platform_workspace_sponsors()
+    ]
+    project_options = []
+    for project in _platform_workspace_projects():
+        owner = project.owner_org
+        task = project.task
+        project_options.append({
+            "id": project.pk,
+            "org_code": owner.org_code if owner else "",
+            "label": (
+                f"{getattr(task, 'project_id', project.pk)} — "
+                f"{getattr(task, 'description', 'Project')}"
+            ),
+            "owner_name": _organization_display_short_name(owner) if owner else "",
+        })
+
+    kind = (request.session.get("active_workspace_kind") or "").strip().lower()
+    active_project_id = request.session.get("active_project_id")
+    active_org_code = active_org.org_code if active_org else ""
+
+    if not kind and active_org:
+        org_type = (active_org.organization_type or "").strip().upper()
+        from .tenant import EMPLOYER_ORG_TYPES
+
+        if active_org.contractor_type == Organization.CONTRACTOR_CONSULTANT:
+            kind = "consultant"
+        elif org_type in EMPLOYER_ORG_TYPES:
+            kind = "sponsor"
+        else:
+            kind = "contractor"
+
+    label = ""
+    if kind == "project" and active_project_id:
+        for project in project_options:
+            if str(project["id"]) == str(active_project_id):
+                owner = project.get("owner_name") or ""
+                label = project["label"]
+                if owner:
+                    label = f"{label} · {owner}"
+                break
+    elif active_org:
+        if kind == "consultant":
+            label = f"{_organization_display_name(active_org)} · Consultant"
+        elif kind == "sponsor":
+            label = f"{_organization_display_name(active_org)} · Project sponsor"
+        else:
+            ctype = active_org.get_contractor_type_display()
+            label = f"{_organization_display_name(active_org)} · {ctype}"
+
+    return {
+        "workspace_contractor_options": contractor_options,
+        "workspace_consultant_options": consultant_options,
+        "workspace_sponsor_options": sponsor_options,
+        "workspace_project_options": project_options,
+        "active_workspace_kind": kind,
+        "active_workspace_label": label,
+        "active_project_id": active_project_id or "",
+    }
+
+
 def _resolve_project_task(qs, raw):
     """Find task by clean id or legacy bracket-wrapped project_id in the database."""
     if raw is None:
@@ -346,7 +462,7 @@ def _build_dashboard_context(request, *, mode):
     if mode == "tenant" and active_org:
         portal_name = f"{active_org.short_name or active_org.name} Portal"
 
-    return {
+    ctx = {
         "username": user.username,
         "role": role,
         "modules": modules,
@@ -383,6 +499,9 @@ def _build_dashboard_context(request, *, mode):
         "active_org_code": active_org.org_code if active_org else "",
         "can_manage_users": user.is_superuser or can_manage_users(user),
     }
+    if mode == "platform":
+        ctx.update(_platform_workspace_context(request, active_org))
+    return ctx
 
 
 def home(request):
@@ -575,7 +694,7 @@ def dashboard(request):
 @login_required
 @csrf_exempt
 def switch_active_organization(request):
-    """Platform admin: preview another client company on the shared service."""
+    """Platform admin: preview another subscriber workspace on the shared service."""
     if request.method != "POST":
         return HttpResponseForbidden("Method not allowed")
     if not request.user.is_superuser and not can_manage_tenants(request.user):
@@ -583,18 +702,94 @@ def switch_active_organization(request):
             {"status": "error", "message": "Only platform administrators can switch companies."},
             status=403,
         )
+
+    workspace_target = (request.POST.get("workspace_target") or "").strip()
     org_code = (request.POST.get("org_code") or "").strip()
+    project_id = (request.POST.get("project_id") or "").strip()
+
+    if workspace_target:
+        if ":" not in workspace_target:
+            return JsonResponse(
+                {"status": "error", "message": "Invalid workspace selection."},
+                status=400,
+            )
+        kind, value = workspace_target.split(":", 1)
+        kind = kind.strip().lower()
+        value = value.strip()
+        if kind == "project":
+            project_id = value
+        elif kind in ("contractor", "consultant", "sponsor", "org"):
+            org_code = value
+            if kind == "org":
+                kind = "sponsor"
+        else:
+            return JsonResponse(
+                {"status": "error", "message": "Unknown workspace type."},
+                status=400,
+            )
+    else:
+        kind = (request.POST.get("workspace_kind") or "contractor").strip().lower()
+
+    if project_id:
+        try:
+            from buildwatch.models import InfraProject
+        except Exception:
+            return JsonResponse(
+                {"status": "error", "message": "Project registry unavailable."},
+                status=503,
+            )
+        project = (
+            InfraProject.objects.select_related("owner_org", "task")
+            .filter(pk=project_id)
+            .first()
+        )
+        if not project or not project.owner_org_id:
+            return JsonResponse(
+                {"status": "error", "message": "Project not found."},
+                status=400,
+            )
+        org = project.owner_org
+        request.session["active_org_code"] = org.org_code
+        request.session["active_project_id"] = project.pk
+        request.session["active_workspace_kind"] = "project"
+        task = project.task
+        label = (
+            f"{getattr(task, 'project_id', project.pk)} — "
+            f"{getattr(task, 'description', 'Project')}"
+        )
+        return JsonResponse({
+            "status": "success",
+            "message": f"Now viewing project {label} ({org.name}).",
+            "org_code": org.org_code,
+            "project_id": project.pk,
+            "workspace_kind": "project",
+        })
+
     org = Organization.objects.filter(org_code=org_code).first()
     if not org:
         return JsonResponse(
             {"status": "error", "message": "Organization not found."},
             status=400,
         )
+
+    from .tenant import EMPLOYER_ORG_TYPES
+
+    if kind not in ("contractor", "consultant", "sponsor"):
+        if org.contractor_type == Organization.CONTRACTOR_CONSULTANT:
+            kind = "consultant"
+        elif (org.organization_type or "").strip().upper() in EMPLOYER_ORG_TYPES:
+            kind = "sponsor"
+        else:
+            kind = "contractor"
+
     request.session["active_org_code"] = org_code
+    request.session.pop("active_project_id", None)
+    request.session["active_workspace_kind"] = kind
     return JsonResponse({
         "status": "success",
         "message": f"Now viewing as {org.name}.",
         "org_code": org_code,
+        "workspace_kind": kind,
     })
 
 def _ops_cross_task_activity_feed():
