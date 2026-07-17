@@ -7,9 +7,9 @@
   <header style="margin-bottom:24px;">
     <div class="bw-kicker">{{ bw_persona_kicker|default:"Public procurement exchange" }}</div>
     <h1 class="bw-title">{{ bw_persona_title|default:"Open tenders" }}</h1>
-    {% if bw_persona_lead %}
-    <p class="bw-lead">{{ bw_persona_lead }}</p>
-    {% endif %}
+    <p class="bw-lead">
+      {{ bw_persona_lead|default:"Browse published infrastructure tenders. Register to download BOQ documents and bid." }}
+    </p>
     {% if user.is_authenticated %}
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
         {% if bw_persona == 'employer' %}
@@ -127,6 +127,9 @@
             <div class="bw-ref">{{ listing.event.ref }}</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <span class="bw-tag">{{ listing.get_tender_type_display }}</span>
+              {% if listing.boq_document %}
+                <span class="bw-tag bw-tag--ok">BOQ PDF</span>
+              {% endif %}
               {% if listing.is_closing_soon %}
                 <span class="bw-tag bw-tag--warn">Closing soon</span>
               {% elif listing.event.is_open %}

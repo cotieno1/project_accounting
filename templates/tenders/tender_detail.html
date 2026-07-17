@@ -322,7 +322,7 @@
                   Register Interest
                 </button>
               </form>
-              <div style="font-size:.75rem;color:var(--bw-dgrey);text-align:center;">
+              <div style="font-size:.75rem;color:var(--bw-dgrey);text-align:center;margin-bottom:12px;">
                 Required before downloading BOQ or bidding
               </div>
             {% else %}
@@ -360,14 +360,36 @@
               <div style="font-size:.72rem;color:var(--bw-dgrey);text-align:center;margin-bottom:10px;">
                 Available now — not blocked by certificate progress.
               </div>
+            {% endif %}
 
-              {% if listing.boq_document %}
-                <a href="{% url 'tender-boq-download' listing.pk %}"
-                   class="bw-btn bw-btn--ghost"
-                   style="width:100%;justify-content:center;">
-                  Download BOQ file
-                </a>
+            {% if can_load_pdf_boq %}
+            <form method="POST" action="{% url 'tender-load-pdf-boq' listing.pk %}" style="margin-bottom:8px;">
+              {% csrf_token %}
+              <button type="submit"
+                      class="bw-btn bw-btn--teal"
+                      style="width:100%;justify-content:center;"
+                      onclick="return confirm('Load the attached RFQ/BOQ PDF into your Pioneer bid workspace? Existing unsaved rates for this tender will be cleared.');">
+                Load PDF BOQ into workspace
+              </button>
+            </form>
+            <div style="font-size:.72rem;color:var(--bw-dgrey);text-align:center;margin-bottom:10px;line-height:1.4;">
+              Parses the employer’s BOQ PDF into online categories and lines for pricing.
+              {% if not listing.boq_document %}
+              <br>No file attached yet — the system will use the shipped Isiolo extract if available.
               {% endif %}
+            </div>
+            {% endif %}
+
+            {% if listing.boq_document and bidder_reg %}
+              <a href="{% url 'tender-boq-download' listing.pk %}"
+                 class="bw-btn bw-btn--ghost"
+                 style="width:100%;justify-content:center;">
+                Download BOQ PDF
+              </a>
+            {% elif listing.boq_document and not bidder_reg %}
+              <div style="font-size:.72rem;color:var(--bw-dgrey);text-align:center;margin-top:4px;">
+                Register interest to download the BOQ PDF file.
+              </div>
             {% endif %}
           {% endif %}
         </div>

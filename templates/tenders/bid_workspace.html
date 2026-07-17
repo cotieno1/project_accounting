@@ -55,6 +55,31 @@
   <div class="bw-alert bw-alert--warning">This tender has closed. Workspace is read-only.</div>
   {% endif %}
 
+  {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+  <div class="bw-card" style="margin-bottom:16px;">
+    <div class="bw-card-header">Load RFQ / BOQ PDF</div>
+    <div class="bw-card-body">
+      <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;">
+        Pull the employer’s attached BOQ PDF from the tender exchange into this workspace
+        (categories and lines). Use this when starting from the published PDF on
+        <a href="{% url 'tender-detail' listing.pk %}">the tender page</a>.
+      </p>
+      <form method="POST" action="{% url 'tender-load-pdf-boq' listing.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="bw-btn bw-btn--teal"
+                onclick="return confirm('Load PDF BOQ into this workspace? Unsaved main rates will be cleared.');">
+          Load PDF BOQ into workspace
+        </button>
+        {% if listing.boq_document %}
+        <a href="{% url 'tender-boq-download' listing.pk %}" class="bw-btn bw-btn--ghost" style="margin-left:8px;">
+          Download BOQ PDF
+        </a>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
   {% if listing.event.is_open and workspace.status != 'SUBMITTED' and can_switch_boq_mode %}
   <div class="bw-card" style="margin-bottom:16px;">
     <div class="bw-card-header">Filter 1 · BOQ input source</div>

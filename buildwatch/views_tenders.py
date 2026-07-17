@@ -12,6 +12,7 @@
 # Authenticated views:
 #   tender_register      POST /tenders/<id>/register/
 #   tender_boq_download  GET  /tenders/<id>/boq/
+#   tender_load_pdf_boq  POST /tenders/<id>/boq/load/
 #   bid_workspace        GET/POST /tenders/<id>/bid/
 #   bid_self_assess      GET/POST /tenders/<id>/bid/self-assess/
 #   bid_draft_pdf        GET  /tenders/<id>/bid/draft.pdf/
@@ -729,6 +730,11 @@ def tender_detail(request, listing_id):
 
     addenda = listing.addenda.order_by('addendum_no')
     mr_done, mr_total = _mr_progress(workspace, requirements)
+    can_load_pdf_boq = bool(
+        can_upload_mr
+        and listing.event.is_open
+        and (workspace is None or workspace.status != BidWorkspace.SUBMITTED)
+    )
 
     ctx = {
         'listing': listing,
@@ -740,6 +746,7 @@ def tender_detail(request, listing_id):
         'requirements': requirements,
         'mr_rows': mr_rows,
         'can_upload_mr': can_upload_mr,
+        'can_load_pdf_boq': can_load_pdf_boq,
         'mr_done_count': mr_done,
         'mr_total': mr_total,
         'mr_progress_pct': int((mr_done * 100) / mr_total) if mr_total else 0,
@@ -811,9 +818,6 @@ def tender_register(request, listing_id):
     else:
         messages.info(request, 'You are already registered for this tender.')
 
-    # Prefer BOQ file download when available; otherwise open the workspace
-    if listing.boq_document:
-        return redirect('tender-boq-download', listing_id=listing_id)
     return redirect('bid-workspace', listing_id=listing_id)
 
 
@@ -845,7 +849,87 @@ def tender_boq_download(request, listing_id):
     )
 
 
+def _load_pdf_boq_into_workspace(listing, workspace):
+    """
+    Parse the tender's attached RFQ/BOQ PDF (or shipped extract) into packages/lines
+    and reset this contractor workspace so Pioneer can price from the PDF source.
+    """
+    from buildwatch.boq_ingest.persist import apply_standard_boq
+    from buildwatch.boq_ingest.sources import load_pdf_auto_boq
+
+    doc = load_pdf_auto_boq(listing)
+    stats = apply_standard_boq(listing, doc)
+    listing.boq_input_mode = TenderListing.BOQ_PDF_AUTO
+    listing.save(update_fields=["boq_input_mode"])
+
+    if workspace.status != BidWorkspace.SUBMITTED:
+        WorkspaceBillPrice.objects.filter(workspace=workspace).delete()
+        workspace.selected_package_codes = []
+        workspace.pricing_complete = False
+        workspace.save(update_fields=["selected_package_codes", "pricing_complete"])
+
+    stats["warnings"] = list(getattr(doc, "warnings", []) or [])
+    stats["source_name"] = getattr(doc, "source_name", "") or ""
+    stats["document_name"] = (doc.meta or {}).get("document_name") or stats["source_name"]
+    return stats
+
+
 @login_required
+@require_POST
+def tender_load_pdf_boq(request, listing_id):
+    """
+    POST /tenders/<listing_id>/boq/load/
+    Pioneer (contractor): register interest if needed, parse the attached PDF BOQ
+    into the online bid workspace, then open pricing.
+    """
+    listing = get_object_or_404(TenderListing, pk=listing_id, is_published=True)
+
+    if not listing.event.is_open:
+        messages.error(request, 'This tender has closed.')
+        return redirect('tender-detail', listing_id=listing_id)
+
+    try:
+        org, ua, reg, workspace = _ensure_bidder_workspace(request, listing)
+    except PermissionError as exc:
+        messages.error(request, str(exc))
+        return redirect('tender-detail', listing_id=listing_id)
+
+    if workspace.status == BidWorkspace.SUBMITTED:
+        messages.warning(
+            request,
+            'Bid already submitted — PDF BOQ cannot be reloaded for this tender.',
+        )
+        return redirect('bid-workspace', listing_id=listing_id)
+
+    try:
+        stats = _load_pdf_boq_into_workspace(listing, workspace)
+    except Exception as exc:
+        messages.error(
+            request,
+            f'Could not load PDF BOQ into the workspace: {exc}',
+        )
+        return redirect('tender-detail', listing_id=listing_id)
+
+    try:
+        reg.record_boq_download()
+    except Exception:
+        pass
+
+    listing.registered_bidder_count = BidderRegistration.objects.filter(
+        tender=listing
+    ).count()
+    listing.save(update_fields=['registered_bidder_count'])
+
+    src = stats.get("document_name") or stats.get("source_name") or "RFQ/BOQ PDF"
+    messages.success(
+        request,
+        f'{org.short_name or org.name}: loaded PDF BOQ ({src}) — '
+        f'{stats.get("categories", 0)} categories, {stats.get("lines", 0)} lines. '
+        f'Select categories and enter unit rates.',
+    )
+    for wmsg in stats.get("warnings") or []:
+        messages.warning(request, wmsg)
+    return redirect('bid-workspace', listing_id=listing_id)
 
 
 def _bid_pack_context(request, listing, workspace, org, ua):

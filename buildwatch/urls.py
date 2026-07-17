@@ -56,6 +56,10 @@ tender_patterns = [
          t.tender_boq_download,
          name='tender-boq-download'),
 
+    path('<int:listing_id>/boq/load/',
+         t.tender_load_pdf_boq,
+         name='tender-load-pdf-boq'),
+
     path('<int:listing_id>/bid/',
          t.bid_workspace,
          name='bid-workspace'),
