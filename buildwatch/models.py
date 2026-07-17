@@ -557,6 +557,15 @@ class TenderListing(models.Model):
     # Short summary for listing card
     summary         = models.TextField(blank=True, max_length=500,
                           help_text='2–3 sentence summary shown on listing card')
+    works_description = models.TextField(
+        blank=True,
+        help_text='Description of the Works shown on the tender detail page.',
+    )
+    contract_particulars = models.TextField(
+        blank=True,
+        help_text='Contract particulars / conditions of contract (used instead of '
+                  'an MR checklist when this tender publishes conditions).',
+    )
 
     created_at      = models.DateTimeField(auto_now_add=True)
     created_by      = models.ForeignKey('accounts.UserAccount',

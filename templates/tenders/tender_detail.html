@@ -91,6 +91,20 @@
         </div>
       </div>
 
+      {% if listing.works_description %}
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div class="bw-card-header">Description of the Works</div>
+        <div class="bw-card-body" style="font-size:.88rem;color:var(--bw-navy);line-height:1.65;white-space:pre-wrap;">{{ listing.works_description }}</div>
+      </div>
+      {% endif %}
+
+      {% if listing.contract_particulars %}
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div class="bw-card-header">Contract Particulars / Conditions</div>
+        <div class="bw-card-body" style="font-size:.88rem;color:var(--bw-navy);line-height:1.65;white-space:pre-wrap;">{{ listing.contract_particulars }}</div>
+      </div>
+      {% endif %}
+
       <!-- Mandatory requirements (only when this tender has an explicit pack) -->
       {% if mr_rows %}
       <div class="bw-card" style="margin-bottom:20px;">

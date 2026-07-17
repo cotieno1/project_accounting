@@ -35,6 +35,33 @@ from buildwatch.models import (
 REF = "ED-AHP/001/2025-2026"
 TASK_ID = "ED_AHP_001"
 EMPLOYER_CODE = "SDHUD"
+
+WORKS_DESCRIPTION = """DESCRIPTION OF THE WORKS
+The construction comprises reinforced concrete foundations, masonry walling, reinforced
+concrete beams, columns, staircases and suspended solid slabs, roof construction.
+The exterior facade consists of steel casement windows, steel and timber doors, render and
+paint finish, clay and stone facing finish to walls.
+The interior works includes timber doors and finishes which are generally plaster and paint to
+walls, ceramic and non slip ceramic tiles to floors and walls.
+External works generally comprise of foul water drainage, storm water drainage, pathway,
+dryline area, septic tank, underground water tank.
+All mechanical / electrical services and other specialist works associated with the above
+works shall be executed by domestic/nominated sub contractors approved by the Engineer."""
+
+CONTRACT_PARTICULARS = """CONTRACT PARTICULARS
+B FORM OF CONTRACT
+The Contractor will be required to enter into a contract with
+the Employer under the Terms and Conditions of Contract as "Standard Tender Document
+for Procurement of Works (Building and Associated Civil Engineering Works)" issued by
+the Public Procurement Regulatory Authority in February 2021 (updated 2022) and in
+association with the latest applicable version of the Public Procurement and Asset Disposal
+Act.
+The Contractor's attention is called to the appendix of the conditions of Contract and
+additions and amendments thereto, which shall be read as incorporated herein and he shall
+allow any sums which he considers necessary for the observance of such conditions,
+together with sub clauses used in application.
+The priority of such documents shall be as stated in the conditions of agreement."""
+
 FIXTURE = (
     Path(__file__).resolve().parents[2]
     / "boq_ingest"
@@ -208,13 +235,17 @@ class Command(BaseCommand):
                 county_region="Narok County",
                 currency="KES",
                 summary=summary,
+                works_description=WORKS_DESCRIPTION,
+                contract_particulars=CONTRACT_PARTICULARS,
                 created_by=ua,
                 boq_input_mode=TenderListing.BOQ_PDF_AUTO,
-                mr_checklist="",  # housing BOQ - do not inherit Isiolo electrical MRs
+                mr_checklist="",  # housing BOQ - conditions replace MR pack
             )
             self.stdout.write(self.style.SUCCESS("  + TenderListing created"))
         else:
             listing.summary = summary
+            listing.works_description = WORKS_DESCRIPTION
+            listing.contract_particulars = CONTRACT_PARTICULARS
             listing.country = ke
             listing.county_region = "Narok County"
             listing.tender_type = TenderListing.WORKS
