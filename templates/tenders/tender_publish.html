@@ -15,9 +15,8 @@
       Publish a Tender
     </h1>
     <p style="color:var(--bw-dgrey);font-size:.88rem;line-height:1.55;">
-      Publish your tender to the BuildWatch global exchange.
-      Government, PPP and private tenders — works, consultancy and goods.
-      Free to publish.
+      Upload a new tender BOQ PDF from your local drive and publish it to the exchange.
+      It lists with the same look and bidder functions as open tenders (register, download BOQ, bid workspace).
     </p>
   </div>
 
@@ -25,31 +24,75 @@
         enctype="multipart/form-data">
     {% csrf_token %}
 
+    <div class="bw-card" style="margin-bottom:20px;border-left:4px solid var(--bw-teal);">
+      <div class="bw-card-header">Upload tender BOQ PDF</div>
+      <div class="bw-card-body">
+        <div class="bw-alert bw-alert--info" style="margin-bottom:16px;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Choose the PDF from your computer (e.g. Downloads). This creates a <strong>new</strong> tender — separate from SK/004/2025-2026.
+        </div>
+        <div class="bw-field">
+          <label class="bw-label" for="boq_document">
+            Bills of Quantities (BOQ) PDF <span class="req">*</span>
+          </label>
+          <div class="bw-hint">Required. Contractors download / load this file from the tender page.</div>
+          <input type="file" name="boq_document" id="boq_document"
+                 accept=".pdf,.xlsx,.xls" class="bw-input"
+                 style="padding:6px 10px;" required>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Section 1: Project ─────────────────────────────────────────── -->
     <div class="bw-card" style="margin-bottom:20px;">
       <div class="bw-card-header">1. Project</div>
       <div class="bw-card-body">
-        <div class="bw-field">
-          <label class="bw-label" for="project_id">
-            BuildWatch Project <span class="req">*</span>
-          </label>
-          <div class="bw-hint">
-            Select the project this tender belongs to.
-            If your project isn't listed,
-            <a href="{% url 'infra-project-create' %}"
-               style="color:var(--bw-blue);">register it first</a>.
+        <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;cursor:pointer;">
+          <input type="checkbox" name="create_new_project" value="1" id="create_new_project"
+                 {% if not projects %}checked{% endif %}
+                 style="margin-top:3px;"
+                 onchange="var c=this.checked;document.getElementById('existing-project-wrap').style.display=c?'none':'block';document.getElementById('new-project-wrap').style.display=c?'block':'none';">
+          <span>
+            <strong>Create a new project with this tender</strong><br>
+            <span style="font-size:.8rem;color:var(--bw-dgrey);">Use this when the BOQ PDF is not already linked to a BuildWatch project.</span>
+          </span>
+        </label>
+        <div id="new-project-wrap" style="{% if projects %}display:none;{% else %}{% endif %}">
+          <div class="bw-field">
+            <label class="bw-label" for="new_project_code">New project code</label>
+            <div class="bw-hint">Optional — defaults from the tender reference.</div>
+            <input class="bw-input" type="text" name="new_project_code" id="new_project_code"
+                   placeholder="e.g. ED_AHP_001">
           </div>
-          <select class="bw-select" name="project_id" id="project_id" required>
-            <option value="" disabled selected>Select project…</option>
-            {% for project in projects %}
-              <option value="{{ project.pk }}">
-                {{ project.task.project_id }} — {{ project.task.description }}
-                ({{ project.county|default:project.country.code }})
-              </option>
-            {% empty %}
-              <option disabled>No projects yet — register a project first</option>
-            {% endfor %}
-          </select>
+          <div class="bw-field">
+            <label class="bw-label" for="sector">Sector</label>
+            <select class="bw-select" name="sector" id="sector">
+              {% for val, label in SECTORS %}
+              <option value="{{ val }}" {% if val == 'BUILDINGS' %}selected{% endif %}>{{ label }}</option>
+              {% empty %}
+              <option value="BUILDINGS" selected>Buildings</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div id="existing-project-wrap" style="{% if not projects %}display:none;{% endif %}">
+          <div class="bw-field">
+            <label class="bw-label" for="project_id">Existing BuildWatch project</label>
+            <div class="bw-hint">
+              Or <a href="{% url 'infra-project-create' %}" style="color:var(--bw-blue);">register a project first</a>.
+            </div>
+            <select class="bw-select" name="project_id" id="project_id">
+              <option value="">Select project…</option>
+              {% for project in projects %}
+                <option value="{{ project.pk }}">
+                  {{ project.task.project_id }} — {{ project.task.description }}
+                  ({{ project.county|default:project.country.code }})
+                </option>
+              {% empty %}
+                <option disabled>No projects yet — tick “Create a new project” above</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
 
         <div class="bw-row2">
@@ -59,7 +102,7 @@
             </label>
             <div class="bw-hint">Official procurement reference number</div>
             <input class="bw-input" type="text" name="ref" id="ref"
-              placeholder="e.g. SK/004/2025-2026" required>
+              placeholder="e.g. ED-AHP/001/2025-2026" required>
           </div>
           <div class="bw-field">
             <label class="bw-label" for="tender_type">
@@ -78,7 +121,7 @@
             Tender Description <span class="req">*</span>
           </label>
           <input class="bw-input" type="text" name="description" id="description"
-            placeholder="e.g. Proposed Completion of Isiolo Stadium — Electrical Services"
+            placeholder="e.g. Proposed Construction of Emurua Dikirr Affordable Housing Project"
             required>
         </div>
 
@@ -217,21 +260,11 @@
 
     <!-- ── Section 4: Documents ───────────────────────────────────────── -->
     <div class="bw-card" style="margin-bottom:20px;">
-      <div class="bw-card-header">4. Documents</div>
+      <div class="bw-card-header">4. Supporting documents (optional)</div>
       <div class="bw-card-body">
         <div class="bw-alert bw-alert--info" style="margin-bottom:16px;">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Documents are only available to registered bidders —
-          registration is required before download.
-        </div>
-        <div class="bw-field">
-          <label class="bw-label" for="boq_document">
-            Bills of Quantities (BOQ)
-          </label>
-          <div class="bw-hint">PDF or XLSX. This is the primary pricing document.</div>
-          <input type="file" name="boq_document" id="boq_document"
-                 accept=".pdf,.xlsx,.xls" class="bw-input"
-                 style="padding:6px 10px;">
+          The primary BOQ PDF is already required above. Specs and drawings are optional extras for registered bidders.
         </div>
         <div class="bw-row2">
           <div class="bw-field">

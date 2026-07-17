@@ -40,6 +40,13 @@ else
   log "STEP 1b: ensure_bootstrap FAILED — continuing"
 fi
 
+log "STEP 1b2: seed Emurua Dikirr tender"
+if python manage.py seed_emurua_dikirr_tender; then
+  log "STEP 1b2: seed_emurua_dikirr_tender OK"
+else
+  log "STEP 1b2: seed_emurua_dikirr_tender FAILED — continuing"
+fi
+
 log "STEP 1c: quality scorecard"
 QUALITY_MIN="${QUALITY_MIN_SCORE:-90}"
 if python manage.py quality_scorecard --min-score "$QUALITY_MIN"; then

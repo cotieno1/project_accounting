@@ -12,12 +12,14 @@
     </p>
     {% if user.is_authenticated %}
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+        {% if can_publish_tender %}
+          <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal">Upload new tender (PDF)</a>
+        {% endif %}
         {% if bw_persona == 'employer' %}
-          <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal">{{ bw_primary_cta_label }}</a>
-          <a href="{% url 'infra-project-list' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label }}</a>
+          <a href="{% url 'infra-project-list' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label|default:"Manage projects" }}</a>
         {% elif bw_persona == 'contractor' %}
-          <a href="{% url 'my-bids' %}" class="bw-btn bw-btn--teal">{{ bw_primary_cta_label }}</a>
-          <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label }}</a>
+          <a href="{% url 'my-bids' %}" class="bw-btn bw-btn--{% if can_publish_tender %}ghost{% else %}teal{% endif %}">{{ bw_primary_cta_label|default:"My bids" }}</a>
+          <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label|default:"Set alerts" }}</a>
         {% endif %}
       </div>
     {% else %}

@@ -494,6 +494,70 @@ def _tender_visible_to(listing, request):
     return False
 
 
+def _can_publish_tender(request):
+    """Employers / sponsors and platform admins can publish to the exchange."""
+    if not request.user.is_authenticated:
+        return False
+    if getattr(request.user, "is_superuser", False) or getattr(request.user, "is_staff", False):
+        return True
+    try:
+        from accounts.roles import USER_ADMIN, get_role_code
+
+        if get_role_code(request.user) == USER_ADMIN:
+            return True
+    except Exception:
+        pass
+    org = get_active_organization(request)
+    return get_exchange_persona(org=org, request=request) == "employer"
+
+
+def _ensure_publish_user_account(request, org):
+    ua = _get_user_account(request)
+    if ua is not None:
+        return ua
+    try:
+        return _ensure_user_account(request, org)
+    except Exception as exc:
+        raise PermissionError(f"User profile required to publish: {exc}") from exc
+
+
+def _create_project_for_tender(org, *, project_code, description, country, county_region, sector="BUILDINGS"):
+    """Create / reuse an InfraProject so a tender can be published from a BOQ PDF alone."""
+    from accounts.models import ProjectTask
+
+    code = (project_code or "").strip().upper()
+    code = "".join(ch if ch.isalnum() or ch == "_" else "_" for ch in code)[:40] or "TENDER"
+    base = code
+    n = 1
+    while ProjectTask.objects.filter(project_id=code).exists():
+        # reuse existing task if description matches same owner later
+        existing = ProjectTask.objects.filter(project_id=code).first()
+        if existing and hasattr(existing, "infra_profile"):
+            proj = existing.infra_profile
+            if proj.owner_org_id == org.pk:
+                return proj
+        code = f"{base[:36]}_{n}"
+        n += 1
+
+    task, _ = ProjectTask.objects.get_or_create(
+        project_id=code,
+        defaults={"description": (description or code)[:255]},
+    )
+    project, _ = InfraProject.objects.get_or_create(
+        task=task,
+        defaults={
+            "owner_org": org,
+            "country": country,
+            "sector": sector or "BUILDINGS",
+            "project_type": "GOV",
+            "county": (county_region or "")[:100],
+            "contract_value": Decimal("0"),
+            "is_active": True,
+        },
+    )
+    return project
+
+
 # ── PUBLIC VIEWS ─────────────────────────────────────────────────────────────
 
 def tender_list(request):
@@ -566,6 +630,7 @@ def tender_list(request):
         'filter_funding':funding,
         'filter_closing':closing_soon,
         'search':        search,
+        'can_publish_tender': _can_publish_tender(request),
         'TENDER_TYPES':  TenderListing.TENDER_TYPE_CHOICES,
         'FUNDING_TYPES': TenderListing.FUNDING_CHOICES,
         'SECTORS': [
@@ -2080,55 +2145,103 @@ def tender_alerts(request):
 def tender_publish(request):
     """
     GET/POST /tenders/publish/
-    Employer creates and publishes a new tender to the exchange.
+    Employer / platform admin uploads a new tender (with BOQ PDF from local drive)
+    and publishes it to the exchange — same listing + bidder functions as Isiolo.
     """
-    ua  = _get_user_account(request)
+    if not _can_publish_tender(request):
+        messages.error(
+            request,
+            'Only employer / sponsor organisations (or platform admin) can publish tenders.',
+        )
+        return redirect('tender-list')
+
     org = get_active_organization(request)
+    if org is None:
+        messages.error(request, 'Select an organisation before publishing a tender.')
+        return redirect('tender-list')
+
+    try:
+        ua = _ensure_publish_user_account(request, org)
+    except PermissionError as exc:
+        messages.error(request, str(exc))
+        return redirect('tender-list')
 
     projects = InfraProject.objects.filter(
         owner_org=org, is_active=True
     ).select_related('task')
     countries = Country.objects.filter(is_active=True).order_by('name')
+    form_ctx = {
+        'projects': projects,
+        'countries': countries,
+        'TENDER_TYPES': TenderListing.TENDER_TYPE_CHOICES,
+        'VISIBILITY': TenderListing.VISIBILITY_CHOICES,
+        'FUNDING_TYPES': TenderListing.FUNDING_CHOICES,
+        'SECTORS': [
+            ('ROADS', 'Roads & Bridges'),
+            ('BUILDINGS', 'Buildings'),
+            ('WATER', 'Water & Sanitation'),
+            ('ENERGY', 'Energy'),
+            ('ICT', 'ICT Infrastructure'),
+            ('OTHER', 'Other'),
+        ],
+        **branding_template_context(request),
+    }
 
     if request.method == 'POST':
         p = request.POST
 
-        project_id    = p.get('project_id')
-        ref           = p.get('ref', '').strip()
-        description   = p.get('description', '').strip()
-        tender_type   = p.get('tender_type', TenderListing.WORKS)
-        visibility    = p.get('visibility', TenderListing.PUBLIC)
-        funding       = p.get('funding_source', TenderListing.GOV)
-        country_code  = p.get('country', '')
+        project_id = p.get('project_id')
+        create_new = p.get('create_new_project') == '1' or not project_id
+        ref = p.get('ref', '').strip()
+        description = p.get('description', '').strip()
+        tender_type = p.get('tender_type', TenderListing.WORKS)
+        visibility = p.get('visibility', TenderListing.PUBLIC)
+        funding = p.get('funding_source', TenderListing.GOV)
+        country_code = p.get('country', '')
         county_region = p.get('county_region', '').strip()
-        issue_date    = p.get('issue_date')
-        closing_date  = p.get('closing_date')
-        summary       = p.get('summary', '').strip()
-        val_min_raw   = p.get('value_min', '').replace(',', '')
-        val_max_raw   = p.get('value_max', '').replace(',', '')
-        currency      = p.get('currency', 'KES').strip()
+        sector = p.get('sector', 'BUILDINGS').strip() or 'BUILDINGS'
+        issue_date = p.get('issue_date')
+        closing_date = p.get('closing_date')
+        summary = p.get('summary', '').strip()
+        val_min_raw = p.get('value_min', '').replace(',', '')
+        val_max_raw = p.get('value_max', '').replace(',', '')
+        currency = p.get('currency', 'KES').strip()
+        boq_file = request.FILES.get('boq_document')
 
         errors = []
-        if not project_id: errors.append('Project is required.')
-        if not ref:        errors.append('Tender reference is required.')
-        if not description:errors.append('Description is required.')
-        if not issue_date: errors.append('Issue date is required.')
-        if not closing_date: errors.append('Closing date is required.')
+        if not ref:
+            errors.append('Tender reference is required.')
+        if not description:
+            errors.append('Description is required.')
+        if not issue_date:
+            errors.append('Issue date is required.')
+        if not closing_date:
+            errors.append('Closing date is required.')
+        if not boq_file:
+            errors.append('Upload the tender BOQ PDF from your local drive.')
         if EvaluationEvent.objects.filter(ref=ref).exists():
             errors.append(f'Tender reference {ref} already exists.')
+        if not create_new and not project_id:
+            errors.append('Select an existing project, or create one with this tender.')
 
         if errors:
             for e in errors:
                 messages.error(request, e)
-            return render(request, 'tenders/tender_publish.html', {
-                'projects': projects, 'countries': countries,
-                **branding_template_context(request),
-            })
+            return render(request, 'tenders/tender_publish.html', form_ctx)
 
-        project = get_object_or_404(InfraProject, pk=project_id)
         country = Country.objects.filter(code=country_code).first()
+        if create_new:
+            project = _create_project_for_tender(
+                org,
+                project_code=p.get('new_project_code') or ref,
+                description=description,
+                country=country,
+                county_region=county_region,
+                sector=sector,
+            )
+        else:
+            project = get_object_or_404(InfraProject, pk=project_id, owner_org=org)
 
-        # Create EvaluationEvent
         event = EvaluationEvent.objects.create(
             project=project,
             context=EvaluationEvent.PROCUREMENT,
@@ -2140,7 +2253,6 @@ def tender_publish(request):
             created_by=ua,
         )
 
-        # Create TenderListing
         val_min = Decimal(val_min_raw) if val_min_raw else None
         val_max = Decimal(val_max_raw) if val_max_raw else None
 
@@ -2154,36 +2266,33 @@ def tender_publish(request):
             estimated_value_min=val_min,
             estimated_value_max=val_max,
             currency=currency,
-            summary=summary,
+            summary=summary or description[:500],
             created_by=ua,
+            boq_input_mode=TenderListing.BOQ_PDF_AUTO,
         )
 
-        # Handle document uploads
-        for field in ['boq_document', 'specification', 'drawings']:
+        listing.boq_document = boq_file
+        for field in ['specification', 'drawings']:
             f = request.FILES.get(field)
             if f:
                 setattr(listing, field, f)
         listing.save()
 
-        # Publish immediately if requested
         if p.get('publish_now') == '1':
             listing.publish(ua)
-            messages.success(request,
-                f'Tender {ref} published to the BuildWatch exchange.')
-        else:
-            messages.success(request,
-                f'Tender {ref} saved as draft. Publish it when ready.')
+            messages.success(
+                request,
+                f'Tender {ref} published to the BuildWatch exchange with BOQ PDF.',
+            )
+            return redirect('tender-detail', listing_id=listing.pk)
 
+        messages.success(
+            request,
+            f'Tender {ref} saved as draft. Publish it when ready.',
+        )
         return redirect('tender-manage', listing_id=listing.pk)
 
-    return render(request, 'tenders/tender_publish.html', {
-        'projects':  projects,
-        'countries': countries,
-        'TENDER_TYPES':  TenderListing.TENDER_TYPE_CHOICES,
-        'VISIBILITY':    TenderListing.VISIBILITY_CHOICES,
-        'FUNDING_TYPES': TenderListing.FUNDING_CHOICES,
-        **branding_template_context(request),
-    })
+    return render(request, 'tenders/tender_publish.html', form_ctx)
 
 
 @login_required
