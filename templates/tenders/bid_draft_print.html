@@ -23,41 +23,47 @@
     .total-row td { font-weight: bold; background: #eee; }
     .noborder td { border: none; padding: 6pt 2pt; }
     .small { font-size: 8pt; }
+    .pre { white-space: pre-wrap; font-size: 8.5pt; line-height: 1.4; }
   </style>
 </head>
 <body>
 
   <div class="center">
-    <div class="muted">DOMESTIC SUB-CONTRACTOR TENDER</div>
+    <div class="muted">{{ doc_kind }}</div>
     <h1>FORM OF TENDER / BID DOCUMENT</h1>
     <div><strong>{{ tender_title }}</strong></div>
-    <div class="muted">Electrical, Structured Cabling, CCTV and Solar Installation Works</div>
+    <div class="muted">{{ works_subtitle }}</div>
     <div class="mono" style="margin-top:4pt;">Tender Reference: {{ listing.event.ref }}</div>
   </div>
 
   {% if is_draft %}
   <div class="banner draft"><strong>DRAFT — NOT YET LODGED.</strong>
-    Prepared for compliance review against the Tender / RFQ document
-    <em>Proposed Completion of Isiolo Stadium — Electrical Services Domestic Tender FINAL</em>
-    (SK/004/2025-2026). Complete all mandatory attachments before submission.</div>
+    Prepared for compliance review against
+    <em>{{ tender_title }}</em>
+    ({{ listing.event.ref }}). Complete all required attachments before submission.</div>
   {% else %}
   <div class="banner final"><strong>SUBMITTED</strong> — lodged {{ workspace.submitted_at|date:"d M Y H:i" }}
     (submission #{{ workspace.submission_id }}).</div>
   {% endif %}
 
-  <h2>A. Tender particulars (RFQ / Tender Document)</h2>
+  <h2>A. Tender particulars</h2>
   <table>
     <tr><th width="32%">Procuring Entity / Client</th><td>{{ employer_name }}</td></tr>
     <tr><th>Address for submission</th><td class="small">{{ employer_address }}</td></tr>
     <tr><th>Project</th><td>{{ tender_title }}</td></tr>
     <tr><th>Tender No.</th><td class="mono">{{ listing.event.ref }}</td></tr>
-    <tr><th>Contract type</th><td>Domestic Sub-Contract (Electrical Services)</td></tr>
+    <tr><th>Contract type</th><td>{{ contract_type }}</td></tr>
     <tr><th>Closing date / time</th><td>{{ listing.event.closing_date|date:"d M Y H:i"|default:closing_note }}</td></tr>
-    <tr><th>Currency</th><td>{{ listing.currency }} — rates inclusive of 16% VAT and all applicable taxes/levies at time of tender (per RFQ)</td></tr>
-    <tr><th>BOQ basis</th><td class="small">Bills of Quantities prepared by the Chief Quantity Surveyor; quantities provisional and subject to remeasurement (RFQ cl. 8).</td></tr>
+    <tr><th>Currency</th><td>{{ currency_tax_note }}</td></tr>
+    <tr><th>BOQ basis</th><td class="small">{{ boq_basis_note }}</td></tr>
   </table>
 
-  <h2>B. Form of Tender (RFQ Section 7 and 11)</h2>
+  {% if works_description %}
+  <h2>A1. Description of the Works</h2>
+  <div class="pre">{{ works_description }}</div>
+  {% endif %}
+
+  <h2>B. Form of Tender</h2>
   <p class="small">
     I/We the undersigned, having examined and understood the Tender Documents, including the Bills of Quantities,
     Specifications, Drawings and Contract Conditions for the <strong>{{ tender_title }}</strong>
@@ -82,14 +88,14 @@
   </table>
   <p class="small muted">
     This Form of Tender grand total is the sum of the priced Bills of Quantities in Section F and must match
-    the Bill Summary carried forward below (RFQ: grand total of all bills carried to Form of Tender).
+    the Bill Summary carried forward below.
   </p>
 
-  <h2>C. RFQ submission compliance checklist (Section 7)</h2>
+  <h2>C. Submission compliance checklist</h2>
   <table>
     <tr>
       <th width="8%" class="ctr">#</th>
-      <th width="62%">Required item (per RFQ)</th>
+      <th width="62%">Required item</th>
       <th width="30%" class="ctr">Status in this pack</th>
     </tr>
     {% for item in rfq_checklist %}
@@ -105,7 +111,8 @@
     clearly marked with Tender Reference {{ listing.event.ref }}, delivered to the address above.
   </p>
 
-  <h2>D. Mandatory requirements MR1–MR14 (RFQ Section 4)</h2>
+  {% if show_mr_section %}
+  <h2>D. Mandatory requirements</h2>
   <p class="small">Non-compliance with any mandatory item results in disqualification. Certified copies must be attached.</p>
   <table>
     <tr>
@@ -128,6 +135,14 @@
     {% endfor %}
   </table>
   <p class="small"><strong>MR gate:</strong> {{ mr_summary }}</p>
+  {% elif contract_particulars %}
+  <h2>D. Contract Particulars / Conditions</h2>
+  <div class="pre">{{ contract_particulars }}</div>
+  <p class="small muted">{{ mr_summary }}</p>
+  {% else %}
+  <h2>D. Conditions</h2>
+  <p class="small">{{ mr_summary }}</p>
+  {% endif %}
 
   <h2>E. Bill of Quantities — summary (carry to Form of Tender)</h2>
   <table>
@@ -153,8 +168,8 @@
     </tr>
   </table>
 
-  <h2>F. Fully priced Bills of Quantities (RFQ: unit rates and amounts)</h2>
-  <p class="small muted">Columns align to the tender BOQ: ITEM / DESCRIPTION / UNIT / QTY / RATE / AMOUNT. Rates include VAT at 16%.
+  <h2>F. Fully priced Bills of Quantities</h2>
+  <p class="small muted">Columns: ITEM / DESCRIPTION / UNIT / QTY / RATE / AMOUNT.
     {% if has_subcontract_quotes %}Subcontracted bills carry the sub-contractor quote after they updated their BOQ.{% endif %}
   </p>
   {% for section in package_sections %}
@@ -187,12 +202,13 @@
   <p class="muted">No priced BOQ lines yet. Select categories and enter rates in the bid workspace.</p>
   {% endfor %}
 
-  <h2>G. Bidder declaration and signature (RFQ Section 11)</h2>
+  <h2>G. Bidder declaration and signature</h2>
   <p class="small">
-    I/We confirm that: (i) this offer conforms to the Tender Documents and RFQ for Tender No. {{ listing.event.ref }};
-    (ii) all rates are inclusive of supply, labour, delivery, installation, testing, commissioning and applicable taxes including 16% VAT;
-    (iii) BOQ quantities are provisional and subject to measurement; (iv) supporting certificates listed in Section D are true copies of originals;
-    (v) this is a Domestic Sub-Contract offer payable through the Main Contractor's certificates unless otherwise agreed.
+    I/We confirm that: (i) this offer conforms to the Tender Documents for Tender No. {{ listing.event.ref }};
+    (ii) all rates are inclusive of supply, labour, delivery, installation, testing, commissioning and applicable taxes;
+    (iii) BOQ quantities are provisional where so stated and subject to measurement; (iv) supporting documents
+    listed in Section D are true copies of originals where attached;
+    (v) {{ declaration_note }}.
   </p>
   <table class="noborder" width="100%">
     <tr>
@@ -211,7 +227,7 @@
 
   <p class="small muted" style="margin-top:10pt;">
     Generated {{ generated_at|date:"d M Y H:i" }} · {{ listing.event.ref }} · {{ org.short_name }} ·
-    Source: Proposed Completion of Isiolo Stadium Electrical Services Domestic Tender FINAL / RFQ SK/004/2025-2026.
+    Source: {{ source_document }}.
   </p>
 </body>
 </html>

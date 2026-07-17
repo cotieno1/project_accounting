@@ -1087,9 +1087,128 @@ def tender_load_pdf_boq(request, listing_id):
     return redirect('bid-workspace', listing_id=listing_id)
 
 
+def _bid_pack_particulars(listing):
+    """
+    Tender-specific heading / employer / contract text for the bid pack PDF.
+    Must never fall back to another tender's hard-coded particulars.
+    """
+    event = listing.event
+    project = getattr(event, "project", None)
+    owner = getattr(project, "owner_org", None) if project else None
+
+    tender_title = (getattr(event, "description", None) or "").strip() or (
+        "Tender %s" % (getattr(event, "ref", "") or listing.pk)
+    )
+    ref = (getattr(event, "ref", None) or "").strip()
+
+    employer_name = ""
+    employer_address = ""
+    if owner is not None:
+        employer_name = (
+            (getattr(owner, "name", None) or "").strip()
+            or (getattr(owner, "short_name", None) or "").strip()
+        )
+        bits = []
+        addr = (getattr(owner, "contact_address", None) or "").strip()
+        if addr:
+            bits.append(addr)
+        phone = (getattr(owner, "phone", None) or "").strip()
+        if phone:
+            bits.append("Tel: %s" % phone)
+        employer_address = " · ".join(bits)
+
+    closing = getattr(event, "closing_date", None)
+    closing_note = closing.strftime("%d %B %Y at %H:%M HRS") if closing else "See tender notice"
+
+    works_description = (getattr(listing, "works_description", None) or "").strip()
+    contract_particulars = (getattr(listing, "contract_particulars", None) or "").strip()
+    summary = (getattr(listing, "summary", None) or "").strip()
+    mr_pack = (getattr(listing, "mr_checklist", None) or "").strip()
+
+    # Electrical domestic RFQ pack (Isiolo SK/004 family) vs building works tenders
+    is_electrical_rfq = mr_pack == TenderListing.MR_CHECKLIST_KE_ELECTRICAL_RFQ or ref.upper().startswith(
+        "SK/004"
+    )
+
+    if is_electrical_rfq:
+        return {
+            "doc_kind": "DOMESTIC SUB-CONTRACTOR TENDER",
+            "works_subtitle": (
+                "Electrical, Structured Cabling, CCTV and Solar Installation Works"
+            ),
+            "contract_type": "Domestic Sub-Contract (Electrical Services)",
+            "tender_title": tender_title,
+            "employer_name": employer_name
+            or "Sports Kenya Ltd (The Director General)",
+            "employer_address": employer_address
+            or "P.O. Box Private Bag, Kasarani, Nairobi, Kenya · Tel: +254 20 2390500/1",
+            "closing_note": closing_note,
+            "boq_basis_note": (
+                "Bills of Quantities prepared by the Chief Quantity Surveyor; "
+                "quantities provisional and subject to remeasurement (per RFQ)."
+            ),
+            "show_mr_section": True,
+            "works_description": works_description,
+            "contract_particulars": contract_particulars,
+            "source_document": "%s / RFQ %s" % (tender_title, ref),
+            "declaration_note": (
+                "this is a Domestic Sub-Contract offer payable through the Main "
+                "Contractor's certificates unless otherwise agreed"
+            ),
+            "currency_tax_note": (
+                "%s — rates inclusive of 16%% VAT and all applicable taxes/levies "
+                "at time of tender (per RFQ)" % (listing.currency or "KES")
+            ),
+            "is_electrical_rfq": True,
+        }
+
+    tender_type_label = ""
+    try:
+        tender_type_label = listing.get_tender_type_display()
+    except Exception:
+        tender_type_label = getattr(listing, "tender_type", "") or "Works"
+
+    subtitle = summary
+    if not subtitle and works_description:
+        subtitle = works_description.splitlines()[0][:160]
+    if not subtitle:
+        subtitle = "Building and Associated Civil Engineering Works"
+
+    return {
+        "doc_kind": "WORKS TENDER",
+        "works_subtitle": subtitle[:200],
+        "contract_type": "%s — Building and Associated Civil Engineering Works"
+        % tender_type_label,
+        "tender_title": tender_title,
+        "employer_name": employer_name or "Procuring Entity (see tender notice)",
+        "employer_address": employer_address
+        or "As stated in the tender / invitation documents",
+        "closing_note": closing_note,
+        "boq_basis_note": (
+            "Bills of Quantities as published with this tender; quantities are "
+            "provisional where so stated and subject to remeasurement."
+        ),
+        "show_mr_section": bool(mr_pack),
+        "works_description": works_description,
+        "contract_particulars": contract_particulars,
+        "source_document": "%s / %s" % (tender_title, ref),
+        "declaration_note": (
+            "this offer is under the Terms and Conditions of the Standard Tender "
+            "Document for Procurement of Works (PPRA) as stated in the Contract Particulars"
+        ),
+        "currency_tax_note": (
+            "%s — rates inclusive of all applicable taxes/levies at time of tender"
+            % (listing.currency or "KES")
+        ),
+        "is_electrical_rfq": False,
+    }
+
+
 def _bid_pack_context(request, listing, workspace, org, ua):
     """Shared context for RFQ-compliant draft/submitted bid PDF pack."""
     from buildwatch.amount_words import amount_in_words
+
+    particulars = _bid_pack_particulars(listing)
 
     selected = workspace.selected_codes()
     packages = list(
@@ -1192,7 +1311,12 @@ def _bid_pack_context(request, listing, workspace, org, ua):
     mr_pass = sum(1 for c in self_checks if c.self_result == SelfAssessmentCheck.PASS)
     mr_docs = sum(1 for c in self_checks if c.document or c.document_uploaded)
     mr_total = len(self_checks)
-    if mr_total == 0:
+    if not particulars["show_mr_section"]:
+        mr_summary = (
+            "No mandatory-requirement pack on this tender — "
+            "see Contract Particulars / Conditions."
+        )
+    elif mr_total == 0:
         mr_summary = "No MR rows — complete Certificates before submit."
     elif workspace.self_assessment_passed:
         mr_summary = "Self-assessment PASSED (%s/%s) · documents attached %s/%s." % (
@@ -1214,31 +1338,46 @@ def _bid_pack_context(request, listing, workspace, org, ua):
             "status": "Included (Section F) — %s priced lines" % priced_lines
             if priced_lines else "Incomplete — no priced lines yet",
         },
-        {
-            "label": "Mandatory Requirement documents MR1–MR14 (certified copies)",
-            "status": "Checklist Section D — %s/%s docs attached" % (mr_docs, mr_total or 14),
-        },
-        {
-            "label": "Technical Schedules (Section III) — equipment make/model/catalogue",
-            "status": "Attach separately (not generated in this pack)",
-        },
-        {
-            "label": "Manufacturer brochures/catalogues (highlighted models)",
-            "status": "Attach separately (not generated in this pack)",
-        },
-        {
-            "label": "Personnel forms PER-1 and PER-2",
-            "status": "Attach separately (not generated in this pack)",
-        },
-        {
-            "label": "Experience forms EXP-3.4 / EXP-4.1 / EXP-4.2a / EXP-4.2b",
-            "status": "Attach separately (not generated in this pack)",
-        },
-        {
-            "label": "Form EQU — Equipment Schedule with evidence",
-            "status": "Attach separately (not generated in this pack)",
-        },
     ]
+    if particulars["show_mr_section"]:
+        rfq_checklist.append({
+            "label": "Mandatory Requirement documents (certified copies)",
+            "status": "Checklist Section D — %s/%s docs attached" % (mr_docs, mr_total or 0),
+        })
+    else:
+        rfq_checklist.append({
+            "label": "Contract Particulars / Conditions acknowledged",
+            "status": "Included (Section D)" if particulars["contract_particulars"]
+            else "See tender notice / Contract Particulars",
+        })
+    if particulars["is_electrical_rfq"]:
+        rfq_checklist.extend([
+            {
+                "label": "Technical Schedules (Section III) — equipment make/model/catalogue",
+                "status": "Attach separately (not generated in this pack)",
+            },
+            {
+                "label": "Manufacturer brochures/catalogues (highlighted models)",
+                "status": "Attach separately (not generated in this pack)",
+            },
+            {
+                "label": "Personnel forms PER-1 and PER-2",
+                "status": "Attach separately (not generated in this pack)",
+            },
+            {
+                "label": "Experience forms EXP-3.4 / EXP-4.1 / EXP-4.2a / EXP-4.2b",
+                "status": "Attach separately (not generated in this pack)",
+            },
+            {
+                "label": "Form EQU — Equipment Schedule with evidence",
+                "status": "Attach separately (not generated in this pack)",
+            },
+        ])
+    else:
+        rfq_checklist.append({
+            "label": "Supporting schedules / certificates required by the tender documents",
+            "status": "Attach separately as required by the Procuring Entity",
+        })
 
     is_draft = workspace.status != BidWorkspace.SUBMITTED
     currency_words = "Kenya Shillings" if (listing.currency or "").upper() in ("", "KES") else listing.currency
@@ -1257,10 +1396,6 @@ def _bid_pack_context(request, listing, workspace, org, ua):
         "signatory_designation": "",
         "vat_certificate_no": getattr(org, "tax_pin", "") or "",
         "generated_at": timezone.now(),
-        "tender_title": "Proposed Completion of Isiolo Stadium — Electrical Services",
-        "employer_name": "Sports Kenya Ltd (The Director General)",
-        "employer_address": "P.O. Box Private Bag, Kasarani, Nairobi, Kenya · Tel: +254 20 2390500/1",
-        "closing_note": "10th July 2025 at 11:00 HRS (per RFQ)",
         "partial_offer": bool(packages) and len(selected_packages) < len(packages),
         "rfq_checklist": rfq_checklist,
         "mr_summary": mr_summary,
@@ -1268,6 +1403,7 @@ def _bid_pack_context(request, listing, workspace, org, ua):
         "subcontract_sections": subcontract_sections,
         "subcontract_quote_total": subcontract_quote_total,
         "has_subcontract_quotes": bool(sub_ready),
+        **particulars,
         **branding_template_context(request),
     }
     return ctx
