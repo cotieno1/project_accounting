@@ -8,10 +8,16 @@ from decimal import Decimal, InvalidOperation
 def normalize_unit(raw: str) -> str:
     u = (raw or "").rstrip(".").strip()
     ul = u.lower()
-    if ul.startswith("no"):
+    if ul.startswith("no") or ul == "nr":
         return "No"
-    if ul.startswith("lm") or ul == "m":
+    if ul in {"lm", "m", "m1"}:
         return "Lm"
+    if ul in {"sm", "m2", "sqm"}:
+        return "SM"
+    if ul in {"cm", "m3", "cum"}:
+        return "CM"
+    if ul in {"kg", "kgs"}:
+        return "Kg"
     if ul == "sum":
         return "Sum"
     if ul == "item":
@@ -20,6 +26,8 @@ def normalize_unit(raw: str) -> str:
         return "Lot"
     if ul == "set":
         return "Set"
+    if ul in {"pc", "pcs", "pr"}:
+        return "No"
     return (u or "No")[:30]
 
 

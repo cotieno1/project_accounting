@@ -236,6 +236,26 @@ class Command(BaseCommand):
                 save=True,
             )
 
+        # Persist structured packages/lines so the bid workspace is not empty.
+        try:
+            from buildwatch.boq_ingest.persist import apply_standard_boq
+            from buildwatch.boq_ingest.sources import load_pdf_auto_boq
+
+            doc = load_pdf_auto_boq(listing)
+            stats = apply_standard_boq(listing, doc)
+            listing.boq_input_mode = TenderListing.BOQ_PDF_AUTO
+            listing.save(update_fields=["boq_input_mode"])
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "  + BOQ ingest: %s packages, %s lines (%s)"
+                    % (stats["categories"], stats["lines"], stats.get("adapter_id"))
+                )
+            )
+        except Exception as exc:
+            self.stdout.write(
+                self.style.WARNING("  ! BOQ ingest skipped: %s" % exc)
+            )
+
         if not listing.is_published:
             listing.publish(ua)
             self.stdout.write(self.style.SUCCESS("  + Published to exchange"))

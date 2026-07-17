@@ -17,9 +17,11 @@ def _ensure_builtins() -> None:
     global _LOADED
     if _LOADED:
         return
+    from .adapters.emurua_ahp_pdf import EmuruaAhpPdfAdapter
     from .adapters.isiolo_domestic_pdf import IsioloDomesticPdfAdapter
 
     register(IsioloDomesticPdfAdapter())
+    register(EmuruaAhpPdfAdapter())
     _LOADED = True
 
 
