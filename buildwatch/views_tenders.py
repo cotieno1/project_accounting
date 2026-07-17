@@ -1628,30 +1628,8 @@ def bid_workspace(request, listing_id):
             return redirect('bid-workspace', listing_id=listing_id)
 
         if action == 'begin_subcontract':
-            # Step 1: subcontract first — create invite here (fixes Process 500 redirect).
+            # Optional subcontracting — create invite when Yes; No skips to main BOQ.
             import secrets
-
-            active_subs = _active_subcontracts(listing, org)
-            planned_n = workspace.planned_subcontractor_count
-            if planned_n is None:
-                messages.error(
-                    request,
-                    'Set how many sub-contractors you need (N) first, then invite.',
-                )
-                return redirect('bid-workspace', listing_id=listing_id)
-            if planned_n == 0:
-                messages.warning(
-                    request,
-                    'Planned sub-contractors is 0 — subcontracting is locked (MR14 N/A).',
-                )
-                return redirect('bid-workspace', listing_id=listing_id)
-            if len(active_subs) >= planned_n:
-                messages.warning(
-                    request,
-                    f'Sub-contractor quota filled ({len(active_subs)}/{planned_n}). '
-                    'Subcontracting controls are locked.',
-                )
-                return redirect('bid-workspace', listing_id=listing_id)
 
             required = (request.POST.get('subcontract_required') or '').strip().upper()
             if required == 'NO':
@@ -1661,15 +1639,42 @@ def bid_workspace(request, listing_id):
                     _mark_mr14_not_applicable(workspace)
                     messages.success(
                         request,
-                        'Subcontracting not required — N set to 0, MR14 marked N/A. '
+                        'No subcontracting on this bid (optional step skipped). '
                         'Continue with main BOQ categories below.',
                     )
                 except Exception as exc:
-                    messages.error(request, f'Could not update MR14: {exc}')
+                    messages.error(request, f'Could not update workspace: {exc}')
                 return redirect('bid-workspace', listing_id=listing_id)
 
             if required != 'YES':
-                messages.error(request, 'Choose whether subcontracting is required.')
+                messages.error(
+                    request,
+                    'Choose whether you want to subcontract any packages (optional).',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+
+            active_subs = _active_subcontracts(listing, org)
+            planned_n = workspace.planned_subcontractor_count
+            if planned_n is None:
+                messages.error(
+                    request,
+                    'Set how many sub-contractors you want (N) before inviting, '
+                    'or choose No to skip subcontracting.',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+            if planned_n == 0:
+                messages.warning(
+                    request,
+                    'Planned sub-contractors is 0 — subcontracting is off for this bid. '
+                    'Raise N if you later decide to invite a sub.',
+                )
+                return redirect('bid-workspace', listing_id=listing_id)
+            if len(active_subs) >= planned_n:
+                messages.warning(
+                    request,
+                    f'Sub-contractor quota filled ({len(active_subs)}/{planned_n}). '
+                    'Subcontracting controls are locked.',
+                )
                 return redirect('bid-workspace', listing_id=listing_id)
 
             arr_type = (request.POST.get('arrangement_type') or 'A').strip().upper()
