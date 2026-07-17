@@ -120,14 +120,21 @@ def _pkg_title(building_title: str, bill: int | None, bill_title: str,
     return " / ".join(parts)[:120]
 
 
+PAGE_MARK = re.compile(r"^---PAGE\s+(\d+)---\s*$")
+
+
 def parse_emurua_text(text: str, source_name: str) -> StandardBoq:
     warnings: list[str] = []
-    raw_lines: list[str] = []
+    # (page_no or None, line_text)
+    raw_lines: list[tuple[int | None, str]] = []
+    current_page: int | None = None
     for ln in text.splitlines():
-        if ln.startswith("---PAGE"):
+        pm = PAGE_MARK.match(ln.strip())
+        if pm:
+            current_page = int(pm.group(1))
             continue
         for part in _split_glued_items(ln):
-            raw_lines.append(part)
+            raw_lines.append((current_page, part))
 
     building_code = "GE"
     building_title = "General"
@@ -136,17 +143,20 @@ def parse_emurua_text(text: str, source_name: str) -> StandardBoq:
     elem = None
     elem_title = ""
     buf: list[str] | None = None
+    buf_page: int | None = None
     packages: dict[str, list[StandardBoqLine]] = defaultdict(list)
     package_meta: dict[str, tuple[str, int]] = {}
     seen_refs: dict[str, set[str]] = defaultdict(set)
     sort_counter = 0
 
     def flush() -> None:
-        nonlocal buf, sort_counter
+        nonlocal buf, buf_page, sort_counter
         if not buf:
             return
         raw = " ".join(buf)
+        item_page = buf_page
         buf = None
+        buf_page = None
         m = re.match(r"^([A-Z])\s*(.*)$", raw)
         if not m:
             return
@@ -188,6 +198,17 @@ def parse_emurua_text(text: str, source_name: str) -> StandardBoq:
             bill_ref = ("%s%d" % (bill_ref[:18], n))[:20]
         seen_refs[code].add(bill_ref)
 
+        extras = {
+            "building": building_code,
+            "bill": bill,
+            "element": elem,
+            "item": letter,
+            "rate": tm.group(3),
+            "amount": tm.group(4),
+        }
+        if item_page:
+            extras["page"] = item_page
+
         packages[code].append(
             StandardBoqLine(
                 bill_ref=bill_ref,
@@ -195,18 +216,12 @@ def parse_emurua_text(text: str, source_name: str) -> StandardBoq:
                 unit=unit,
                 quantity=qty,
                 sort_order=len(packages[code]) + 1,
-                extras={
-                    "building": building_code,
-                    "bill": bill,
-                    "element": elem,
-                    "item": letter,
-                    "rate": tm.group(3),
-                    "amount": tm.group(4),
-                },
+                source_page=item_page,
+                extras=extras,
             )
         )
 
-    for ln in raw_lines:
+    for page_no, ln in raw_lines:
         building_code, building_title = _detect_building(
             ln, building_code, building_title
         )
@@ -235,6 +250,7 @@ def parse_emurua_text(text: str, source_name: str) -> StandardBoq:
         if ITEM_START.match(ln):
             flush()
             buf = [ln]
+            buf_page = page_no
             continue
 
         if buf:
@@ -245,8 +261,6 @@ def parse_emurua_text(text: str, source_name: str) -> StandardBoq:
                 or ELEM_RE.search(ln)
             ):
                 flush()
-                # re-process structural headers on next loop - push back by
-                # handling inline below is awkward; just flush and drop
                 continue
             buf.append(ln)
 
@@ -273,6 +287,7 @@ def parse_emurua_text(text: str, source_name: str) -> StandardBoq:
             )
         )
 
+    paged = sum(1 for c in categories for ln in c.lines if ln.source_page)
     return StandardBoq(
         source_name=source_name,
         adapter_id=ADAPTER_ID,
@@ -281,6 +296,7 @@ def parse_emurua_text(text: str, source_name: str) -> StandardBoq:
         meta={
             "package_count": len(categories),
             "line_count": sum(len(c.lines) for c in categories),
+            "lines_with_page": paged,
             "buildings": sorted({c.code.split("-")[0] for c in categories}),
         },
     )

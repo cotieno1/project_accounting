@@ -940,6 +940,12 @@ class TenderBoqLine(models.Model):
     quantity    = models.DecimalField(max_digits=12, decimal_places=3,
                       default=Decimal('1'))
     sort_order  = models.PositiveSmallIntegerField(default=0)
+    source_page = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='1-based PDF page this line was extracted from (PDF-auto ingest).',
+    )
 
     class Meta:
         unique_together = [['package', 'bill_ref']]

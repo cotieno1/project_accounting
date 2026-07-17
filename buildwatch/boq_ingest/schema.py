@@ -13,6 +13,7 @@ class StandardBoqLine:
     unit: str
     quantity: Decimal
     sort_order: int = 0
+    source_page: int | None = None
     extras: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

@@ -390,6 +390,141 @@
       {% endif %}
 
       {% if package_sections %}
+      {% if has_pdf_pages %}
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:.82rem;color:var(--bw-mid);">
+          Pricing layout:
+          {% if boq_view == 'page' %}
+          <strong style="color:var(--bw-navy);">By PDF page</strong>
+          · <a href="?boq_view=package" style="color:var(--bw-teal);">By category</a>
+          {% else %}
+          <a href="?boq_view=page" style="color:var(--bw-teal);">By PDF page</a>
+          · <strong style="color:var(--bw-navy);">By category</strong>
+          {% endif %}
+        </div>
+        {% if boq_view == 'page' and page_nav %}
+        <div style="font-size:.78rem;color:var(--bw-mid);font-family:var(--bw-mono);">
+          {{ page_nav|length }} page{{ page_nav|length|pluralize }} with priced lines
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if boq_view == 'page' and page_sections %}
+      <div id="boq-page-nav" class="bw-boq-page-nav" style="position:sticky;top:0;z-index:20;margin-bottom:12px;
+           background:rgba(255,255,255,.97);border:1px solid var(--bw-rule);border-radius:10px;
+           padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+           box-shadow:0 6px 18px rgba(15,23,42,.06);">
+        <button type="button" class="bw-btn bw-btn--ghost bw-btn--sm" id="boq-prev-page">Prev page</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--bw-mid);">
+          Page
+          <select id="boq-page-jump" class="bw-input" style="min-width:110px;padding:6px 8px;font-size:.8rem;">
+            {% for p in page_nav %}
+            <option value="{{ p.page_key }}">{{ p.page_label }} ({{ p.line_count }})</option>
+            {% endfor %}
+            {% for section in page_sections %}
+              {% if section.page is None %}
+              <option value="{{ section.page_key }}">{{ section.page_label }} ({{ section.line_count }})</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </label>
+        <button type="button" class="bw-btn bw-btn--ghost bw-btn--sm" id="boq-next-page">Next page</button>
+        <span style="width:1px;height:22px;background:var(--bw-rule);margin:0 4px;"></span>
+        <button type="button" class="bw-btn bw-btn--ghost bw-btn--sm" id="boq-prev-line">Prev line</button>
+        <span id="boq-line-pos" style="font-family:var(--bw-mono);font-size:.78rem;color:var(--bw-mid);min-width:72px;text-align:center;">1 / 1</span>
+        <button type="button" class="bw-btn bw-btn--ghost bw-btn--sm" id="boq-next-line">Next line</button>
+      </div>
+
+      <form method="POST" action="{% url 'bid-workspace' listing.pk %}" id="boq-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_prices">
+
+        {% for section in page_sections %}
+        <div class="bw-card" style="margin-bottom:14px;" data-boq-page="{{ section.page_key }}" id="boq-page-{{ section.page_key }}">
+          <div class="bw-card-header" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;">
+            <span>{{ section.page_label }}
+              <span style="font-family:var(--bw-mono);font-weight:500;color:var(--bw-mid);margin-left:8px;">
+                {{ section.line_count }} line{{ section.line_count|pluralize }}
+              </span>
+            </span>
+            <span style="font-family:var(--bw-mono);font-size:.8rem;color:var(--bw-mid);">
+              Page sub-total {{ listing.currency }} {{ section.subtotal|floatformat:2 }}
+            </span>
+          </div>
+          <div class="bw-card-body" style="padding:0;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+              <thead>
+                <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
+                  <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:90px;">Ref</th>
+                  <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Description</th>
+                  <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:110px;">Category</th>
+                  <th style="padding:10px 14px;text-align:center;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:60px;">Unit</th>
+                  <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:70px;">Qty</th>
+                  <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:130px;">Unit rate ({{ listing.currency }})</th>
+                  <th style="padding:10px 14px;text-align:right;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:120px;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in section.rows %}
+                <tr style="border-bottom:1px solid var(--bw-rule);"
+                    data-boq-line
+                    data-page-key="{{ section.page_key }}"
+                    data-pkg="{{ row.package.code }}">
+                  <td style="padding:10px 14px;">
+                    <input type="hidden" name="bill_ref" value="{{ row.line.bill_ref }}">
+                    <input type="hidden" name="pkg_{{ row.line.bill_ref }}" value="{{ row.package.code }}">
+                    <input type="hidden" name="desc_{{ row.line.bill_ref }}" value="{{ row.line.description }}">
+                    <input type="hidden" name="unit_{{ row.line.bill_ref }}" value="{{ row.line.unit }}">
+                    <input type="hidden" name="qty_{{ row.line.bill_ref }}" value="{{ row.line.quantity }}">
+                    <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);">{{ row.line.bill_ref }}</span>
+                  </td>
+                  <td style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
+                  <td style="padding:10px 14px;">
+                    <span style="font-family:var(--bw-mono);font-size:.72rem;color:var(--bw-mid);">{{ row.package.code }}</span>
+                  </td>
+                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
+                  <td style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:-3 }}</td>
+                  <td style="padding:10px 14px;">
+                    {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+                    <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
+                           step="0.01" min="0" class="bw-input"
+                           style="text-align:right;padding:7px 8px;"
+                           data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
+                           data-pkg="{{ row.package.code }}" data-bill="{{ row.bill_key }}"
+                           onchange="recalcRow(this)" oninput="recalcRow(this)">
+                    {% else %}
+                    <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
+                    {% endif %}
+                  </td>
+                  <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
+                      id="amount-{{ row.line.bill_ref }}" class="boq-amount"
+                      data-pkg="{{ row.package.code }}" data-bill="{{ row.bill_key }}">{{ row.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                <tr style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
+                  <td colspan="6" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;">
+                    {{ section.page_label }} sub-total
+                  </td>
+                  <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);">
+                    {{ section.subtotal|floatformat:2 }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endfor %}
+
+        {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+        <div class="bw-card" style="margin-bottom:14px;">
+          <div class="bw-card-body" style="display:flex;justify-content:flex-end;">
+            <button type="submit" class="bw-btn bw-btn--teal">Save prices</button>
+          </div>
+        </div>
+        {% endif %}
+      </form>
+      {% else %}
       <form method="POST" action="{% url 'bid-workspace' listing.pk %}" id="boq-form">
         {% csrf_token %}
         <input type="hidden" name="action" value="save_prices">
@@ -508,6 +643,7 @@
         </div>
         {% endif %}
       </form>
+      {% endif %}
       {% endif %}
       {% if category_summary %}
       <div class="bw-card" style="margin-bottom:14px;">
@@ -797,9 +933,92 @@ function recalcRow(input) {
   if (amountEl) amountEl.textContent = fmtMoney(qty * rate);
   recalcTotals();
 }
+function initBoqPageNav() {
+  const pages = Array.from(document.querySelectorAll('[data-boq-page]'));
+  const lines = Array.from(document.querySelectorAll('tr[data-boq-line]'));
+  if (!pages.length || !lines.length) return;
+  const jump = document.getElementById('boq-page-jump');
+  const pos = document.getElementById('boq-line-pos');
+  let lineIdx = 0;
+
+  function pageKeys() {
+    return pages.map(function (el) { return el.getAttribute('data-boq-page'); });
+  }
+  function currentPageIdx() {
+    const key = lines[lineIdx] && lines[lineIdx].getAttribute('data-page-key');
+    const keys = pageKeys();
+    const i = keys.indexOf(key);
+    return i < 0 ? 0 : i;
+  }
+  function highlightLine() {
+    lines.forEach(function (tr) { tr.classList.remove('boq-line-focus'); });
+    const tr = lines[lineIdx];
+    if (!tr) return;
+    tr.classList.add('boq-line-focus');
+    tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (pos) pos.textContent = (lineIdx + 1) + ' / ' + lines.length;
+    if (jump) {
+      const key = tr.getAttribute('data-page-key');
+      if (key && jump.value !== key) jump.value = key;
+    }
+  }
+  function goLine(delta) {
+    lineIdx = Math.max(0, Math.min(lines.length - 1, lineIdx + delta));
+    highlightLine();
+  }
+  function goPage(delta) {
+    const keys = pageKeys();
+    let pIdx = currentPageIdx() + delta;
+    pIdx = Math.max(0, Math.min(keys.length - 1, pIdx));
+    const target = pages[pIdx];
+    if (!target) return;
+    const key = target.getAttribute('data-boq-page');
+    const first = lines.findIndex(function (tr) {
+      return tr.getAttribute('data-page-key') === key;
+    });
+    if (first >= 0) lineIdx = first;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    highlightLine();
+  }
+  function jumpToPage(key) {
+    const first = lines.findIndex(function (tr) {
+      return tr.getAttribute('data-page-key') === key;
+    });
+    if (first < 0) return;
+    lineIdx = first;
+    const block = document.getElementById('boq-page-' + key);
+    if (block) block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    highlightLine();
+  }
+
+  const prevPage = document.getElementById('boq-prev-page');
+  const nextPage = document.getElementById('boq-next-page');
+  const prevLine = document.getElementById('boq-prev-line');
+  const nextLine = document.getElementById('boq-next-line');
+  if (prevPage) prevPage.addEventListener('click', function () { goPage(-1); });
+  if (nextPage) nextPage.addEventListener('click', function () { goPage(1); });
+  if (prevLine) prevLine.addEventListener('click', function () { goLine(-1); });
+  if (nextLine) nextLine.addEventListener('click', function () { goLine(1); });
+  if (jump) jump.addEventListener('change', function () { jumpToPage(jump.value); });
+  document.addEventListener('keydown', function (ev) {
+    if (!ev.altKey) return;
+    if (ev.key === 'ArrowDown') { ev.preventDefault(); goLine(1); }
+    if (ev.key === 'ArrowUp') { ev.preventDefault(); goLine(-1); }
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); goPage(1); }
+    if (ev.key === 'ArrowLeft') { ev.preventDefault(); goPage(-1); }
+  });
+  highlightLine();
+}
 document.addEventListener('DOMContentLoaded', function () {
   toggleSubcontractFilter();
   recalcTotals();
+  initBoqPageNav();
 });
 </script>
+<style>
+tr.boq-line-focus td {
+  background: #e8f7f2 !important;
+  box-shadow: inset 3px 0 0 var(--bw-teal);
+}
+</style>
 {% endblock %}

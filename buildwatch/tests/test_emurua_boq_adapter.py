@@ -28,6 +28,9 @@ class EmuruaAhpAdapterTests(SimpleTestCase):
         # Walling / Block A style packages should appear
         codes = {c.code for c in doc.categories}
         self.assertTrue(any(c.startswith("BA-") for c in codes))
+        paged = [ln for c in doc.categories for ln in c.lines if ln.source_page]
+        self.assertGreater(len(paged), 0)
+        self.assertTrue(all(isinstance(ln.source_page, int) and ln.source_page >= 1 for ln in paged))
 
     def test_detect_prefers_emurua_over_isiolo(self):
         adapter, score = detect_adapter(FIXTURE, text_sample=FIXTURE.read_text(encoding="utf-8")[:4000])

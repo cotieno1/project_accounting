@@ -389,6 +389,58 @@ def _group_rows_by_bill(rows):
     return groups
 
 
+def _group_rows_by_page(rows):
+    """
+    Group priced BOQ rows by PDF source_page (Page 1 .. Page N).
+    Lines without a page go under 'Other'.
+    """
+    def sort_key(row):
+        line = row.get("line")
+        page = getattr(line, "source_page", None) if line is not None else None
+        try:
+            page_n = int(page) if page is not None else 10**9
+        except (TypeError, ValueError):
+            page_n = 10**9
+        pkg = row.get("package")
+        pkg_order = getattr(pkg, "sort_order", 0) if pkg is not None else 0
+        line_order = getattr(line, "sort_order", 0) if line is not None else 0
+        ref = getattr(line, "bill_ref", "") if line is not None else ""
+        return (page_n, pkg_order, line_order, ref)
+
+    groups = []
+    current_page = object()
+    current = None
+    for row in sorted(rows, key=sort_key):
+        line = row.get("line")
+        page = getattr(line, "source_page", None) if line is not None else None
+        try:
+            page = int(page) if page is not None else None
+        except (TypeError, ValueError):
+            page = None
+        if page != current_page:
+            if page is None:
+                label = "Other (no PDF page)"
+                page_key = "other"
+            else:
+                label = "Page %d" % page
+                page_key = str(page)
+            current = {
+                "page": page,
+                "page_key": page_key,
+                "page_label": label,
+                "rows": [],
+                "subtotal": Decimal("0"),
+                "line_count": 0,
+            }
+            groups.append(current)
+            current_page = page
+        amount = row.get("amount") or Decimal("0")
+        current["rows"].append(row)
+        current["subtotal"] += amount
+        current["line_count"] += 1
+    return groups
+
+
 def _subcontract_package_sections(listing, org, packages):
     """
     Read-only BOQ sections for packages assigned to sub-contractors.
@@ -1716,6 +1768,7 @@ def bid_workspace(request, listing_id):
     package_sections = []
     category_summary = []
     grand_total = Decimal('0')
+    page_view_rows = []
 
     for pkg in packages:
         if pkg.code.upper() not in subcontracted_set:
@@ -1742,14 +1795,17 @@ def bid_workspace(request, listing_id):
             bp = price_map.get(line.bill_ref)
             amount = bp.amount if bp else Decimal('0')
             subtotal += amount
-            rows.append({
+            row = {
                 'line': line,
                 'price': bp,
                 'rate': bp.unit_rate if bp else Decimal('0'),
                 'amount': amount,
                 'bill_key': _bill_category_key(line.bill_ref),
                 'bill_label': _bill_category_label(_bill_category_key(line.bill_ref)),
-            })
+                'package': pkg,
+            }
+            rows.append(row)
+            page_view_rows.append(row)
         bill_groups = _group_rows_by_bill(rows)
         grand_total += subtotal
         package_sections.append({
@@ -1777,6 +1833,29 @@ def bid_workspace(request, listing_id):
             'subtotal': None,  # not selected
             'line_count': pkg.lines.count(),
         })
+
+    page_sections = _group_rows_by_page(page_view_rows) if page_view_rows else []
+    has_pdf_pages = any(
+        getattr(r.get("line"), "source_page", None) for r in page_view_rows
+    )
+    # Default: PDF-sourced BOQs open in page view; ?boq_view=package keeps legacy layout
+    requested_view = (request.GET.get("boq_view") or "").strip().lower()
+    if requested_view == "package":
+        boq_view = "package"
+    elif requested_view == "page":
+        boq_view = "page" if has_pdf_pages else "package"
+    else:
+        boq_view = "page" if has_pdf_pages else "package"
+    page_nav = [
+        {
+            "page": g["page"],
+            "page_key": g["page_key"],
+            "page_label": g["page_label"],
+            "line_count": g["line_count"],
+        }
+        for g in page_sections
+        if g.get("page") is not None
+    ]
     can_switch_boq_mode = (
         getattr(request.user, 'is_staff', False)
         or (ua and listing.created_by_id == getattr(ua, 'pk', None))
@@ -1833,6 +1912,10 @@ def bid_workspace(request, listing_id):
         'boq_mode_choices': TenderListing.BOQ_INPUT_MODE_CHOICES,
         'can_switch_boq_mode': can_switch_boq_mode,
         'package_sections': package_sections,
+        'page_sections': page_sections,
+        'page_nav': page_nav,
+        'boq_view': boq_view,
+        'has_pdf_pages': has_pdf_pages,
         'subcontract_package_sections': subcontract_package_sections,
         'subcontract_grand_total': subcontract_grand_total,
         'combined_grand_total': grand_total + subcontract_grand_total,

@@ -28,6 +28,15 @@ def apply_standard_boq(listing: TenderListing, doc) -> dict:
             ref = (line.bill_ref or "")[:20]
             keep_refs.add(ref)
             ref_to_pkg[ref] = cat.code
+            page = getattr(line, "source_page", None)
+            if page is None and isinstance(getattr(line, "extras", None), dict):
+                page = line.extras.get("page") or line.extras.get("source_page")
+            try:
+                page = int(page) if page is not None else None
+            except (TypeError, ValueError):
+                page = None
+            if page is not None and page < 1:
+                page = None
             TenderBoqLine.objects.update_or_create(
                 package=pkg,
                 bill_ref=ref,
@@ -36,6 +45,7 @@ def apply_standard_boq(listing: TenderListing, doc) -> dict:
                     "unit": (line.unit or "No")[:30],
                     "quantity": Decimal(str(line.quantity)),
                     "sort_order": line.sort_order,
+                    "source_page": page,
                 },
             )
         pkg.lines.exclude(bill_ref__in=keep_refs).delete()
