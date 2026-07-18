@@ -492,6 +492,23 @@
         </div>
       </div>
 
+      <!-- Compliance & sign-off -->
+      {% if user.is_authenticated %}
+      <div class="bw-card" style="margin-bottom:16px;">
+        <div class="bw-card-header">Compliance &amp; Sign-off</div>
+        <div class="bw-card-body" style="padding:14px 18px;">
+          <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:10px;line-height:1.5;">
+            Hold points, certificates and site-readiness (storage, CCTV, equipment) with an
+            accountable person, evidence and sign-off. Missed steps raise alerts.
+          </div>
+          <a href="{% url 'compliance-register' listing.pk %}"
+             class="bw-btn bw-btn--ghost" style="width:100%;justify-content:center;">
+            Open Compliance Register
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Stats card -->
       <div class="bw-card" style="margin-bottom:16px;">
         <div class="bw-card-body" style="padding:14px 18px;">

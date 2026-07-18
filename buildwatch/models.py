@@ -387,7 +387,7 @@ class TechnicalScore(models.Model):
     raw_score       = models.DecimalField(max_digits=5, decimal_places=2,
                           help_text='Score 0–10 assigned by evaluator')
     weighted_score  = models.DecimalField(max_digits=6, decimal_places=3,
-                          help_text='raw_score × weight / 10 — computed on save')
+                          help_text='raw_score x weight / 10 — computed on save')
     notes           = models.TextField(blank=True)
     scored_by       = models.ForeignKey('accounts.UserAccount',
                           on_delete=models.SET_NULL, null=True, blank=True)
@@ -400,14 +400,14 @@ class TechnicalScore(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.criterion}: {self.raw_score}/10 × {self.weight}% = {self.weighted_score}"
+        return f"{self.criterion}: {self.raw_score}/10 x {self.weight}% = {self.weighted_score}"
 
 
 class SubmissionBillPrice(models.Model):
     """
     Submission's priced amount for a BOQ bill.
     PROCUREMENT: contractor's quoted amount vs QS estimate
-    INSPECTION:  approved quantity × rate = certifiable amount
+    INSPECTION:  approved quantity x rate = certifiable amount
     """
     submission      = models.ForeignKey(Submission, on_delete=models.CASCADE,
                           related_name='bill_prices')
@@ -423,7 +423,7 @@ class SubmissionBillPrice(models.Model):
                           help_text='Amount approved after evaluation/inspection')
     variance_pct    = models.DecimalField(max_digits=7, decimal_places=3,
                           default=Decimal('0'),
-                          help_text='(submitted - qs_estimate) / qs_estimate × 100')
+                          help_text='(submitted - qs_estimate) / qs_estimate x 100')
     is_outlier      = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
@@ -992,6 +992,115 @@ class TenderPreamble(models.Model):
 
     def __str__(self):
         return f"{self.trade_code} — {self.title}"
+
+
+class ComplianceCheckpoint(models.Model):
+    """
+    A compliance / certification / sign-off checkpoint for a tender's works.
+
+    Anchored (where possible) to a BOQ preamble clause so that hold points
+    ("approval before filling"), certificates ("anti-termite written guarantee"),
+    inspections and site-readiness items (storage, CCTV, equipment) each have an
+    accountable person, evidence, a sign-off and a due date for missed-step alerts.
+    """
+    HOLD_POINT = 'HOLD_POINT'
+    CERTIFICATE = 'CERTIFICATE'
+    INSPECTION = 'INSPECTION'
+    SITE_READINESS = 'SITE_READINESS'
+    CATEGORY_CHOICES = [
+        (HOLD_POINT, 'Hold point — approval required before proceeding'),
+        (CERTIFICATE, 'Certificate / written guarantee'),
+        (INSPECTION, 'Inspection sign-off'),
+        (SITE_READINESS, 'Site readiness (storage, CCTV, equipment, security)'),
+    ]
+
+    ROLE_CONTRACTOR = 'CONTRACTOR'
+    ROLE_SITE_MANAGER = 'SITE_MANAGER'
+    ROLE_ARCHITECT = 'ARCHITECT'
+    ROLE_ENGINEER = 'ENGINEER'
+    ROLE_QS = 'QS'
+    ROLE_CLIENT = 'CLIENT'
+    ROLE_CHOICES = [
+        (ROLE_CONTRACTOR, 'Contractor'),
+        (ROLE_SITE_MANAGER, 'Site Manager / Foreman'),
+        (ROLE_ARCHITECT, 'Architect'),
+        (ROLE_ENGINEER, 'Engineer'),
+        (ROLE_QS, 'Quantity Surveyor'),
+        (ROLE_CLIENT, 'Client / Employer'),
+    ]
+
+    STATUS_PENDING = 'PENDING'
+    STATUS_SUBMITTED = 'SUBMITTED'
+    STATUS_APPROVED = 'APPROVED'
+    STATUS_REJECTED = 'REJECTED'
+    STATUS_NA = 'NA'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_SUBMITTED, 'Submitted — awaiting sign-off'),
+        (STATUS_APPROVED, 'Approved / signed off'),
+        (STATUS_REJECTED, 'Rejected — rework required'),
+        (STATUS_NA, 'Not applicable'),
+    ]
+
+    tender          = models.ForeignKey(TenderListing, on_delete=models.CASCADE,
+                          related_name='checkpoints')
+    preamble        = models.ForeignKey(TenderPreamble, on_delete=models.SET_NULL,
+                          null=True, blank=True, related_name='checkpoints')
+    code            = models.CharField(max_length=40)
+    title           = models.CharField(max_length=160)
+    requirement     = models.TextField(blank=True,
+                          help_text='What must be confirmed / certified (clause text).')
+    category        = models.CharField(max_length=20, choices=CATEGORY_CHOICES,
+                          default=HOLD_POINT)
+    responsible_role = models.CharField(max_length=20, choices=ROLE_CHOICES,
+                          default=ROLE_CONTRACTOR,
+                          help_text='Role accountable for delivering this checkpoint.')
+    approver_role   = models.CharField(max_length=20, choices=ROLE_CHOICES,
+                          default=ROLE_ARCHITECT,
+                          help_text='Role that signs off / approves.')
+    is_mandatory    = models.BooleanField(default=True)
+    sort_order      = models.PositiveSmallIntegerField(default=0)
+    source_page     = models.PositiveIntegerField(null=True, blank=True)
+
+    # Sign-off / accountability state
+    status          = models.CharField(max_length=12, choices=STATUS_CHOICES,
+                          default=STATUS_PENDING)
+    responsible_user = models.ForeignKey('accounts.UserAccount',
+                          on_delete=models.SET_NULL, null=True, blank=True,
+                          related_name='responsible_checkpoints',
+                          help_text='The person taking responsibility for this step.')
+    due_date        = models.DateField(null=True, blank=True)
+    evidence        = models.FileField(upload_to='compliance/evidence/%Y/%m/',
+                          null=True, blank=True)
+    certificate_ref = models.CharField(max_length=100, blank=True)
+    submitted_at    = models.DateTimeField(null=True, blank=True)
+    signed_off_by   = models.ForeignKey('accounts.UserAccount',
+                          on_delete=models.SET_NULL, null=True, blank=True,
+                          related_name='signed_checkpoints')
+    signed_off_at   = models.DateTimeField(null=True, blank=True)
+    notes           = models.TextField(blank=True)
+    overdue_notified_at = models.DateTimeField(null=True, blank=True,
+                          help_text='Last time a missed-step alert was sent.')
+    created_at      = models.DateTimeField(auto_now_add=True)
+    updated_at      = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [['tender', 'code']]
+        ordering = ['category', 'sort_order', 'code']
+
+    def __str__(self):
+        return f"{self.code} — {self.title} [{self.status}]"
+
+    @property
+    def is_overdue(self):
+        from django.utils import timezone
+        if self.status in (self.STATUS_APPROVED, self.STATUS_NA):
+            return False
+        return bool(self.due_date and self.due_date < timezone.now().date())
+
+    @property
+    def is_open(self):
+        return self.status not in (self.STATUS_APPROVED, self.STATUS_NA)
 
 
 class SelfAssessmentCheck(models.Model):

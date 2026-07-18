@@ -346,6 +346,21 @@ class Command(BaseCommand):
                 self.style.WARNING("  ! Preamble extraction skipped: %s" % exc)
             )
 
+        # Generate compliance / sign-off checkpoints (hold points, certificates,
+        # site readiness) anchored to the preamble clauses.
+        try:
+            from buildwatch.compliance import generate_checkpoints_for_tender
+
+            created = generate_checkpoints_for_tender(listing)
+            self.stdout.write(self.style.SUCCESS(
+                "  + Compliance checkpoints: %d new (total %d)"
+                % (created, listing.checkpoints.count())
+            ))
+        except Exception as exc:
+            self.stdout.write(
+                self.style.WARNING("  ! Compliance checkpoints skipped: %s" % exc)
+            )
+
         if not listing.is_published:
             listing.publish(ua)
             self.stdout.write(self.style.SUCCESS("  + Published to exchange"))

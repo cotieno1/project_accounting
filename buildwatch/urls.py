@@ -15,6 +15,7 @@ from django.urls import path
 from buildwatch import views_bw as bw
 from buildwatch import views_tenders as t
 from buildwatch import views_subcontract_portal as sub
+from buildwatch import views_compliance as comp
 
 # ── BuildWatch core (Sprint 1) ────────────────────────────────────────────────
 buildwatch_patterns = [
@@ -50,6 +51,15 @@ tender_patterns = [
     path('sponsors/<str:org_code>/',
          t.sponsor_landing,
          name='sponsor-landing'),
+
+    # ── Compliance & sign-off register ───────────────────────────────────
+    path('<int:listing_id>/compliance/',
+         comp.compliance_register,
+         name='compliance-register'),
+
+    path('<int:listing_id>/compliance/action/',
+         comp.compliance_action,
+         name='compliance-action'),
 
     # ── Bidder actions — login required ──────────────────────────────────
     path('<int:listing_id>/register/',

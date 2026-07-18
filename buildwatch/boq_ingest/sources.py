@@ -96,7 +96,7 @@ def load_pdf_auto_boq(listing) -> StandardBoq:
             except OSError:
                 pass
 
-    # Only safe for Isiolo-shaped demos â never invent Emurua lines from this.
+    # Only safe for Isiolo-shaped demos — never invent Emurua lines from this.
     listing_name = (
         (getattr(getattr(listing, "event", None), "ref", None) or "")
         + " "

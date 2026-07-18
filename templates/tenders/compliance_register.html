@@ -1,0 +1,163 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Compliance &amp; Sign-off - {{ listing.event.ref }}{% endblock %}
+
+{% block bw_content %}
+<div style="max-width:1100px;margin:0 auto;padding:32px 24px;">
+
+  <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:16px;">
+    <a href="{% url 'tender-list' %}" style="color:var(--bw-blue);text-decoration:none;">Tenders</a>
+    &nbsp;/&nbsp;
+    <a href="{% url 'tender-detail' listing.pk %}" style="color:var(--bw-blue);text-decoration:none;">{{ listing.event.ref }}</a>
+    &nbsp;/&nbsp; Compliance &amp; Sign-off
+  </div>
+
+  {% if messages %}
+    {% for m in messages %}
+    <div style="padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:.85rem;
+                background:{% if 'error' in m.tags %}#fdecec;color:#a12020{% else %}#eaf6ec;color:#1c6b30{% endif %};">
+      {{ m }}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Header / progress -->
+  <div class="bw-card" style="margin-bottom:18px;">
+    <div style="padding:22px 24px;">
+      <h1 style="font-size:1.35rem;font-weight:700;color:var(--bw-navy);margin:0 0 4px;">
+        Compliance &amp; Sign-off Register
+      </h1>
+      <div style="font-size:.85rem;color:var(--bw-dgrey);margin-bottom:16px;">
+        {{ listing.event.description }} &middot; <span class="mono">{{ listing.event.ref }}</span>
+      </div>
+      <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;">
+        <div><div style="font-size:1.6rem;font-weight:700;color:var(--bw-navy);">{{ stats.pct }}%</div><div style="font-size:.72rem;color:var(--bw-dgrey);">Signed off</div></div>
+        <div><div style="font-size:1.6rem;font-weight:700;color:var(--bw-navy);">{{ stats.approved }}/{{ stats.total }}</div><div style="font-size:.72rem;color:var(--bw-dgrey);">Approved</div></div>
+        <div><div style="font-size:1.6rem;font-weight:700;color:#b8860b;">{{ stats.submitted }}</div><div style="font-size:.72rem;color:var(--bw-dgrey);">Awaiting sign-off</div></div>
+        <div><div style="font-size:1.6rem;font-weight:700;color:#a12020;">{{ stats.overdue }}</div><div style="font-size:.72rem;color:var(--bw-dgrey);">Missed / overdue</div></div>
+      </div>
+      <div style="height:8px;background:#eef1f6;border-radius:6px;margin-top:16px;overflow:hidden;">
+        <div style="height:100%;width:{{ stats.pct }}%;background:#1c6b30;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missed-step banner -->
+  {% if overdue %}
+  <div class="bw-card" style="margin-bottom:18px;border-left:4px solid #a12020;">
+    <div style="padding:16px 20px;">
+      <div style="font-weight:700;color:#a12020;margin-bottom:6px;">Action required - {{ overdue|length }} missed step{{ overdue|length|pluralize }}</div>
+      <ul style="margin:0;padding-left:18px;font-size:.83rem;color:var(--bw-navy);">
+        {% for cp in overdue %}
+        <li>{{ cp.title }} - due {{ cp.due_date|date:"d M Y" }}{% if cp.responsible_user %} ({{ cp.responsible_user.first_name }} {{ cp.responsible_user.last_name }}){% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
+  {% for g in groups %}
+  <div class="bw-card" style="margin-bottom:16px;">
+    <div class="bw-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>{{ g.label }}</span>
+      <span style="font-size:.72rem;font-weight:600;color:var(--bw-dgrey);">{{ g.open_count }} open / {{ g.items|length }}</span>
+    </div>
+    <div class="bw-card-body" style="padding:0;">
+      {% for cp in g.items %}
+      <div style="padding:14px 18px;border-top:1px solid #eef1f6;">
+        <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;">
+          <div style="flex:1;min-width:240px;">
+            <div style="font-weight:600;color:var(--bw-navy);font-size:.9rem;">
+              {{ cp.title }}
+              {% if cp.source_page %}<span style="font-size:.68rem;color:var(--bw-dgrey);font-weight:500;">(BOQ p.{{ cp.source_page }})</span>{% endif %}
+            </div>
+            <div style="font-size:.75rem;color:var(--bw-dgrey);margin-top:3px;">
+              Responsible: <strong>{{ cp.get_responsible_role_display }}</strong>
+              {% if cp.responsible_user %} &middot; {{ cp.responsible_user.first_name }} {{ cp.responsible_user.last_name }}{% endif %}
+              &nbsp;|&nbsp; Approver: <strong>{{ cp.get_approver_role_display }}</strong>
+              {% if cp.due_date %} &nbsp;|&nbsp; Due: <span style="{% if cp.is_overdue %}color:#a12020;font-weight:700;{% endif %}">{{ cp.due_date|date:"d M Y" }}</span>{% endif %}
+            </div>
+            {% if cp.requirement %}
+            <details style="margin-top:6px;">
+              <summary style="cursor:pointer;font-size:.75rem;color:var(--bw-blue);">Requirement</summary>
+              <div style="white-space:pre-wrap;font-size:.78rem;color:var(--bw-navy);margin-top:4px;line-height:1.55;">{{ cp.requirement }}</div>
+            </details>
+            {% endif %}
+            {% if cp.certificate_ref or cp.evidence %}
+            <div style="font-size:.74rem;color:var(--bw-dgrey);margin-top:5px;">
+              {% if cp.evidence %}<a href="{{ cp.evidence.url }}" style="color:var(--bw-blue);">Evidence</a>{% endif %}
+              {% if cp.certificate_ref %} &middot; Ref: <span class="mono">{{ cp.certificate_ref }}</span>{% endif %}
+              {% if cp.signed_off_by %} &middot; Signed off by {{ cp.signed_off_by.first_name }} {{ cp.signed_off_by.last_name }} on {{ cp.signed_off_at|date:"d M Y" }}{% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <div style="text-align:right;">
+            {% if cp.status == 'APPROVED' %}
+            <span class="bw-badge bw-badge--open">Approved</span>
+            {% elif cp.status == 'SUBMITTED' %}
+            <span class="bw-badge" style="background:#fdf3e0;color:#b8860b;">Awaiting sign-off</span>
+            {% elif cp.status == 'REJECTED' %}
+            <span class="bw-badge bw-badge--closed">Rejected</span>
+            {% elif cp.status == 'NA' %}
+            <span class="bw-badge" style="background:#eef1f6;color:var(--bw-dgrey);">N/A</span>
+            {% else %}
+            <span class="bw-badge" style="background:#eef1f6;color:var(--bw-dgrey);">Pending</span>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if cp.is_open %}
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+          <!-- Take responsibility -->
+          <details>
+            <summary style="cursor:pointer;font-size:.76rem;color:var(--bw-blue);">Take responsibility / set due date</summary>
+            <form method="post" action="{% url 'compliance-action' listing.pk %}" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              {% csrf_token %}
+              <input type="hidden" name="checkpoint_id" value="{{ cp.pk }}">
+              <input type="hidden" name="action" value="assign">
+              <label style="font-size:.74rem;color:var(--bw-dgrey);">Due <input type="date" name="due_date" style="font-size:.78rem;padding:3px 6px;"></label>
+              <button type="submit" style="font-size:.76rem;padding:4px 12px;border-radius:6px;border:1px solid var(--bw-blue);background:var(--bw-blue);color:#fff;cursor:pointer;">I'll take this</button>
+            </form>
+          </details>
+
+          {% if caps.can_submit %}
+          <!-- Submit evidence -->
+          <details>
+            <summary style="cursor:pointer;font-size:.76rem;color:var(--bw-blue);">Submit evidence / certificate</summary>
+            <form method="post" action="{% url 'compliance-action' listing.pk %}" enctype="multipart/form-data" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              {% csrf_token %}
+              <input type="hidden" name="checkpoint_id" value="{{ cp.pk }}">
+              <input type="hidden" name="action" value="submit">
+              <input type="file" name="evidence" style="font-size:.76rem;">
+              <input type="text" name="certificate_ref" placeholder="Certificate / ref no." style="font-size:.78rem;padding:3px 6px;">
+              <button type="submit" style="font-size:.76rem;padding:4px 12px;border-radius:6px;border:1px solid #1c6b30;background:#1c6b30;color:#fff;cursor:pointer;">Submit for sign-off</button>
+            </form>
+          </details>
+          {% endif %}
+
+          {% if caps.can_approve %}
+          <!-- Sign off -->
+          <details>
+            <summary style="cursor:pointer;font-size:.76rem;color:#1c6b30;font-weight:600;">Sign off / decision</summary>
+            <form method="post" action="{% url 'compliance-action' listing.pk %}" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              {% csrf_token %}
+              <input type="hidden" name="checkpoint_id" value="{{ cp.pk }}">
+              <input type="text" name="notes" placeholder="Note (optional)" style="font-size:.78rem;padding:3px 6px;">
+              <button type="submit" name="action" value="approve" style="font-size:.76rem;padding:4px 12px;border-radius:6px;border:1px solid #1c6b30;background:#1c6b30;color:#fff;cursor:pointer;">Approve</button>
+              <button type="submit" name="action" value="reject" style="font-size:.76rem;padding:4px 12px;border-radius:6px;border:1px solid #a12020;background:#fff;color:#a12020;cursor:pointer;">Reject</button>
+              <button type="submit" name="action" value="na" style="font-size:.76rem;padding:4px 12px;border-radius:6px;border:1px solid #ccc;background:#fff;color:var(--bw-dgrey);cursor:pointer;">N/A</button>
+            </form>
+          </details>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="bw-card"><div class="bw-card-body">No compliance checkpoints have been generated for this tender yet.</div></div>
+  {% endfor %}
+
+</div>
+{% endblock %}
