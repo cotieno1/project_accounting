@@ -1,0 +1,24 @@
+﻿---
+description: Pioneer Project Accounting — lanes, Railway, Android/PWA, ops/BOM UI
+alwaysApply: true
+---
+
+# Pioneer context
+
+Read docs/pioneer-project-context.md for full detail.
+
+## Android + Railway
+- One codebase: Django on Railway + templates + static/css/pioneer/.
+- Android = PWA first, then optional TWA — not native UI rewrite.
+- Push main → Railway → web and Android shell both update.
+- New screens: layouts/cockpit.html.
+
+## Boundaries
+- Manual lanes; misc_purchase.html frozen unless asked.
+- BOM: Start BOM POST only; bom_print.html browser print.
+
+## Ops dashboard
+- Activity feed with Project Status/stage; accordion sidebar (I open by default).
+
+## Deploy
+- Commit only when user asks.

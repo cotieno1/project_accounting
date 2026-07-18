@@ -1,0 +1,1040 @@
+---PAGE 1---
+REQUEST  FOR  QUOTATION  –  ISIOLO  STADIUM  ELECTRICAL  SERVICES   |    Tender  Ref:  SK/004/2025-2026 
+REQUEST  FOR  QUOTATION 
+Proposed  Completion  of  Isiolo  Stadium 
+Electrical,  Structured  Cabling,  CCTV  and  Solar  Installation  Works 
+Isiolo  County,  Kenya  Tender  Reference:  SK/004/2025-2026  Issued  by:  The  Director  General,  Sports  Kenya  Ltd  P.O.  Box  Private  Bag,  Kasarani,  Nairobi  |  Tel:  +254  20  2390500/1  Consulting  Electrical  Engineer:  Chief  Engineer  (Electrical),  Ministry  of  Lands,  Public  Works,  Housing  &  Urban  Development  –  State  Dept.  for  Public  Works,  P.O.  Box  41191-00100,  Nairobi  Quantity  Surveyor:  Chief  Quantity  Surveyor,  Ministry  of  Lands,  Public  Works,  Housing  &  Urban  Development  –  State  Dept.  for  Public  Works,  P.O.  Box  30743-00100,  Nairobi   Closing  Date  &  Time:   10th  July  2025  at  11:00  HRS RFQ  Issued:  June  2025  CONFIDENTIAL  &  COMMERCIAL  IN  CONFIDENCE 
+ 
+Sports  Kenya  Ltd  –  Confidential  &  Commercial  in  ConfidencePage  
+1  
+---PAGE 2---
+REQUEST  FOR  QUOTATION  –  ISIOLO  STADIUM  ELECTRICAL  SERVICES   |    Tender  Ref:  SK/004/2025-2026 
+1.  Introduction  and  Background  Sports  Kenya  Ltd,  acting  as  the  Client,  invites  quotations  from  suitably  qualified  and  registered  electrical  
+contractors
+ 
+for
+ 
+the
+ 
+completion
+ 
+of
+ 
+electrical
+ 
+services
+ 
+installation
+ 
+works
+ 
+at
+ 
+the
+ 
+proposed
+ 
+Isiolo
+ 
+Stadium,
+ 
+Isiolo
+ 
+County.
+ 
+This
+ 
+Request
+ 
+for
+ 
+Quotation
+ 
+(RFQ)
+ 
+is
+ 
+issued
+ 
+under
+ 
+Tender
+ 
+Reference
+ 
+SK/004/2025-2026
+ 
+as
+ 
+a
+ 
+Domestic
+ 
+Sub-Contractor
+ 
+tender.
+ The  project  forms  part  of  the  broader  construction  of  a  multi-use  stadium  facility  in  Isiolo  County.  The  scope  
+covers
+ 
+the
+ 
+complete
+ 
+supply,
+ 
+installation,
+ 
+testing
+ 
+and
+ 
+commissioning
+ 
+of
+ 
+electrical,
+ 
+structured
+ 
+cabling,
+ 
+CCTV,
+ 
+fire
+ 
+alarm,
+ 
+solar
+ 
+PV,
+ 
+MATV,
+ 
+lightning
+ 
+protection,
+ 
+access
+ 
+control
+ 
+and
+ 
+power
+ 
+reticulation
+ 
+systems
+ 
+across
+ 
+the
+ 
+following
+ 
+facilities:
+ •  Western  Pavilion  –  Ground  to  Third  Floor  •  Eastern  Pavilion  –  Ground  to  Third  Floor  •  Ablution  Block  •  Gate  House  •  External  area  &  terrace  lighting,  high-mast  floodlighting  and  power  reticulation   The  Works  are  prepared  by  the  Consulting  Electrical  Engineer  from  the  Ministry  of  Lands,  Public  Works,  
+Housing
+ 
+&
+ 
+Urban
+ 
+Development,
+ 
+in
+ 
+conjunction
+ 
+with
+ 
+the
+ 
+Chief
+ 
+Quantity
+ 
+Surveyor
+ 
+from
+ 
+the
+ 
+same
+ 
+ministry.
+ 
+All
+ 
+prices
+ 
+shall
+ 
+include
+ 
+supply
+ 
+of
+ 
+materials,
+ 
+labour,
+ 
+delivery
+ 
+to
+ 
+site,
+ 
+storage,
+ 
+installation,
+ 
+testing,
+ 
+commissioning
+ 
+and
+ 
+all
+ 
+applicable
+ 
+taxes
+ 
+(including
+ 
+16%
+ 
+VAT).
+  
+2.  Scope  of  Works  –  Consulting  Engineer  Deliverables  The  following  table  summarises  the  detailed  scope  of  works  as  specified  by  the  Consulting  Electrical  
+Engineer.
+ 
+Quoters
+ 
+must
+ 
+price
+ 
+all
+ 
+items
+ 
+as
+ 
+detailed
+ 
+in
+ 
+the
+ 
+attached
+ 
+Bills
+ 
+of
+ 
+Quantities
+ 
+(Parts
+ 
+2A–11
+ 
+of
+ 
+the
+ 
+BOQ).
+  
+Discipline Key  Deliverables 
+Electrical  Installation  Wiring  of  1,063+  lighting  points,  500+  socket  outlets  across  Pavilions  (W  &  E),  Ablution  Block  and  Gate  House.  Supply  &  installation  of  MCB  DBs,  consumer  units  (100A  SP&N  and  TP&N).  Sub-mains  armoured  cable  runs  (4–185mm²).  Fire  alarm  systems  (addressable  Menvier  panels,  smoke  detectors,  break-glass,  sounders)  in  all  pavilion  floors.  
+Power  Reticulation  Four  3-phase  IP66  sub-switchboards  (Sub-boards  A–D)  plus  dedicated  Western  and  Eastern  Pavilion  sub-boards.  Buried  armoured  4-core  SWA  feeder  cables  totalling  ~1,040  Lm.  1,200  Lm  PVC  duct  networks,  30  manholes,  concrete  cable  route  markers.  
+Floodlighting  &  External  
+4×  25m  polygonal  steel  high-mast  towers,  each  carrying  12×  1,000W  IP66  LED  floodlights  (100  lm/W,  L70  >  50,000  hrs)  with  electric  lowering  winch.  50×  4m  area  lighting  columns  fitted  with  40W  LED  solar-top  fittings.  352×  LED  battens  for  terrace/pitch  surround  lighting.  
+CCTV  &  Security  24×  indoor  +  10×  outdoor  +  2×  PTZ  cameras;  2×  32-channel  NVR;  48-port  PoE+  switch;  10TB  surveillance  HDDs;  50"  4K  monitoring  display;  5×  1kVA  UPS  rack  units.  
+Structured  Cabling  &  ICT  
+96×  Cat6  RJ45  dual  data/voice  outlets;  5,760  Lm  Cat6  UTP;  300  Lm  8-core  multimode  fibre;  1×  22U  main  cabinet,  4×  9U  floor  cabinets;  4×  24-port  edge  switches;  8×  802.11ac  Wave  2  WAPs;  1×  fibre  SFP  core  switch.  
+Access  Control  16-door  Impro-based  access  control;  600kg  EM  locks;  125/13.56  MHz  readers;  proximity  card  set;  1×  workstation  (Intel  i7);  Mylair  wiring;  programming  &  commissioning.  
+Sports  Kenya  Ltd  –  Confidential  &  Commercial  in  ConfidencePage  
+2  
+---PAGE 3---
+REQUEST  FOR  QUOTATION  –  ISIOLO  STADIUM  ELECTRICAL  SERVICES   |    Tender  Ref:  SK/004/2025-2026 
+Solar  PV  Systems  Western  Pavilion:  6×  555W  monocrystalline  panels  +  8kW  hybrid  inverter  +  2×  5.12kWh  LiFePO ₄  batteries.  Eastern  Pavilion:  equivalent  scheme.  Manual  bypass  switch;  6mm²  DC  cabling;  surge  protection;  mounting  frames.  
+Lightning  Protection  Furse-compliant  air  termination  spikes,  25mm×3mm  bare  copper  tape,  downward  conductors,  earth  inspection  chambers  (×4),  copper  earth  rods  (×4)  across  Western  Pavilion  rooftop  and  High  Mast  towers.  
+MATV  Aluminium  aerial  mast,  UHF/VHF  grid  antennae,  INVERTO  Quattro  LNB,  2×  satellite  dishes  (Ku-band),  multiswitch,  tap-off  units,  coaxial  cable  runs,  10×  TV  faceplates.   
+ 
+3.  Budget  Baseline  –  Bills  of  Quantities  Summary  The  Bills  of  Quantities  have  been  prepared  by  the  Chief  Quantity  Surveyor  and  form  the  contractual  basis  for  
+pricing.
+ 
+The
+ 
+following
+ 
+table
+ 
+reflects
+ 
+the
+ 
+complete
+ 
+schedule
+ 
+of
+ 
+bills.
+ 
+Quoters
+ 
+shall
+ 
+insert
+ 
+their
+ 
+rates
+ 
+and
+ 
+amounts
+ 
+in
+ 
+the
+ 
+blank
+ 
+RATE
+ 
+and
+ 
+AMOUNT
+ 
+columns
+ 
+of
+ 
+the
+ 
+original
+ 
+BOQ
+ 
+document.
+ 
+The
+ 
+summary
+ 
+below
+ 
+establishes
+ 
+the
+ 
+budget
+ 
+structure
+ 
+and
+ 
+is
+ 
+the
+ 
+budget
+ 
+baseline
+ 
+for
+ 
+Project
+ 
+X.
+  
+Bill Description Notes  /  Provisional  Amounts 
+1  Bill  No.1  –  Sub-Contract  Preliminaries  Incl.  supervision  KES  300,000  PS;  mobilisation;  testing  &  commissioning;  records;  O&M  manuals  
+2A  Bill  No.2  –  Western  Pavilion  (Grd  –  3rd  Floors)  4  floors:  lighting,  sockets,  DBs,  sub-mains,  fire  alarm,  MATV  
+2B  Bill  No.2  –  Western  Pavilion  –  CCTV  Installation  36  cameras  (24  indoor/10  outdoor/2  PTZ);  2×  NVRs;  PoE  switches;  2,880  Lm  Cat6E  
+2C  Bill  No.2  –  Western  Pavilion  –  Solar  Installation  6×  555W  mono  panels;  8kW  hybrid  inverter;  2×  5.12kWh  Li  batteries;  bypass  switch  
+2D  Bill  No.2  –  Western  Pavilion  –  Structured  Cabling  &  Access  Control  
+96  Cat6  data  outlets;  fibre  backbone;  4×  edge  switches;  8×  WAPs;  16-door  access  control;  EM  locks  
+2E  Bill  No.2  –  Western  Pavilion  –  Lightning  Protection  Air  termination,  down  conductors,  earth  rods  (Furse  system)  
+2F  Bill  No.2  –  Western  Pavilion  –  MATV  Aerial  mast,  UHF/VHF  antennae,  satellite  dish,  multiswitch,  TV  outlets  
+3A  Bill  No.2  –  Eastern  Pavilion  (Grd  –  3rd  Floors)  4  floors:  lighting,  sockets,  DBs,  sub-mains,  fire  alarm  
+3B  Bill  No.2  –  Eastern  Pavilion  –  Solar  Installation  Similar  to  Western  Pavilion  solar  scheme  
+Sports  Kenya  Ltd  –  Confidential  &  Commercial  in  ConfidencePage  
+3  
+---PAGE 4---
+REQUEST  FOR  QUOTATION  –  ISIOLO  STADIUM  ELECTRICAL  SERVICES   |    Tender  Ref:  SK/004/2025-2026 
+3C  Bill  No.2  –  Eastern  Pavilion  –  Structured  Cabling  Data/voice  outlets,  cabinets,  patch  panels,  active  switching  
+4  Bill  No.2  –  Ablution  Block  Lighting,  sockets,  distribution,  sub-mains  
+5  Bill  No.2  –  Gate  House  Full  electrical  fit-out  incl.  lighting,  sockets,  DBs  
+6  Bill  No.2  –  Area  Lighting  50×  4m  galvanised  steel  columns;  50×  40W  LED  solar  top-post  fittings  
+7  Bill  No.2  –  Terrace  Lighting  352×  LED  batten  fittings;  4×  DBs;  780  Lm  sub-mains  cabling  
+8  Bill  No.2  –  High  Mast  Floodlighting  (4  No.)  4×  25m  polygonal  steel  masts;  12×  1000W  LED  floodlights  per  mast;  winch;  lightning  protection  
+9  Bill  No.2  –  Power  Reticulation  Sub-boards  A–D;  Western  &  Eastern  Pavilion  sub-boards;  690  m  4-core  SWA  cables  (35–185mm²);  1,200  Lm  ducting;  30  manholes  
+10  Bill  No.2  –  Project  Manager's  Stationery  A4  papers,  UPS  units,  toners,  2×  laptops  (HP  Core  i7)  
+11  Bill  No.2  –  Provisional  Sums  &  Contingency  Training  levy  KES  300,000;  Contingency  KES  5,000,000;  KPLC  Capital  Contribution  KES  4,000,000   Known  Fixed  Provisional  Sums  (included  in  Bill  11):  •  Supervision  /  Site  Meetings  Provisional  Sum:  KES  300,000  •  Training  Levy  (MOPW  Technical  Staff):  KES  300,000  •  Contingency  Sum:  KES  5,000,000  •  KPLC  Capital  Contribution:  KES  4,000,000   Note:  The  BOQ  rate  and  amount  cells  are  blank;  it  is  the  bidder's  responsibility  to  price  each  item.  The  grand  
+total
+ 
+of
+ 
+all
+ 
+bills
+ 
+must
+ 
+be
+ 
+carried
+ 
+forward
+ 
+to
+ 
+the
+ 
+Form
+ 
+of
+ 
+Tender.
+ 
+All
+ 
+rates
+ 
+are
+ 
+inclusive
+ 
+of
+ 
+VAT
+ 
+at
+ 
+16%
+ 
+and
+ 
+all
+ 
+other
+ 
+applicable
+ 
+taxes
+ 
+and
+ 
+levies
+ 
+at
+ 
+time
+ 
+of
+ 
+tender.
+  
+4.  Mandatory  Qualification  Requirements  All  bidders  must  satisfy  the  following  mandatory  requirements.  Non-compliance  with  any  item  will  result  in  
+immediate
+ 
+disqualification.
+ 
+Certified
+ 
+copies
+ 
+of
+ 
+all
+ 
+documents
+ 
+must
+ 
+be
+ 
+attached
+ 
+to
+ 
+the
+ 
+submission.
+  
+Ref. Requirement 
+MR1  Certificate  of  Incorporation  /  Business  Registration  
+MR2  Valid  Tax  Compliance  Certificate  (KRA)  
+Sports  Kenya  Ltd  –  Confidential  &  Commercial  in  ConfidencePage  
+4  
+---PAGE 5---
+REQUEST  FOR  QUOTATION  –  ISIOLO  STADIUM  ELECTRICAL  SERVICES   |    Tender  Ref:  SK/004/2025-2026 
+MR3  EPRA  Licence  –  Class  B  Electrical  Installation  Works  
+MR4  EPRA  Licence  –  Class  T2  or  above,  Solar  Installation  Works  
+MR5  NCA  Certificate  –  Electrical  Installation  Works  (NCA  6  or  above)  
+MR6  Valid  NCA  Contractor's  Practising  Licence  –  Electrical  
+MR7  NCA  Certificate  –  CCTV  /  Security  Surveillance  /  Structured  Cabling  (NCA  8  or  above)  
+MR8  Valid  NCA  Practising  Licence  –  Structured  Cabling  &  CCTV  
+MR9  Communication  Authority  of  Kenya  –  Registration  Licence  (Telecom  Contractor)  
+MR10  Communication  Authority  of  Kenya  –  Compliance  Certificate  (Telecom  Contractor)  
+MR11  Manufacturer's  Authorisation  Letters  for  NVRs  and  Network  Switches  offered  
+MR12  Valid  Single  Business  Permit  (current  year)  
+MR13  CR12  Form  (within  last  12  months)  or  National  ID(s)  for  Sole  Proprietorship  
+MR14  Signed  Domestic  Sub-Contractor  Agreement  with  Main  Contractor  (if  applicable)   
+ 
+5.  Technical  Evaluation  Criteria  Submissions  meeting  the  Mandatory  Requirements  will  be  technically  evaluated  against  the  following  criteria.  
+Full
+ 
+compliance
+ 
+is
+ 
+required
+ 
+to
+ 
+proceed
+ 
+to
+ 
+financial
+ 
+evaluation.
+  
+Item Evaluation  Criterion 
+1  Compliance  with  all  Technical  Specifications  as  detailed  in  Section  II  of  the  Tender  Document,  including  compliance  with  manufacturer  brochures/catalogues  (highlighted  with  model/catalogue  numbers).  Non-compliance  with  any  key  technical  specification  renders  the  entire  system  non-compliant.  
+2  Key  Personnel  Qualifications:  (a)  Director  –  minimum  Diploma,  5  years'  experience  in  electrical  engineering;  (b)  Project  Manager  –  minimum  Degree,  5  years'  experience  in  electrical  engineering;  (c)  At  least  3  qualified  artisans  with  minimum  Certificate  and  5  years'  relevant  experience.  Evidence:  certified  ID  copies,  academic  certificates,  CVs,  recommendation  letters.  
+3  Firm  Experience:  Minimum  3  completed  projects  of  similar  nature,  complexity  and  magnitude  executed  between  2019  and  2022.  Evidence:  award  letters,  completion  certificates,  LSOs.  
+4  Plant  &  Equipment:  Proof  of  ownership  or  lease  of:  (a)  at  least  3  means  of  transport;  (b)  at  least  3  items  from:  phase  sequence  meter,  earth  loop  impedance  tester,  earth  resistance  tester,  insulation  resistance  tester,  clamp  meter/multimeter,  cable  qualification  tester,  impact  punch-down  tool,  cable  stripper,  crimping  tools,  probe  picks.   
+ 
+6.  Key  Technical  Specifications  Summary  The  following  specifications  are  extracted  from  Section  II  of  the  tender  document.  Bidders  must  confirm  
+compliance
+ 
+with
+ 
+each
+ 
+item.
+ 
+Detailed
+ 
+particular
+ 
+specifications
+ 
+are
+ 
+attached
+ 
+as
+ 
+Appendix
+ 
+A.
+  
+Sports  Kenya  Ltd  –  Confidential  &  Commercial  in  ConfidencePage  
+5  
+---PAGE 6---
+REQUEST  FOR  QUOTATION  –  ISIOLO  STADIUM  ELECTRICAL  SERVICES   |    Tender  Ref:  SK/004/2025-2026 
+6.1  Luminaires  •  LED  Batten  (Type  J):  Weatherproof,  4ft,  3,200  lm,  18W  (or  36W  twin),  6,500K  –  Thorn  Poppack  or  
+approved
+ 
+equal
+ •  COB  Downlighter  (Type  N):  1,000  lm,  13W,  4,000K,  85mm  –  Philips  ClearAscent  or  approved  equal  •  Emergency  Exit  Sign:  8W  LED,  3-hour  duration,  non-maintained  –  Thorn  EF  X3  or  approved  equal  •  High  Mast  LED  Floodlight:  1,000W,  IP66,  ≥100  lm/W,  L70  >  50,000  hrs,  -35°C  to  +55°C,  5-year  
+warranty
+ •  Area  Lighting:  40W  LED  solar  top-post,  IP66,  IK08  –  Thorn  Avenue  F2  LED  or  approved  equal  
+6.2  Switchgear  &  Distribution  •  MCBs  and  MCCBs:  Merlin  Gerin  (MCBs);  Havells  or  approved  equal  (MCCBs,  25–35  kA  rated)  •  Socket  Outlets  &  Switches:  MK  or  approved  equal  •  Sub-boards:  IP66,  flush-fronted,  12  SWG  galvanised  mild  steel,  cream  powder-coated,  BS  162  
+compliant
+ •  Cables:  PVC  insulated  SC  copper  (1.5–185mm²)  for  internal;  armoured  SWA  for  sub-mains  and  
+buried
+ 
+runs;
+ 
+fire-resistant
+ 
+2×1.5mm²
+ 
+for
+ 
+fire
+ 
+alarm
+ 
+circuits
+ 
+6.3  CCTV  &  Networking  •  NVR:  32-channel,  up  to  8  MP,  HDMI/VGA  4K  output  •  Switches:  Cisco  CBS350-8SE-2G-EU  (8-port  SFP)  and  Cisco  CBS220-48P-4G  (48-port  PoE+)  or  
+approved
+ 
+equal
+ •  Structured  cabling:  Siemon  Cat6  UTP;  Siemon  patch  panels  and  patch  cords  •  WAPs:  Cisco  WAP200  or  approved  equal  (802.11ac  Wave  2)  
+6.4  Solar  PV  •  Panels:  Monocrystalline  555W  –  Jinko  Solar  or  approved  equal  •  Inverter:  Single-phase  8kW  hybrid  –  Victron,  Growatt,  Jinko  or  approved  equal  •  Battery:  5.12  kWh  Ferro  Lithium  (LiFePO ₄ )  –  Weco  or  approved  equal  
+6.5  Fire  Alarm  •  System:  Fully  addressable,  4-loop  panels  –  Menvier  or  approved  equal  •  Devices:  Addressable  photoelectric  smoke  detectors,  manual  break-glass  points,  electronic  
+sounders
+ 
+with
+ 
+visual
+ 
+alarm
+ 
+beacons
+ 
+–
+ 
+Menvier
+ 
+or
+ 
+approved
+ 
+equal
+  
+7.  Quotation  Submission  Requirements  Quotations  shall  be  submitted  as  one  original  and  two  copies  in  a  sealed  envelope  clearly  marked  with  the  
+Tender
+ 
+Reference:
+ 
+SK/004/2025-2026.
+ 
+Submissions
+ 
+must
+ 
+include
+ 
+the
+ 
+following:
+ 1.  Completed  and  signed  Form  of  Tender  with  grand  total  (words  and  figures)  2.  Fully  priced  Bills  of  Quantities  (Sections  I)  with  unit  rates  and  amounts  for  all  items  3.  Technical  Schedules  (Section  III)  –  completed  with  proposed  equipment  model/make/manufacturer  
+and
+ 
+catalogue
+ 
+numbers
+ 4.  Coloured  manufacturer's  brochures/catalogues  with  highlighted  model  and  catalogue  numbers  for  
+ALL
+ 
+equipment
+ 5.  All  Mandatory  Requirement  documents  (MR1–MR14)  as  listed  in  Section  4  above  6.  Personnel  forms:  Form  PER-1  (Key  Personnel  Schedule)  and  Form  PER-2  (Résumés  &  
+Declarations)
+ 7.  Experience  forms:  Form  EXP-3.4  (Current  Contract  Commitments),  EXP-4.1  (General  Experience),  
+EXP-4.2a
+ 
+(Specific
+ 
+Experience),
+ 
+EXP-4.2b
+ 
+(Key
+ 
+Activities)
+ 8.  Form  EQU  –  Equipment  Schedule  with  supporting  evidence  
+Sports  Kenya  Ltd  –  Confidential  &  Commercial  in  ConfidencePage  
+6  
+---PAGE 7---
+REQUEST  FOR  QUOTATION  –  ISIOLO  STADIUM  ELECTRICAL  SERVICES   |    Tender  Ref:  SK/004/2025-2026 
+ Submissions  are  to  be  delivered  to:  The  Director  General,  Sports  Kenya  Ltd,  P.O.  Box  Private  Bag,  Kasarani,  
+Nairobi,
+ 
+not
+ 
+later
+ 
+than
+ 
+10th
+ 
+July
+ 
+2025
+ 
+at
+ 
+11:00
+ 
+HRS.
+ 
+Late
+ 
+submissions
+ 
+will
+ 
+not
+ 
+be
+ 
+accepted
+ 
+under
+ 
+any
+ 
+circumstances.
+  
+8.  Contract  Conditions  and  General  Provisions  •  This  is  a  Domestic  Sub-Contract.  Payment  will  be  made  through  the  Main  Contractor's  certificates  
+unless
+ 
+direct
+ 
+payment
+ 
+is
+ 
+specifically
+ 
+agreed.
+ 
+All
+ 
+payments
+ 
+are
+ 
+subject
+ 
+to
+ 
+retention
+ 
+as
+ 
+per
+ 
+Main
+ 
+Contract.
+ •  The  Sub-Contractor  shall  supply,  deliver,  unload,  hoist,  fix,  test,  commission  and  hand  over  the  
+complete
+ 
+installation
+ 
+including
+ 
+provision
+ 
+of
+ 
+labour,
+ 
+transport,
+ 
+plant
+ 
+and
+ 
+storage.
+ •  All  quantities  in  the  BOQ  are  provisional.  Actual  quantities  shall  be  measured  and  valued  by  the  
+Quantity
+ 
+Surveyor.
+ 
+Leave
+ 
+all
+ 
+work
+ 
+uncovered
+ 
+until
+ 
+measured.
+ •  All  materials  must  comply  with  specified  standards.  Samples  to  be  provided  when  requested.  
+Alternative
+ 
+brands
+ 
+of
+ 
+equal
+ 
+and
+ 
+approved
+ 
+quality
+ 
+may
+ 
+be
+ 
+accepted.
+ •  The  Sub-Contractor  shall  prepare  working  drawings  and  as-installed  record  drawings  (4  copies  of  
+O&M
+ 
+manuals
+ 
+on
+ 
+practical
+ 
+completion).
+ •  The  Sub-Contractor  shall  carry  out  routine  maintenance  once  per  month  during  the  Defects  Liability  
+Period
+ 
+and
+ 
+submit
+ 
+monthly
+ 
+reports.
+ •  No  claims  will  be  entertained  for  pre-financing  or  loss  of  profit  arising  from  premature  termination  or  
+variation
+ 
+of
+ 
+works.
+ •  Exchange  rates:  prior-year  rates  for  turnover  data;  signing-date  rate  for  contract  value.  Errors  in  
+exchange
+ 
+rates
+ 
+may
+ 
+be
+ 
+corrected
+ 
+by
+ 
+the
+ 
+Procuring
+ 
+Entity.
+ •  The  Employer  reserves  the  right  to  accept  or  reject  any  quotation  without  assigning  reasons.   
+9.  Commissioning  Requirements  A  Commissioning  Guide  for  Electrical  Works  is  included  in  the  tender  document  (pages  113–118).  The  
+Sub-Contractor
+ 
+shall
+ 
+comply
+ 
+fully
+ 
+with
+ 
+its
+ 
+requirements.
+ 
+Key
+ 
+commissioning
+ 
+deliverables
+ 
+tied
+ 
+to
+ 
+the
+ 
+consulting
+ 
+engineer's
+ 
+scope
+ 
+are:
+ •  Testing  each  section  of  the  installation  prior  to  covering  up,  with  two  weeks'  notice  to  the  Engineer  •  Witness  testing  of  all  manufactured  plant  and  equipment  •  Fire  alarm  system  functional  tests  (loop  integrity,  detector  response,  sounder  activation)  •  CCTV  system  –  camera  focus,  recording  verification,  NVR  playback  confirmation,  switch  
+configuration
+ •  Solar  PV  –  inverter  grid-tie  test,  battery  charge/discharge  cycle,  bypass  switch  operation  •  High  mast  floodlights  –  lamp  operation,  winch  test,  earth  resistance  verification  (≤10  Ω)  •  Access  control  –  card  programming,  EM  lock  force  test,  door  controller  commissioning  •  Insulation  resistance,  earth  loop  impedance  and  polarity  tests  on  all  final  circuits  •  Handover  documentation:  test  certificates,  as-installed  drawings,  O&M  manuals  (4  hard  copies  +  
+digital)
+  
+10.  Enquiries  and  Clarifications  All  enquiries  regarding  this  RFQ  must  be  submitted  in  writing  to  the  address  below  no  later  than  seven  (7)  
+calendar
+ 
+days
+ 
+before
+ 
+the
+ 
+closing
+ 
+date.
+ 
+Responses
+ 
+will
+ 
+be
+ 
+issued
+ 
+to
+ 
+all
+ 
+registered
+ 
+bidders
+ 
+as
+ 
+an
+ 
+addendum.
+ The  Director  General  Sports  Kenya  Ltd  
+Sports  Kenya  Ltd  –  Confidential  &  Commercial  in  ConfidencePage  
+7  
+---PAGE 8---
+REQUEST  FOR  QUOTATION  –  ISIOLO  STADIUM  ELECTRICAL  SERVICES   |    Tender  Ref:  SK/004/2025-2026 
+P.O.  Box  Private  Bag,  Kasarani,  Nairobi,  Kenya  Tel:  +254  20  2390500/1   
+11.  Bidder's  Declaration  and  Signature  I/We  the  undersigned,  having  examined  and  understood  the  Tender  Documents,  including  the  Bills  of  
+Quantities,
+ 
+Specifications,
+ 
+Drawings
+ 
+and
+ 
+Contract
+ 
+Conditions,
+ 
+hereby
+ 
+offer
+ 
+to
+ 
+complete
+ 
+the
+ 
+Works
+ 
+described
+ 
+herein
+ 
+in
+ 
+conformity
+ 
+with
+ 
+the
+ 
+Tender
+ 
+Documents
+ 
+for
+ 
+the
+ 
+sum
+ 
+entered
+ 
+in
+ 
+the
+ 
+Form
+ 
+of
+ 
+Tender.
+  
+Company  Name:   
+Authorised  Signatory:   
+Designation:   
+Signature:   
+Date:   
+PIN  Number:   
+VAT  Certificate  No.:   
+Company  Stamp:   
+Witness  Name:   
+Witness  Signature:   
+Witness  Date:    
+NOTE:  This  RFQ  document  must  be  read  in  conjunction  with  the  full  Tender  Document  (121  pages)  
+issued
+ 
+under
+ 
+Tender
+ 
+No.
+ 
+SK/004/2025-2026,
+ 
+including
+ 
+all
+ 
+Parts,
+ 
+Sections,
+ 
+Specifications,
+ 
+Technical
+ 
+Schedules
+ 
+and
+ 
+the
+ 
+Commissioning
+ 
+Guide.
+ 
+The
+ 
+complete
+ 
+BOQ
+ 
+(Bills
+ 
+1–24)
+ 
+with
+ 
+blank
+ 
+rate/amount
+ 
+columns
+ 
+is
+ 
+attached
+ 
+as
+ 
+Appendix
+ 
+A
+ 
+and
+ 
+must
+ 
+be
+ 
+fully
+ 
+priced
+ 
+and
+ 
+submitted.
+ 
+Sports  Kenya  Ltd  –  Confidential  &  Commercial  in  ConfidencePage  
+8  

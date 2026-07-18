@@ -1,0 +1,253 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+content = r"""{% extends "layouts/cockpit.html" %}
+{% load static %}
+{% load pioneer_tags %}
+
+{% block title %}Pioneer | Requisition Order Builder{% endblock %}
+{% block body_class %}ro-builder{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/ro-builder.css' %}?v=5">
+{% endblock %}
+
+{% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Requisition" process="Ordinary Requisition Process" only %}{% endblock %}
+{% block sidebar %}
+    {% include "includes/cockpit_sidebar_brand.html" with lane="Requisition" process="Ordinary Requisition Process" brand_class="ro-sidebar-brand" only %}
+
+    <div class="sidebar-block ro-sidebar-task-picker">
+        <span class="nav-label">Active Project Task</span>
+        <select class="form-input" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'}">
+            <option value="">-- Select project task --</option>
+            {% for t in tasks %}
+                <option value="{{ t.project_id|clean_task_id }}" {% if active_task and t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>
+                    {{ t.project_id|clean_task_id }}: {{ t.description|clean_task_description|truncatechars:48 }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if not active_task %}
+        <p class="ro-sidebar-note">{{ setup_message }}</p>
+        {% endif %}
+    </div>
+
+    {% if ro %}
+    <div class="sidebar-block ro-sidebar-actions">
+        <span class="nav-label">Workflow Actions</span>
+        {% include "includes/ro_workflow_actions.html" %}
+    </div>
+    {% endif %}
+
+    <div class="sidebar-footer">
+        <a href="{% if active_task %}/ops-dashboard/?task_id={{ active_task.project_id|clean_task_id }}{% else %}/dashboard/{% endif %}" class="sidebar-back-link">
+            Return to Dashboard
+        </a>
+    </div>
+{% endblock %}
+
+{% block workspace %}
+    <div class="panel ro-workspace-task-bar">
+        <span class="nav-label">Active project task</span>
+        <select class="form-input ro-workspace-task-select" aria-label="Select project task" onchange="if(this.value){window.location.href='?task_id='+encodeURIComponent(this.value)}else{window.location.href='?'}">
+            <option value="">-- Select project task --</option>
+            {% for t in tasks %}
+                <option value="{{ t.project_id|clean_task_id }}" {% if active_task and t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>
+                    {{ t.project_id|clean_task_id }}: {{ t.description|clean_task_description|truncatechars:48 }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% if ro %}
+    <div class="panel ro-workspace-actions">
+        <span class="nav-label">Workflow actions</span>
+        {% include "includes/ro_workflow_actions.html" %}
+    </div>
+    {% endif %}
+
+    <div class="panel">
+        <div class="ro-page-header">
+            <div>
+                <h1>Requisition Order</h1>
+                <p class="ro-page-subtitle">
+                    {% if active_task %}
+                    Linked task: <span style="color: var(--light);">{{ active_task.description|clean_task_description }}</span>
+                    {% elif setup_message %}
+                    {{ setup_message }}
+                    {% endif %}
+                </p>
+            </div>
+            {% if ro %}
+            <div class="ro-status-wrap">
+                <span class="ro-status-badge{% if ro.is_confirmed %} ro-status-badge--confirmed{% endif %}">{{ ro.get_status_display }}</span>
+                {% if ro.ro_no %}<span class="ro-number-label">{{ ro.ro_no }}</span>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if ro and ro.is_confirmed %}
+        <div class="ro-locked-banner" role="status">
+            <strong>{{ ro.ro_no }}</strong> was confirmed on <strong>{{ ro.confirmed_at|date:"d M Y, H:i" }}</strong>.
+            This requisition is locked — you can only print final copies. Draft print and confirmation are disabled permanently.
+        </div>
+        {% elif ro and ro_is_editable %}
+        <div class="ro-draft-banner" role="status">
+            <strong>Draft mode.</strong> Add, edit, or delete line items freely. Use <strong>Print Draft RO</strong> for an unofficial copy.
+            When ready, use the red <strong>Confirm RO &amp; Print Final</strong> button — this is a <strong>one-time action</strong> that assigns the RO number, fixes the date, and locks all lines forever.
+        </div>
+        {% endif %}
+
+        <div class="ro-table-wrap">
+            <table class="ro-table">
+                <thead>
+                    <tr>
+                        <th width="60">No.</th>
+                        <th>Material / Technical Specification</th>
+                        <th width="100">UOM</th>
+                        <th width="100">Quantity</th>
+                        {% if ro_is_editable %}<th width="160">Actions</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in ro_items %}
+                    {% if ro_is_editable %}
+                    <tr class="ro-item-row ro-item-row--editable">
+                        <form method="POST" class="ro-item-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <td data-label="No." style="color: var(--muted);">{{ forloop.counter|stringformat:"02d" }}</td>
+                            <td data-label="Material">
+                                <input class="form-input ro-inline-input" type="text" name="description" value="{{ item.tech_spec_summary }}" required>
+                            </td>
+                            <td data-label="UOM">
+                                <input class="form-input ro-inline-input ro-inline-input--uom" type="text" name="uom" value="{{ item.uom }}" required>
+                            </td>
+                            <td data-label="Qty">
+                                <input class="form-input ro-inline-input ro-inline-input--qty" type="number" step="0.01" min="0" name="qty" value="{{ item.quantity }}" required>
+                            </td>
+                            <td data-label="Actions" class="ro-item-actions">
+                                <button type="submit" name="update_item" class="btn-action btn-secondary ro-item-btn">Save</button>
+                                <button type="submit" name="delete_item" class="btn-action btn-danger ro-item-btn" onclick="return confirm('Remove this line from the draft requisition?');">Delete</button>
+                            </td>
+                        </form>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td data-label="No." style="color: var(--muted);">{{ forloop.counter|stringformat:"02d" }}</td>
+                        <td data-label="Material" style="font-weight: 500;">{{ item.tech_spec_summary }}</td>
+                        <td data-label="UOM"><span class="ro-uom">{{ item.uom }}</span></td>
+                        <td data-label="Qty" class="ro-qty">{{ item.quantity }}</td>
+                    </tr>
+                    {% endif %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if ro_is_editable %}5{% else %}4{% endif %}" class="ro-empty">
+                            No items found. Fetch from BOM or add items manually to generate the RO.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modals %}
+<div id="roAddItemModal" class="cockpit-modal" role="dialog" aria-labelledby="roAddItemTitle" aria-hidden="true">
+    <div class="cockpit-modal-panel">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px;">
+            <h3 id="roAddItemTitle" style="color: var(--primary); margin: 0;">Add Requisition Item</h3>
+            <button type="button" onclick="closeRoModal()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:24px; line-height:1; padding:0;" aria-label="Close">&times;</button>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="ro-modal-field" style="margin-bottom: 20px;">
+                <label for="roItemDescription">Material description / spec</label>
+                <input class="form-input" type="text" id="roItemDescription" name="description" placeholder="e.g., High-Tensile Steel Bars D12" required>
+            </div>
+
+            <div class="ro-modal-grid">
+                <div class="ro-modal-field">
+                    <label for="roItemUom">Unit (UOM)</label>
+                    <input class="form-input" type="text" id="roItemUom" name="uom" placeholder="kg, bags, pcs" required>
+                </div>
+                <div class="ro-modal-field">
+                    <label for="roItemQty">Required quantity</label>
+                    <input class="form-input" type="number" step="0.01" id="roItemQty" name="qty" placeholder="0.00" required>
+                </div>
+            </div>
+
+            <button type="submit" name="add_item" class="btn-action" style="width:100%; margin:0;">
+                Confirm &amp; Add to Requisition
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if ro and ro_is_editable %}
+<div id="roConfirmModal" class="cockpit-modal ro-confirm-modal" role="alertdialog" aria-labelledby="roConfirmTitle" aria-hidden="true">
+    <div class="cockpit-modal-panel ro-confirm-panel">
+        <h3 id="roConfirmTitle" class="ro-confirm-title">Confirm RO — one-time only</h3>
+        <div class="ro-confirm-warning">
+            <p><strong>This action cannot be undone.</strong></p>
+            <p>Confirming will:</p>
+            <ul>
+                <li>Assign the official <strong>RO number</strong></li>
+                <li>Fix the <strong>confirmation date</strong> on the final document</li>
+                <li><strong>Lock all line items</strong> — no add, edit, or delete after this</li>
+                <li>Open the <strong>Print Final RO</strong> document immediately</li>
+            </ul>
+            <p class="ro-confirm-shout">You will never be able to confirm this requisition again. Only final copies can be printed afterward.</p>
+        </div>
+        <form method="POST" action="{% url 'confirm_ro' ro.id %}" id="roConfirmForm">
+            {% csrf_token %}
+            <div class="ro-confirm-actions">
+                <button type="button" class="btn-action btn-secondary" onclick="closeRoConfirmModal()">Cancel — keep editing draft</button>
+                <button type="submit" class="btn-action btn-danger">Yes — confirm RO &amp; print final (once only)</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openRoModal() {
+        var modal = document.getElementById("roAddItemModal");
+        modal.style.display = "flex";
+        modal.setAttribute("aria-hidden", "false");
+    }
+    function closeRoModal() {
+        var modal = document.getElementById("roAddItemModal");
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden", "true");
+    }
+    function openRoConfirmModal() {
+        var modal = document.getElementById("roConfirmModal");
+        if (!modal) return;
+        modal.style.display = "flex";
+        modal.setAttribute("aria-hidden", "false");
+    }
+    function closeRoConfirmModal() {
+        var modal = document.getElementById("roConfirmModal");
+        if (!modal) return;
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden", "true");
+    }
+    document.getElementById("roAddItemModal").addEventListener("click", function(e) {
+        if (e.target === this) closeRoModal();
+    });
+    var confirmModal = document.getElementById("roConfirmModal");
+    if (confirmModal) {
+        confirmModal.addEventListener("click", function(e) {
+            if (e.target === this) closeRoConfirmModal();
+        });
+    }
+</script>
+{% endblock %}
+"""
+
+(ROOT / "templates/RO_builder.html").write_text(content, encoding="utf-8", newline="\n")
+print("RO_builder written ok")

@@ -1,4 +1,4 @@
-﻿"""Outbound email helpers: onboarding, notifications, CEO CC on all mail."""
+"""Outbound email helpers: onboarding, notifications, CEO CC on all mail."""
 
 import ast
 import logging

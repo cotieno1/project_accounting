@@ -1,12 +1,12 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}Accept subcontract — {{ listing.event.ref }}{% endblock %}
+{% block title %}Accept subcontract â€” {{ listing.event.ref }}{% endblock %}
 
 {% block bw_content %}
 <div class="bw-wrap" style="max-width:640px;">
 
   <header style="margin-bottom:22px;">
-    <div class="bw-kicker">BuildWatch · Subcontract invitation</div>
+    <div class="bw-kicker">BuildWatch Â· Subcontract invitation</div>
     <h1 class="bw-title">{{ arrangement.get_arrangement_type_display }}</h1>
     <p class="bw-lead">
       {{ arrangement.main_organisation.name|default:arrangement.main_organisation.short_name }}
@@ -18,7 +18,7 @@
   <div class="bw-card" style="margin-bottom:16px;">
     <div class="bw-card-body" style="font-size:.9rem;line-height:1.55;">
       <p style="margin:0 0 10px;">{{ listing.event.description }}</p>
-      <p style="margin:0 0 8px;"><strong>Packages:</strong> {{ arrangement.selected_codes|join:", "|default:"—" }}</p>
+      <p style="margin:0 0 8px;"><strong>Packages:</strong> {{ arrangement.selected_codes|join:", "|default:"â€”" }}</p>
       <p style="margin:0 0 8px;">
         <strong>Payment:</strong>
         {% if arrangement.payment_via_main %}

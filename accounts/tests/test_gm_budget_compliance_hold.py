@@ -1,4 +1,4 @@
-﻿"""GM desk hold when ad-hoc disbursements precede CEO budget approval."""
+"""GM desk hold when ad-hoc disbursements precede CEO budget approval."""
 
 from decimal import Decimal
 

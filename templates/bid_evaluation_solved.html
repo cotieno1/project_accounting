@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -174,8 +175,8 @@
     <div style="margin-bottom: 25px;">
         <select onchange="window.location.href='?task_id=' + this.value;" style="width: 100%; margin-bottom: 0;">
             {% for t in tasks %}
-                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
-                    {{ t.project_id }}
+                <option value="{{ t.project_id|clean_task_id }}" {% if t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>
+                    {{ t.project_id|clean_task_id }}
                 </option>
             {% empty %}
                 <option disabled>No active tasks loaded</option>
@@ -197,8 +198,8 @@
         </div>
         <select onchange="window.location.href='?task_id=' + this.value;" style="width: 100%;">
             {% for t in tasks %}
-                <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
-                    {{ t.project_id }}
+                <option value="{{ t.project_id|clean_task_id }}" {% if t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>
+                    {{ t.project_id|clean_task_id }}
                 </option>
             {% empty %}
                 No active tasks selected
@@ -389,7 +390,7 @@
         <div style="background: #070b14; padding: 20px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 20px; font-family: monospace; font-size: 13px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
                 <span style="color: #94a3b8;">Task Target ID:</span>
-                <span style="color: #f1f5f9; font-weight: bold;">{{ active_task.project_id }}</span>
+                <span style="color: #f1f5f9; font-weight: bold;">{{ active_task.project_id|clean_task_id }}</span>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
                 <span style="color: #94a3b8;">Locked Material Cost:</span>

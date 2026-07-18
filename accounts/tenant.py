@@ -101,13 +101,12 @@ def get_exchange_persona(org=None, request=None):
     """Return contractor | employer | guest for BuildWatch UI customisation.
 
     Organisation-level: every authorised user under the org shares the same face.
-    Guests never inherit the platform default tenant (e.g. Pioneer).
+    Example: Pioneer Construction Co Ltd staff all see the contractor exchange.
     """
-    user = getattr(request, "user", None) if request is not None else None
-    if request is not None and (not user or not user.is_authenticated):
-        return "guest"
-
     if org is None and request is not None:
+        user = getattr(request, "user", None)
+        if not user or not user.is_authenticated:
+            return "guest"
         org = get_active_organization(request)
     if org is None:
         return "guest"
@@ -127,22 +126,14 @@ def get_exchange_persona(org=None, request=None):
 
 
 def exchange_persona_context(request=None, org=None):
-    user = getattr(request, "user", None) if request is not None else None
-    authenticated = bool(user and user.is_authenticated)
-
-    # Guests: never use default/platform org for labeling
-    if request is not None and not authenticated:
-        org = None
-    elif org is None and authenticated:
-        org = get_active_organization(request)
-
+    if org is None and request is not None:
+        user = getattr(request, "user", None)
+        if user and user.is_authenticated:
+            org = get_active_organization(request)
     persona = get_exchange_persona(org=org, request=request)
-    # Prefer registered legal name (as on the portal), not short code/label
     org_name = ""
-    if org is not None and authenticated:
-        org_name = (getattr(org, "name", None) or getattr(org, "short_name", None) or "").strip()
-
-    brand = f"BuildWatch - {org_name}" if org_name else "BuildWatch"
+    if org is not None:
+        org_name = (getattr(org, "short_name", None) or getattr(org, "name", None) or "").strip()
 
     labels = {
         "guest": {
@@ -157,30 +148,28 @@ def exchange_persona_context(request=None, org=None):
             "bw_primary_cta_label": "Browse tenders",
             "bw_secondary_cta_label": "Publish a tender",
             "bw_org_display": "",
-            "bw_brand_title": "BuildWatch",
         },
         "contractor": {
             "bw_persona": "contractor",
             "bw_persona_label": (f"{org_name} · Contractor" if org_name else "Contractor workspace"),
-            "bw_persona_kicker": "Bidding as contractor",
-            "bw_persona_title": "Open tenders",
-            "bw_persona_lead": "",
+            "bw_persona_kicker": "Contractor · building & infrastructure",
+            "bw_persona_title": "Tenders you can bid",
+            "bw_persona_lead": (
+                (f"Working as {org_name}. " if org_name else "")
+                + "Browse published works, register interest, download BOQ packages "
+                + "and submit bids for your organisation."
+            ),
             "bw_primary_cta_label": "My bids",
             "bw_secondary_cta_label": "Set alerts",
             "bw_org_display": org_name,
-            "bw_brand_title": brand,
         },
         "employer": {
             "bw_persona": "employer",
             "bw_persona_label": (f"{org_name} · Employer" if org_name else "Employer / institution workspace"),
-            "bw_persona_kicker": "Publishing as employer",
+            "bw_persona_kicker": "Employer · government · DFI · private",
             "bw_persona_title": "Tenders you publish",
             "bw_persona_lead": (
-                (
-                    f"Publishing as {org_name}. "
-                    if org_name else
-                    "You are signed in as an employer. "
-                )
+                (f"Working as {org_name}. " if org_name else "")
                 + "Publish and manage open procurement for works and services — "
                 + "government departments, World Bank / AfDB programmes, "
                 + "and private institutions or companies."
@@ -188,7 +177,6 @@ def exchange_persona_context(request=None, org=None):
             "bw_primary_cta_label": "Publish tender",
             "bw_secondary_cta_label": "Manage projects",
             "bw_org_display": org_name,
-            "bw_brand_title": brand,
         },
     }
     return labels[persona]

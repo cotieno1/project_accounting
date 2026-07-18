@@ -35,6 +35,17 @@ from buildwatch.models import (
 REF = "ED-AHP/001/2025-2026"
 TASK_ID = "ED_AHP_001"
 EMPLOYER_CODE = "SDHUD"
+EMPLOYER_NAME = (
+    "Principal Secretary, Ministry of Lands, Public Works, Housing and Urban "
+    "Development - State Department of Housing and Urban Development"
+)
+EMPLOYER_ADDRESS = (
+    "Principal Secretary\n"
+    "Ministry of Lands, Public Works, Housing and Urban Development\n"
+    "State Department of Housing and Urban Development\n"
+    "P.O Box 30119-00100\n"
+    "NAIROBI, KENYA"
+)
 
 WORKS_DESCRIPTION = """DESCRIPTION OF THE WORKS
 The construction comprises reinforced concrete foundations, masonry walling, reinforced
@@ -125,24 +136,33 @@ class Command(BaseCommand):
         employer, created_emp = Organization.objects.get_or_create(
             org_code=EMPLOYER_CODE,
             defaults={
-                "name": (
-                    "State Department for Housing and Urban Development "
-                    "(Ministry of Lands, Public Works, Housing and Urban Development)"
-                ),
-                "short_name": "Housing & Urban Dev.",
+                "name": EMPLOYER_NAME,
+                "short_name": "State Dept. of Housing",
                 "contractor_type": Organization.CONTRACTOR_ROADS,
                 "organization_type": "GOV_NATIONAL",
                 "registration_status": Organization.STATUS_ACTIVE,
-                "contact_address": "P.O Box 30119-00100 Nairobi, Kenya",
+                "registered_address": EMPLOYER_ADDRESS,
+                "contact_address": EMPLOYER_ADDRESS,
                 "phone": "+254-020-2713833",
                 "document_tagline": "Affordable Housing Programme",
             },
         )
         if created_emp:
             self.stdout.write(self.style.SUCCESS(f"  + Employer org {EMPLOYER_CODE}"))
-        elif not (employer.organization_type or "").strip():
+        else:
+            # Keep the sponsor identity current on re-run.
+            employer.name = EMPLOYER_NAME
+            employer.short_name = "State Dept. of Housing"
             employer.organization_type = "GOV_NATIONAL"
-            employer.save(update_fields=["organization_type"])
+            employer.registration_status = Organization.STATUS_ACTIVE
+            employer.registered_address = EMPLOYER_ADDRESS
+            employer.contact_address = EMPLOYER_ADDRESS
+            if not (employer.phone or "").strip():
+                employer.phone = "+254-020-2713833"
+            employer.save(update_fields=[
+                "name", "short_name", "organization_type", "registration_status",
+                "registered_address", "contact_address", "phone",
+            ])
 
         task, _ = ProjectTask.objects.get_or_create(
             project_id=TASK_ID,

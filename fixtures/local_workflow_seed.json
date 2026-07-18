@@ -1,0 +1,430 @@
+[
+{
+  "model": "accounts.projectbudget",
+  "pk": 2,
+  "fields": {
+    "task": "1",
+    "budget_type": "RFQ_LPO",
+    "budget_label": "Budget for 1",
+    "material_total_cost": "106000.00",
+    "labour_burden": "10000.00",
+    "misc_reserve": "23400.00",
+    "equipment_reserve": "0.00",
+    "total_authorized_budget": "139400.00",
+    "created_at": "2026-06-02T21:49:26.875Z",
+    "version": 1,
+    "is_ceo_approved": true,
+    "approved_at": "2026-06-11T14:13:33.014Z",
+    "approved_by": 1,
+    "ceo_aie_reference": ""
+  }
+},
+{
+  "model": "accounts.projectbudget",
+  "pk": 3,
+  "fields": {
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "budget_type": "ADHOC_MISC",
+    "budget_label": "Ad-Hoc Budget — TOMOG-PIONEER-HWF-00026",
+    "material_total_cost": "7698.00",
+    "labour_burden": "0.00",
+    "misc_reserve": "0.00",
+    "equipment_reserve": "0.00",
+    "total_authorized_budget": "7698.00",
+    "created_at": "2026-06-12T15:27:11.635Z",
+    "version": 1,
+    "is_ceo_approved": false,
+    "approved_at": null,
+    "approved_by": null,
+    "ceo_aie_reference": ""
+  }
+},
+{
+  "model": "accounts.miscpurchaseorder",
+  "pk": "6cebc17b-4afa-48d9-a31f-f909aa72d38d",
+  "fields": {
+    "task": "TOMOG-Pioneer-HWF-3330030",
+    "is_sourcing": true,
+    "funding_status": "PENDING",
+    "mpo_number": "MPO-2026-0001",
+    "total_amount": "0.00",
+    "messenger_name": "Piga Hardware Supplier (#1)",
+    "created_at": "2026-06-04T21:10:07.791Z"
+  }
+},
+{
+  "model": "accounts.miscpurchaseorder",
+  "pk": "2ec977fd-2730-4ceb-b9f1-26ecd266fa1d",
+  "fields": {
+    "task": "1",
+    "is_sourcing": true,
+    "funding_status": "PENDING",
+    "mpo_number": "MPO-2026-0002",
+    "total_amount": "980000.00",
+    "messenger_name": "Habenga  Hardware Supplier (#2)",
+    "created_at": "2026-06-05T05:01:35.479Z"
+  }
+},
+{
+  "model": "accounts.miscpurchaseorder",
+  "pk": "332ec096-330c-4d82-b334-588fdf62f081",
+  "fields": {
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "is_sourcing": false,
+    "funding_status": "LOCKED",
+    "mpo_number": "MPO-2026-0003",
+    "total_amount": "7698.00",
+    "messenger_name": "Officer purchase RO",
+    "created_at": "2026-06-12T15:00:37.142Z"
+  }
+},
+{
+  "model": "accounts.miscpurchaseitem",
+  "pk": 1,
+  "fields": {
+    "mpo": "2ec977fd-2730-4ceb-b9f1-26ecd266fa1d",
+    "task": "1",
+    "gl_expense_account": "10",
+    "description": "Bamburi Cement",
+    "uom": "I bag 90kg",
+    "qty": "1000.00",
+    "unit_price": "980.00",
+    "total": "980000.00"
+  }
+},
+{
+  "model": "accounts.miscpurchaseitem",
+  "pk": 3,
+  "fields": {
+    "mpo": "332ec096-330c-4d82-b334-588fdf62f081",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "gl_expense_account": "10",
+    "description": "Construction blocks",
+    "uom": "pcs",
+    "qty": "800.00",
+    "unit_price": "1.00",
+    "total": "800.00"
+  }
+},
+{
+  "model": "accounts.miscpurchaseitem",
+  "pk": 4,
+  "fields": {
+    "mpo": "332ec096-330c-4d82-b334-588fdf62f081",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "gl_expense_account": "10",
+    "description": "Cement",
+    "uom": "bags",
+    "qty": "300.00",
+    "unit_price": "8.00",
+    "total": "2400.00"
+  }
+},
+{
+  "model": "accounts.miscpurchaseitem",
+  "pk": 5,
+  "fields": {
+    "mpo": "332ec096-330c-4d82-b334-588fdf62f081",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "gl_expense_account": "10",
+    "description": "Steel Bar",
+    "uom": "22 * 100kgs",
+    "qty": "22.00",
+    "unit_price": "74.00",
+    "total": "1628.00"
+  }
+},
+{
+  "model": "accounts.miscpurchaseitem",
+  "pk": 6,
+  "fields": {
+    "mpo": "332ec096-330c-4d82-b334-588fdf62f081",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "gl_expense_account": "10",
+    "description": "Sand",
+    "uom": "1 per load",
+    "qty": "1.00",
+    "unit_price": "650.00",
+    "total": "650.00"
+  }
+},
+{
+  "model": "accounts.miscpurchaseitem",
+  "pk": 9,
+  "fields": {
+    "mpo": "332ec096-330c-4d82-b334-588fdf62f081",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "gl_expense_account": "10",
+    "description": "Labour and Transport",
+    "uom": "1",
+    "qty": "2000.00",
+    "unit_price": "1.00",
+    "total": "2000.00"
+  }
+},
+{
+  "model": "accounts.miscpurchaseitem",
+  "pk": 10,
+  "fields": {
+    "mpo": "332ec096-330c-4d82-b334-588fdf62f081",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "gl_expense_account": "10",
+    "description": "Aggregate",
+    "uom": "1",
+    "qty": "1.00",
+    "unit_price": "220.00",
+    "total": "220.00"
+  }
+},
+{
+  "model": "accounts.miscrequisitionorder",
+  "pk": "f673bfa7-259b-4a84-8fdd-ecfc9e9ec6db",
+  "fields": {
+    "mro_number": "MRO-2026-0001",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "source_mpo": "332ec096-330c-4d82-b334-588fdf62f081",
+    "is_sourcing": false,
+    "funding_status": "LOCKED",
+    "messenger_name": "Officer purchase RO",
+    "authorized_by": 1,
+    "total_amount": "7698.00",
+    "created_at": "2026-06-12T15:27:11.649Z",
+    "updated_at": "2026-06-12T15:27:11.649Z"
+  }
+},
+{
+  "model": "accounts.budgettransaction",
+  "pk": 1,
+  "fields": {
+    "budget": 3,
+    "category": "MISC",
+    "amount": "7698.00",
+    "description": "Ad-hoc RO MPO-2026-0003 / MRO-2026-0001",
+    "timestamp": "2026-06-12T15:27:11.651Z"
+  }
+},
+{
+  "model": "accounts.bomheader",
+  "pk": 1,
+  "fields": {
+    "bom_id": "BOM-100",
+    "task": "1",
+    "ro": null,
+    "status": "DRAFT",
+    "created_at": "2026-05-08T07:07:17.119Z"
+  }
+},
+{
+  "model": "accounts.bomheader",
+  "pk": 2,
+  "fields": {
+    "bom_id": "BOM-101",
+    "task": "TOMOG-Pioneer-HWF-3330030",
+    "ro": null,
+    "status": "DRAFT",
+    "created_at": "2026-05-11T11:48:31.745Z"
+  }
+},
+{
+  "model": "accounts.bomheader",
+  "pk": 3,
+  "fields": {
+    "bom_id": "BOM-102",
+    "task": "TOMOG-Pioneer-HWF-0029",
+    "ro": null,
+    "status": "DRAFT",
+    "created_at": "2026-05-22T11:30:44.839Z"
+  }
+},
+{
+  "model": "accounts.bomheader",
+  "pk": 4,
+  "fields": {
+    "bom_id": "BOM-103",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "ro": null,
+    "status": "DRAFT",
+    "created_at": "2026-06-16T08:48:15.396Z"
+  }
+},
+{
+  "model": "accounts.bomitem",
+  "pk": 1,
+  "fields": {
+    "header": 1,
+    "pillar_id": 2,
+    "description": "Bag of Cement",
+    "qty": "100.00",
+    "uom": "90 kg",
+    "unit_price": "0.00",
+    "created_at": "2026-05-08T08:18:54.207Z"
+  }
+},
+{
+  "model": "accounts.bomitem",
+  "pk": 2,
+  "fields": {
+    "header": 2,
+    "pillar_id": 2,
+    "description": "Blocks ",
+    "qty": "800.00",
+    "uom": "pieces",
+    "unit_price": "0.00",
+    "created_at": "2026-05-11T11:49:32.022Z"
+  }
+},
+{
+  "model": "accounts.bomitem",
+  "pk": 3,
+  "fields": {
+    "header": 2,
+    "pillar_id": 2,
+    "description": "Cement",
+    "qty": "250.00",
+    "uom": "50kg",
+    "unit_price": "0.00",
+    "created_at": "2026-05-11T11:50:24.901Z"
+  }
+},
+{
+  "model": "accounts.bomitem",
+  "pk": 4,
+  "fields": {
+    "header": 2,
+    "pillar_id": 2,
+    "description": "Steel Bar",
+    "qty": "10.00",
+    "uom": "100kg",
+    "unit_price": "0.00",
+    "created_at": "2026-05-11T11:50:58.374Z"
+  }
+},
+{
+  "model": "accounts.bomitem",
+  "pk": 5,
+  "fields": {
+    "header": 2,
+    "pillar_id": 2,
+    "description": "Sand",
+    "qty": "1.00",
+    "uom": "load",
+    "unit_price": "0.00",
+    "created_at": "2026-05-11T11:51:29.665Z"
+  }
+},
+{
+  "model": "accounts.bomitem",
+  "pk": 6,
+  "fields": {
+    "header": 2,
+    "pillar_id": 2,
+    "description": "Aggregate",
+    "qty": "220.00",
+    "uom": "load",
+    "unit_price": "0.00",
+    "created_at": "2026-05-11T11:52:10.377Z"
+  }
+},
+{
+  "model": "accounts.requisitionorder",
+  "pk": 1,
+  "fields": {
+    "ro_no": "RO-05110536",
+    "task": "1",
+    "created_by": null,
+    "date_raised": "2026-05-11T05:36:22.898Z",
+    "technical_requirement_note": null,
+    "status": "DRAFT"
+  }
+},
+{
+  "model": "accounts.requisitionorder",
+  "pk": 2,
+  "fields": {
+    "ro_no": "RO-05111153",
+    "task": "TOMOG-Pioneer-HWF-3330030",
+    "created_by": null,
+    "date_raised": "2026-05-11T11:53:08.608Z",
+    "technical_requirement_note": null,
+    "status": "DRAFT"
+  }
+},
+{
+  "model": "accounts.requisitionorder",
+  "pk": 3,
+  "fields": {
+    "ro_no": "RO No. 5111154",
+    "task": "TOMOG-PIONEER-HWF-00026",
+    "created_by": null,
+    "date_raised": "2026-06-16T08:51:09.628Z",
+    "technical_requirement_note": null,
+    "status": "DRAFT"
+  }
+},
+{
+  "model": "accounts.requisitionorderitem",
+  "pk": 1,
+  "fields": {
+    "ro": 1,
+    "product": null,
+    "quantity": "100.00",
+    "uom": "90 kg",
+    "tech_spec_summary": "Bag of Cement"
+  }
+},
+{
+  "model": "accounts.requisitionorderitem",
+  "pk": 2,
+  "fields": {
+    "ro": 2,
+    "product": null,
+    "quantity": "800.00",
+    "uom": "pieces",
+    "tech_spec_summary": "Blocks "
+  }
+},
+{
+  "model": "accounts.requisitionorderitem",
+  "pk": 3,
+  "fields": {
+    "ro": 2,
+    "product": null,
+    "quantity": "250.00",
+    "uom": "50kg",
+    "tech_spec_summary": "Cement"
+  }
+},
+{
+  "model": "accounts.requisitionorderitem",
+  "pk": 4,
+  "fields": {
+    "ro": 2,
+    "product": null,
+    "quantity": "10.00",
+    "uom": "100kg",
+    "tech_spec_summary": "Steel Bar"
+  }
+},
+{
+  "model": "accounts.requisitionorderitem",
+  "pk": 5,
+  "fields": {
+    "ro": 2,
+    "product": null,
+    "quantity": "1.00",
+    "uom": "load",
+    "tech_spec_summary": "Sand"
+  }
+},
+{
+  "model": "accounts.requisitionorderitem",
+  "pk": 6,
+  "fields": {
+    "ro": 2,
+    "product": null,
+    "quantity": "220.00",
+    "uom": "load",
+    "tech_spec_summary": "Aggregate"
+  }
+}
+]

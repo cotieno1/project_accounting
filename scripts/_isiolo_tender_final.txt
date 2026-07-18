@@ -1,0 +1,1483 @@
+---PAGE 1---
+ 
+ 
+ADDENDUM 
+BILLS OF QUANTITIES 
+(ELECTRICAL, STRUCTURED CABLING, CCTV 
+AND SOLAR INSTALLATIONS WORKS FOR THE 
+PROPOSED CONSTRUCTION OF ISIOLO 
+STADIUM-ISIOLO COUNTY 
+TENDER NO. SK/004/2025-2026 
+SPORTS KENYA P.O. BOX PRIVATE BAG, 
+KASARANI 
+TEL: +020 2390500/1 
+CLOSING DATE AND TIME: 10TH JULY 2025 AT 
+1100HRS 
+
+---PAGE 2---
+ 
+PROPOSED CONSTRUCTION OF ISIOLO STADIUM, ISIOLO COUNTY 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+CLIENT 
+THE DIRECTOR GENERAL 
+SPORTS KENYA LTD 
+P.O. BOX PRIVATE BAG KASARANI, 
+NAIROBI, KENYA 
+PROJECT MANAGER ELECTRICAL ENGINER 
+WORKS SECRETARY CHIEF ENGINEER (ELECTRICAL) 
+MINISTRY OF LANDS, PUBLIC WORKS MINISTRY OF LANDS, PUBLIC WORKS 
+HOUSING & URBAN DEVELOPMENT, HOUSING & URBAN DEVELOPMENT 
+STATE DEPARTMENT FOR PUBLIC WORKS, STATE DEPARTMENT FOR PUBLIC WORKS, 
+P.O BOX 30743 – 00100, P.O BOX 41191 – 00100, 
+NAIROBI NAIROBI 
+ 
+ARCHITECT  STRUCTURAL ENGINEER 
+CHIEF ARCHITECT CHIEF STRUCTURAL ENGINEEER 
+MINISTRY OF LANDS, PUBLIC WORKS MINISTRY OF LANDS, PUBLIC WORKS 
+HOUSING & URBAN DEVELOPMENT, HOUSING & URBAN DEVELOPMENT, 
+STATE DEPARTMENT FOR PUBLIC WORKS, STATE DEPARTMENT FOR PUBLIC WORKS, 
+P.O BOX 30743 – 00100, P.O BOX 30743 – 00100, 
+NAIROBI NAIROBI 
+QUANTITY SURVYOR MECHANICAL ENGINEER 
+CHIEF QUANTITY SURVEYOR CHIEF ENGINEER (MECHANICAL (BS)) 
+MINISTRY OF LANDS, PUBLIC WORKS MINISTRY OF LANDS, PUBLIC WORKS 
+HOUSING & URBAN DEVELOPMENT, HOUSING & URBAN DEVELOPMENT 
+STATE DEPARTMENT FOR PUBLIC WORKS, STATE DEPARTMENT FOR PUBLIC WORKS, 
+P.O BOX 30743 – 00100, P.O BOX 41191 – 00100, 
+NAIROBI NAIROBI 
+ 
+ 
+JUNE 2025 
+TENDER SPECIFICATIONS AND BILL OF QUANTITIES 
+FOR THE 
+ 
+---PAGE 3---
+ii  
+TABLE OF CONTENTS 
+TITLE PAGE 
+Contents ................................................................................................................................ i 
+PART 1: Tendering Procedures ............................................................................................ 2-5 
+PART 1I: Work Requirements 
+SECTION I: Bill of Quantities ............................................................................. 7-72 
+SECTION II: Specifications ................................................................................ 73-109 
+SECTION III: Technical Schedule .......................................................................110-112 
+Commissioning Guide for Electrical Works.......................................................... 113-118 
+---PAGE 4---
+1  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+PART1: TENDERING PROCEDURES  
+ 
+ 
+ 
+---PAGE 5---
+2  
+SECTION III - EVALUATION AND QUALIFICATION CRITERIA 
+1.0 GENERAL PROVISIONS 
+1.1 This section contains the criteria that the Employer shall use to evaluate tender and qualify 
+tenderers. No other factors, methods or criteria shall be used other than specified in this tender 
+document. The Tenderer shall provide all the information requested in the forms included in 
+Section IV, Tendering Forms. The Procuring Entity shall use the Standard Tender 
+Evaluation Document for Goods and Works for evaluating Tenders. 
+1.2 Wherever a Tenderer is required to state a monetary amount, Tenderers should indicate the 
+Kenya Shilling equivalent using the rate of exchange determined as follows: 
+a) For construction turnover or financial data required for each year - Exchange rate 
+prevailing on the last day of the respective calendar year (in which the amounts for that 
+year is to be converted) was originally established. 
+b) Value of single contract - Exchange rate prevailing on the date of the contract signature. 
+(a)  Exchange rates shall be taken from the publicly available source identified in the ITT 
+14.3. Any error in determining the exchange rates in the Tender may be corrected by 
+the Procuring Entity. 
+1.3 EVALUATION AND CONTRACT AWARD CRITERIA 
+The Procuring Entity shall use the criteria and methodologies listed in this Section to evaluate 
+tenders and arrive at the Lowest Evaluated Tender. The tender that(i) meets the qualification 
+criteria, (ii) has been determined to be substantially responsive to the Tender Documents, and 
+(iii) is determined to have the Lowest Evaluated Tender price shall be selected for award of 
+contract. 
+2.0 PRELIMINARY EXAMINATION FOR DETERMINATION OF RESPONSIVENESS 
+Preliminary examination for Determination of Responsiveness 
+The Procuring Entity will start by examining all tenders to ensure they meet in all respects the 
+eligibility criteria and other mandatory requirements in the ITT, and that the tender is complete 
+in all aspects in meeting the requirements provided for in the preliminary evaluation criteria 
+outlined below. The Standard Tender Evaluation Report Document for Goods and Works for 
+evaluating Tenders provides very clear guide on how to deal with review of these 
+requirements. Tenders that do not pass the Preliminary Examination will be considered non- 
+responsive and will not be considered further. 
+ 
+ 
+S/No PRELIMINARY EVALUATION CRITERIA / MANDATORY REQUIREMENTS 
+MR1 Company Certificate of incorporation/registration; 
+MR2 Valid Tax Compliance Certificate; 
+MR3 Current and Valid Licence with the Energy and Petroleum Regulatory Authority (EPRA) Class B in 
+electrical installation works 
+MR4 Current and Valid Licence with the Energy and Petroleum Regulatory Authority (EPRA) for 
+technician, Class T2 or above in Solar Installation Works 
+MR5 Current and Valid Certificate of registration with National Construction Authority In Electrical 
+Installation Works (NCA 6 or above); 
+MR6 Current and Valid NCA contractor’s practicing licence in Electrical installation works. 
+MR7 Current and Valid Certificate of registration with National Construction Authority (NCA 8 or 
+above) in CCTV/Security Surveillance, Telecommunication and Structured Cabling Installations 
+MR8 Current and Valid NCA contractor’s practicing licence in Structured Cabling and CCTV Installation 
+works. 
+MR9 Current and Valid Communication Authority of Kenya Registration Licence as a 
+telecommunication contractor 
+MR10 Current and Valid Communication Authority of Kenya Compliance Certificate as a 
+telecommunication contractor 
+---PAGE 6---
+3  
+MR11 Manufacturer’s Authorization Letter for the NVRs, and Network Switches being offered by the 
+bidder 
+MR12 Valid Copy of Current Single Business permit 
+MR13 Submission of valid CR12 form showing the list of directors /shareholding (issued within the last 12 
+months) or National Identity Card(s) for Sole Proprietorship / Partnership 
+MR14 Domestic Contractor’s Agreement - A duly signed and stamped Agreement not earlier than 1 
+month between the Electrical Services Sub-Contractor and the main contractor stating that if the 
+Main Contractor is awarded the contract, they shall work with the firm as their domestic sub- 
+contractor (Not necessary if Main Contractor is also registered for all Electrical Services Works) 
+ 
+N/B: Full compliance by the tenderers shall be required to proceed to the next stage of evaluation. 
+Failure to provide any of the listed requirements shall lead to disqualification 
+---PAGE 7---
+4  
+A. TECHNICAL EVALUATION FOR MAIN WORKS 
+At this stage technical evaluation shall be done by comparing each tender to the technical requirements in the tender 
+document 
+Item Description YES/NO 
+1. Compliance with Technical Specifications 
+(Note: See Compliance to Technical Specifications section on the next page ) 
+ 
+2. Qualification and Experience of Key Personnel  
+Academic Qualification and Experience (Provide evidence in the form of Certified 
+copies national Identity Cards, Academic Certificates, Curriculum Vitae and 
+Recommendation Letters) 
+a) Director of the firm 
+• Holder of at least a diploma with 5 years’ experience in Electrical Engineering field 
+b) Project Manager 
+• Holder of at least a degree with 5 years’ experience in Electrical Engineering field 
+ 
+c) At least 3 No artisans 
+• Holder of at least a certificate with 5 years’ experience in relevant Engineering field 
+ 
+The tenderer MUST fill the forms listed below in the format provided and attach the 
+necessary qualification certificates: 
+1. Form PER - 1 Contractor's Representative and Key Personnel Schedule 
+2. Form PER - 2 Resume and Declaration - Contractor's Representative and Key Personnel. 
+Note: Certified copies national Identity Cards and certificates to be provided as 
+evidence. 
+ 
+3. Experience of the firm in similar services: Electrical/Structured Cabling/CCTV/Solar 
+Installation Works 
+a) Provide Three (3No.) projects of similar nature, complexity and magnitude) between the 
+Period 2019 – 2022: (Provide evidence in form of copies of Award letters, Completion 
+Certificates, LSOs etc.) 
+The tenderer MUST fill the forms listed below in the format provided 
+1. Form EXP – 3.4 Current contract commitments/works in progress 
+2. Form EXP – 4.1 General Construction and contract Experience 
+3. Form EXP – 4.2.a Specific and Contract Management Experience 
+4. Form EXP – 4.2.b Construction Experience and Key Activities 
+ 
+4. Adequacy of tools and equipment (Provide evidence in form Log Books, Purchase 
+Receipts, Lease Agreements etc.) 
+The tenderer must show proof of ownership or leasing of the following equipment: - 
+a) Relevant Transport (at least 3No.) 
+• Means of transport 
+b) Relevant Equipment (at least 3No.) 
+• Phase Sequence meter; 
+• Earth loop impedance Tester; 
+• Earth resistance tester; 
+• Insulation resistance tester; 
+• Clamp meter/multimeter; 
+• Cable Qualification tester 
+• Impact punch down tool; 
+• Cable stripper; 
+ 
+---PAGE 8---
+5  
+Item Description YES/NO 
+ • Crimping tools; 
+• Probe pics 
+The tenderer MUST fill the forms listed below in the format provided. 
+1. Form EQU: Equipment 
+ 
+ QUALIFIED YES / NO  
+ 
+N/B: Full compliance by the tenderers shall be required. Failure to provide any of the listed 
+requirements shall lead to disqualification. 
+COMPLIANCE TO TECHNICAL SPECIFICATION 
+Tenderers shall submit offers that comply with the requirements of the tendering documents, including the basic 
+technical design as indicated in the Drawings and Specifications. 
+Tenderers shall be required; 
+On compliance with Technical Specifications, bidders shall supply equipment/items that comply with the technical 
+specifications set out in the bid document. In this regard, the bidders will be required to submit relevant technical 
+brochures/catalogues with the tender document, highlighting (using a mark -pen or highlighter) the Catalogue 
+Number/model of the proposed items. Such brochures/catalogues should indicate comprehensive relevant data of the 
+proposed equipment/items which should include but not limited to the following: 
+(i) Standards of manufacture; 
+(ii) Performance ratings/characteristics/ features; 
+(iii) Material of manufacture; 
+(iv) Electrical power ratings; and 
+(v) All other requirements as indicated in the technical specifications of the bid. 
+The bid will then be analyzed, using the information in the technical brochures, to determine compliance with key 
+technical specifications for the works/items as indicated in the tender document. 
+The tenderer shall fill in the Technical Schedule as specified in the tender document for Equipment and Items 
+indicating the Model/Make/Manufacturer and catalogue numbers of the Items/Equipments they propose to supply. 
+Bidders not complying with any of the key technical specifications shall be considered noncompliant to the technical 
+specifications while those meeting all the key technical specifications shall be considered compliant. 
+Compliance in this section shall be as shown below: 
+ 
+Description COMPLIANT / 
+NON-COMPLIANT 
+Compliance with Technical Specifications 
+(Note: 
+1) Tender Evaluation Committee to evaluate compliance to all technical specifications 
+for all the Electrical Installation, CCTV and Solar Works as detailed in the 
+Particular specifications and technical schedule of this document as detailed in the 
+Particular specifications of this document 
+2) Bidders who do not highlight catalogue number and model of the proposed items 
+shall be considered non-compliant. 
+3) Non-compliance to any of the specifications shall render the whole system non- 
+compliant 
+ 
+---PAGE 9---
+6  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+PART II - WORKS REQUIREMENTS  
+ 
+---PAGE 10---
+7  
+SECTION I - BILLS OF QUANTITIES 
+ 
+ 
+1. The Bills of Quantities form part of the contract documents and are to be read in conjunction with 
+the contract drawings and general specifications of materials and works. 
+2. The prices quoted shall be deemed to include for all obligations under the sub-contract including 
+but not limited to supply of materials, labour, delivery to site, storage on site, installation, testing, 
+commissioning and all taxes (including 16% VAT and all taxes applicable at the time of tender.) 
+ 
+3. All prices omitted from any item, section or part of the Bills of Quantities shall be deemed to have 
+been included to another item, section or part. 
+ 
+4. The brief descriptions of the items given in the Bills of Quantities are for the purpose of establishing 
+a standard to which the sub-contractor shall adhere to. Otherwise alternative brands of equal and 
+approved quality will be accepted. 
+ 
+Should the sub-contractor install any material not specified here-in before receiving approval from 
+the Project Manager, the sub-contractor shall remove the material in question and, at his own cost, 
+install the proper material. 
+5. The grand total of prices in the price summary page must be carried forward to the Form of 
+Tender. 
+ 
+6. Tenderers must enclose, together with their submitted tenders, detailed coloured manufacturer’s 
+Brochures detailing Technical Literature and specifications on all the equipment they intend to 
+offer. 
+---PAGE 11---
+8  
+PROPOSED COMPLETION OF ISIOLO STADIUM 
+BILLS OF QUANTITIES FOR ELECTRICAL SERVICES INSTALLATION WORKS 
+BILL NO.1: SCHEDULE 1: PRELIMINARIES 
+ITEM DESCRIPTION QTY UNIT RATE AMOUNT 
+SHS. SHS. 
+1 Discrepancies clause - Sub-contractor shall include all work either 1 Item   
+ shown on the Contract Drawings or detailed in the specification. No   
+ claim or extra cost shall be considered for works which has been shown   
+ on the drawings or in the specification alone.   
+ 
+2 
+ 
+Payments clause - Payment will be made through certificates to the 
+ 
+1 
+ 
+Item 
+ Main Contractor, unless he specifically agrees to forego this right, in   
+ which case direct payment can be made to the Domestic Sub-   
+ contractor. All payments will be less retention as specified in the Main   
+ Contract. No payment will become due until materials are delivered to   
+ site.   
+3 Scope of contract works clause - The sub-contractor shall supply, 1 Item 
+ deliver, unload, hoist, fix, test, commission and hand-over in   
+ satisfactory working order the complete installations specified   
+ hereinafter and/or as shown on the Contract Drawings attached hereto,   
+ including the provision of labour, transport and plant for unloading   
+ material and storage, and handling into position and fixing   
+ 
+4 
+ 
+Extent of contractors duties clause - The Sub- contractor shall be 
+ 
+1 
+ 
+Item 
+ responsible for verifying all dimensions relative to his work by actual   
+ measurements taken on site.Shall mark accurately on one set of   
+ drawings and indicate all alterations and/or modifications carried out to   
+ the designed system during the construction period. This information   
+ must be made available on site for inspection by the Engineer.   
+ 
+5 
+ 
+Government legislation and regulations clause - Sub- contractor shall 
+ 
+1 
+ 
+Item 
+ allow for providing holidays and transport for work people, and for   
+ complying with Legislation, Regulations and Union Agreements. The   
+ Sub-contractor must also make himself acquainted with current   
+ legislation and any Government regulations regarding the movement,   
+ housing, security and control of labour, labour camps, passes for   
+ transport, etc.   
+6 Insurance company fees clause - Attention is drawn to the tenderers to 1 Item 
+ allow for all necessary fees, where known, that may be payable in   
+ respect of any fees imposed by Insurance Companies or statutory   
+ authorities for testing or inspection.   
+7 Samples and materials generally clause - The Sub- contractor shall, 1 Item 
+ when required, provide for approval at no extra cost, samples of all   
+ materials to be incorporated in the works. Such samples, when   
+ approved, shall be retained by the Engineer and shall form the standard   
+ for all such materials incorporated.   
+ Sub Total carried to next page  
+ 
+---PAGE 12---
+9  
+ 
+ 
+ITEM DESCRIPTION QTY UNIT RATE AMOUNT 
+SHS. SHS. 
+ Sub-Total B/F from Previous Page     
+8 Bills of quantities clause - All the Quantities are based on the Contract 1 Item 
+ Drawings and are provisional and they shall not be held to gauge or to   
+ limit the amount or description of the work to be executed by the Sub-   
+ contractor but the value thereof shall be deducted from the Sub-contract   
+ Sum and the value of the work ordered by the Engineer and executed   
+ there under shall be measured and valued by the Engineer in accordance   
+ with the contract. All work liable to adjustment under this Sub-contract   
+ shall be left uncovered for a reasonable time to allow measurements   
+ needed for such adjustment to be taken by the Quantity Surveyor or   
+ Engineer. Immediately the work is ready for measuring the Sub-   
+ contractor shall give notice to the Quantity Surveyor or Engineer to   
+ carry out measurements before covering up. If the Sub-contractor shall   
+ make default in these respects he shall, if the Architect so directs,   
+ uncover the work to enable the necessary measurements to be taken and   
+ afterwards reinstate at his own expense.   
+ 
+ 
+9 
+ 
+ 
+Contractors office in Kenya clause - It shall be the Sub- contractor’s 
+ 
+ 
+1 
+ 
+ 
+Item 
+ responsibility to procure work permits, entry permits, licences,   
+ registration, etc., in respect of all expatriate staff. The Sub-contractor   
+ shall prepare a substantial proportion of his Working Drawings at his   
+ office in Kenya. No reasons for delays in the preparation or submission   
+ for approval or otherwise of such drawings or proposals will be   
+ accepted on the grounds that the Sub-contractor’s Head Office is remote   
+ from his office in Nairobi or the site of the Sub- contract Works or   
+ otherwise.   
+10 Identification of plant components clause - Sub-contractor shall supply 1 Item 
+ and fix identification labels to all plant, starters, switches and items of   
+ control equipment etc with white traffolyte or equal labels engraved in   
+ red lettering denoting its name, function and section controlled.   
+ 
+11 
+ 
+Working drawings clause - Sub-contractor shall prepare such Working 
+ 
+1 
+ 
+Item 
+ Drawings as may be necessary. The Working Drawings shall be   
+ complete in such detail not only that the Sub-contract Works can be   
+ executed on site but also that the Engineer can approve the Sub-   
+ contractor’s proposals, detailed designs and intentions in the execution   
+ of the Sub- contract Works.   
+12 Records Drawings (As Installed) and instructions clause - Record 1 Item 
+ Drawings, will be subject to the approval of the Engineer, include   
+ approved Working Drawings adjusted as necessary and certified by the   
+ Sub-contractor as a correct record of the installation of the Sub-contract   
+ Works.   
+ Sub Total carried to next page  
+---PAGE 13---
+10  
+ 
+ 
+ 
+ITEM DESCRIPTION QTY UNIT RATE AMOUNT 
+SHS. SHS. 
+ Sub-Total B/F from Previous Page     
+13 Maintenance Manual clause - Upon Practical 1 Item 
+ Completion of the Sub-contract Works, the Sub- contractor shall furnish   
+ the Engineer four copies of a Maintenance Manual relating to the   
+ installation forming part of all of the Sub-contract Works.   
+ 
+14 
+ 
+Hand over clause - The Sub-contract Works shall be considered 
+ 
+1 
+ 
+Item 
+ complete and the Maintenance and Defects Liability Period shall   
+ commence only when the Sub-contract Works and supporting services   
+ have been tested, commissioned and operated to the satisfaction of the   
+ Engineer and officially approved and accepted by the Employer,   
+ provided always that the handing over of the Sub-contract Works shall   
+ be coincident with the handing over of the Main Contract Works.   
+ 
+15 
+ 
+Testing and inspection - manufactured plant clause - The Engineer 
+ 
+1 
+ 
+Item 
+ reserves the right to inspect and test or witness of all manufactured   
+ plant equipment and materials. The right of the Engineer relating to the   
+ inspection, examination and testing of plant during manufacture. Sub-   
+ contractor shall give two weeks’ notice to the Engineer of his intention   
+ to carry out any inspection or tests and the Engineer or his   
+ representative shall be entitled to witness such tests and inspections.   
+ 
+16 
+ 
+Testing and inspection - installation clause - Allow for testing each 
+ 
+1 
+ 
+Item 
+ section of the Sub-contract Works installation.   
+17 Initial Maintenance Clause - The sub-contractor shall make routine 1 Item 
+ maintenance once a month during the liability for the Defects Period   
+ and shall carry out all necessary adjustments and repairs, cleaning and   
+ oiling of moving parts. A monthly report of the inspection and any   
+ works done upon the installation shall be supplied to the Engineer.   
+ Shall allow in the sub-contract Sum of the initial maintenance,   
+ inspection and break-down service   
+18 Local and other authorities notice clause - The contractor shall comply 1 Item 
+ with and give all notices required by any Regulations, Act or by Law of   
+ any Local Authority or of any Public Service, Company or Authority   
+ who have any jurisdiction with regard to the works or with those   
+ systems the same are or will be connected and he shall pay and   
+ indemnify the Government against any fees or charges legally   
+ demandable under any regulation or by-law in respect of the works;   
+ provided that the said fees and charges if not expressly included in the   
+ contract sum or stated by way of provisional sum shall be added to the   
+ contract sum.   
+ Sub Total carried to next page  
+---PAGE 14---
+11  
+ 
+ 
+ 
+ITEM DESCRIPTION QTY UNIT RATE AMOUNT 
+SHS. SHS. 
+ Sub-Total B/F from Previous Page     
+19 Temporary Works clause - The contractor shall include for the cost of 1 Item   
+ and make necessary arrangements with the Project Manager for such     
+ temporary works.     
+20 Patent Rights clause - The contractor shall fully indemnify the 1 Item 
+  
+ Government of Kenya; against any action, claim or proceeding relating     
+ to infringement of any patent or design rights, and pay any royalties     
+ which may be payable in respect of any article or any part thereof,     
+ which shall have been supplied by the contractor to the Project     
+ Manager.     
+21 Mobilization and Demobilization clause -No claim will be entertained 1 Item 
+  
+ where the contractor has not made any provision for mobilization and     
+ demobilization of labour, plant and equipment in the preliminary bills     
+ of quantities.     
+22 Supervision by Engineer and site meetings clause - A competent Project 1 Item 300,000.00 300,000.00 
+ Engineer appointed by the Chief Engineer as his representative shall     
+ supervise the Contract works. The Project Engineer shall be responsible     
+ for issuing all the site instructions in any variations to the works and     
+ these shall be delivered through the Contractor with the authority of the     
+ Project Manager. Any instructions given verbal shall be confirmed in     
+ writing. The Sub Contractor shall in his tender allow for the provision     
+ of management meetings and site inspections, as instructed by the     
+ Engineer, and also profit and attendance on these funds. The funds shall     
+ be expended according to Project Manager’s instructions to the     
+ Contractor.     
+ 
+23 
+ 
+Allow for Taxes, Profit and Attendance for the above Item 
+ 
+Item 
+ 
+Item 
+  
+24 Contract obligation and employers obligation clause - No claims will be 1 Item   
+ entertained for pre-financing of the project by the sub-contractor, or for     
+ loss of profit (expectation loss) in case of premature termination,     
+ reduction or increase of works as the sub-contractor shall be deemed to     
+ have taken adequate measures in programming his works and     
+ expenditure and taken necessary financial precaution while executing     
+ the works.     
+25 Any other preliminaries 1 Item 
+  
+ Total for Bill No. 1: Sub-Contract Preliminaries C/F to Summary 
+Page 
+ 
+---PAGE 15---
+12  
+BILL NO.2: WESTERN PAVILLION 
+SCHEDULE NO. 1: GROUND FLOOR 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Supply, Deliver, Install, Set to Work and     
+ Commision the Following   
+1.01 Discover and Repair any broken/damaged existing Item Item 
+ conduits for lighting and sockets   
+ LIGHTING POINTS   
+1.02 Lighting point completely wired in 3x1.5mm² SC. No 253 
+ cables drawn in 20mm diameter HG PVC   
+ conduits including all accessories for one way   
+ switching but excluding the switch and luminaire.   
+1.03 Ditto as in item above but for two way switching No 10 
+ excluding the switch and luminaire.   
+1.04 10A one gang one way switch as MK No 3 
+1.05 10A two gang one way switch as MK No 1 
+1.06 10A one gang two way switch as MK No. 10 
+ LIGHT FITTINGS AND ACCESSORIES   
+1.07 Weatherproof LED Batten, 4ft, 3200lms, 18W, No 112 
+ 6500K as Thorn Poppack (Type J)   
+1.08 1000 lumens, 4000K 13W COB, 85mm Surface No. 96 
+ mounted downlighter as Philips ClearAscent   
+ Downlight or equal and approved equivalent.   
+ (Type N)   
+1.09 40W Wall mounted External Bulkhead (Type B) No. 10 
+ 
+1.10 
+ 
+Self-contained single sided EXIT sign with 8W 
+ 
+No. 
+ 
+5 
+ LED lamp for non-maintained emergency lighting   
+ for 3 hour duration as Thorn EF X3 or approved   
+ equivalent.   
+1.11 Mirror Light No. 30 
+ Sub - Total Carried Forward to next page  
+ 
+---PAGE 16---
+13  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+ CCTV, DATA AND TV POINTS   
+1.12 Points wired appoximately 20m for each point No. 14 
+ from the communication room done in 25mmsq.   
+ Size conduits concealed inside ceiling   
+ SOCKET OUTLET POINTS   
+1.13 13A SP socket point completely wired in No 22 
+ 3x2.5mm² SC. PVC insulated cables drawn in   
+ 20mm diameter HG PVC conduits including all   
+ accessories, but excluding the switched socket   
+ outlet.   
+1.14 13A SP twin switched socket outlet as MK No 22 
+1.15 150x150x75mm HG galvanized adaptable box for No 2 
+ ICT and power cables.   
+1.16 Power point wired in 3 x 4.0mm² SC/PVC No. 18 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories. (Instant Shower and Air   
+ Conditioning )   
+1.17 45A DP with Pilot Lamp marked 'As Per No. 18 
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+1.18 Hand Drier wired in 3 x 2.5mm² SC/PVC No. 4 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories.   
+1.19 20A DP with Pilot Lamp marked 'As Per No. 4 
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+ DISTRIBUTION BOARD/CONSUMER UNITS   
+1.20 4 ways 100A SP&N Consumer control unit and No. 1 
+ complete with 100A SPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+ Sub - Total Carried Forward to next page  
+---PAGE 17---
+14  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+1.21 8 ways 100A TP&N Distribution Board and No. 1 
+ complete with 100A TPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+1.22 10A SP MCB as Merlin Gerin No 5 
+1.23 32A SP MCB as Merlin Gerin No 15 
+1.24 Blanking plates No 1 
+ SUB-MAINS CABLES   
+1.25 5x50 mm² armored PVC insulated copper cables Lm. 20 
+ drawn in 38mm diameter HG PVC conduits cast   
+ in floor slab and concealed in the walls from VIP   
+ Pavillion Sub board to Ground Floor DB   
+ FIRE ALARM SYSTEM   
+1.26 Firealarm outlet point comprising wiring in No. 32 
+ 2x1.5mm2 special fire resistant-SC-Cu cables in   
+ 20mm diameter HG conduits in concealed in the   
+ ceiling   
+1.27 Addressable Photoelectric Smoke Detector as No. 26 
+ Menvier or Approved Equivalent   
+1.28 Addressable Manual Fire Alarm 'Break Glass' call No. 4 
+ points as MENVIER or approved equivalent.   
+1.29 Addressable Electronic Fire Alarm sounder No. 2 
+ complete with Red Flashing beacon(Visual alarm)   
+ as MENVIER or approved equivalent   
+1.30 4 loop adressable Fire Alarm control panel as No. 1 
+ MENVIER   
+ TOTAL C/F WESTERN PAVILLION COLLECTION PAGE  
+---PAGE 18---
+15  
+BILL NO.2: WESTERN PAVILLION 
+SCHEDULE NO. 2: FIRST FLOOR 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Supply, Deliver, Install, Set to Work and     
+ Commision the Following   
+2.01 Discover and Repair any broken/damaged existing Item Item 
+ conduits for lighting and sockets   
+ LIGHTING POINTS   
+2.02 Lighting point completely wired in 3x1.5mm² SC. No 113 
+ cables drawn in 20mm diameter HG PVC   
+ conduits including all accessories for one way   
+ switching but excluding the switch and luminaire.   
+2.03 Ditto as in item above but for two way switching No 10 
+ excluding the switch and luminaire.   
+2.04 10A one gang one way switch as MK No 1 
+2.05 10A two gang one way switch as MK No 1 
+2.06 10A one gang two way switch as MK No. 1 
+ LIGHT FITTINGS AND ACCESSORIES   
+2.07 Weatherproof LED Batten, 4ft, 3200lms, 18W, No 84 
+ 6500K as Thorn Poppack (Type J)   
+2.08 1000 lumens, 4000K 13W COB, 85mm Surface No. 10 
+ mounted downlighter as Philips ClearAscent   
+ Downlight or equal and approved equivalent.   
+ (Type N)   
+2.09 Self-contained single sided EXIT sign with 8W No. 5 
+ LED lamp for non-maintained emergency lighting   
+ for 3 hour duration as Thorn EF X3 or approved   
+ equivalent.   
+2.10 Mirror Light No. 14 
+ CCTV, DATA AND TV POINTS   
+2.11 Points wired appoximately 20m for each point No. 14 
+ from the communication room done in 25mmsq.   
+ Size conduits concealed inside ceiling   
+ Sub - Total Carried Forward to next page  
+ 
+---PAGE 19---
+16  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+ SOCKET OUTLET AND OTHER POWER   
+ POINTS   
+2.12 13A SP socket point completely wired in No 20 
+ 3x2.5mm² SC. PVC insulated cables drawn in   
+ 20mm diameter HG PVC conduits including all   
+ accessories, but excluding the switched socket   
+ outlet.   
+2.13 13A SP twin switched socket outlet as MK No 20 
+2.14 150x150x75mm HG galvanized adaptable box for No 3 
+ TV and telephone and power cables.   
+2.15 Cooker power point wired in 3 x 6.0mm² SC/PVC No. 2 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories. (Instant Shower and Undersink   
+ Heater)   
+2.16 Power point wired in 3 x 4.0mm² SC/PVC No. 2 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories. (Air Conditioning)   
+2.16 45A DP Cooker Control Unit with 13A integral No. 2 
+ Socket Outlet and Pilot Lamp marked 'As Per   
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+2.17 45A DP with Pilot Lamp marked 'As Per No. 2 
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+2.18 Hand Drier wired in 3 x 2.5mm² SC/PVC No. 4 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories.   
+2.19 20A DP with Pilot Lamp marked 'As Per No. 4 
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+ Sub - Total Carried Forward to next page  
+---PAGE 20---
+17  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+ DISTRIBUTION BOARD/CONSUMER UNITS   
+2.20 4 ways 100A SP&N Consumer control unit and No. 1 
+ complete with 100A SPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+2.21 6 ways 100A TP&N Distribution Board and No. 1 
+ complete with 100A TPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+2.22 10A SP MCB as Merlin Gerin No 5 
+2.23 32A SP MCB as Merlin Gerin No 10 
+2.24 Blanking plates No 1 
+ SUB-MAINS CABLES   
+2.25 5x10 mm² armored PVC insulated copper cables Lm. 25 
+ drawn in 38mm diameter HG PVC conduits cast   
+ in floor slab and concealed in the walls from VIP   
+ Pavillion DB to First Floor DB   
+ FIRE ALARM SYSTEM   
+2.26 Firealarm outlet point comprising wiring in No. 16 
+ 2x1.5mm2 special fire resistant-SC-Cu cables in   
+ 20mm diameter HG conduits in concealed in the   
+ ceiling   
+2.27 Addressable Photoelectric Smoke Detector as No. 11 
+ Menvier or Approved Equivalent   
+2.28 Addressable Manual Fire Alarm 'Break Glass' call No. 3 
+ points as MENVIER or approved equivalent.   
+2.29 Addressable Electronic Fire Alarm sounder No. 2 
+ complete with Red Flashing beacon(Visual alarm)   
+ as MENVIER or approved equivalent   
+ TOTAL C/F WESTERN PAVILLION COLLECTION PAGE  
+---PAGE 21---
+18  
+BILL NO.2: WESTERN PAVILLION 
+SCHEDULE NO. 3: SECOND FLOOR 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Supply, Deliver, Install, Set to Work and     
+ Commision the Following   
+3.01 Discover and Repair any broken/damaged existing Item Item 
+ conduits for lighting and sockets   
+ LIGHTING POINTS   
+3.02 Lighting point completely wired in 3x1.5mm² SC. No 134 
+ cables drawn in 20mm diameter HG PVC   
+ conduits including all accessories for one way   
+ switching but excluding the switch and luminaire.   
+3.03 Ditto as in item above but for two way switching No 6 
+ excluding the switch and luminaire.   
+3.04 10A one gang one way switch as MK No 5 
+3.05 10A two gang one way switch as MK No 1 
+3.06 10A one gang two way switch as MK No. 5 
+ LIGHT FITTINGS AND ACCESSORIES   
+3.07 Weatherproof LED Batten, 4ft, 3200lms, 18W, No 84 
+ 6500K as Thorn Poppack (Type J)   
+3.08 1000 lumens, 4000K 13W COB, 85mm Surface No. 26 
+ mounted downlighter as Philips ClearAscent   
+ Downlight or equal and approved equivalent.   
+ (Type N)   
+3.09 500 lumens, 4000K 6W COB, 60mm No. 10 
+ Surface/Receessed downlighter as Philips   
+ ClearAscent Downlight or equal and approved   
+ equivalent.   
+3.10 Self-contained single sided EXIT sign with 8W No. 2 
+ LED lamp for non-maintained emergency lighting   
+ for 3 hour duration as Thorn EF X3 or approved   
+ equivalent.   
+3.11 Mirror Light No 12 
+ Sub - Total Carried Forward to next page  
+ 
+---PAGE 22---
+19  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+ CCTV, DATA AND TV POINTS   
+3.12 Points wired appoximately 20m for each point No. 14 
+ from the communication room done in 25mmsq.   
+ Size conduits concealed inside ceiling   
+ SOCKET OUTLET POINTS   
+3.12 13A SP socket point completely wired in No 24 
+ 3x2.5mm² SC. PVC insulated cables drawn in   
+ 20mm diameter HG PVC conduits including all   
+ accessories, but excluding the switched socket   
+ outlet.   
+3.13 13A SP twin switched socket outlet as MK No 24 
+3.14 150x150x75mm HG galvanized adaptable box for No 3 
+ TV and telephone and power cables.   
+3.15 Power point wired in 3 x 4.0mm² SC/PVC No. 4 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories. (Air Conditioning)   
+3.16 45A DP with Pilot Lamp marked 'As Per No. 4 
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+3.17 Hand Drier wired in 3 x 2.5mm² SC/PVC No. 2 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories.   
+3.18 20A DP with Pilot Lamp marked 'As Per No. 2 
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+ DISTRIBUTION BOARD/CONSUMER UNITS   
+3.19 4 ways 100A SP&N Consumer control unit and No. 1 
+ complete with 100A SPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+ Sub - Total Carried Forward to next page  
+---PAGE 23---
+20  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+3.20 6 ways 100A TP&N Distribution Board and No. 1 
+ complete with 100A TPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+3.21 10A SP MCB as Merlin Gerin No 5 
+3.22 32A SP MCB as Merlin Gerin No 10 
+3.23 Blanking plates No 1 
+ SUB-MAINS CABLES   
+3.24 5x4 mm² armored PVC insulated copper cables Lm. 20 
+ drawn in 38mm diameter HG PVC conduits cast   
+ in floor slab and concealed in the walls from VIP   
+ Pavillion DB to Second Floor DB   
+ FIRE ALARM SYSTEM   
+3.25 Firealarm outlet point comprising wiring in No. 19 
+ 2x1.5mm2 special fire resistant-SC-Cu cables in   
+ 20mm diameter HG conduits in concealed in the   
+ ceiling   
+3.26 Addressable Photoelectric Smoke Detector as No. 15 
+ Menvier or Approved Equivalent   
+3.27 Addressable Manual Fire Alarm 'Break Glass' call No. 2 
+ points as MENVIER or approved equivalent.   
+3.28 Addressable Electronic Fire Alarm sounder No. 2 
+ complete with Red Flashing beacon(Visual alarm)   
+ as MENVIER or approved equivalent   
+ TOTAL C/F WESTERN PAVILLION COLLECTION PAGE  
+---PAGE 24---
+21  
+BILL NO.2: WESTERN PAVILLION 
+SCHEDULE NO. 4: THIRD FLOOR 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Supply, Deliver, Install, Set to Work and     
+ Commision the Following   
+4.01 Discover and Repair any broken/damaged existing Item Item 
+ conduits for lighting and sockets   
+ LIGHTING POINTS   
+4.02 Lighting point completely wired in 3x1.5mm² SC. No 97 
+ cables drawn in 20mm diameter HG PVC   
+ conduits including all accessories for one way   
+ switching but excluding the switch and luminaire.   
+4.03 Ditto as in item above but for two way switching No 10 
+ excluding the switch and luminaire.   
+4.04 10A one gang one way switch as MK No 5 
+4.05 10A two gang one way switch as MK No 1 
+4.06 10A one gang two way switch as MK No. 3 
+ LIGHT FITTINGS AND ACCESSORIES   
+4.06 Weatherproof LED Batten, 4ft, 3200lms, 2x18W, No 67 
+ 6500K as Thorn Poppack (Type J)   
+4.07 1000 lumens, 4000K 13W COB, 85mm Surface No. 26 
+ mounted downlighter as Philips ClearAscent   
+ Downlight or equal and approved equivalent.   
+ (Type N)   
+4.08 Self-contained single sided EXIT sign with 8W No. 2 
+ LED lamp for non-maintained emergency lighting   
+ for 3 hour duration as Thorn EF X3 or approved   
+ equivalent.   
+4.09 Mirror Light No 12 
+ CCTV, DATA AND TV POINTS   
+4.09 Points wired appoximately 20m for each point No. 14 
+ from the communication room done in 25mmsq.   
+ Size conduits concealed inside ceiling   
+ Sub - Total Carried Forward to next page  
+ 
+---PAGE 25---
+22  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+ SOCKET OUTLET POINTS   
+4.09 13A SP socket point completely wired in No 23 
+ 3x2.5mm² SC. PVC insulated cables drawn in   
+ 20mm diameter HG PVC conduits including all   
+ accessories, but excluding the switched socket   
+ outlet.   
+4.10 13A SP twin switched socket outlet as MK No 23 
+4.11 150x150x75mm HG galvanized adaptable box for No 3 
+ TV and telephone and power cables.   
+4.12 Power point wired in 3 x 4.0mm² SC/PVC No. 4 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories. (Air Conditioning)   
+4.13 45A DP with Pilot Lamp marked 'As Per No. 4 
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+4.14 Hand Drier wired in 3 x 2.5mm² SC/PVC No. 2 
+ insulated copper cables drawn in concealed 25mm   
+ diameter HG/PVC conduits and including all the   
+ other accessories.   
+4.15 20A DP with Pilot Lamp marked 'As Per No. 2 
+ Application' for item above as MK, MEM or   
+ approved equivalent   
+ DISTRIBUTION BOARD/CONSUMER UNITS   
+4.12 4 ways 100A SP&N Consumer control unit and No. 1 
+ complete with 100A SPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+4.13 4 ways 100A TP&N Distribution Board and No. 1 
+ complete with 100A TPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+ Sub - Total Carried Forward to next page  
+---PAGE 26---
+23  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+4.14 10A SP MCB as Merlin Gerin No 3 
+4.15 32A SP MCB as Merlin Gerin No 2 
+4.16 Blanking plates No 1 
+ SUB-MAINS CABLES   
+4.17 5x4 mm² armored PVC insulated copper cables Lm. 25 
+ drawn in 32mm diameter HG PVC conduits cast   
+ in floor slab and concealed in the walls from VIP   
+ Pavillion DB to Third Floor DB   
+4.18 3core 6mm2 PVC non-armored cables in 32mm 20 Lm. 
+ HG PVC conduits to the Solar Hybrid Inverter   
+ FIRE ALARM SYSTEM   
+4.19 Firealarm outlet point comprising wiring in No. 19 
+ 2x1.5mm2 special fire resistant-SC-Cu cables in   
+ 20mm diameter HG conduits in concealed in the   
+ ceiling   
+4.20 Addressable Photoelectric Smoke Detector as No. 15 
+ Menvier or Approved Equivalent   
+4.21 Addressable Manual Fire Alarm 'Break Glass' call No. 2 
+ points as MENVIER or approved equivalent.   
+4.22 Addressable Electronic Fire Alarm sounder No. 2 
+ complete with Red Flashing beacon(Visual alarm)   
+ as MENVIER or approved equivalent   
+ TOTAL C/F WESTERN PAVILLION COLLECTION PAGE  
+---PAGE 27---
+24  
+BILL NO.2: EASTERN PAVILLION 
+SCHEDULE NO. 5: CCTV INSTALLATION WORKS 
+ITEM DESCRIPTION QTY. UNIT RATE 
+SHS. 
+AMOUNT 
+SHS. 
+ Supply, install, test and commission the following:     
+  
+CAMERAS AND WIRING 
+  
+5.01 Type A Indoor Camera with installation Accessories 24 No. 
+ and as described in the particular specifications of   
+ this document   
+5.02 Type B Outdoor Camera with installation Accessories 10 No. 
+ and as described in the particular specifications of   
+ this document   
+5.03 Type C Outdoor PTZ Camera with installation 2 No. 
+ Accessories and as described in the particular   
+ specifications of this document   
+5.04 4 Pair Cat6E Outdoor UTP Cables for Cameras 2880 Lm. 
+ CABINET AND ACCESSORIES   
+5.05 32 channels Intelligent Network video recorder with 2 No. 
+ 8-ch IP cameras input, Up to 8 Megapixels resolution   
+ recording HDMI and VGA output at up to 4K   
+ resolution   
+5.06 8 Port SFP Switch with 2xGE SFP as described in 1 No. 
+ the particular specification of the tender document as   
+ Cisco CBS350-8SE-2G-EU or equal and approved   
+ equivalent   
+5.07 48 Port POE+ Switch with 2 x 1GE SFP as described 1 No. 
+ in the particular specification of the tender document   
+ as Cisco CBS220-48P-4G or equal and approved   
+ equivalent   
+5.08 10TB Surveillance Hard Disk 4 No. 
+5.09 Cable managers as Siemon or Approved Equivalent 2 No. 
+5.10 24 Port fibre optic patch panel 1 No. 
+5.11 LC-LC fibre patch cord Complete with connectors 2 No. 
+5.12 24 port RJ45 cat 6 patch panel for UTP termination 4 No. 
+ as Siemon.   
+ Sub total carried to next page  
+---PAGE 28---
+25  
+ITEM DESCRIPTION QTY UNIT RATE AMOUNT 
+(Kshs) 
+ Sub total carried from previous page     
+5.13 1M RJ45-RJ45 Cat 6 UTP factory terminated patch 36 No. 
+ cord as Siemon or approved equivalent to be used in   
+ cabinet.   
+5.14 Rack mount, 230V ,50Hz 1KVA, as APC smart UPS 5 No. 
+ with USB and serial port or equal and approved   
+ equivalent..   
+5.15 LED panel display 50”,HDMI input,4K, Component 1 No. 
+ video input, composite video input, S-video input,   
+ VGA/HDMI input,VGA/HDMI output and composite   
+ video output. 3 USB, RF In (Antenna/Cable),   
+ Ethernet, Optical, RS232C (Mini Jack) Smart TV   
+ Operating Systemweb OS 3.5 as Samsung, Hisense   
+ Panaboard or equal and approved equivalent   
+ 
+5.16 
+ 
+5M HDMI Cable 
+ 
+10 
+ 
+Lm. 
+5.17 Fittings, Accessories and Consumables Item Item 
+ TOTAL C/F WESTERN PAVILLION COLLECTION PAGE  
+---PAGE 29---
+26  
+BILL NO.2: WESTERN PAVILLION 
+SCHEDULE NO. 6: PAVILLION SOLAR INSTALLATION WORKS 
+ITEM DESCRIPTION QTY. UNIT RATE 
+SHS. 
+AMOUNT 
+SHS. 
+ Supply, install, test and commission the following:     
+ 
+6.01 
+ 
+Monocrystalline 555 watts solar panel as Jinko or 
+ 
+6 
+ 
+No. 
+ equal and approved equivalent   
+6.02 Single  phase  8KW  hybrid  inverter  as  Victron, 1 No. 
+ Growatt, Jinko or equal and approved equivalent   
+6.03 5.12 Kwh Ferro Lithium battery as Weco or equal 2 No. 
+ and approved equivalent complete with all wiring to   
+ inverter and accessories   
+6.03 Solar Surge Protector 1 No. 
+6.04 6mm2 Solar DC cables 25 Lm. 
+6.05 PV Disconnect 1000-40-5 1 No. 
+6.06 Outgoing 32A TPN MCB 1 No. 
+6.07 Aluminium mounting frames, brackets and all Item Item 
+ accessories required to mount the P.V modules (on   
+ roof) as per the specifications   
+6.08 IP66 well-ventilated enclouse with sufficient capacity 1 No. 
+ to house the isolator and disconnect switch   
+6.09 Fittings, Accessories and Consumables Item Item 
+6.10 9 ways 100A SP&N Consumer Unit complete with 1 No. 
+ 100A SPN integral isolator ,but excluding the MCBs   
+ as Merlin Gerin.   
+6.11 MCBs to fit in the above   
+ i) 32A SP MCB 3 No. 
+ ii) Blanking plates 6 No. 
+6.12 3core 6mm2 PVC non-armored cables in 32mm HG 20 Lm. 
+ PVC conduits to the Solar Loads Consumer Unit   
+ Sub total carried to next page  
+---PAGE 30---
+27  
+ITEM DESCRIPTION QTY UNIT RATE AMOUNT 
+(Kshs) 
+ Sub total carried from previous page     
+6.13 3core 4mm2 PVC non-armored cables in 32mm HG 30 Lm. 
+ PVC conduits to the Floor Consumer Unit   
+6.14 Manual Bypass Switch 1 No. 
+ TOTAL C/F WESTERN PAVILLION COLLECTION PAGE  
+---PAGE 31---
+28  
+BILL NO.2: WESTERN PAVILLION 
+SCHEDULE NO.7: STRUCTURED CABLING & ACCESS CTRL INSTALLATION WORKS 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+SHS. SHS. 
+ Supply, Install, Test & Commission the     
+ following:   
+ HORIZONTAL CABLING   
+7.01 RJ45 cat 6 UTP (Dual) Data and voice outlets 96 No. 
+ complete with faceplates and labelling system as   
+ Siemons or its equal and approved equivalent   
+7.02 3m RJ45- RJ45 Cat 6 UTP factory terminated 96 No. 
+ patch cord as Siemons for use at workstation areas   
+ 
+7.03 
+ 
+1m, RJ45- RJ45 cat 6 UTP factory terminated 
+ 
+96 
+ 
+No. 
+ patch cord as Siemons to be used in cabinet.   
+7.04 Cat 6 UTP 4-pair screened cable as Siemons 5760 Lm. 
+ pulled between cabinet and work stations.   
+ CABINETS   
+7.05 22U 600x800mm wall/ground mount Cabinet to 1 No. 
+ house the Network Switch as described in   
+ particular specification   
+7.06 9U 600x800mm wall/ground mount Cabinet to 4 No. 
+ house the Network Switch as described in   
+ particular specification   
+7.07 24 port RJ45 cat 6 Data patch panel for UTP 6 No. 
+ termination as Siemon.   
+7.08 2U Cable Manager 16 No. 
+7.09 Rack mountable 240V, 50Hz 1500VA, APC Smart- 1 No. 
+ UPS RM SMT2000RM2U(240V) un-interupted   
+ power supply unit (UPS) with USB and Serial Port   
+ or equal and approved equivalent   
+7.10 Rack mountable 240V, 50Hz 1000VA, APC Smart- 4 No. 
+ UPS RM SMT2000RM2U(240V) un-interupted   
+ power supply unit (UPS) with USB and Serial Port   
+ or equal and approved equivalent   
+ Sub total carried to next page  
+---PAGE 32---
+29  
+ 
+ITEM DESCRIPTION UNIT QTY. RATE AMOUNT 
+SHS. SHS. 
+ Sub total b/f     
+ ACTIVE COMPONENTS   
+7.11 24 Port Edge Switch as Cisco SG350-28P with 24 4 No. 
+ x 1G Base-T/SFP+ combo + 2 x SFP/1G uplink   
+ ports   
+7.12 Wireless Access point, versatile, high-performance 8 No. 
+ wireless solution that supports 802.11ac Wave 2   
+ wireless connectivity, as Cisco WAP 200   
+ Wireless Access Point or approved equivalent   
+ 
+7.13 
+ 
+8 Port SFP Switch with 2xGE SFP as described in 
+ 
+1 
+ 
+No. 
+ the particular specification of the tender document   
+ as Cisco CBS350-8SE-2G-EU or equal and   
+ approved equivalent   
+ BACKBONE CABLING   
+7.14 SFP fibre modules as CISCO or approved 2 No. 
+ equivalent   
+7.15 8 core multimode fibre optic cable complete with 300 Lm 
+ connectors   
+7.16 Fully Loaded 24 Port fibre optic patch panel 5 No. 
+ ACCESS CONTROL   
+ CONTROL PANEL   
+7.17 Access Control Module complete with Integrated 1 No. 
+ Power Supply and batteries as specified in   
+ Particular Specifications as Impro IPS Combo   
+ Cluster box or approved equivalent.   
+7.18 Door Controller Module as Impro Weigand Reader 7 No. 
+ Module   
+ Sub total carried to next page  
+---PAGE 33---
+30  
+ 
+ITEM DESCRIPTION UNIT QTY. RATE AMOUNT 
+SHS. SHS. 
+ Sub total b/f     
+ READERS   
+7.19 Multi-Discipline Reader, 125kHz & 13.56MHZ 16 No. 
+ Reader, Wiegand Interface, Second Edition with   
+ pigtail as Impro or equal and approved equivaleent   
+7.20 Door Exit switch 16 No. 
+7.21 Override Key switch 16 No. 
+7.22 Emergency Break Glass 16 No. 
+ ELECTOMAGNETIC LOCK   
+7.23 An Electromagnetic Lock of 600Kg Force 16 No. 
+ complete with installation accessories, door   
+ closure & power supply as described in particular   
+ specification or equal and approved equivalent.   
+ CARDS AND CABLES   
+7.24 Proximity Cards with the individual employee's 50 No. 
+ name as specified in Particular Specifications.   
+7.25 Mylair cable for access control system 800 Lm. 
+ (approximately 100m). This is provisional length.   
+7.26 1mm2 cable for wiring door exit switches 40 Lm. 
+ WORKSTATION   
+7.27 Specifications:- Processor: Intel i7 8th Gen 1 No. 
+ Memory: 8GB DDR3 RAM Internal Storage: 1   
+ TB 7.2K RPM DVD: LAN: Dual Port Gigabit   
+ Ethernet, Chassis: Tower Monitor: 24 inch or large   
+ with minimum display resolution of 2560 x 1440   
+ Operating System: Windows, Peripherals:   
+ Keyboard, Optical Mouse, Warranty: 03 Years   
+7.28 Programming, testing and commissioning. 1 Lot. 
+7.29 Any other item required   
+ 1)   
+ 2)   
+ 3)   
+ TOTAL C/F TO VIP PAVILLION COLLECTION PAGE  
+---PAGE 34---
+31  
+BILL NO.2: WESTERN PAVILLION 
+SCHEDULE NO. 8: LIGHTNING PROTECTION 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Supply, Deliver, Install, Set to Work and     
+ Commision the Following   
+ AIR TERMINATION   
+8.01 Supply and lay along the ridge cap 25mm x 3mm Lm. 100 
+ thick bare copper tape as Furse P. No. TC030   
+8.02 State Holdfast as Furse Cat. No. HF015 to fix the Item 1 
+ above tape to the roof ridge / parapet wall.   
+8.03 Air termination spike comprising the following.   
+ 2000mm by 15mm diameter copper rod as Furse No. 3 
+ P.No. RA240 Complete with: Copper multiple point   
+ as Furse P. No. RA 600 and Copper ridge saddle as   
+ Furse P No. SD115.   
+ DOWNWARD CONDUCTOR   
+8.04 Downward conductor comprising 25mm x 3mm Lm. 30 
+ thick bare copper tape as item 3.00   
+8.05 Copper square tape clamp for making crossing tape No. 2 
+ joints as Furse CT  105 – FU.   
+8.06 DC tape clips for fixing the down conductors to the No. 12 
+ wall as Furse CT 105 – FU   
+8.07 Copper Oblong test clamp as Furse P NO CN 105 No. 2 
+8.08 Steel conduits 32 mm diameter conduit. Lm. 10 
+8.09 Saddles for the above item No. 4 
+ EARTHING   
+8.10 Earth inspection concrete chamber 300mm x 300mm No. 2 
+ x 300mm with an air tight inspection cover to   
+ approval.   
+8.11 16 mm nominal diameter by 1500mm threaded No. 2 
+ copper bond earth rod as Furse P NO 310 driven to   
+ ground.   
+8.12 Driving stud for the above item as Furse ST 300 No. 2 
+ Sub - Total Carried Forward to next page  
+---PAGE 35---
+32  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ 
+ 
+8.13 
+Sub - Total brought Forward 
+ 
+Earth electrode rod - to - downward conductor 
+copper tape clamps as Furse CR 105 
+ 
+ 
+No. 
+ 
+ 
+2 
+  
+ TOTAL C/F WESTERN PAVILLION COLLECTION PAGE  
+---PAGE 36---
+33  
+BILL NO.2: WESTERN PAVILLION 
+SCHEDULE NO. 9: MATV INSTALLATION WORKS 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+SHS. SHS. 
+ 
+ 
+ 
+9.01 
+Supply, Install, Test and commission the 
+following: 
+ 
+Aluminium Aerial Mast 
+ 
+Grid UHF/VHF Antennae complete Sets 
+Mounting brackets 
+Astel High Resolution Coaxial Cable 
+TELEVES 9x9 Tap Off Unit 
+TELEVES 9x12 Universal Multiswitch 
+INVERTO Quattro (systems) ULTRA L.N.B. 
+ 
+Satellite Dish KU band complete with Antenna 
+and Dish Mount 
+ 
+1-Way 6db Tap F-Connector Splitter- Nickel- 
+plated, zinc die cast housing High shielding with 
+120db RFI, Power pass one port. 
+ 
+TV Outs /Faceplates with 2 Output and noise 
+ 
+Installation Accessories i.e Plugs and Terminators, 
+Compression Connectors, Cable ties, screws, 
+Brackets, Steel Nails etc 
+ 
+Installation, configurations , testing and 
+commissioning 
+ 
+ 
+ 
+No. 
+ 
+ 
+ 
+1 
+  
+9.02 No. 1 
+9.03 No. 1 
+9.04 Roll 30 
+9.05 No. 1 
+9.06 No. 1 
+9.07 No. 2 
+9.08  
+No. 
+ 
+2 
+9.09 
+  
+ No. 10 
+ 
+9.10 
+ 
+No. 
+ 
+10 
+9.11   
+ Item Item 
+ 
+9.12  
+No. 
+ 
+1 
+ TOTAL C/F TO VIP PAVILLION COLLECTION PAGE   
+---PAGE 37---
+34  
+BILL NO. 2: WESTERN PAVILLION COLLECTION PAGE 
+Item Description Amount (KShs) 
+1.00 SCHEDULE NO. 1: GROUND FLOOR  
+2.00 SCHEDULE NO. 2: FIRST FLOOR 
+3.00 SCHEDULE NO. 3: SECOND FLOOR 
+4.00 SCHEDULE NO. 4: THIRD FLOOR 
+5.00 SCHEDULE NO. 5: CCTV INSTALLATION WORKS 
+6.00 SCHEDULE NO. 6: PAVILLION SOLAR INSTALLATION WORKS 
+7.00 SCHEDULE NO.7: STRUCTURED CABLING & ACCESS CTRL 
+ INSTALLATION WORKS 
+8.00 SCHEDULE NO. 8: LIGHTNING PROTECTION 
+9.00 SCHEDULE NO. 9: MATV INSTALLATION WORKS 
+ TOTAL C/F TO GRAND SUMMARY PAGE  
+---PAGE 38---
+35  
+BILL NO.2: EASTERN PAVILLION 
+SCHEDULE NO. 10: GROUND FLOOR 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Supply, Deliver, Install, Set to Work and     
+ Commision the Following   
+10.01 Discover and Repair any broken/damaged Item Item 
+ existing conduits for lighting and sockets   
+ LIGHTING POINTS   
+10.02 Lighting point completely wired in 3x1.5mm² SC. No 73 
+ cables drawn in 20mm diameter HG PVC   
+ conduits including all accessories for one way   
+ switching but excluding the switch and luminaire.   
+10.03 Ditto as in item above but for two way switching No 10 
+ excluding the switch and luminaire.   
+10.04 10A one gang one way switch as MK No 3 
+10.05 10A two gang one way switch as MK No 1 
+10.06 10A one gang two way switch as MK No. 10 
+ LIGHT FITTINGS AND ACCESSORIES   
+10.07 Weatherproof LED Batten, 4ft, 3200lms, 18W, No 76 
+ 6500K as Thorn Poppack (Type J)   
+10.08 1000 lumens, 4000K 13W COB, 85mm Surface No. 40 
+ mounted downlighter as Philips ClearAscent   
+ Downlight or equal and approved   
+ equivalent.(Type N)   
+10.09 40W Wall mounted External Bulkhead (Type B) No. 10 
+ 
+10.10 
+ 
+Self-contained single sided EXIT sign with 8W 
+ 
+No. 
+ 
+5 
+ LED lamp for non-maintained emergency lighting   
+ for 3 hour duration as Thorn EF X3 or approved   
+ equivalent   
+10.11 Mirror Light No. 4 
+ Sub - Total Carried Forward to next page  
+ 
+---PAGE 39---
+36  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+ CCTV, DATA AND TV POINTS   
+10.12 Points wired appoximately 20m for each point No. 14 
+ from the communication room done in 25mmsq.   
+ Size conduits concealed inside ceiling   
+ SOCKET OUTLET POINTS   
+10.11 13A SP socket point completely wired in No 25 
+ 3x2.5mm² SC. PVC insulated cables drawn in   
+ 20mm diameter HG PVC conduits including all   
+ accessories, but excluding the switched socket   
+ outlet.   
+10.12 13A SP twin switched socket outlet as MK No 25 
+10.13 150x150x75mm HG galvanized adaptable box for No 2 
+ ICT and power cables.   
+ DISTRIBUTION BOARD/CONSUMER UNITS   
+10.14 4 ways 100A SP&N Consumer control unit and No. 1 
+ complete with 100A SPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+10.15 6 ways 100A TP&N Distribution Board and No. 1 
+ complete with 100A TPN integral isolator ,but   
+ excluding the MCBs as Merlin Gerin.   
+10.16 10A SP MCB as Merlin Gerin No 5 
+10.17 32A SP MCB as Merlin Gerin No 2 
+10.18 Blanking plates No 1 
+ SUB-MAINS CABLES   
+10.19 5x4 mm² armored PVC insulated copper cables Lm. 10 
+ drawn in 38mm diameter HG PVC conduits cast   
+ in floor slab and concealed in the walls from VIP   
+ Pavillion DB to Ground Floor DB   
+ Sub - Total Carried Forward to next page  
+---PAGE 40---
+37  
+ 
+ITEM DESCRIPTION UNIT QTY RATE AMOUNT 
+ Sub - Total brought Forward     
+ FIRE ALARM SYSTEM   
+10.20 Firealarm outlet point comprising wiring in 13 No. 
+ 2x1.5mm2 special fire resistant-SC-Cu cables in   
+ 20mm diameter HG conduits in concealed in the   
+ ceiling   
+10.21 Addressable Photoelectric Smoke Detector as 10 No. 
+ Menvier or Approved Equivalent   
+10.22 Addressable Manual Fire Alarm 'Break Glass' call 2 No. 
+ points as MENVIER or approved equivalent.   
+ 
+10.23 
+ 
+Addressable Electronic Fire Alarm sounder 
+ 
+1 
+ 
+No. 
+ complete with Red Flashing beacon(Visual alarm)   
+ as MENVIER or approved equivalent   
+10.24 4 loop adressable Fire Alarm control panel as 1 No. 
+ MENVIER   
+ TOTAL C/F EASTERN PAVILLION COLLECTION PAGE  

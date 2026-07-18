@@ -91,6 +91,55 @@
         </div>
       </div>
 
+      {% with sponsor=listing.event.project.owner_org %}
+      {% if sponsor %}
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div class="bw-card-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span>Project Sponsor / Procuring Entity</span>
+          <span style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">
+            Published by the project owner
+          </span>
+        </div>
+        <div class="bw-card-body">
+          <div style="font-size:.95rem;font-weight:700;color:var(--bw-navy);margin-bottom:4px;">
+            {{ sponsor.name }}
+          </div>
+          {% if listing.event.project.county or listing.county_region %}
+          <div style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:10px;">
+            {{ listing.country.name }}{% if listing.county_region %} · {{ listing.county_region }}{% endif %}
+          </div>
+          {% endif %}
+
+          <details style="margin-top:6px;">
+            <summary style="cursor:pointer;font-size:.82rem;font-weight:600;color:var(--bw-teal);">
+              Drill down — sponsor contact details
+            </summary>
+            <div style="margin-top:10px;display:grid;grid-template-columns:1fr;gap:10px;">
+              {% if sponsor.contact_address or sponsor.registered_address %}
+              <div>
+                <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bw-dgrey);margin-bottom:3px;">Address</div>
+                <div style="font-size:.85rem;color:var(--bw-navy);white-space:pre-wrap;line-height:1.5;">{{ sponsor.contact_address|default:sponsor.registered_address }}</div>
+              </div>
+              {% endif %}
+              {% if sponsor.phone %}
+              <div>
+                <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bw-dgrey);margin-bottom:3px;">Telephone</div>
+                <div style="font-size:.85rem;color:var(--bw-navy);">{{ sponsor.phone }}</div>
+              </div>
+              {% endif %}
+              {% if sponsor.email %}
+              <div>
+                <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bw-dgrey);margin-bottom:3px;">Email</div>
+                <div style="font-size:.85rem;color:var(--bw-navy);">{{ sponsor.email }}</div>
+              </div>
+              {% endif %}
+            </div>
+          </details>
+        </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+
       {% if listing.works_description %}
       <div class="bw-card" style="margin-bottom:20px;">
         <div class="bw-card-header">Description of the Works</div>

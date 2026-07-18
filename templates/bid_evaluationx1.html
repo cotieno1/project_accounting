@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 we restructure to reflect the changes we have made 1.1 , 1.2 should not change  but we will move 2.2 
 
 <!DOCTYPE html>
@@ -41,8 +42,8 @@ we restructure to reflect the changes we have made 1.1 , 1.2 should not change  
     <span class="nav-label">I. Task Selection</span>
     <select onchange="window.location.href='?task_id=' + this.value;">
         {% for t in tasks %}
-            <option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>
-                {{ t.project_id }}
+            <option value="{{ t.project_id|clean_task_id }}" {% if t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>
+                {{ t.project_id|clean_task_id }}
             </option>
         {% endfor %}
     </select>

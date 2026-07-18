@@ -18,5 +18,5 @@ class Command(BaseCommand):
                 },
             )
             verb = "Created" if created else "Updated"
-            self.stdout.write(f"{verb}: {obj.code} - {obj.description}")
+            self.stdout.write(f"{verb}: {obj.code} — {obj.description}")
         self.stdout.write(self.style.SUCCESS("Access categories ready."))

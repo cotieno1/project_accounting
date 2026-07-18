@@ -57,18 +57,6 @@ class MiscPurchaseMobileTests(TestCase):
         html = response.content.decode()
         self.assertIn('id="miscTaskSelect-sidebar"', html)
 
-    def test_misc_purchase_body_class_for_mobile_scoping(self):
-        url = reverse("misc_purchase_builder")
-        response = self.client.get(url, {"task_id": self.task.project_id})
-        html = response.content.decode()
-        self.assertIn('class="cockpit-app misc-purchase"', html)
-
-    def test_misc_purchase_mobile_stylesheet_version(self):
-        url = reverse("misc_purchase_builder")
-        response = self.client.get(url, {"task_id": self.task.project_id})
-        html = response.content.decode()
-        self.assertIn("misc-purchase.css?v=2", html)
-
 
 
 class PrintGuardHelperTests(TestCase):

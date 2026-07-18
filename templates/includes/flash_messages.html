@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 {% if messages %}
 <div class="flash-messages-stack" role="status" aria-live="polite">
     {% for message in messages %}
@@ -5,7 +6,7 @@
     {% endfor %}
     {% if request.resolver_match.url_name != 'ops_dashboard' %}
     <p class="flash-main-menu-link">
-        <a href="{% if main_menu_url %}{{ main_menu_url }}{% elif active_task %}{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}">&larr; Main menu</a>
+        <a href="{% if main_menu_url %}{{ main_menu_url }}{% elif active_task %}{% url 'ops_dashboard' %}?task_id={{ active_task.project_id|clean_task_id }}{% else %}{% url 'ops_dashboard' %}{% endif %}">&larr; Main menu</a>
     </p>
     {% endif %}
 </div>

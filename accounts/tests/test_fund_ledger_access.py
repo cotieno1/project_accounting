@@ -1,4 +1,4 @@
-﻿"""Access tests for fund ledger CEO/GM screen."""
+"""Access tests for fund ledger CEO/GM screen."""
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase

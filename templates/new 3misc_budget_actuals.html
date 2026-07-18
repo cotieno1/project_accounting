@@ -1,7 +1,8 @@
+{% load pioneer_tags %}
 pls add the task id and name herein :"<div class="sidebar">
         <h2>PIONEER</h2>
         <select onchange="window.location.href='?task_id=' + this.value;" class="form-input">
-            {% for t in tasks %}<option value="{{ t.project_id }}" {% if t.project_id == active_task.project_id %}selected{% endif %}>{{ t.project_id }}</option>{% endfor %}
+            {% for t in tasks %}<option value="{{ t.project_id|clean_task_id }}" {% if t.project_id|clean_task_id == active_task.project_id|clean_task_id %}selected{% endif %}>{{ t.project_id|clean_task_id }}</option>{% endfor %}
         </select>
     </div>
 
