@@ -33,7 +33,9 @@
                     <div id="setupDropdown" class="setup-dropdown">
                         {% if is_platform_main_admin %}
                         <div class="setup-item"><div><strong>Software Setup</strong><small>{{ app_name }} product branding</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openSingleton('app_settings')">Configure</button></div></div>
+                        {% if not is_sponsor_account %}
                         <div class="setup-item"><div><strong>Building Contractors</strong><small>Create, list, and amend subscriber tenants (Pioneer, etc.)</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('organization')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('organization')">List</button><a class="setup-link" href="{% url 'buildwatch-register' %}?type=CONTRACTOR" target="_blank" rel="noopener">Public register</a></div></div>
+                        {% endif %}
                         <div class="setup-item"><div><strong>Approve registration</strong><small>Self-service BuildWatch signup queue</small></div><div class="setup-item-actions"><input type="text" id="approveRegRef" placeholder="Email or staff no" style="max-width:160px;margin-right:8px;"><button type="button" class="setup-link setup-link-primary" onclick="approveRegistration()">Approve</button></div></div>
                         <div class="setup-item"><div><strong>Global User Accounts</strong><small>Create Pioneer admin and platform users</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('user')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('user')">List</button></div></div>
                         <div class="setup-item"><div><strong>User Categories</strong><small>Access roles</small></div><div class="setup-item-actions"><button type="button" class="setup-link setup-link-primary" onclick="MasterRegistry.openAdd('role')">Add</button><button type="button" class="setup-link" onclick="MasterRegistry.openList('role')">List</button></div></div>
@@ -85,7 +87,7 @@
 	<!-- MAIN -->
 	<div class="container">
 
-    {% if is_platform_main_admin %}
+    {% if is_platform_main_admin and not is_sponsor_account %}
     <section class="platform-workspace" aria-labelledby="platformWorkspaceTitle">
         <div class="platform-workspace-head">
             <div>
@@ -148,7 +150,9 @@
 	   <div class="nav-tabs">
         {% if is_platform_main_admin %}
 		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+		{% if not is_sponsor_account %}
 		<div class="tab" onclick="showSection('platform-tenants')">Building Contractors</div>
+		{% endif %}
 		<a href="{% url 'tender-list' %}" class="tab">Public Procurement Bid Dashboard</a>
 		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
         <a href="{% url 'ops_dashboard' %}" class="tab">Close Tender - Financial Dashboard</a>

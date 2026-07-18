@@ -462,6 +462,13 @@ def _build_dashboard_context(request, *, mode):
     if mode == "tenant" and active_org:
         portal_name = f"{active_org.short_name or active_org.name} Portal"
 
+    # Persona of the logged-in account's OWN organisation (independent of any
+    # platform-admin workspace switch). Project owners/sponsors hide the
+    # contractor-tenant admin surfaces (Building Contractors, subscriber workspace).
+    from .tenant import get_exchange_persona
+    own_org = _user_tenant_organization(user)
+    is_sponsor_account = get_exchange_persona(org=own_org) == "employer" if own_org else False
+
     ctx = {
         "username": user.username,
         "role": role,
@@ -471,6 +478,7 @@ def _build_dashboard_context(request, *, mode):
         "contractor_label": contractor_label,
         "is_platform_main_admin": mode == "platform",
         "is_tenant_portal": mode == "tenant",
+        "is_sponsor_account": is_sponsor_account,
         "pending_registrations": pending_regs,
         "building_tenants": building_tenants,
         "consultant_tenants": consultant_tenants,
