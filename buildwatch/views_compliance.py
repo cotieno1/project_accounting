@@ -35,6 +35,70 @@ CATEGORY_ORDER = [
     ComplianceCheckpoint.CERTIFICATE,
 ]
 
+# Construction sequence used to lay out the draft programme of works.
+TRADE_SEQUENCE = {
+    "EXCAVATION": 1, "CONCRETE": 2, "WALLING": 3, "STEELWORK": 3,
+    "ROOFING": 4, "CARPENTRY": 5, "METALWORK": 5, "PLUMBING": 6,
+    "DRAINAGE": 6, "GLAZING": 7, "FINISHINGS": 7, "PAINTING": 8,
+    "PAVINGS": 8, "GENERAL": 9,
+}
+PHASE_LABELS = {
+    0: "Mobilisation & Site Readiness",
+    1: "Substructure - Excavation & Earthworks",
+    2: "Concrete Works",
+    3: "Walling & Structural Frame",
+    4: "Roofing",
+    5: "Carpentry, Joinery & Metalwork",
+    6: "Plumbing & Drainage",
+    7: "Finishes & Glazing",
+    8: "Painting & External Works",
+    9: "General & Handover",
+}
+CERT_HEADINGS = {
+    ComplianceCheckpoint.CERTIFICATE: "Certificate of Compliance",
+    ComplianceCheckpoint.HOLD_POINT: "Hold Point Release / Approval Record",
+    ComplianceCheckpoint.INSPECTION: "Inspection Sign-off Record",
+    ComplianceCheckpoint.SITE_READINESS: "Site Readiness Confirmation",
+}
+
+
+def _phase_of(cp):
+    if cp.category == ComplianceCheckpoint.SITE_READINESS:
+        return 0
+    code = (cp.preamble.trade_code if cp.preamble_id else "") or ""
+    return TRADE_SEQUENCE.get(code.upper(), 9)
+
+
+def _draft_programme(checkpoints):
+    """Lay checkpoints out as a draft programme of works (phases + milestones)."""
+    from collections import defaultdict
+
+    buckets = defaultdict(list)
+    for cp in checkpoints:
+        buckets[_phase_of(cp)].append(cp)
+
+    phases = []
+    start = 1
+    for idx in sorted(buckets):
+        items = buckets[idx]
+        dur = max(2, min(6, len(items)))
+        end = start + dur - 1
+        phases.append({
+            "idx": idx,
+            "label": PHASE_LABELS.get(idx, "Phase %d" % idx),
+            "start": start, "end": end, "duration": dur,
+            "items": items, "count": len(items),
+        })
+        start = end + 1
+
+    total = phases[-1]["end"] if phases else 0
+    for p in phases:
+        p["left_pct"] = round((p["start"] - 1) * 100.0 / total, 2) if total else 0
+        p["width_pct"] = round(p["duration"] * 100.0 / total, 2) if total else 0
+        p["target_week"] = p["end"]
+    return {"phases": phases, "total_weeks": total,
+            "end_by_phase": {p["idx"]: p["end"] for p in phases}}
+
 
 def _current_ua(request):
     return UserAccount.objects.filter(user=request.user).select_related("organization").first()
@@ -129,10 +193,16 @@ def compliance_register(request, listing_id):
     total = len(checkpoints)
     pct = int(round(approved * 100 / total)) if total else 0
 
+    programme = _draft_programme(checkpoints)
+    dated = [cp.due_date for cp in checkpoints if cp.due_date]
+    start_default = min(dated).isoformat() if dated else today.isoformat()
+
     ctx = {
         "listing": listing,
         "caps": caps,
         "groups": groups,
+        "programme": programme,
+        "start_default": start_default,
         "overdue": overdue,
         "stats": {
             "total": total,
@@ -162,11 +232,38 @@ def compliance_action(request, listing_id):
         return redirect("tender-detail", listing_id=listing.pk)
 
     ua = _current_ua(request)
-    cp = get_object_or_404(ComplianceCheckpoint, pk=request.POST.get("checkpoint_id"), tender=listing)
     action = (request.POST.get("action") or "").strip()
     owner = getattr(listing.event, "project", None)
     owner_org = getattr(owner, "owner_org", None)
     sponsor_email = getattr(owner_org, "email", "") if owner_org else ""
+
+    # Programme-wide action (no single checkpoint) - handle before the lookup.
+    if action == "apply_programme":
+        if not caps["can_submit"]:
+            messages.error(request, "You cannot set the programme dates.")
+            return redirect("compliance-register", listing_id=listing.pk)
+        from datetime import datetime, timedelta
+
+        raw = (request.POST.get("start_date") or "").strip()
+        try:
+            start = datetime.strptime(raw, "%Y-%m-%d").date()
+        except ValueError:
+            messages.error(request, "Enter a valid programme start date.")
+            return redirect("compliance-register", listing_id=listing.pk)
+        checkpoints = list(listing.checkpoints.all())
+        prog = _draft_programme(checkpoints)
+        updated = 0
+        for c in checkpoints:
+            if c.status in (ComplianceCheckpoint.STATUS_APPROVED, ComplianceCheckpoint.STATUS_NA):
+                continue
+            wk = prog["end_by_phase"].get(_phase_of(c), prog["total_weeks"])
+            c.due_date = start + timedelta(weeks=wk)
+            c.save(update_fields=["due_date"])
+            updated += 1
+        messages.success(request, "Draft programme applied - due dates set for %d milestones." % updated)
+        return redirect("compliance-register", listing_id=listing.pk)
+
+    cp = get_object_or_404(ComplianceCheckpoint, pk=request.POST.get("checkpoint_id"), tender=listing)
 
     if action == "assign":
         cp.responsible_user = ua
@@ -249,3 +346,33 @@ def compliance_action(request, listing_id):
         messages.error(request, "Unknown action.")
 
     return redirect("compliance-register", listing_id=listing.pk)
+
+
+@login_required
+def compliance_sample_certificate(request, listing_id, checkpoint_id):
+    """Render a sample / template certificate (or sign-off record) for a checkpoint."""
+    listing = get_object_or_404(
+        TenderListing.objects.select_related("event", "event__project", "event__project__owner_org"),
+        pk=listing_id,
+    )
+    caps = _access(request, listing)
+    if caps is None:
+        messages.error(request, "You do not have access to this tender's compliance register.")
+        return redirect("tender-detail", listing_id=listing.pk)
+
+    cp = get_object_or_404(ComplianceCheckpoint, pk=checkpoint_id, tender=listing)
+    owner_org = getattr(getattr(listing.event, "project", None), "owner_org", None)
+
+    ctx = {
+        "listing": listing,
+        "cp": cp,
+        "owner_org": owner_org,
+        "contractor_org": caps.get("org"),
+        "heading": CERT_HEADINGS.get(cp.category, "Compliance Record"),
+        "today": timezone.now().date(),
+    }
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
+
+    pdf = build_pdf_bytes("tenders/compliance_certificate_print.html", ctx)
+    ref = (listing.event.ref or "").replace("/", "-")
+    return pdf_inline_response(pdf, "SAMPLE-%s-%s" % (cp.code, ref))

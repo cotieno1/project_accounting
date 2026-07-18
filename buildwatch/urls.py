@@ -61,6 +61,10 @@ tender_patterns = [
          comp.compliance_action,
          name='compliance-action'),
 
+    path('<int:listing_id>/compliance/<int:checkpoint_id>/sample.pdf',
+         comp.compliance_sample_certificate,
+         name='compliance-sample-cert'),
+
     # ── Bidder actions — login required ──────────────────────────────────
     path('<int:listing_id>/register/',
          t.tender_register,

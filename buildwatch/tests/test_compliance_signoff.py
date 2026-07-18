@@ -142,6 +142,28 @@ class ComplianceSignoffTests(TestCase):
         self.assertEqual(cp.status, ComplianceCheckpoint.STATUS_APPROVED)
         self.assertIsNotNone(cp.signed_off_at)
 
+    def test_sample_certificate_pdf(self):
+        generate_checkpoints_for_tender(self.listing)
+        cp = self.listing.checkpoints.filter(category=ComplianceCheckpoint.CERTIFICATE).first()
+        c = Client(); c.login(username="contractor1", password="test-pass-123")
+        resp = c.get(reverse("compliance-sample-cert", args=[self.listing.pk, cp.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "application/pdf")
+        self.assertTrue(resp.content[:5].startswith(b"%PDF"))
+
+    def test_apply_programme_sets_due_dates(self):
+        generate_checkpoints_for_tender(self.listing)
+        c = Client(); c.login(username="contractor1", password="test-pass-123")
+        resp = c.post(reverse("compliance-action", args=[self.listing.pk]), {
+            "action": "apply_programme", "start_date": "2026-01-05",
+        })
+        self.assertEqual(resp.status_code, 302)
+        dated = self.listing.checkpoints.exclude(due_date__isnull=True).count()
+        self.assertGreater(dated, 0)
+        # site-readiness (phase 0) is due before a later trade checkpoint
+        site = self.listing.checkpoints.filter(code="SITE-STORAGE").first()
+        self.assertIsNotNone(site.due_date)
+
     def test_overdue_property_and_command(self):
         cp = ComplianceCheckpoint.objects.create(
             tender=self.listing, code="X-OVERDUE", title="Overdue item",

@@ -50,6 +50,31 @@
   <div class="bw-alert bw-alert--warning">This tender has closed. Workspace is read-only.</div>
   {% endif %}
 
+  <!-- Compliance, certificates & programme (belongs to the contractor) -->
+  <div class="bw-card" style="margin-bottom:16px;border-left:4px solid var(--bw-teal,#0c6b8a);">
+    <div class="bw-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span>Compliance, Certificates &amp; Programme</span>
+      {% if compliance_summary.overdue %}
+      <span style="font-size:.72rem;font-weight:700;color:#a12020;">{{ compliance_summary.overdue }} missed step{{ compliance_summary.overdue|pluralize }}</span>
+      {% endif %}
+    </div>
+    <div class="bw-card-body">
+      <p style="font-size:.86rem;color:var(--bw-mid);margin:0 0 12px;line-height:1.5;">
+        Your hold points, certificates (e.g. anti-termite guarantee) and site-readiness items
+        (storage, CCTV, equipment) &mdash; each with an accountable person, a sample certificate to
+        download, evidence upload and a draft programme of milestones.
+      </p>
+      <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+        <div><div style="font-size:1.4rem;font-weight:700;color:var(--bw-navy);">{{ compliance_summary.pct }}%</div><div style="font-size:.7rem;color:var(--bw-mid);">Signed off</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700;color:var(--bw-navy);">{{ compliance_summary.approved }}/{{ compliance_summary.total }}</div><div style="font-size:.7rem;color:var(--bw-mid);">Approved</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700;color:#a12020;">{{ compliance_summary.overdue }}</div><div style="font-size:.7rem;color:var(--bw-mid);">Missed / overdue</div></div>
+      </div>
+      <a href="{% url 'compliance-register' listing.pk %}" class="bw-btn bw-btn--teal">
+        Open Compliance &amp; Programme
+      </a>
+    </div>
+  </div>
+
   {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
   <div class="bw-card" style="margin-bottom:16px;">
     <div class="bw-card-header">Load RFQ / BOQ PDF</div>

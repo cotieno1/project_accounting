@@ -42,6 +42,54 @@
     </div>
   </div>
 
+  <!-- Draft programme of works -->
+  {% if programme.phases %}
+  <div class="bw-card" style="margin-bottom:18px;">
+    <div class="bw-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span>Draft Programme of Works &mdash; milestones</span>
+      <span style="font-size:.72rem;font-weight:600;color:var(--bw-dgrey);">approx. {{ programme.total_weeks }} weeks</span>
+    </div>
+    <div class="bw-card-body" style="padding:16px 18px;">
+      <p style="margin:0 0 12px;font-size:.8rem;color:var(--bw-dgrey);line-height:1.5;">
+        Indicative sequence derived from the BOQ preambles. Set a start date to turn these into
+        real milestone due dates &mdash; missed milestones then raise alerts automatically.
+      </p>
+
+      {% if caps.can_submit %}
+      <form method="post" action="{% url 'compliance-action' listing.pk %}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="apply_programme">
+        <label style="font-size:.78rem;color:var(--bw-navy);">Programme start
+          <input type="date" name="start_date" value="{{ start_default }}" style="font-size:.8rem;padding:4px 7px;">
+        </label>
+        <button type="submit" class="bw-btn bw-btn--teal" style="font-size:.78rem;padding:5px 14px;">Apply draft dates to milestones</button>
+      </form>
+      {% endif %}
+
+      <!-- Gantt -->
+      <div style="overflow-x:auto;">
+        <div style="min-width:560px;">
+          {% for p in programme.phases %}
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">
+            <div style="width:210px;flex-shrink:0;font-size:.78rem;color:var(--bw-navy);font-weight:600;">
+              {{ p.label }}
+              <span style="font-weight:400;color:var(--bw-dgrey);">({{ p.count }})</span>
+            </div>
+            <div style="position:relative;flex:1;height:22px;background:#f2f5fa;border-radius:5px;">
+              <div style="position:absolute;top:0;bottom:0;left:{{ p.left_pct }}%;width:{{ p.width_pct }}%;
+                          background:{% if p.idx == 0 %}#0c6b8a{% else %}#2f6fb0{% endif %};
+                          border-radius:5px;color:#fff;font-size:.68rem;line-height:22px;text-align:center;overflow:hidden;">
+                wk {{ p.start }}-{{ p.end }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Missed-step banner -->
   {% if overdue %}
   <div class="bw-card" style="margin-bottom:18px;border-left:4px solid #a12020;">
@@ -101,13 +149,21 @@
             {% elif cp.status == 'NA' %}
             <span class="bw-badge" style="background:#eef1f6;color:var(--bw-dgrey);">N/A</span>
             {% else %}
-            <span class="bw-badge" style="background:#eef1f6;color:var(--bw-dgrey);">Pending</span>
+            <a href="{% url 'compliance-sample-cert' listing.pk cp.pk %}" target="_blank"
+               style="display:inline-block;font-size:.74rem;font-weight:600;color:var(--bw-blue);
+                      border:1px solid var(--bw-blue);border-radius:6px;padding:4px 10px;text-decoration:none;">
+              {% if cp.category == 'CERTIFICATE' %}Sample certificate{% else %}Sample sign-off form{% endif %}
+            </a>
             {% endif %}
           </div>
         </div>
 
         {% if cp.is_open %}
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center;">
+          <a href="{% url 'compliance-sample-cert' listing.pk cp.pk %}" target="_blank"
+             style="font-size:.76rem;color:var(--bw-blue);text-decoration:none;">
+            {% if cp.category == 'CERTIFICATE' %}Sample certificate{% else %}Sample form{% endif %} &darr;
+          </a>
           <!-- Take responsibility -->
           <details>
             <summary style="cursor:pointer;font-size:.76rem;color:var(--bw-blue);">Take responsibility / set due date</summary>

@@ -2090,11 +2090,27 @@ def bid_workspace(request, listing_id):
             pending_sub_quotes = []
             can_print_draft_bid = True
 
+    _cp_qs = listing.checkpoints.all()
+    _cp_total = _cp_qs.count()
+    _cp_appr = _cp_qs.filter(status='APPROVED').count()
+    _cp_overdue = (
+        _cp_qs.filter(due_date__lt=timezone.now().date())
+        .exclude(status__in=['APPROVED', 'NA'])
+        .count()
+    )
+    compliance_summary = {
+        'total': _cp_total,
+        'approved': _cp_appr,
+        'overdue': _cp_overdue,
+        'pct': int(round(_cp_appr * 100 / _cp_total)) if _cp_total else 0,
+    }
+
     ctx = {
         'listing': listing,
         'workspace': workspace,
         'packages': packages,
         'main_packages': main_packages,
+        'compliance_summary': compliance_summary,
         'subcontracted_codes': subcontracted_codes,
         'selected_codes': selected,
         'boq_input_mode': listing.boq_input_mode,
