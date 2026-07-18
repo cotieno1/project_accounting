@@ -54,6 +54,12 @@ class Command(BaseCommand):
             help="Temporary password; the PS is forced to change it on first login.",
         )
         parser.add_argument("--staff-no", default="SDHUD-PS-001")
+        parser.add_argument(
+            "--force-change",
+            action="store_true",
+            help="Require the PS to change the password on first login "
+                 "(default: password is directly usable).",
+        )
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -137,12 +143,13 @@ class Command(BaseCommand):
         ua.email = email
         ua.access_level = category
         ua.organization = org
-        ua.must_change_password = True
+        ua.must_change_password = bool(opts["force_change"])
         ua.save()
 
+        note = ("must change on first login" if opts["force_change"]
+                else "directly usable, no forced change")
         self.stdout.write(self.style.SUCCESS(
-            f"Registered PS login: username='{username}' temp password='{password}' "
-            f"(must change on first login)."
+            f"Registered PS login: username='{username}' password='{password}' ({note})."
         ))
         self.stdout.write(
             f"Sponsor landing: /tenders/sponsors/{ORG_CODE}/   |   Accounting officer: "
