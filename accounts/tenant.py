@@ -153,12 +153,8 @@ def exchange_persona_context(request=None, org=None):
             "bw_persona": "contractor",
             "bw_persona_label": (f"{org_name} · Contractor" if org_name else "Contractor workspace"),
             "bw_persona_kicker": "Contractor · building & infrastructure",
-            "bw_persona_title": "Tenders you can bid",
-            "bw_persona_lead": (
-                (f"Working as {org_name}. " if org_name else "")
-                + "Browse published works, register interest, download BOQ packages "
-                + "and submit bids for your organisation."
-            ),
+            "bw_persona_title": "Tenders",
+            "bw_persona_lead": "",
             "bw_primary_cta_label": "My bids",
             "bw_secondary_cta_label": "Set alerts",
             "bw_org_display": org_name,
