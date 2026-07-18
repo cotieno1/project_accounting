@@ -1,4 +1,5 @@
 {% extends "buildwatch/base.html" %}
+{% load pioneer_tags %}
 
 {% block title %}Tender Activity - BuildWatch{% endblock %}
 
@@ -10,10 +11,11 @@
       Procuring Entity &middot; {{ org_name }}
     </div>
     <h1 style="font-size:1.6rem;font-weight:700;color:var(--bw-navy);letter-spacing:-.03em;margin-bottom:6px;">Tender Activity</h1>
-    <p style="color:var(--bw-dgrey);font-size:.88rem;line-height:1.55;max-width:720px;">
-      Who has registered to bid on your tenders, your appointed consultant team, and a space to
-      post clarifications, changes or announcements to bidders. Bidding workspaces belong to the
-      contractors &mdash; you see their interest and, once submitted, their bids.
+    <p style="color:var(--bw-dgrey);font-size:.88rem;line-height:1.55;max-width:760px;">
+      The heart of each project &mdash; from award to completion. Track who is bidding, the appointed
+      consultant team, compliance &amp; standards, and every shilling: contract sum vs certified vs paid,
+      with interim and final payment certificates for the contractor and consultants so that what was
+      promised is delivered and accounted for.
     </p>
   </div>
 
@@ -37,6 +39,197 @@
           <a href="{% url 'tender-manage' row.tender.pk %}" class="bw-btn bw-btn--primary bw-btn--sm">Manage / post announcement</a>
         </div>
       </div>
+    </div>
+
+    <!-- Project Delivery Hub -->
+    <div style="padding:18px 22px;border-bottom:1px solid var(--bw-lgrey,#eef1f6);background:linear-gradient(180deg,#f6fafd,#ffffff);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <h3 style="font-size:.92rem;font-weight:700;color:var(--bw-navy);margin:0;">Project delivery hub &middot; every shilling accounted</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          {% if row.awarded %}<span class="bw-badge bw-badge--open">Awarded: {{ row.awarded.name }}</span>{% endif %}
+          {% if row.compliance %}
+            <a href="{% url 'compliance-register' row.tender.pk %}" class="bw-badge bw-badge--closing" style="text-decoration:none;">Compliance {{ row.compliance.pct }}%{% if row.compliance.overdue %} &middot; {{ row.compliance.overdue }} overdue{% endif %}</a>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if row.vfm %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;">
+        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
+          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Contract sum</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--bw-navy);">{{ row.vfm.contract_sum|fmt_money }}</div>
+        </div>
+        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
+          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Certified to date</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--bw-navy);">{{ row.vfm.certified_gross|fmt_money }}</div>
+          <div style="font-size:.66rem;color:var(--bw-dgrey);">{{ row.vfm.pct_certified }}% of contract</div>
+        </div>
+        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
+          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Paid to date</div>
+          <div style="font-size:1rem;font-weight:700;color:#1a7f4b;">{{ row.vfm.paid_to_date|fmt_money }}</div>
+          <div style="font-size:.66rem;color:var(--bw-dgrey);">Outstanding {{ row.vfm.outstanding|fmt_money }}</div>
+        </div>
+        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
+          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Retention held</div>
+          <div style="font-size:1rem;font-weight:700;color:#b7791f;">{{ row.vfm.retention_held|fmt_money }}</div>
+        </div>
+        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
+          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Balance to complete</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--bw-navy);">{{ row.vfm.balance|fmt_money }}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="height:9px;border-radius:6px;background:#e8edf3;overflow:hidden;display:flex;">
+          <div style="width:{{ row.vfm.pct_paid }}%;background:#1a7f4b;"></div>
+          <div style="width:{{ row.vfm.pct_certified_only }}%;background:#7fb2d9;"></div>
+        </div>
+        <div style="font-size:.68rem;color:var(--bw-dgrey);margin-top:4px;">
+          <span style="color:#1a7f4b;font-weight:600;">&#9632; Paid {{ row.vfm.pct_paid }}%</span> &nbsp;
+          <span style="color:#7fb2d9;font-weight:600;">&#9632; Certified {{ row.vfm.pct_certified }}%</span>
+          {% if row.vfm.over_budget %}&nbsp; <span style="color:#c0392b;font-weight:600;">&#9888; Certified exceeds authorised budget</span>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if not row.vfm.contract_sum %}
+      <!-- Record award / contract sum -->
+      <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="border:1px dashed var(--bw-teal);border-radius:9px;padding:12px 13px;margin-bottom:14px;background:#fff;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="record_award">
+        <div style="font-size:.8rem;font-weight:700;color:var(--bw-navy);margin-bottom:8px;">Record award &amp; contract sum</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+          <label style="font-size:.72rem;color:var(--bw-dgrey);">Awarded contractor<br>
+            <select name="awarded_org" required style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;min-width:200px;">
+              <option value="">Select bidder&hellip;</option>
+              {% for o in row.payee_orgs %}<option value="{{ o.org_code }}">{{ o.name }}</option>{% endfor %}
+            </select>
+          </label>
+          <label style="font-size:.72rem;color:var(--bw-dgrey);">Contract sum<br>
+            <input type="text" name="contract_sum" placeholder="0.00" required style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:150px;">
+          </label>
+          <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Record award</button>
+        </div>
+      </form>
+      {% endif %}
+
+      <!-- Payment certificates -->
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
+        <h4 style="font-size:.82rem;font-weight:700;color:var(--bw-navy);margin:0;">Payment certificates</h4>
+        <span style="font-size:.72rem;color:var(--bw-dgrey);">{{ row.certificates|length }} certificate{{ row.certificates|length|pluralize }}</span>
+      </div>
+      {% if row.certificates %}
+      <div style="overflow-x:auto;margin-bottom:10px;">
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+          <thead>
+            <tr style="text-align:left;color:var(--bw-dgrey);font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;">
+              <th style="padding:6px 8px;">Cert</th>
+              <th style="padding:6px 8px;">Payee</th>
+              <th style="padding:6px 8px;">Type</th>
+              <th style="padding:6px 8px;text-align:right;">Gross</th>
+              <th style="padding:6px 8px;text-align:right;">Retention</th>
+              <th style="padding:6px 8px;text-align:right;">Net payable</th>
+              <th style="padding:6px 8px;">Status</th>
+              <th style="padding:6px 8px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in row.certificates %}
+            <tr style="border-top:1px solid var(--bw-lgrey,#eef1f6);">
+              <td style="padding:7px 8px;font-family:monospace;font-size:.74rem;">
+                <a href="{% url 'payment-certificate-pdf' row.tender.pk c.pk %}" target="_blank" style="color:var(--bw-blue);text-decoration:none;">{{ c.cert_no }}</a>
+              </td>
+              <td style="padding:7px 8px;color:var(--bw-navy);">{{ c.payee_name|default:'&mdash;' }}<div style="font-size:.66rem;color:var(--bw-dgrey);">{{ c.get_payee_kind_display }}</div></td>
+              <td style="padding:7px 8px;color:var(--bw-dgrey);">{{ c.get_cert_type_display }}</td>
+              <td style="padding:7px 8px;text-align:right;">{{ c.gross_amount|money }}</td>
+              <td style="padding:7px 8px;text-align:right;color:#b7791f;">{{ c.retention_amount|money }}</td>
+              <td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--bw-navy);">{{ c.net_payable|money }}</td>
+              <td style="padding:7px 8px;">
+                {% if c.status == 'PAID' %}<span class="bw-badge bw-badge--open">Paid</span>
+                {% elif c.status == 'CERTIFIED' %}<span class="bw-badge bw-badge--closing">Certified</span>
+                {% else %}<span class="bw-badge bw-badge--closed">Draft</span>{% endif %}
+              </td>
+              <td style="padding:7px 8px;">
+                <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                {% if c.status == 'DRAFT' %}
+                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
+                    <input type="hidden" name="action" value="certify_certificate"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Certify</button>
+                  </form>
+                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}" onsubmit="return confirm('Remove draft {{ c.cert_no }}?');">{% csrf_token %}
+                    <input type="hidden" name="action" value="delete_certificate"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                    <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Delete</button>
+                  </form>
+                {% elif c.status == 'CERTIFIED' %}
+                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="display:flex;gap:4px;align-items:center;">{% csrf_token %}
+                    <input type="hidden" name="action" value="mark_paid"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                    <input type="text" name="paid_reference" placeholder="Ref / M-Pesa" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;width:110px;font-size:.72rem;">
+                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Mark paid</button>
+                  </form>
+                {% else %}
+                  <span style="font-size:.7rem;color:var(--bw-dgrey);">{{ c.paid_reference|default:'' }}</span>
+                {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="font-size:.8rem;color:var(--bw-dgrey);margin:0 0 10px;">No payment certificates yet. Raise an advance, interim or final certificate below.</p>
+      {% endif %}
+
+      <!-- Raise a certificate -->
+      <details style="margin-top:4px;">
+        <summary style="cursor:pointer;font-size:.8rem;font-weight:600;color:var(--bw-blue);">+ Raise a payment certificate</summary>
+        <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:13px;margin-top:10px;background:#fff;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_certificate">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+            <label style="font-size:.72rem;color:var(--bw-dgrey);">Payee type<br>
+              <select name="payee_kind" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+                <option value="CONTRACTOR">Contractor</option>
+                <option value="CONSULTANT">Consultant</option>
+              </select>
+            </label>
+            <label style="font-size:.72rem;color:var(--bw-dgrey);">Contractor (if contractor)<br>
+              <select name="payee_org" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+                <option value="">&mdash;</option>
+                {% for o in row.payee_orgs %}<option value="{{ o.org_code }}">{{ o.name }}</option>{% endfor %}
+              </select>
+            </label>
+            <label style="font-size:.72rem;color:var(--bw-dgrey);">Consultant (if consultant)<br>
+              <select name="consultant_id" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+                <option value="">&mdash;</option>
+                {% for c in row.consultants %}<option value="{{ c.pk }}">{{ c.get_role_display }} &middot; {{ c.display_name }}</option>{% endfor %}
+              </select>
+            </label>
+            <label style="font-size:.72rem;color:var(--bw-dgrey);">Certificate type<br>
+              <select name="cert_type" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+                {% for val,label in cert_types %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+              </select>
+            </label>
+            <label style="font-size:.72rem;color:var(--bw-dgrey);">Gross amount (this period)<br>
+              <input type="text" name="gross_amount" placeholder="0.00" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+            </label>
+            <label style="font-size:.72rem;color:var(--bw-dgrey);">Retention %<br>
+              <input type="text" name="retention_pct" value="10" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+            </label>
+            <label style="font-size:.72rem;color:var(--bw-dgrey);">Retention released (final)<br>
+              <input type="text" name="retention_released" placeholder="0.00" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+            </label>
+            <label style="font-size:.72rem;color:var(--bw-dgrey);">Period to<br>
+              <input type="date" name="period_to" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+            </label>
+          </div>
+          <label style="font-size:.72rem;color:var(--bw-dgrey);display:block;margin-top:8px;">Description / title<br>
+            <input type="text" name="title" placeholder="e.g. Interim valuation No. 1 - substructure" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+          </label>
+          <div style="margin-top:10px;font-size:.7rem;color:var(--bw-dgrey);">Certificates are raised as <strong>draft</strong>, then <strong>certified</strong> for payment, then <strong>paid</strong>. Retention is withheld on interim certificates and released on the final certificate.</div>
+          <div style="margin-top:10px;"><button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise draft certificate</button></div>
+        </form>
+      </details>
     </div>
 
     <!-- Registered bidders -->

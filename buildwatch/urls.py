@@ -16,6 +16,7 @@ from buildwatch import views_bw as bw
 from buildwatch import views_tenders as t
 from buildwatch import views_subcontract_portal as sub
 from buildwatch import views_compliance as comp
+from buildwatch import views_delivery as deliv
 
 # ── BuildWatch core (Sprint 1) ────────────────────────────────────────────────
 buildwatch_patterns = [
@@ -64,6 +65,15 @@ tender_patterns = [
     path('<int:listing_id>/compliance/<int:checkpoint_id>/sample.pdf',
          comp.compliance_sample_certificate,
          name='compliance-sample-cert'),
+
+    # ── Project Delivery Hub (award, payment certificates) ───────────────
+    path('<int:listing_id>/delivery/action/',
+         deliv.delivery_action,
+         name='delivery-action'),
+
+    path('<int:listing_id>/delivery/certificate/<int:cert_id>.pdf',
+         deliv.payment_certificate_pdf,
+         name='payment-certificate-pdf'),
 
     # ── Bidder actions — login required ──────────────────────────────────
     path('<int:listing_id>/register/',

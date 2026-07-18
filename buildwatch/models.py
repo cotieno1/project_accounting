@@ -1444,3 +1444,134 @@ class SubcontractQuoteLine(models.Model):
 
     def __str__(self):
         return f"{self.bill_ref}: {self.amount:,.2f}"
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# PROJECT DELIVERY HUB - payment certification & value-for-money
+# ════════════════════════════════════════════════════════════════════════════
+
+class PaymentCertificate(models.Model):
+    """
+    A certified payment to the contractor or a consultant for a project.
+
+    Incremental model (per period) so project rollups are simple sums:
+      gross_amount        value of work done / fee earned THIS period (pre-retention)
+      retention_amount    withheld this period (interim) = gross x retention_pct
+      retention_released  retention paid back (usually on the final certificate)
+      net_payable         gross_amount - retention_amount + retention_released
+
+    Tracks the money spine of a project ("every shilling accounted"): what was
+    promised (contract sum on the project), what has been certified, what has
+    been paid, and what retention is being held as a guarantee of delivery.
+    """
+    CONTRACTOR = "CONTRACTOR"
+    CONSULTANT = "CONSULTANT"
+    PAYEE_CHOICES = [
+        (CONTRACTOR, "Contractor"),
+        (CONSULTANT, "Consultant"),
+    ]
+
+    INTERIM = "INTERIM"
+    ADVANCE = "ADVANCE"
+    FINAL = "FINAL"
+    TYPE_CHOICES = [
+        (INTERIM, "Interim payment certificate"),
+        (ADVANCE, "Advance / mobilisation"),
+        (FINAL, "Final / completion certificate"),
+    ]
+
+    STATUS_DRAFT = "DRAFT"
+    STATUS_CERTIFIED = "CERTIFIED"
+    STATUS_PAID = "PAID"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft"),
+        (STATUS_CERTIFIED, "Certified for payment"),
+        (STATUS_PAID, "Paid"),
+    ]
+
+    project = models.ForeignKey(
+        InfraProject, on_delete=models.CASCADE,
+        related_name="payment_certificates",
+    )
+    tender = models.ForeignKey(
+        TenderListing, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="payment_certificates",
+    )
+    payee_kind = models.CharField(max_length=12, choices=PAYEE_CHOICES, default=CONTRACTOR)
+    payee_org = models.ForeignKey(
+        "accounts.Organization", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="payment_certificates",
+        help_text="Contractor company or consultant firm being paid.",
+    )
+    consultant = models.ForeignKey(
+        TenderConsultant, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="payment_certificates",
+    )
+    payee_name = models.CharField(max_length=200, blank=True)
+
+    cert_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default=INTERIM)
+    cert_no = models.CharField(max_length=40, blank=True, help_text="Auto: IPC-YYYY-###")
+    title = models.CharField(max_length=200, blank=True)
+    period_from = models.DateField(null=True, blank=True)
+    period_to = models.DateField(null=True, blank=True)
+
+    gross_amount = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
+    retention_pct = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("10"))
+    retention_amount = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
+    retention_released = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
+    net_payable = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
+
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    certified_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="certified_payments",
+    )
+    certified_at = models.DateTimeField(null=True, blank=True)
+    paid_reference = models.CharField(max_length=100, blank=True)
+    paid_method = models.CharField(max_length=20, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="raised_payments",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def save(self, *args, **kwargs):
+        pct = self.retention_pct or Decimal("0")
+        if self.cert_type == self.FINAL:
+            # Final certificate: no new retention withheld.
+            self.retention_amount = Decimal("0")
+        else:
+            self.retention_amount = (
+                (self.gross_amount or Decimal("0")) * pct / Decimal("100")
+            ).quantize(Decimal("0.01"))
+        self.net_payable = (
+            (self.gross_amount or Decimal("0"))
+            - self.retention_amount
+            + (self.retention_released or Decimal("0"))
+        ).quantize(Decimal("0.01"))
+        if not self.cert_no:
+            self.cert_no = self._make_cert_no()
+        super().save(*args, **kwargs)
+
+    def _make_cert_no(self):
+        prefix = {self.INTERIM: "IPC", self.ADVANCE: "ADV", self.FINAL: "FC"}.get(
+            self.cert_type, "PC"
+        )
+        year = timezone.now().year
+        n = (
+            PaymentCertificate.objects
+            .filter(cert_no__startswith=f"{prefix}-{year}-")
+            .count()
+            + 1
+        )
+        return f"{prefix}-{year}-{n:03d}"
+
+    def __str__(self):
+        return f"{self.cert_no or 'PC'} - {self.payee_name} {self.net_payable:,.2f} [{self.status}]"

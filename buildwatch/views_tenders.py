@@ -39,7 +39,9 @@ from .models import (
     BidderRegistration, BidWorkspace, SelfAssessmentCheck, WorkspaceBillPrice,
     EvaluationEvent, MandatoryRequirement, Submission, AuditLedger, Country,
     InfraProject, TenderBoqPackage, TenderBoqLine, SubcontractArrangement,
+    ComplianceCheckpoint, PaymentCertificate,
 )
+from .delivery import value_for_money
 from accounts.models import Organization, UserAccount
 from accounts.tenant import (
     get_active_organization,
@@ -2420,18 +2422,60 @@ def _sponsor_activity(request, org):
             .values_list('organisation_id', flat=True)
         )
         bidders = [{'reg': r, 'submitted': r.organisation_id in submitted_ids} for r in regs]
+        consultants = list(t.consultants.all())
+
+        project = getattr(t.event, 'project', None)
+
+        # ── Delivery hub: value-for-money + certificates + compliance ────
+        vfm = None
+        certificates = []
+        awarded = None
+        compliance = None
+        if project is not None:
+            vfm = value_for_money(project)
+            certificates = list(
+                project.payment_certificates
+                .select_related('payee_org', 'consultant', 'certified_by')
+            )
+            awarded_sub = (
+                Submission.objects
+                .filter(event=t.event, is_awarded=True)
+                .select_related('submitter_org')
+                .first()
+            )
+            if awarded_sub:
+                awarded = awarded_sub.submitter_org
+
+            cps = list(t.checkpoints.all())
+            if cps:
+                approved = sum(1 for c in cps if c.status == ComplianceCheckpoint.STATUS_APPROVED)
+                overdue = sum(1 for c in cps if c.is_overdue)
+                compliance = {
+                    'total': len(cps),
+                    'approved': approved,
+                    'overdue': overdue,
+                    'pct': int(round(approved * 100 / len(cps))),
+                }
+
         rows.append({
             'tender': t,
+            'project': project,
             'bidders': bidders,
             'bidder_count': len(bidders),
             'submitted_count': sum(1 for b in bidders if b['submitted']),
-            'consultants': list(t.consultants.all()),
+            'consultants': consultants,
             'addenda': list(t.addenda.all()),
+            'vfm': vfm,
+            'certificates': certificates,
+            'awarded': awarded,
+            'compliance': compliance,
+            'payee_orgs': [b['reg'].organisation for b in bidders],
         })
 
     ctx = {
         'sponsor_rows': rows,
         'org': org,
+        'cert_types': PaymentCertificate.TYPE_CHOICES,
         **branding_template_context(request),
     }
     return render(request, 'tenders/sponsor_activity.html', ctx)
