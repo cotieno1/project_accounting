@@ -321,7 +321,7 @@
 {% block content %}
 <div class="bw-shell">
   <nav class="bw-topnav">
-    <a class="bw-topnav__brand" href="{% url 'tender-list' %}">
+    <a class="bw-topnav__brand" href="{% url 'home' %}">
       <span class="bw-topnav__mark" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </span>
@@ -344,6 +344,7 @@
           <a href="{% url 'tender-alerts' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-alerts' %}is-active{% endif %}">Alerts</a>
         {% endif %}
       {% else %}
+      <a href="{% url 'home' %}" class="bw-topnav__link">Home</a>
       <a href="{% url 'login' %}?next={% url 'tender-list' %}" class="bw-topnav__link">Sign in</a>
       <a href="{% url 'buildwatch-register' %}?type=CONTRACTOR" class="bw-btn bw-btn--ghost bw-btn--sm">Contractor register</a>
       <a href="{% url 'buildwatch-register' %}?type=GOV_NATIONAL" class="bw-btn bw-btn--teal bw-btn--sm">Employer register</a>
@@ -365,10 +366,12 @@
   </main>
 
   <footer class="bw-footer">
-    <span>{{ bw_brand_title|default:"BuildWatch" }}</span>
+    <span>&copy; {% now "Y" %} {{ bw_brand_title|default:"BuildWatch" }} &middot; Global infrastructure integrity platform</span>
     <span>
+      <a href="{% url 'home' %}">Home</a>
+      &nbsp;&middot;&nbsp;
       <a href="{% url 'tender-list' %}">Tenders</a>
-      &nbsp;Â·&nbsp;
+      &nbsp;&middot;&nbsp;
       <a href="{% url 'buildwatch-register' %}">Register</a>
     </span>
   </footer>
