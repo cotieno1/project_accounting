@@ -156,6 +156,9 @@ def delivery_action(request, listing_id):
     )
 
     if action == "certify_certificate":
+        if cert.status != PaymentCertificate.STATUS_DRAFT:
+            messages.error(request, "Only a draft certificate can be certified.")
+            return redirect("my-bids")
         cert.status = PaymentCertificate.STATUS_CERTIFIED
         cert.certified_by = ua
         cert.certified_at = timezone.now()
@@ -163,17 +166,37 @@ def delivery_action(request, listing_id):
         _audit_cert(project, ua, "PAYMENT_CERT_CERTIFIED", cert)
         messages.success(request, "Certified for payment: %s (%s)." % (cert.cert_no, f"{cert.net_payable:,.2f}"))
 
-    elif action == "mark_paid":
-        cert.status = PaymentCertificate.STATUS_PAID
+    elif action == "raise_ro":
+        # Step 2 - raise the Requisition Order against a certified certificate.
+        if cert.status != PaymentCertificate.STATUS_CERTIFIED:
+            messages.error(request, "A certificate must be certified before a requisition order is raised.")
+            return redirect("my-bids")
+        ref = (request.POST.get("ro_no") or "").strip()[:40]
+        cert.ro_no = ref or PaymentCertificate._make_seq_no("RO", "ro_no")
+        cert.ro_raised_by = ua
+        cert.ro_raised_at = timezone.now()
+        cert.status = PaymentCertificate.STATUS_REQUISITIONED
+        cert.save(update_fields=["ro_no", "ro_raised_by", "ro_raised_at", "status", "updated_at"])
+        _audit_cert(project, ua, "PAYMENT_RO_RAISED", cert, {"ro_no": cert.ro_no})
+        messages.success(request, "Requisition order %s raised for %s." % (cert.ro_no, cert.cert_no))
+
+    elif action in ("raise_payment_order", "mark_paid"):
+        # Step 3 - raise the Payment Order (PV) / transfer of funds.
+        if cert.status != PaymentCertificate.STATUS_REQUISITIONED:
+            messages.error(request, "Raise the requisition order (RO) before the payment order.")
+            return redirect("my-bids")
+        ref = (request.POST.get("pv_no") or "").strip()[:40]
+        cert.pv_no = ref or PaymentCertificate._make_seq_no("PV", "pv_no")
         cert.paid_reference = (request.POST.get("paid_reference") or "").strip()[:100]
         cert.paid_method = (request.POST.get("paid_method") or "").strip()[:20]
         cert.paid_at = timezone.now()
+        cert.status = PaymentCertificate.STATUS_PAID
         cert.save(update_fields=[
-            "status", "paid_reference", "paid_method", "paid_at", "updated_at",
+            "pv_no", "paid_reference", "paid_method", "paid_at", "status", "updated_at",
         ])
-        _audit_cert(project, ua, "PAYMENT_CERT_PAID", cert,
-                    {"reference": cert.paid_reference})
-        messages.success(request, "Marked paid: %s." % cert.cert_no)
+        _audit_cert(project, ua, "PAYMENT_ORDER_RAISED", cert,
+                    {"pv_no": cert.pv_no, "ro_no": cert.ro_no, "reference": cert.paid_reference})
+        messages.success(request, "Payment order %s raised - funds transferred for %s." % (cert.pv_no, cert.cert_no))
 
     elif action == "delete_certificate":
         if cert.status != PaymentCertificate.STATUS_DRAFT:

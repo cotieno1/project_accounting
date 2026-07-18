@@ -68,8 +68,13 @@
 
   {% if cert.notes %}<div class="box">{{ cert.notes }}</div>{% endif %}
 
-  {% if cert.status == 'PAID' %}
-  <div class="box">Paid on {{ cert.paid_at|date:"d M Y" }}{% if cert.paid_method %} by {{ cert.paid_method }}{% endif %}{% if cert.paid_reference %} &middot; ref <span class="mono">{{ cert.paid_reference }}</span>{% endif %}.</div>
+  {% if cert.ro_no or cert.pv_no %}
+  <h2>Payment processing trail</h2>
+  <table class="kv">
+    {% if cert.ro_no %}<tr><td>Requisition Order (RO)</td><td><span class="mono">{{ cert.ro_no }}</span>{% if cert.ro_raised_at %} &middot; {{ cert.ro_raised_at|date:"d M Y" }}{% endif %}</td></tr>{% endif %}
+    {% if cert.pv_no %}<tr><td>Payment Order (PV)</td><td><span class="mono">{{ cert.pv_no }}</span>{% if cert.paid_at %} &middot; {{ cert.paid_at|date:"d M Y" }}{% endif %}</td></tr>{% endif %}
+    {% if cert.status == 'PAID' %}<tr><td>Transfer of funds</td><td>{% if cert.paid_method %}{{ cert.paid_method }}{% endif %}{% if cert.paid_reference %} &middot; ref <span class="mono">{{ cert.paid_reference }}</span>{% endif %}</td></tr>{% endif %}
+  </table>
   {% endif %}
 
   <table class="sigrow">

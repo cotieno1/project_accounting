@@ -1480,13 +1480,17 @@ class PaymentCertificate(models.Model):
         (FINAL, "Final / completion certificate"),
     ]
 
+    # Government payment procedure: certify -> Requisition Order (RO)
+    # -> Payment Order (PV) / transfer of funds.
     STATUS_DRAFT = "DRAFT"
     STATUS_CERTIFIED = "CERTIFIED"
+    STATUS_REQUISITIONED = "REQUISITIONED"
     STATUS_PAID = "PAID"
     STATUS_CHOICES = [
         (STATUS_DRAFT, "Draft"),
         (STATUS_CERTIFIED, "Certified for payment"),
-        (STATUS_PAID, "Paid"),
+        (STATUS_REQUISITIONED, "Requisition order raised"),
+        (STATUS_PAID, "Payment order raised / funds transferred"),
     ]
 
     project = models.ForeignKey(
@@ -1521,13 +1525,25 @@ class PaymentCertificate(models.Model):
     retention_released = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
     net_payable = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
 
-    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     certified_by = models.ForeignKey(
         "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="certified_payments",
     )
     certified_at = models.DateTimeField(null=True, blank=True)
-    paid_reference = models.CharField(max_length=100, blank=True)
+
+    # Step 2 - Requisition Order (request for funds)
+    ro_no = models.CharField(max_length=40, blank=True, help_text="Auto: RO-YYYY-###")
+    ro_raised_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="requisitioned_payments",
+    )
+    ro_raised_at = models.DateTimeField(null=True, blank=True)
+
+    # Step 3 - Payment Order (PV) / transfer of funds
+    pv_no = models.CharField(max_length=40, blank=True, help_text="Auto: PV-YYYY-###")
+    paid_reference = models.CharField(max_length=100, blank=True,
+                                      help_text="Bank/M-Pesa/cheque transfer reference")
     paid_method = models.CharField(max_length=20, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
@@ -1564,10 +1580,14 @@ class PaymentCertificate(models.Model):
         prefix = {self.INTERIM: "IPC", self.ADVANCE: "ADV", self.FINAL: "FC"}.get(
             self.cert_type, "PC"
         )
+        return self._make_seq_no(prefix, "cert_no")
+
+    @staticmethod
+    def _make_seq_no(prefix, field):
         year = timezone.now().year
         n = (
             PaymentCertificate.objects
-            .filter(cert_no__startswith=f"{prefix}-{year}-")
+            .filter(**{f"{field}__startswith": f"{prefix}-{year}-"})
             .count()
             + 1
         )

@@ -145,9 +145,12 @@
               <td style="padding:7px 8px;text-align:right;color:#b7791f;">{{ c.retention_amount|money }}</td>
               <td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--bw-navy);">{{ c.net_payable|money }}</td>
               <td style="padding:7px 8px;">
-                {% if c.status == 'PAID' %}<span class="bw-badge bw-badge--open">Paid</span>
+                {% if c.status == 'PAID' %}<span class="bw-badge bw-badge--open">Paid (PV)</span>
+                {% elif c.status == 'REQUISITIONED' %}<span class="bw-badge bw-badge--closing">RO raised</span>
                 {% elif c.status == 'CERTIFIED' %}<span class="bw-badge bw-badge--closing">Certified</span>
                 {% else %}<span class="bw-badge bw-badge--closed">Draft</span>{% endif %}
+                {% if c.ro_no %}<div style="font-size:.64rem;color:var(--bw-dgrey);font-family:monospace;">RO {{ c.ro_no }}</div>{% endif %}
+                {% if c.pv_no %}<div style="font-size:.64rem;color:var(--bw-dgrey);font-family:monospace;">PV {{ c.pv_no }}</div>{% endif %}
               </td>
               <td style="padding:7px 8px;">
                 <div style="display:flex;gap:5px;flex-wrap:wrap;">
@@ -162,12 +165,21 @@
                   </form>
                 {% elif c.status == 'CERTIFIED' %}
                   <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="display:flex;gap:4px;align-items:center;">{% csrf_token %}
-                    <input type="hidden" name="action" value="mark_paid"><input type="hidden" name="cert_id" value="{{ c.pk }}">
-                    <input type="text" name="paid_reference" placeholder="Ref / M-Pesa" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;width:110px;font-size:.72rem;">
-                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Mark paid</button>
+                    <input type="hidden" name="action" value="raise_ro"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                    <input type="text" name="ro_no" placeholder="RO no. (optional)" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;width:120px;font-size:.72rem;">
+                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise RO</button>
+                  </form>
+                {% elif c.status == 'REQUISITIONED' %}
+                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">{% csrf_token %}
+                    <input type="hidden" name="action" value="raise_payment_order"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                    <select name="paid_method" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;font-size:.72rem;">
+                      <option value="BANK">Bank</option><option value="CHQ">Cheque</option><option value="MPESA">M-Pesa</option>
+                    </select>
+                    <input type="text" name="paid_reference" placeholder="Transfer ref" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;width:110px;font-size:.72rem;">
+                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise Payment Order</button>
                   </form>
                 {% else %}
-                  <span style="font-size:.7rem;color:var(--bw-dgrey);">{{ c.paid_reference|default:'' }}</span>
+                  <span style="font-size:.7rem;color:var(--bw-dgrey);">{{ c.paid_method }} {{ c.paid_reference|default:'' }}</span>
                 {% endif %}
                 </div>
               </td>
@@ -226,7 +238,7 @@
           <label style="font-size:.72rem;color:var(--bw-dgrey);display:block;margin-top:8px;">Description / title<br>
             <input type="text" name="title" placeholder="e.g. Interim valuation No. 1 - substructure" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
           </label>
-          <div style="margin-top:10px;font-size:.7rem;color:var(--bw-dgrey);">Certificates are raised as <strong>draft</strong>, then <strong>certified</strong> for payment, then <strong>paid</strong>. Retention is withheld on interim certificates and released on the final certificate.</div>
+          <div style="margin-top:10px;font-size:.7rem;color:var(--bw-dgrey);">Government payment procedure: <strong>Draft</strong> &rarr; <strong>Certified for payment</strong> &rarr; <strong>Requisition Order (RO)</strong> &rarr; <strong>Payment Order (PV) / transfer of funds</strong>. Retention is withheld on interim certificates and released on the final certificate.</div>
           <div style="margin-top:10px;"><button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise draft certificate</button></div>
         </form>
       </details>

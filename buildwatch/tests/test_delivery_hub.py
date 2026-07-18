@@ -106,16 +106,32 @@ class DeliveryHubTests(TestCase):
         self.assertEqual(cert.net_payable, Decimal("9000000.00"))
         self.assertEqual(cert.status, PaymentCertificate.STATUS_DRAFT)
 
-        # Certify then pay
+        # Gov procedure: certify -> requisition order -> payment order
         c.post(reverse("delivery-action", args=[self.listing.pk]),
                {"action": "certify_certificate", "cert_id": cert.pk})
         cert.refresh_from_db()
         self.assertEqual(cert.status, PaymentCertificate.STATUS_CERTIFIED)
 
+        # Payment order cannot be raised before the RO
         c.post(reverse("delivery-action", args=[self.listing.pk]),
-               {"action": "mark_paid", "cert_id": cert.pk, "paid_reference": "MPESA123"})
+               {"action": "raise_payment_order", "cert_id": cert.pk, "paid_reference": "X"})
+        cert.refresh_from_db()
+        self.assertEqual(cert.status, PaymentCertificate.STATUS_CERTIFIED)
+
+        # Raise the requisition order
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "raise_ro", "cert_id": cert.pk})
+        cert.refresh_from_db()
+        self.assertEqual(cert.status, PaymentCertificate.STATUS_REQUISITIONED)
+        self.assertTrue(cert.ro_no.startswith("RO-"))
+
+        # Raise the payment order (transfer of funds)
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "raise_payment_order", "cert_id": cert.pk,
+                "paid_method": "MPESA", "paid_reference": "MPESA123"})
         cert.refresh_from_db()
         self.assertEqual(cert.status, PaymentCertificate.STATUS_PAID)
+        self.assertTrue(cert.pv_no.startswith("PV-"))
 
         vfm = value_for_money(self.project)
         self.assertEqual(vfm["certified_gross"], Decimal("10000000.00"))
