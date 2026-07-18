@@ -47,6 +47,10 @@ tender_patterns = [
          t.tender_detail,
          name='tender-detail'),
 
+    path('sponsors/<str:org_code>/',
+         t.sponsor_landing,
+         name='sponsor-landing'),
+
     # ── Bidder actions — login required ──────────────────────────────────
     path('<int:listing_id>/register/',
          t.tender_register,

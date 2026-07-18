@@ -102,8 +102,13 @@
         </div>
         <div class="bw-card-body">
           <div style="font-size:.95rem;font-weight:700;color:var(--bw-navy);margin-bottom:4px;">
-            {{ sponsor.name }}
+            <a href="{% url 'sponsor-landing' sponsor.org_code %}">{{ sponsor.name }}</a>
           </div>
+          {% if sponsor.accounting_officer_name %}
+          <div style="font-size:.82rem;color:var(--bw-navy);margin-bottom:4px;">
+            {{ sponsor.accounting_officer_title }}{% if sponsor.accounting_officer_title %} · {% endif %}{{ sponsor.accounting_officer_name }}
+          </div>
+          {% endif %}
           {% if listing.event.project.county or listing.county_region %}
           <div style="font-size:.82rem;color:var(--bw-dgrey);margin-bottom:10px;">
             {{ listing.country.name }}{% if listing.county_region %} · {{ listing.county_region }}{% endif %}

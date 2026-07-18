@@ -914,6 +914,37 @@ def tender_detail(request, listing_id):
     return render(request, 'tenders/tender_detail.html', ctx)
 
 
+def sponsor_landing(request, org_code):
+    """
+    GET /tenders/sponsors/<org_code>/
+    Public landing page for a project owner / sponsor: identity, accounting
+    officer, mandate, and every tender they have published on the exchange.
+    """
+    from accounts.models import Organization
+
+    sponsor = get_object_or_404(Organization, org_code=org_code)
+    tenders = (
+        TenderListing.objects.filter(
+            event__project__owner_org=sponsor,
+            is_published=True,
+        )
+        .select_related('event', 'country')
+        .order_by('-published_at', '-id')
+    )
+    open_count = sum(1 for tl in tenders if tl.event.is_open)
+
+    ctx = {
+        'sponsor': sponsor,
+        'tenders': tenders,
+        'tender_count': len(tenders),
+        'open_count': open_count,
+        'hide_nav_register': True,
+    }
+    if request.user.is_authenticated:
+        ctx.update(branding_template_context(request))
+    return render(request, 'tenders/sponsor_landing.html', ctx)
+
+
 # ── BIDDER VIEWS (login required) ────────────────────────────────────────────
 
 @login_required

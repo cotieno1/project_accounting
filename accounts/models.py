@@ -315,6 +315,28 @@ class Organization(models.Model):
         default="",
         help_text="BuildWatch registration org type (CONTRACTOR, CONSULTANT, GOV_COUNTY, etc.).",
     )
+    accounting_officer_name = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        help_text="Accounting Officer / head of the entity, e.g. 'Eng Charles Korir'.",
+    )
+    accounting_officer_title = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        help_text="Title of the accounting officer, e.g. 'Principal Secretary'.",
+    )
+    profile_summary = models.TextField(
+        blank=True,
+        default="",
+        help_text="About / mandate shown on the sponsor's public landing page.",
+    )
+    website = models.URLField(
+        blank=True,
+        default="",
+        help_text="Official website shown on the sponsor landing page.",
+    )
     registration_status = models.CharField(
         max_length=20,
         choices=REGISTRATION_STATUS_CHOICES,

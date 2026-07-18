@@ -1,0 +1,108 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}{{ sponsor.short_name|default:sponsor.name }} &mdash; Project Sponsor &mdash; BuildWatch{% endblock %}
+
+{% block bw_content %}
+<div class="bw-wrap">
+
+  <div class="bw-meta" style="margin-bottom:14px;">
+    <a href="{% url 'tender-list' %}" class="bw-topnav__link" style="padding-left:0;">&larr; All tenders</a>
+  </div>
+
+  <header class="bw-card" style="margin-bottom:20px;">
+    <div class="bw-card-body">
+      <div class="bw-kicker">Project Sponsor &middot; Procuring Entity</div>
+      <h1 class="bw-title" style="margin-bottom:6px;">{{ sponsor.name }}</h1>
+
+      {% if sponsor.accounting_officer_name %}
+      <p class="bw-lead" style="margin-bottom:14px;">
+        <strong style="color:var(--bw-navy);">{{ sponsor.accounting_officer_title }}</strong>
+        {% if sponsor.accounting_officer_title %} &middot; {% endif %}{{ sponsor.accounting_officer_name }}
+        <span style="color:var(--bw-mid);"> &mdash; Accounting Officer</span>
+      </p>
+      {% endif %}
+
+      <div class="bw-meta">
+        <span><strong>{{ tender_count }}</strong> published tender{{ tender_count|pluralize }}</span>
+        {% if open_count %}<span><strong>{{ open_count }}</strong> open now</span>{% endif %}
+        {% if sponsor.website %}<span><a href="{{ sponsor.website }}" target="_blank" rel="noopener">{{ sponsor.website }}</a></span>{% endif %}
+      </div>
+    </div>
+  </header>
+
+  <div class="bw-layout">
+    <aside>
+      <div class="bw-panel" style="position:sticky;top:72px;">
+        <div class="bw-panel__hd">Sponsor details</div>
+        <div class="bw-panel__bd">
+          {% if sponsor.contact_address or sponsor.registered_address %}
+          <div class="bw-field">
+            <div class="bw-label">Address</div>
+            <div style="font-size:.85rem;color:var(--bw-navy);white-space:pre-wrap;line-height:1.5;">{{ sponsor.contact_address|default:sponsor.registered_address }}</div>
+          </div>
+          {% endif %}
+          {% if sponsor.phone %}
+          <div class="bw-field">
+            <div class="bw-label">Telephone</div>
+            <div style="font-size:.85rem;color:var(--bw-navy);">{{ sponsor.phone }}</div>
+          </div>
+          {% endif %}
+          {% if sponsor.email %}
+          <div class="bw-field">
+            <div class="bw-label">Email</div>
+            <div style="font-size:.85rem;color:var(--bw-navy);">{{ sponsor.email }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+
+    <section>
+      {% if sponsor.profile_summary %}
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div class="bw-card-header">About this sponsor</div>
+        <div class="bw-card-body" style="font-size:.88rem;color:var(--bw-navy);line-height:1.65;">{{ sponsor.profile_summary }}</div>
+      </div>
+      {% endif %}
+
+      <div class="bw-card">
+        <div class="bw-card-header">Published tenders</div>
+        {% if not tenders %}
+        <div class="bw-panel__bd">
+          <p class="bw-lead">This sponsor has no published tenders on the exchange yet.</p>
+        </div>
+        {% else %}
+        {% for listing in tenders %}
+        <a class="bw-list-item" href="{% url 'tender-detail' listing.pk %}">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+            <div class="bw-ref">{{ listing.event.ref }}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <span class="bw-tag">{{ listing.get_tender_type_display }}</span>
+              {% if listing.boq_document %}<span class="bw-tag bw-tag--ok">BOQ PDF</span>{% endif %}
+              {% if listing.is_closing_soon %}
+                <span class="bw-tag bw-tag--warn">Closing soon</span>
+              {% elif listing.event.is_open %}
+                <span class="bw-tag bw-tag--ok">Open</span>
+              {% else %}
+                <span class="bw-tag bw-tag--muted">Closed</span>
+              {% endif %}
+            </div>
+          </div>
+          <h3>{{ listing.event.description }}</h3>
+          <div class="bw-meta" style="margin-top:10px;">
+            {% if listing.country %}<span>{{ listing.country.name }}{% if listing.county_region %} &middot; {{ listing.county_region }}{% endif %}</span>{% endif %}
+            <span>{{ listing.get_funding_source_display }}</span>
+            {% if listing.event.is_open %}
+              <span><strong>{{ listing.event.days_remaining }}</strong> day{{ listing.event.days_remaining|pluralize }} left</span>
+            {% else %}
+              <span>Closed {{ listing.event.closing_date|date:"d M Y" }}</span>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -36,11 +36,12 @@ REF = "ED-AHP/001/2025-2026"
 TASK_ID = "ED_AHP_001"
 EMPLOYER_CODE = "SDHUD"
 EMPLOYER_NAME = (
-    "Principal Secretary, Ministry of Lands, Public Works, Housing and Urban "
-    "Development - State Department of Housing and Urban Development"
+    "Ministry of Lands, Public Works, Housing and Urban Development - "
+    "State Department of Housing and Urban Development"
 )
+EMPLOYER_OFFICER_NAME = "Eng Charles Korir"
+EMPLOYER_OFFICER_TITLE = "Principal Secretary"
 EMPLOYER_ADDRESS = (
-    "Principal Secretary\n"
     "Ministry of Lands, Public Works, Housing and Urban Development\n"
     "State Department of Housing and Urban Development\n"
     "P.O Box 30119-00100\n"
@@ -145,6 +146,8 @@ class Command(BaseCommand):
                 "contact_address": EMPLOYER_ADDRESS,
                 "phone": "+254-020-2713833",
                 "document_tagline": "Affordable Housing Programme",
+                "accounting_officer_name": EMPLOYER_OFFICER_NAME,
+                "accounting_officer_title": EMPLOYER_OFFICER_TITLE,
             },
         )
         if created_emp:
@@ -157,11 +160,14 @@ class Command(BaseCommand):
             employer.registration_status = Organization.STATUS_ACTIVE
             employer.registered_address = EMPLOYER_ADDRESS
             employer.contact_address = EMPLOYER_ADDRESS
+            employer.accounting_officer_name = EMPLOYER_OFFICER_NAME
+            employer.accounting_officer_title = EMPLOYER_OFFICER_TITLE
             if not (employer.phone or "").strip():
                 employer.phone = "+254-020-2713833"
             employer.save(update_fields=[
                 "name", "short_name", "organization_type", "registration_status",
                 "registered_address", "contact_address", "phone",
+                "accounting_officer_name", "accounting_officer_title",
             ])
 
         task, _ = ProjectTask.objects.get_or_create(
