@@ -15,23 +15,115 @@ from accounts.models import ProjectTask
 from accounts.tenant import branding_template_context, get_active_organization
 
 
+def _project_stage_track(project):
+    """Derive a standard project lifecycle stage track for one InfraProject.
+
+    There is no status field on InfraProject, so the stage is inferred from the
+    procurement EvaluationEvent, its published TenderListing, the submissions
+    and the compliance checkpoints.
+    """
+    from buildwatch.models import EvaluationEvent, Submission
+
+    ev = (project.evaluation_events
+          .filter(context=EvaluationEvent.PROCUREMENT)
+          .order_by('id')
+          .first())
+    listing = getattr(ev, 'listing', None)
+    published = bool(listing and listing.is_published)
+    status = ev.status if ev else None
+    awarded = Submission.objects.filter(event=ev, is_awarded=True).exists() if ev else False
+    sub_count = ev.submissions.count() if ev else 0
+
+    cp_total = cp_appr = 0
+    if listing is not None:
+        cps = listing.checkpoints.all()
+        cp_total = cps.count()
+        cp_appr = cps.filter(status='APPROVED').count()
+
+    funded = bool(published or (project.contract_value and project.contract_value > 0))
+    tendered = published
+    eval_active = status in (EvaluationEvent.STATUS_CLOSED, EvaluationEvent.STATUS_EVALUATED)
+    eval_done = bool(awarded or status in (EvaluationEvent.STATUS_EVALUATED,
+                                           EvaluationEvent.STATUS_AWARDED))
+    award_done = bool(awarded or status == EvaluationEvent.STATUS_AWARDED)
+    exec_done = bool(cp_total and cp_appr == cp_total)
+
+    if award_done or eval_done:
+        eval_detail = 'Completed'
+    elif eval_active:
+        eval_detail = 'In progress'
+    elif tendered:
+        eval_detail = 'Awaiting close (%d bid%s)' % (sub_count, '' if sub_count == 1 else 's')
+    else:
+        eval_detail = 'Pending'
+
+    if published:
+        tender_detail = 'Published %s' % (listing.published_at.strftime('%d %b %Y')
+                                          if listing.published_at else 'yes')
+    else:
+        tender_detail = 'Not yet'
+
+    if cp_total:
+        exec_detail = '%d/%d signed off' % (cp_appr, cp_total)
+    elif award_done:
+        exec_detail = 'Mobilising'
+    else:
+        exec_detail = 'Pending'
+
+    raw = [
+        ('Project Identification', True, project.task.project_id),
+        ('Project Funding', funded, 'Secured' if funded else 'Pending'),
+        ('Tendered', tendered, tender_detail),
+        ('Tender Evaluation', eval_done, eval_detail),
+        ('Award', award_done, award_done and 'Awarded' or 'Pending'),
+        ('Execution & Compliance', exec_done, exec_detail),
+    ]
+
+    stages = []
+    prev_done = True
+    done_count = 0
+    for label, done, detail in raw:
+        if done:
+            state = 'done'
+            done_count += 1
+        elif prev_done:
+            state = 'current'
+            prev_done = False
+        else:
+            state = 'pending'
+        stages.append({'label': label, 'state': state, 'detail': detail})
+
+    pct = int(round(done_count * 100 / len(raw))) if raw else 0
+    return {
+        'project': project,
+        'stages': stages,
+        'pct': pct,
+        'listing': listing,
+        'value': project.contract_value,
+    }
+
+
 @login_required
 def infra_project_list(request):
-    """
-    Sprint 1 — List all InfraProjects visible to the logged-in user.
-    Stub: returns empty list until buildwatch.InfraProject model is migrated.
-    """
-    try:
-        from buildwatch.models import InfraProject
-        org = get_active_organization(request)
-        projects = InfraProject.objects.filter(
-            owner_org=org, is_active=True
-        ).order_by('-id')
-    except Exception:
-        projects = []
+    """Projects Status - the sponsor's projects with a lifecycle stage track."""
+    from buildwatch.models import InfraProject
+    from accounts.tenant import get_exchange_persona
+
+    org = get_active_organization(request)
+    projects = (
+        InfraProject.objects
+        .filter(owner_org=org, is_active=True)
+        .exclude(county__iexact='Isiolo')
+        .exclude(task__project_id__icontains='SK_004')
+        .select_related('task', 'country')
+        .order_by('-id')
+    )
+    rows = [_project_stage_track(p) for p in projects]
+    is_sponsor = (get_exchange_persona(org=org) == 'employer') if org else False
 
     return render(request, 'buildwatch/project_list.html', {
-        'projects': projects,
+        'project_rows': rows,
+        'is_sponsor': is_sponsor,
         **branding_template_context(request),
     })
 

@@ -383,7 +383,7 @@
       <a href="{% url 'tender-list' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-list' %}is-active{% endif %}">Tenders</a>
       {% if user.is_authenticated %}
         {% if bw_persona == 'employer' %}
-          <a href="{% url 'infra-project-list' %}" class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}is-active{% endif %}">Projects</a>
+          <a href="{% url 'infra-project-list' %}" class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}is-active{% endif %}">Projects Status</a>
           <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal bw-btn--sm">Publish tender</a>
           <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">Bidder activity</a>
         {% else %}

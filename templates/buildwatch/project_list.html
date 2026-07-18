@@ -1,42 +1,86 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}Projects — BuildWatch{% endblock %}
+{% block title %}Projects Status — BuildWatch{% endblock %}
 
 {% block bw_content %}
+<style>
+  .ps-card{border:1px solid var(--bw-rule,#e3e8f0);border-radius:12px;padding:18px 20px;margin-bottom:16px;
+           background:#fff;text-decoration:none;display:block;color:inherit;transition:box-shadow .15s,border-color .15s;}
+  .ps-card:hover{box-shadow:0 4px 16px rgba(20,40,70,.08);border-color:#c7d2e2;}
+  .ps-head{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-bottom:18px;}
+  .ps-id{font-family:"Courier New",monospace;font-size:.72rem;color:var(--bw-mid,#6b7890);margin-bottom:2px;}
+  .ps-name{font-size:1.02rem;font-weight:700;color:var(--bw-navy);margin:0;}
+  .ps-meta{font-size:.74rem;color:var(--bw-mid,#6b7890);margin-top:4px;}
+  .ps-meta span{margin-right:12px;}
+  .ps-pct{text-align:right;flex-shrink:0;}
+  .ps-pct b{font-size:1.5rem;color:var(--bw-navy);}
+  .ps-pct small{display:block;font-size:.66rem;color:var(--bw-mid,#6b7890);text-transform:uppercase;letter-spacing:.5px;}
+  .ps-track{display:flex;flex-wrap:nowrap;overflow-x:auto;padding-top:4px;}
+  .ps-step{flex:1 1 0;min-width:118px;text-align:center;position:relative;padding:26px 4px 0;}
+  .ps-step::before{content:"";position:absolute;top:11px;left:-50%;width:100%;height:3px;background:#dce3ee;z-index:0;}
+  .ps-step:first-child::before{display:none;}
+  .ps-step--done::before,.ps-step--current::before{background:#1c6b30;}
+  .ps-dot{position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:24px;border-radius:50%;
+          background:#dce3ee;color:#fff;font-size:.72rem;font-weight:700;line-height:24px;z-index:1;}
+  .ps-step--done .ps-dot{background:#1c6b30;}
+  .ps-step--current .ps-dot{background:#0c6b8a;box-shadow:0 0 0 4px rgba(12,107,138,.15);}
+  .ps-slabel{font-size:.73rem;font-weight:600;color:var(--bw-navy);line-height:1.25;}
+  .ps-step--pending .ps-slabel{color:var(--bw-mid,#9aa6ba);}
+  .ps-sdetail{font-size:.67rem;color:var(--bw-mid,#6b7890);margin-top:2px;}
+  .ps-step--current .ps-sdetail{color:#0c6b8a;font-weight:600;}
+</style>
+
 <div class="bw-wrap">
   <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
     <div>
-      <div class="bw-kicker">Infrastructure</div>
-      <h1 class="bw-title">Projects</h1>
-      <p class="bw-lead">Registered BuildWatch projects linked to Pioneer tasks.</p>
+      <div class="bw-kicker">Infrastructure &middot; Projects Status</div>
+      <h1 class="bw-title">Projects Status</h1>
+      <p class="bw-lead">
+        Delivery status of all projects under {{ org_name|default:"the project sponsor" }},
+        tracked from identification through funding, tender, evaluation, award and execution.
+      </p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <a href="{% url 'isiolo-stadium-pilot' %}" class="bw-btn bw-btn--ghost bw-btn--sm">Isiolo pilot</a>
       <a href="{% url 'infra-project-create' %}" class="bw-btn bw-btn--primary bw-btn--sm">Register project</a>
     </div>
   </header>
 
-  {% if projects %}
-  <div class="bw-panel">
-    {% for project in projects %}
-    <a class="bw-list-item" href="{% url 'infra-project-dashboard' project.pk %}">
-      <div class="bw-ref">{{ project.task.project_id }}</div>
-      <h3>{{ project.task.description }}</h3>
-      <div class="bw-meta">
-        <span>{{ project.get_sector_display }}</span>
-        {% if project.county %}<span>{{ project.county }}</span>{% endif %}
-        {% if project.is_active %}<span class="bw-tag bw-tag--ok">Active</span>{% endif %}
+  {% if project_rows %}
+    {% for row in project_rows %}
+    <a class="ps-card" href="{% url 'infra-project-dashboard' row.project.pk %}">
+      <div class="ps-head">
+        <div>
+          <div class="ps-id">{{ row.project.task.project_id }}</div>
+          <h3 class="ps-name">{{ row.project.task.description }}</h3>
+          <div class="ps-meta">
+            <span>{{ row.project.get_sector_display }}</span>
+            {% if row.project.county %}<span>{{ row.project.county }}</span>{% endif %}
+            {% if row.listing %}<span>Ref: {{ row.listing.event.ref }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="ps-pct">
+          <b>{{ row.pct }}%</b>
+          <small>Delivery</small>
+        </div>
+      </div>
+
+      <div class="ps-track">
+        {% for s in row.stages %}
+        <div class="ps-step ps-step--{{ s.state }}">
+          <div class="ps-dot">{% if s.state == 'done' %}&#10003;{% else %}{{ forloop.counter }}{% endif %}</div>
+          <div class="ps-slabel">{{ s.label }}</div>
+          <div class="ps-sdetail">{{ s.detail }}</div>
+        </div>
+        {% endfor %}
       </div>
     </a>
     {% endfor %}
-  </div>
   {% else %}
   <div class="bw-panel">
     <div class="bw-panel__bd">
       <h2 style="margin:0 0 8px;font-size:1.05rem;color:var(--bw-navy);">No projects yet</h2>
-      <p class="bw-lead">Register an infrastructure project to track tenders and delivery against a Pioneer task.</p>
+      <p class="bw-lead">Register an infrastructure project to track its delivery status from identification to handover.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;">
-        <a href="{% url 'isiolo-stadium-pilot' %}" class="bw-btn bw-btn--ghost">Start with Isiolo</a>
         <a href="{% url 'infra-project-create' %}" class="bw-btn bw-btn--primary">Register project</a>
       </div>
     </div>
