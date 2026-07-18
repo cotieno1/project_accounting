@@ -57,6 +57,38 @@
   letter-spacing: -0.02em;
 }
 .bw-topnav__brand:hover { color: var(--bw-navy); }
+.bw-topnav__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.bw-topnav__org {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.1;
+  color: var(--bw-teal);
+  letter-spacing: -0.01em;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: #e9f6f4;
+  border: 1px solid #bfe6df;
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bw-topnav__user {
+  align-self: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bw-navy);
+  padding-left: 4px;
+}
+.bw-topnav__logout { margin: 0; display: inline; }
+@media (max-width: 700px) {
+  .bw-topnav__org { max-width: 150px; font-size: 0.9rem; }
+}
 .bw-topnav__mark {
   width: 32px; height: 32px;
   background: var(--bw-teal);
@@ -321,16 +353,20 @@
 {% block content %}
 <div class="bw-shell">
   <nav class="bw-topnav">
-    <a class="bw-topnav__brand" href="{% url 'home' %}">
-      <span class="bw-topnav__mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </span>
-      {{ bw_brand_title|default:"BuildWatch" }}
-    </a>
+    <div class="bw-topnav__left">
+      <a class="bw-topnav__brand" href="{% url 'home' %}">
+        <span class="bw-topnav__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        {{ bw_brand_title|default:"BuildWatch" }}
+      </a>
+      {% if user.is_authenticated and org_name %}
+      <span class="bw-topnav__org" title="{{ org_name }}">{{ org_short_name|default:org_name }}</span>
+      {% endif %}
+    </div>
     <div class="bw-topnav__links">
       {% if user.is_authenticated %}
       <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">← Main dashboard</a>
-      <span class="bw-tag" style="align-self:center;">{{ bw_persona_label|default:"Tender exchange" }}</span>
       {% endif %}
       <a href="{% url 'tender-list' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-list' %}is-active{% endif %}">Tenders</a>
       {% if user.is_authenticated %}
@@ -343,6 +379,11 @@
           <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">My Bids</a>
           <a href="{% url 'tender-alerts' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'tender-alerts' %}is-active{% endif %}">Alerts</a>
         {% endif %}
+        <span class="bw-topnav__user" title="Signed in">{{ user.get_full_name|default:user.get_username }}</span>
+        <form method="post" action="{% url 'logout' %}" class="bw-topnav__logout">
+          {% csrf_token %}
+          <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Log out</button>
+        </form>
       {% else %}
       <a href="{% url 'home' %}" class="bw-topnav__link">Home</a>
       <a href="{% url 'login' %}?next={% url 'tender-list' %}" class="bw-topnav__link">Sign in</a>
