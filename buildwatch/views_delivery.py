@@ -22,6 +22,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import Organization
 
 from .delivery import record_award, value_for_money
+from .kickoff import generate_sop_for_tender, sop_progress
 from .milestones import (
     autodistribute_value,
     generate_milestones_for_tender,
@@ -30,7 +31,10 @@ from .milestones import (
 from .models import (
     AuditLedger,
     PaymentCertificate,
+    ProjectKickoffSOP,
     ProjectMilestone,
+    SOPPartySignoff,
+    SOPPrerequisite,
     TenderConsultant,
     TenderListing,
 )
@@ -174,6 +178,61 @@ def delivery_action(request, listing_id):
         except Exception:
             pass
         messages.success(request, "Milestone delivered & signed off: %s." % m.name)
+        return redirect("my-bids")
+
+    # ?? Pre-commencement SOP / kick-off ??????????????????????????????????
+    if action == "generate_sop":
+        sop, created = generate_sop_for_tender(listing, ua)
+        if created:
+            messages.success(
+                request,
+                "Draft pre-commencement SOP created - share it with the QS, PM and Contractor "
+                "for sign-off.",
+            )
+        else:
+            messages.info(request, "A kick-off SOP already exists for this tender.")
+        return redirect("my-bids")
+
+    if action == "toggle_prereq":
+        pr = get_object_or_404(
+            SOPPrerequisite, pk=request.POST.get("prereq_id"), sop__project=project
+        )
+        pr.is_done = not pr.is_done
+        pr.done_at = timezone.now() if pr.is_done else None
+        pr.done_by = ua if pr.is_done else None
+        pr.save(update_fields=["is_done", "done_at", "done_by"])
+        return redirect("my-bids")
+
+    if action == "sign_sop":
+        so = get_object_or_404(
+            SOPPartySignoff, pk=request.POST.get("signoff_id"), sop__project=project
+        )
+        # Contractor signs the CONTRACTOR party; sponsor/admin can sign any party.
+        may_sign = caps["is_sponsor"] or caps["is_admin"] or (
+            caps["is_bidder"] and so.role == SOPPartySignoff.CONTRACTOR
+        )
+        if not may_sign:
+            messages.error(request, "You cannot sign on behalf of this party.")
+            return redirect("my-bids")
+        so.signed = True
+        so.signed_at = timezone.now()
+        so.signed_by = ua
+        so.person_name = (request.POST.get("person_name") or _name(ua) or "")[:150]
+        so.save(update_fields=["signed", "signed_at", "signed_by", "person_name"])
+        status = so.sop.refresh_status()
+        try:
+            AuditLedger.objects.create(
+                project=project, user=ua, action="SOP_SIGNED",
+                model_name="SOPPartySignoff", object_id=str(so.pk),
+                detail={"role": so.role, "party": so.party_name, "sop_status": status},
+                professional_reg=getattr(ua, "professional_reg_no", "") or "",
+            )
+        except Exception:
+            pass
+        if status == ProjectKickoffSOP.STATUS_SIGNED:
+            messages.success(request, "SOP signed by all parties - works may commence.")
+        else:
+            messages.success(request, "Signed as %s." % so.get_role_display())
         return redirect("my-bids")
 
     if action == "add_certificate":
@@ -346,3 +405,38 @@ def payment_certificate_pdf(request, listing_id, cert_id):
     pdf = build_pdf_bytes("tenders/payment_certificate_print.html", ctx)
     ref = (cert.cert_no or "certificate").replace("/", "-")
     return pdf_inline_response(pdf, ref)
+
+
+@login_required
+def sop_pdf(request, listing_id, sop_id):
+    listing = get_object_or_404(
+        TenderListing.objects.select_related(
+            "event", "event__project", "event__project__owner_org"
+        ),
+        pk=listing_id,
+    )
+    caps = _access(request, listing)
+    if caps is None:
+        messages.error(request, "You do not have access to this project's SOP.")
+        return redirect("tender-detail", listing_id=listing.pk)
+
+    project = getattr(listing.event, "project", None)
+    sop = get_object_or_404(
+        ProjectKickoffSOP.objects.prefetch_related("prerequisites", "signoffs"),
+        pk=sop_id, project=project,
+    )
+    ctx = {
+        "listing": listing,
+        "project": project,
+        "sop": sop,
+        "owner_org": getattr(project, "owner_org", None),
+        "prerequisites": list(sop.prerequisites.all()),
+        "signoffs": list(sop.signoffs.all()),
+        "progress": sop_progress(sop),
+        "today": timezone.now().date(),
+    }
+    from accounts.misc_doc_pdf import build_pdf_bytes, pdf_inline_response
+
+    pdf = build_pdf_bytes("tenders/sop_print.html", ctx)
+    ref = (listing.event.ref or "SOP").replace("/", "-")
+    return pdf_inline_response(pdf, "SOP-%s" % ref)

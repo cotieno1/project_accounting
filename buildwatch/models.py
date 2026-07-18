@@ -1664,3 +1664,127 @@ class PaymentCertificate(models.Model):
 
     def __str__(self):
         return f"{self.cert_no or 'PC'} - {self.payee_name} {self.net_payable:,.2f} [{self.status}]"
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# PROJECT KICK-OFF - pre-commencement SOP signed off by all parties
+# ════════════════════════════════════════════════════════════════════════════
+
+class ProjectKickoffSOP(models.Model):
+    """
+    Pre-commencement Standard Operating Procedure / kick-off agreement.
+
+    After award the QS, Project Manager (Engineer), Contractor and Employer
+    agree the work plan and confirm the pre-requisites are in place, then all
+    parties sign off before works commence. This is the shared SOP document.
+    """
+    STATUS_DRAFT = "DRAFT"
+    STATUS_CIRCULATED = "CIRCULATED"
+    STATUS_SIGNED = "SIGNED"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft"),
+        (STATUS_CIRCULATED, "Circulated - awaiting signatures"),
+        (STATUS_SIGNED, "Signed off by all parties"),
+    ]
+
+    project = models.ForeignKey(
+        InfraProject, on_delete=models.CASCADE, related_name="kickoff_sops",
+    )
+    tender = models.ForeignKey(
+        TenderListing, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="kickoff_sops",
+    )
+    title = models.CharField(
+        max_length=200,
+        default="Pre-commencement SOP & Project Kick-off Agreement",
+    )
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="created_sops",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def refresh_status(self, save=True):
+        required = list(self.signoffs.filter(is_required=True))
+        signed = [s for s in required if s.signed]
+        any_signed = self.signoffs.filter(signed=True).exists()
+        if required and len(signed) == len(required):
+            self.status = self.STATUS_SIGNED
+        elif any_signed:
+            self.status = self.STATUS_CIRCULATED
+        else:
+            self.status = self.STATUS_DRAFT
+        if save:
+            self.save(update_fields=["status", "updated_at"])
+        return self.status
+
+    def __str__(self):
+        return f"SOP {self.project_id} [{self.status}]"
+
+
+class SOPPrerequisite(models.Model):
+    """A pre-commencement checklist item on the kick-off SOP."""
+    sop = models.ForeignKey(
+        ProjectKickoffSOP, on_delete=models.CASCADE, related_name="prerequisites",
+    )
+    seq = models.PositiveSmallIntegerField(default=0)
+    text = models.CharField(max_length=400)
+    responsible = models.CharField(max_length=120, blank=True)
+    is_done = models.BooleanField(default=False)
+    done_at = models.DateTimeField(null=True, blank=True)
+    done_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="completed_prerequisites",
+    )
+
+    class Meta:
+        ordering = ["seq", "id"]
+
+    def __str__(self):
+        return f"{self.seq}. {self.text[:50]}"
+
+
+class SOPPartySignoff(models.Model):
+    """A party's sign-off on the kick-off SOP."""
+    EMPLOYER = "EMPLOYER"
+    PM_ENGINEER = "PM_ENGINEER"
+    QS = "QS"
+    ARCHITECT = "ARCHITECT"
+    CONTRACTOR = "CONTRACTOR"
+    OTHER = "OTHER"
+    ROLE_CHOICES = [
+        (EMPLOYER, "Employer / Procuring entity"),
+        (PM_ENGINEER, "Project Manager / Engineer (PM)"),
+        (QS, "Quantity Surveyor"),
+        (ARCHITECT, "Architect"),
+        (CONTRACTOR, "Contractor"),
+        (OTHER, "Other party"),
+    ]
+
+    sop = models.ForeignKey(
+        ProjectKickoffSOP, on_delete=models.CASCADE, related_name="signoffs",
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    party_name = models.CharField(max_length=200, blank=True)
+    person_name = models.CharField(max_length=150, blank=True)
+    is_required = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    signed = models.BooleanField(default=False)
+    signed_at = models.DateTimeField(null=True, blank=True)
+    signed_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="sop_signoffs",
+    )
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+        unique_together = [["sop", "role"]]
+
+    def __str__(self):
+        return f"{self.get_role_display()} - {'signed' if self.signed else 'pending'}"

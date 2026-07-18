@@ -75,6 +75,10 @@ tender_patterns = [
          deliv.payment_certificate_pdf,
          name='payment-certificate-pdf'),
 
+    path('<int:listing_id>/delivery/sop/<int:sop_id>.pdf',
+         deliv.sop_pdf,
+         name='sop-pdf'),
+
     # ── Bidder actions — login required ──────────────────────────────────
     path('<int:listing_id>/register/',
          t.tender_register,

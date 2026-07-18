@@ -39,9 +39,10 @@ from .models import (
     BidderRegistration, BidWorkspace, SelfAssessmentCheck, WorkspaceBillPrice,
     EvaluationEvent, MandatoryRequirement, Submission, AuditLedger, Country,
     InfraProject, TenderBoqPackage, TenderBoqLine, SubcontractArrangement,
-    ComplianceCheckpoint, PaymentCertificate,
+    ComplianceCheckpoint, PaymentCertificate, ProjectKickoffSOP,
 )
 from .delivery import value_for_money
+from .kickoff import sop_progress
 from .milestones import milestone_schedule
 from accounts.models import Organization, UserAccount
 from accounts.tenant import (
@@ -2433,9 +2434,25 @@ def _sponsor_activity(request, org):
         awarded = None
         compliance = None
         schedule = None
+        sop = None
+        sop_data = None
         if project is not None:
             vfm = value_for_money(project)
             schedule = milestone_schedule(project)
+            sop = (
+                ProjectKickoffSOP.objects
+                .filter(project=project, tender=t)
+                .prefetch_related('prerequisites', 'prerequisites__done_by',
+                                  'signoffs', 'signoffs__signed_by')
+                .first()
+            )
+            if sop:
+                sop_data = {
+                    'sop': sop,
+                    'prerequisites': list(sop.prerequisites.all()),
+                    'signoffs': list(sop.signoffs.all()),
+                    'progress': sop_progress(sop),
+                }
             certificates = list(
                 project.payment_certificates
                 .select_related('payee_org', 'consultant', 'certified_by')
@@ -2473,6 +2490,7 @@ def _sponsor_activity(request, org):
             'awarded': awarded,
             'compliance': compliance,
             'schedule': schedule,
+            'sop': sop_data,
             'delivered_milestones': [
                 r['m'] for r in (schedule['milestones'] if schedule else [])
                 if r['delivered']

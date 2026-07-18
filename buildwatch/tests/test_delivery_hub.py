@@ -19,7 +19,9 @@ from buildwatch.models import (
     EvaluationEvent,
     InfraProject,
     PaymentCertificate,
+    ProjectKickoffSOP,
     ProjectMilestone,
+    SOPPrerequisite,
     Submission,
     TenderConsultant,
     TenderListing,
@@ -235,6 +237,43 @@ class DeliveryHubTests(TestCase):
         self.assertEqual(sched["totals"]["count"], 2)
         self.assertEqual(sched["totals"]["value"], Decimal("100000000.00"))
         self.assertTrue(sched["total_weeks"] >= 1)
+
+    def test_generate_sop_and_all_party_signoff(self):
+        c = self._sponsor_client()
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "generate_sop"})
+        sop = ProjectKickoffSOP.objects.get(project=self.project)
+        self.assertEqual(sop.status, ProjectKickoffSOP.STATUS_DRAFT)
+        self.assertEqual(sop.prerequisites.count(), 15)
+        required = sop.signoffs.filter(is_required=True)
+        self.assertTrue(required.count() >= 4)  # employer, PM, QS, contractor
+
+        # Sign every required party
+        for so in required:
+            c.post(reverse("delivery-action", args=[self.listing.pk]),
+                   {"action": "sign_sop", "signoff_id": so.pk, "person_name": "Eng Korir"})
+        sop.refresh_from_db()
+        self.assertEqual(sop.status, ProjectKickoffSOP.STATUS_SIGNED)
+
+    def test_toggle_prerequisite(self):
+        c = self._sponsor_client()
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "generate_sop"})
+        pr = SOPPrerequisite.objects.filter(sop__project=self.project).first()
+        self.assertFalse(pr.is_done)
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "toggle_prereq", "prereq_id": pr.pk})
+        pr.refresh_from_db()
+        self.assertTrue(pr.is_done)
+
+    def test_sop_pdf_renders(self):
+        c = self._sponsor_client()
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "generate_sop"})
+        sop = ProjectKickoffSOP.objects.get(project=self.project)
+        resp = c.get(reverse("sop-pdf", args=[self.listing.pk, sop.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "application/pdf")
 
     def test_contractor_cannot_manage_hub(self):
         c = Client(); c.login(username="pioneer1", password="test-pass-123")
