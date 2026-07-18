@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-# ?? Trade section headings (delimiters). First match wins per line. ???????????
+# ── Trade section headings (delimiters). First match wins per line. ───────────
 TRADE_SECTIONS = [
     (re.compile(r"(?i)EXCAVATION\s+AND\s+EARTHWORK"), "EXCAVATION", "Excavation and Earthwork"),
     (re.compile(r"(?i)CONCRETE\s+WORK"), "CONCRETE", "Concrete Work"),

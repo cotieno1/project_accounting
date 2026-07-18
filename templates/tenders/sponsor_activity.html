@@ -4,516 +4,586 @@
 {% block title %}Tender Activity - BuildWatch{% endblock %}
 
 {% block bw_content %}
-<div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
+<style>
+  .dh { color:#16233b; }
+  .dh-wrap { max-width:1080px; margin:0 auto; padding:30px 22px 56px; }
+  .dh-eyebrow { font:600 .68rem/1 ui-monospace,monospace; letter-spacing:.12em; text-transform:uppercase; color:#0f8a8a; }
+  .dh-h1 { font-size:1.55rem; font-weight:800; letter-spacing:-.02em; margin:7px 0 6px; color:#16233b; }
+  .dh-lead { color:#5b6b82; font-size:.88rem; line-height:1.6; max-width:820px; }
+
+  .dh-card { background:#fff; border:1px solid #e6ebf2; border-radius:14px; box-shadow:0 1px 3px rgba(20,35,60,.05); margin-bottom:24px; overflow:hidden; }
+  .dh-card__top { padding:18px 22px; border-bottom:1px solid #eef2f7; display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:flex-start; background:linear-gradient(180deg,#f9fbfe,#fff); }
+  .dh-ref { font:600 .72rem/1 ui-monospace,monospace; color:#8494a8; }
+  .dh-name { font-size:1.06rem; font-weight:800; color:#16233b; margin-top:3px; letter-spacing:-.01em; }
+  .dh-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+  .dh-body { padding:20px 22px; display:flex; flex-direction:column; gap:20px; }
+
+  .dh-panel { border:1px solid #e6ebf2; border-radius:12px; background:#fff; }
+  .dh-panel__head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 15px; border-bottom:1px solid #eef2f7; }
+  .dh-panel__title { font-size:.9rem; font-weight:700; color:#16233b; margin:0; }
+  .dh-panel__title small { font-weight:500; color:#8494a8; }
+  .dh-panel__meta { font-size:.74rem; color:#8494a8; }
+  .dh-panel__body { padding:15px; }
+
+  .dh-steps { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .dh-step { border:1px solid #e6ebf2; border-radius:11px; padding:12px 13px; background:#fbfcfe; }
+  .dh-step__num { font:700 .58rem/1 sans-serif; letter-spacing:.1em; text-transform:uppercase; color:#98a6ba; display:flex; align-items:center; gap:6px; }
+  .dh-step__title { font-weight:700; font-size:.84rem; margin:7px 0 4px; color:#16233b; }
+  .dh-step__desc { font-size:.68rem; color:#8494a8; line-height:1.45; margin:0; }
+  .dh-step__tick { display:inline-flex; width:15px; height:15px; border-radius:50%; align-items:center; justify-content:center; font-size:.6rem; background:#d7dee8; color:#fff; }
+  .dh-step.is-done { border-color:#bfe6cf; background:#f2faf5; }
+  .dh-step.is-done .dh-step__num { color:#1a7f4b; }
+  .dh-step.is-done .dh-step__tick { background:#1a7f4b; }
+  .dh-step.is-active { border-color:#9fb8e6; background:#f3f7fd; box-shadow:0 0 0 2px rgba(60,110,200,.08); }
+  .dh-step.is-active .dh-step__num { color:#2f5fb0; }
+  .dh-step.is-active .dh-step__tick { background:#2f5fb0; }
+
+  .dh-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:11px; }
+  .dh-stat { border:1px solid #e6ebf2; border-radius:11px; padding:11px 13px; background:#fbfcfe; }
+  .dh-stat__k { font:700 .62rem/1 sans-serif; letter-spacing:.05em; text-transform:uppercase; color:#8494a8; }
+  .dh-stat__v { font-size:1.04rem; font-weight:800; color:#16233b; margin-top:5px; font-variant-numeric:tabular-nums; }
+  .dh-stat__s { font-size:.66rem; color:#8494a8; margin-top:2px; }
+
+  .dh-bar { height:10px; border-radius:6px; background:#eef2f7; overflow:hidden; display:flex; }
+  .dh-bar > i { display:block; height:100%; }
+  .dh-legend { font-size:.68rem; color:#8494a8; margin-top:6px; display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+  .dh-legend b { font-weight:600; }
+
+  .dh-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  .dh-table th { text-align:left; font:700 .62rem sans-serif; letter-spacing:.05em; text-transform:uppercase; color:#8494a8; padding:9px 10px; border-bottom:1px solid #e6ebf2; white-space:nowrap; }
+  .dh-table td { padding:9px 10px; border-bottom:1px solid #f0f3f8; vertical-align:top; }
+  .dh-table tbody tr:last-child td { border-bottom:none; }
+  .dh-table .dh-strong { font-weight:700; color:#16233b; }
+  .dh-num { text-align:right; font-variant-numeric:tabular-nums; font-family:ui-monospace,monospace; }
+  .dh-total td { border-top:2px solid #16233b; font-weight:800; background:#fbfcfe; }
+
+  .dh-pill { display:inline-block; padding:3px 10px; border-radius:20px; font:700 .62rem sans-serif; text-transform:uppercase; letter-spacing:.03em; }
+  .dh-pill--ok { background:rgba(26,127,75,.12); color:#1a7f4b; }
+  .dh-pill--info { background:rgba(47,95,176,.13); color:#2f5fb0; }
+  .dh-pill--warn { background:rgba(183,121,31,.15); color:#b7791f; }
+  .dh-pill--muted { background:rgba(132,148,168,.16); color:#68758a; }
+  .dh-pill--danger { background:rgba(192,57,43,.13); color:#c0392b; }
+  a.dh-pill { text-decoration:none; }
+
+  .dh-field { display:flex; flex-direction:column; gap:4px; }
+  .dh-field > span { font:600 .64rem sans-serif; text-transform:uppercase; letter-spacing:.04em; color:#8494a8; }
+  .dh-input, .dh-select { padding:7px 9px; border:1px solid #d5deea; border-radius:8px; font-size:.78rem; color:#16233b; background:#fff; width:100%; box-sizing:border-box; }
+  .dh-input:focus, .dh-select:focus { outline:none; border-color:#7fa8e0; box-shadow:0 0 0 3px rgba(60,110,200,.1); }
+  .dh-form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+
+  .dh-empty { border:1px dashed #b9d0d0; border-radius:11px; padding:16px; background:#f7fbfb; }
+  .dh-empty p { font-size:.82rem; color:#5b6b82; margin:0 0 10px; line-height:1.55; }
+
+  .dh-gantt-row { display:flex; align-items:center; gap:12px; padding:4px 0; }
+  .dh-gantt-lab { width:210px; flex:0 0 210px; font-size:.75rem; font-weight:600; color:#16233b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dh-gantt-track { position:relative; flex:1; height:18px; background:#eef2f7; border-radius:5px; }
+  .dh-gantt-bar { position:absolute; top:0; height:18px; border-radius:5px; }
+  .dh-gantt-wk { width:82px; flex:0 0 82px; text-align:right; font-size:.68rem; color:#8494a8; }
+
+  .dh-prq { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid #f0f3f8; }
+  .dh-prq:first-child { border-top:none; }
+  .dh-prq__box { border:none; background:none; cursor:pointer; font-size:1.05rem; line-height:1.1; padding:0; }
+  .dh-prq__t { font-size:.79rem; color:#16233b; }
+  .dh-prq__t.is-done { color:#8494a8; text-decoration:line-through; }
+  .dh-prq__r { font-size:.66rem; color:#8494a8; margin-top:2px; }
+
+  .dh-sign-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:11px; }
+  .dh-sign { border:1px solid #e6ebf2; border-radius:10px; padding:11px 12px; background:#fff; }
+  .dh-sign.is-signed { background:#f2faf5; border-color:#bfe6cf; }
+  .dh-sign__role { font:700 .62rem sans-serif; text-transform:uppercase; letter-spacing:.04em; color:#0f8a8a; }
+  .dh-sign__party { font-size:.82rem; font-weight:700; color:#16233b; line-height:1.3; margin-top:2px; }
+
+  .dh-inline { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .dh-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:11px; }
+  .dh-tile { border:1px solid #e6ebf2; border-radius:10px; padding:11px 13px; background:#fbfcfe; }
+  .dh-note { border-left:3px solid #0f8a8a; padding:8px 13px; margin-bottom:9px; background:#f6fafc; border-radius:0 8px 8px 0; }
+
+  @media (max-width:820px){ .dh-steps { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:520px){ .dh-steps { grid-template-columns:1fr; } .dh-gantt-lab{ width:120px; flex-basis:120px; } }
+</style>
+
+<div class="dh">
+<div class="dh-wrap">
 
   <div style="margin-bottom:24px;">
-    <div style="font-size:.7rem;font-family:monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--bw-teal);margin-bottom:6px;">
-      Procuring Entity &middot; {{ org_name }}
-    </div>
-    <h1 style="font-size:1.6rem;font-weight:700;color:var(--bw-navy);letter-spacing:-.03em;margin-bottom:6px;">Tender Activity</h1>
-    <p style="color:var(--bw-dgrey);font-size:.88rem;line-height:1.55;max-width:760px;">
-      The heart of each project &mdash; from award to completion. Track who is bidding, the appointed
-      consultant team, compliance &amp; standards, and every shilling: contract sum vs certified vs paid,
-      with interim and final payment certificates for the contractor and consultants so that what was
-      promised is delivered and accounted for.
+    <div class="dh-eyebrow">Procuring entity &middot; {{ org_name }}</div>
+    <h1 class="dh-h1">Tender Activity</h1>
+    <p class="dh-lead">
+      The command centre for each project &mdash; from award to completion. Track the delivery lifecycle,
+      the appointed consultant team, compliance &amp; standards, and every shilling: contract sum vs
+      certified vs paid, with interim and final payment certificates so that what was promised is
+      delivered and accounted for.
     </p>
   </div>
 
   {% for row in sponsor_rows %}
-  <div class="bw-card" style="margin-bottom:22px;">
-    <div style="padding:20px 22px;border-bottom:1px solid var(--bw-lgrey,#eef1f6);">
-      <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;">
-        <div>
-          <div style="font-family:monospace;font-size:.72rem;color:var(--bw-dgrey);margin-bottom:3px;">{{ row.tender.event.ref }}</div>
-          <div style="font-size:1.02rem;font-weight:700;color:var(--bw-navy);">{{ row.tender.event.description }}</div>
-          <div style="font-size:.78rem;color:var(--bw-dgrey);margin-top:4px;">
-            {% if row.tender.event.is_open %}
-              <span class="bw-badge bw-badge--open">Open</span> &middot; closes {{ row.tender.event.closing_date|date:"d M Y H:i" }}
-            {% else %}
-              <span class="bw-badge bw-badge--closed">Closed</span>
-            {% endif %}
-          </div>
+  <div class="dh-card">
+
+    <!-- Tender header -->
+    <div class="dh-card__top">
+      <div>
+        <div class="dh-ref">{{ row.tender.event.ref }}</div>
+        <div class="dh-name">{{ row.tender.event.description }}</div>
+        <div style="margin-top:7px;font-size:.76rem;color:#8494a8;">
+          {% if row.tender.event.is_open %}
+            <span class="dh-pill dh-pill--ok">Open</span> &middot; closes {{ row.tender.event.closing_date|date:"d M Y H:i" }}
+          {% else %}
+            <span class="dh-pill dh-pill--muted">Closed</span>
+          {% endif %}
+          {% if row.awarded %} &middot; <span class="dh-pill dh-pill--info">Awarded: {{ row.awarded.name }}</span>{% endif %}
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <a href="{% url 'tender-detail' row.tender.pk %}" class="bw-btn bw-btn--ghost bw-btn--sm">View tender</a>
-          <a href="{% url 'tender-manage' row.tender.pk %}" class="bw-btn bw-btn--primary bw-btn--sm">Manage / post announcement</a>
-        </div>
+      </div>
+      <div class="dh-actions">
+        <a href="{% url 'tender-detail' row.tender.pk %}" class="bw-btn bw-btn--ghost bw-btn--sm">View tender</a>
+        <a href="{% url 'tender-manage' row.tender.pk %}" class="bw-btn bw-btn--primary bw-btn--sm">Manage / announcement</a>
       </div>
     </div>
 
-    <!-- Project Delivery Hub -->
-    <div style="padding:18px 22px;border-bottom:1px solid var(--bw-lgrey,#eef1f6);background:linear-gradient(180deg,#f6fafd,#ffffff);">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-        <h3 style="font-size:.92rem;font-weight:700;color:var(--bw-navy);margin:0;">Project delivery hub &middot; every shilling accounted</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          {% if row.awarded %}<span class="bw-badge bw-badge--open">Awarded: {{ row.awarded.name }}</span>{% endif %}
+    <div class="dh-body">
+
+      <!-- Delivery lifecycle stepper -->
+      {% if row.lifecycle %}
+      <div class="dh-steps">
+        {% for st in row.lifecycle %}
+        <div class="dh-step is-{{ st.state }}">
+          <div class="dh-step__num">
+            <span class="dh-step__tick">{% if st.state == 'done' %}&#10003;{% else %}{{ st.num }}{% endif %}</span>
+            Step {{ st.num }}
+          </div>
+          <div class="dh-step__title">{{ st.title }}</div>
+          <p class="dh-step__desc">{{ st.desc }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Value for money -->
+      {% if row.vfm %}
+      <div class="dh-panel">
+        <div class="dh-panel__head">
+          <h3 class="dh-panel__title">Value for money <small>&middot; every shilling accounted</small></h3>
           {% if row.compliance %}
-            <a href="{% url 'compliance-register' row.tender.pk %}" class="bw-badge bw-badge--closing" style="text-decoration:none;">Compliance {{ row.compliance.pct }}%{% if row.compliance.overdue %} &middot; {{ row.compliance.overdue }} overdue{% endif %}</a>
+          <a href="{% url 'compliance-register' row.tender.pk %}" class="dh-pill dh-pill--info">Compliance {{ row.compliance.pct }}%{% if row.compliance.overdue %} &middot; {{ row.compliance.overdue }} overdue{% endif %}</a>
           {% endif %}
         </div>
-      </div>
-
-      {% if row.vfm %}
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;">
-        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
-          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Contract sum</div>
-          <div style="font-size:1rem;font-weight:700;color:var(--bw-navy);">{{ row.vfm.contract_sum|fmt_money }}</div>
-        </div>
-        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
-          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Certified to date</div>
-          <div style="font-size:1rem;font-weight:700;color:var(--bw-navy);">{{ row.vfm.certified_gross|fmt_money }}</div>
-          <div style="font-size:.66rem;color:var(--bw-dgrey);">{{ row.vfm.pct_certified }}% of contract</div>
-        </div>
-        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
-          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Paid to date</div>
-          <div style="font-size:1rem;font-weight:700;color:#1a7f4b;">{{ row.vfm.paid_to_date|fmt_money }}</div>
-          <div style="font-size:.66rem;color:var(--bw-dgrey);">Outstanding {{ row.vfm.outstanding|fmt_money }}</div>
-        </div>
-        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
-          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Retention held</div>
-          <div style="font-size:1rem;font-weight:700;color:#b7791f;">{{ row.vfm.retention_held|fmt_money }}</div>
-        </div>
-        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:10px 12px;background:#fff;">
-          <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--bw-dgrey);">Balance to complete</div>
-          <div style="font-size:1rem;font-weight:700;color:var(--bw-navy);">{{ row.vfm.balance|fmt_money }}</div>
-        </div>
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <div style="height:9px;border-radius:6px;background:#e8edf3;overflow:hidden;display:flex;">
-          <div style="width:{{ row.vfm.pct_paid }}%;background:#1a7f4b;"></div>
-          <div style="width:{{ row.vfm.pct_certified_only }}%;background:#7fb2d9;"></div>
-        </div>
-        <div style="font-size:.68rem;color:var(--bw-dgrey);margin-top:4px;">
-          <span style="color:#1a7f4b;font-weight:600;">&#9632; Paid {{ row.vfm.pct_paid }}%</span> &nbsp;
-          <span style="color:#7fb2d9;font-weight:600;">&#9632; Certified {{ row.vfm.pct_certified }}%</span>
-          {% if row.vfm.over_budget %}&nbsp; <span style="color:#c0392b;font-weight:600;">&#9888; Certified exceeds authorised budget</span>{% endif %}
-        </div>
-      </div>
-      {% endif %}
-
-      {% if not row.vfm.contract_sum %}
-      <!-- Record award / contract sum -->
-      <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="border:1px dashed var(--bw-teal);border-radius:9px;padding:12px 13px;margin-bottom:14px;background:#fff;">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="record_award">
-        <div style="font-size:.8rem;font-weight:700;color:var(--bw-navy);margin-bottom:8px;">Record award &amp; contract sum</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-          <label style="font-size:.72rem;color:var(--bw-dgrey);">Awarded contractor<br>
-            <select name="awarded_org" required style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;min-width:200px;">
-              <option value="">Select bidder&hellip;</option>
-              {% for o in row.payee_orgs %}<option value="{{ o.org_code }}">{{ o.name }}</option>{% endfor %}
-            </select>
-          </label>
-          <label style="font-size:.72rem;color:var(--bw-dgrey);">Contract sum<br>
-            <input type="text" name="contract_sum" placeholder="0.00" required style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:150px;">
-          </label>
-          <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Record award</button>
-        </div>
-      </form>
-      {% endif %}
-
-      <!-- Pre-commencement SOP & kick-off sign-off -->
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0 8px;flex-wrap:wrap;">
-        <h4 style="font-size:.82rem;font-weight:700;color:var(--bw-navy);margin:0;">Pre-commencement SOP &amp; kick-off <span style="font-weight:500;color:var(--bw-dgrey);">&middot; signed off by all parties</span></h4>
-        {% if row.sop %}
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            {% if row.sop.progress.all_signed %}<span class="bw-badge bw-badge--open">Signed by all parties</span>
-            {% elif row.sop.sop.status == 'CIRCULATED' %}<span class="bw-badge bw-badge--closing">Awaiting signatures</span>
-            {% else %}<span class="bw-badge bw-badge--closed">Draft</span>{% endif %}
-            <a href="{% url 'sop-pdf' row.tender.pk row.sop.sop.pk %}" target="_blank" class="bw-btn bw-btn--ghost bw-btn--sm">Print SOP</a>
+        <div class="dh-panel__body">
+          <div class="dh-stats" style="margin-bottom:14px;">
+            <div class="dh-stat"><div class="dh-stat__k">Contract sum</div><div class="dh-stat__v">{{ row.vfm.contract_sum|fmt_money }}</div></div>
+            <div class="dh-stat"><div class="dh-stat__k">Certified to date</div><div class="dh-stat__v">{{ row.vfm.certified_gross|fmt_money }}</div><div class="dh-stat__s">{{ row.vfm.pct_certified }}% of contract</div></div>
+            <div class="dh-stat"><div class="dh-stat__k">Paid to date</div><div class="dh-stat__v" style="color:#1a7f4b;">{{ row.vfm.paid_to_date|fmt_money }}</div><div class="dh-stat__s">Outstanding {{ row.vfm.outstanding|money }}</div></div>
+            <div class="dh-stat"><div class="dh-stat__k">Retention held</div><div class="dh-stat__v" style="color:#b7791f;">{{ row.vfm.retention_held|fmt_money }}</div></div>
+            <div class="dh-stat"><div class="dh-stat__k">Balance to complete</div><div class="dh-stat__v">{{ row.vfm.balance|fmt_money }}</div></div>
           </div>
-        {% endif %}
-      </div>
+          <div class="dh-bar">
+            <i style="width:{{ row.vfm.pct_paid }}%;background:#1a7f4b;"></i>
+            <i style="width:{{ row.vfm.pct_certified_only }}%;background:#7fb2d9;"></i>
+          </div>
+          <div class="dh-legend">
+            <span style="color:#1a7f4b;"><b>&#9632;</b> Paid {{ row.vfm.pct_paid }}%</span>
+            <span style="color:#7fb2d9;"><b>&#9632;</b> Certified {{ row.vfm.pct_certified }}%</span>
+            {% if row.vfm.over_budget %}<span class="dh-pill dh-pill--danger">Certified exceeds authorised budget</span>{% endif %}
+          </div>
 
-      {% if not row.sop %}
-      <div style="border:1px dashed var(--bw-teal);border-radius:9px;padding:13px;margin-bottom:14px;background:#fff;">
-        <div style="font-size:.8rem;color:var(--bw-dgrey);margin-bottom:8px;">
-          After award, draft the pre-commencement SOP so the QS, Project Manager, Contractor and
-          Employer agree the work plan, confirm the pre-requisites are in place, and sign off before
-          works begin.
-        </div>
-        <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
-          <input type="hidden" name="action" value="generate_sop">
-          <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Generate draft SOP</button>
-        </form>
-      </div>
-      {% else %}
-      <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:13px;margin-bottom:14px;background:#fff;">
-        <div style="font-size:.72rem;color:var(--bw-dgrey);margin-bottom:10px;">
-          Prerequisites {{ row.sop.progress.prereq_done }}/{{ row.sop.progress.prereq_total }} confirmed ({{ row.sop.progress.prereq_pct }}%)
-          &middot; Signatures {{ row.sop.progress.sign_done }}/{{ row.sop.progress.sign_total }}
-        </div>
-
-        <!-- Prerequisite checklist -->
-        <div style="margin-bottom:12px;">
-          {% for p in row.sop.prerequisites %}
-          <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-top:1px solid var(--bw-lgrey,#f1f4f8);">
+          {% if not row.vfm.contract_sum %}
+          <form method="post" action="{% url 'delivery-action' row.tender.pk %}" class="dh-empty" style="margin-top:14px;">
             {% csrf_token %}
-            <input type="hidden" name="action" value="toggle_prereq"><input type="hidden" name="prereq_id" value="{{ p.pk }}">
-            <button type="submit" title="Toggle done" style="border:none;background:none;cursor:pointer;font-size:1rem;line-height:1.2;color:{% if p.is_done %}#1a7f4b{% else %}#c3cedb{% endif %};">{% if p.is_done %}&#9745;{% else %}&#9744;{% endif %}</button>
-            <div style="flex:1;">
-              <div style="font-size:.78rem;color:{% if p.is_done %}var(--bw-dgrey){% else %}var(--bw-navy){% endif %};{% if p.is_done %}text-decoration:line-through;{% endif %}">{{ p.text }}</div>
-              <div style="font-size:.66rem;color:var(--bw-dgrey);">Responsible: {{ p.responsible|default:'-' }}{% if p.is_done and p.done_at %} &middot; confirmed {{ p.done_at|date:"d M Y" }}{% endif %}</div>
+            <input type="hidden" name="action" value="record_award">
+            <div class="dh-label" style="margin-bottom:9px;">Record award &amp; contract sum</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+              <label class="dh-field" style="min-width:220px;"><span>Awarded contractor</span>
+                <select name="awarded_org" required class="dh-select">
+                  <option value="">Select bidder&hellip;</option>
+                  {% for o in row.payee_orgs %}<option value="{{ o.org_code }}">{{ o.name }}</option>{% endfor %}
+                </select>
+              </label>
+              <label class="dh-field" style="width:170px;"><span>Contract sum</span>
+                <input type="text" name="contract_sum" placeholder="0.00" required class="dh-input">
+              </label>
+              <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Record award</button>
             </div>
           </form>
-          {% endfor %}
-        </div>
-
-        <!-- All-party sign-off -->
-        <div style="font-size:.74rem;font-weight:700;color:var(--bw-navy);margin-bottom:6px;">Sign-off by all parties</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
-          {% for s in row.sop.signoffs %}
-          <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:8px;padding:10px 11px;background:{% if s.signed %}#f2faf5{% else %}#fff{% endif %};">
-            <div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;color:var(--bw-teal);font-weight:700;">{{ s.get_role_display }}{% if not s.is_required %} (optional){% endif %}</div>
-            <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);line-height:1.3;">{{ s.party_name|default:'-' }}</div>
-            {% if s.signed %}
-              <div style="font-size:.72rem;color:#1a7f4b;margin-top:5px;">&#10003; Signed{% if s.person_name %} by {{ s.person_name }}{% endif %}{% if s.signed_at %} &middot; {{ s.signed_at|date:"d M Y" }}{% endif %}</div>
-            {% else %}
-              <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">{% csrf_token %}
-                <input type="hidden" name="action" value="sign_sop"><input type="hidden" name="signoff_id" value="{{ s.pk }}">
-                <input type="text" name="person_name" placeholder="Signatory name" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;width:130px;font-size:.72rem;">
-                <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Sign</button>
-              </form>
-            {% endif %}
-          </div>
-          {% endfor %}
+          {% endif %}
         </div>
       </div>
       {% endif %}
 
-      <!-- Delivery & payment programme (BOQ milestones + Gantt) -->
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0 8px;">
-        <h4 style="font-size:.82rem;font-weight:700;color:var(--bw-navy);margin:0;">Delivery &amp; payment programme <span style="font-weight:500;color:var(--bw-dgrey);">&middot; BOQ stages + Gantt</span></h4>
-        {% if row.schedule and row.schedule.milestones %}
-        <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
-          <input type="hidden" name="action" value="redistribute_value">
-          <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Split value evenly</button>
-        </form>
-        {% endif %}
-      </div>
-
-      {% if row.schedule and row.schedule.milestones %}
-      <!-- Gantt -->
-      <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:12px 13px;background:#fff;margin-bottom:10px;">
-        {% for r in row.schedule.milestones %}
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-          <div style="width:190px;flex:0 0 190px;font-size:.74rem;color:var(--bw-navy);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            {% if r.delivered %}&#10003; {% endif %}{{ r.m.name }}
+      <!-- Kick-off SOP -->
+      <div class="dh-panel">
+        <div class="dh-panel__head">
+          <h3 class="dh-panel__title">Pre-commencement SOP <small>&middot; signed off by all parties</small></h3>
+          {% if row.sop %}
+          <div class="dh-inline">
+            {% if row.sop.progress.all_signed %}<span class="dh-pill dh-pill--ok">Signed by all parties</span>
+            {% elif row.sop.sop.status == 'CIRCULATED' %}<span class="dh-pill dh-pill--warn">Awaiting signatures</span>
+            {% else %}<span class="dh-pill dh-pill--muted">Draft</span>{% endif %}
+            <a href="{% url 'sop-pdf' row.tender.pk row.sop.sop.pk %}" target="_blank" class="bw-btn bw-btn--ghost bw-btn--sm">Print SOP</a>
           </div>
-          <div style="position:relative;flex:1;height:20px;background:#f1f5f9;border-radius:5px;">
-            <div style="position:absolute;left:{{ r.left_pct }}%;width:{{ r.width_pct }}%;top:0;height:20px;border-radius:5px;background:{% if r.delivered %}#1a7f4b{% elif r.m.status == 'IN_PROGRESS' %}#7fb2d9{% else %}#c3cedb{% endif %};"></div>
+          {% endif %}
+        </div>
+        <div class="dh-panel__body">
+          {% if not row.sop %}
+          <div class="dh-empty">
+            <p>After award, draft the pre-commencement SOP so the QS, Project Manager, Contractor and
+               Employer agree the work plan, confirm the pre-requisites are in place, and sign off before
+               works begin.</p>
+            <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
+              <input type="hidden" name="action" value="generate_sop">
+              <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Generate draft SOP</button>
+            </form>
           </div>
-          <div style="width:74px;flex:0 0 74px;text-align:right;font-size:.7rem;color:var(--bw-dgrey);">wk {{ r.m.planned_start_week }}-{{ r.m.end_week }}</div>
-        </div>
-        {% endfor %}
-        <div style="font-size:.68rem;color:var(--bw-dgrey);margin-top:6px;">
-          <span style="color:#1a7f4b;font-weight:600;">&#9632; Delivered</span> &nbsp;
-          <span style="color:#7fb2d9;font-weight:600;">&#9632; In progress</span> &nbsp;
-          <span style="color:#c3cedb;font-weight:600;">&#9632; Pending</span> &nbsp; &middot; &nbsp;
-          Programme span: {{ row.schedule.total_weeks }} week{{ row.schedule.total_weeks|pluralize }}
-        </div>
-      </div>
-
-      <!-- Milestone table -->
-      <div style="overflow-x:auto;margin-bottom:12px;">
-        <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
-          <thead>
-            <tr style="text-align:left;color:var(--bw-dgrey);font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;">
-              <th style="padding:6px 8px;">Milestone</th>
-              <th style="padding:6px 8px;">Delivery (compliance)</th>
-              <th style="padding:6px 8px;text-align:right;">Stage value</th>
-              <th style="padding:6px 8px;text-align:right;">Certified / paid</th>
-              <th style="padding:6px 8px;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in row.schedule.milestones %}
-            <tr style="border-top:1px solid var(--bw-lgrey,#eef1f6);">
-              <td style="padding:7px 8px;color:var(--bw-navy);font-weight:600;">{{ r.m.name }}
-                <div style="font-size:.66rem;color:var(--bw-dgrey);font-weight:400;">
-                  {% if r.delivered %}<span style="color:#1a7f4b;">Delivered {{ r.m.delivered_at|date:"d M Y" }}</span>
-                  {% else %}{{ r.m.get_status_display }}{% endif %}
-                </div>
-              </td>
-              <td style="padding:7px 8px;color:var(--bw-dgrey);">
-                {% if r.compliance.total %}{{ r.compliance.approved }}/{{ r.compliance.total }} signed off ({{ r.compliance.pct }}%){% if r.compliance.open_mandatory %} &middot; <span style="color:#c0392b;">{{ r.compliance.open_mandatory }} open</span>{% endif %}
-                {% else %}<span style="color:var(--bw-dgrey);">No checkpoints</span>{% endif %}
-              </td>
-              <td style="padding:7px 8px;text-align:right;">{{ r.value|money }}{% if r.m.value_pct %}<div style="font-size:.64rem;color:var(--bw-dgrey);">{{ r.m.value_pct }}%</div>{% endif %}</td>
-              <td style="padding:7px 8px;text-align:right;">{{ r.certified|money }}<div style="font-size:.64rem;color:#1a7f4b;">paid {{ r.paid|money }}</div></td>
-              <td style="padding:7px 8px;">
-                {% if r.delivered %}
-                  <span class="bw-badge bw-badge--open" style="font-size:.66rem;">Payment enabled</span>
-                {% elif r.can_deliver %}
-                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}" onsubmit="return confirm('Mark {{ r.m.name }} as delivered & signed off?');">{% csrf_token %}
-                    <input type="hidden" name="action" value="mark_delivered"><input type="hidden" name="milestone_id" value="{{ r.m.pk }}">
-                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Mark delivered</button>
-                  </form>
-                {% else %}
-                  <span style="font-size:.68rem;color:var(--bw-dgrey);">Sign off compliance to deliver</span>
-                {% endif %}
-              </td>
-            </tr>
+          {% else %}
+          <div class="dh-panel__meta" style="margin-bottom:12px;">
+            Pre-requisites {{ row.sop.progress.prereq_done }}/{{ row.sop.progress.prereq_total }} confirmed ({{ row.sop.progress.prereq_pct }}%)
+            &middot; Signatures {{ row.sop.progress.sign_done }}/{{ row.sop.progress.sign_total }}
+          </div>
+          <div style="margin-bottom:14px;">
+            {% for p in row.sop.prerequisites %}
+            <form method="post" action="{% url 'delivery-action' row.tender.pk %}" class="dh-prq">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="toggle_prereq"><input type="hidden" name="prereq_id" value="{{ p.pk }}">
+              <button type="submit" title="Toggle done" class="dh-prq__box" style="color:{% if p.is_done %}#1a7f4b{% else %}#c3cedb{% endif %};">{% if p.is_done %}&#9745;{% else %}&#9744;{% endif %}</button>
+              <div style="flex:1;">
+                <div class="dh-prq__t {% if p.is_done %}is-done{% endif %}">{{ p.text }}</div>
+                <div class="dh-prq__r">Responsible: {{ p.responsible|default:'-' }}{% if p.is_done and p.done_at %} &middot; confirmed {{ p.done_at|date:"d M Y" }}{% endif %}</div>
+              </div>
+            </form>
             {% endfor %}
-            {% if row.schedule.totals %}
-            <tr style="border-top:2px solid var(--bw-navy);font-weight:700;">
-              <td style="padding:7px 8px;color:var(--bw-navy);">Totals ({{ row.schedule.totals.delivered }}/{{ row.schedule.totals.count }} delivered)</td>
-              <td></td>
-              <td style="padding:7px 8px;text-align:right;">{{ row.schedule.totals.value|money }}</td>
-              <td style="padding:7px 8px;text-align:right;">{{ row.schedule.totals.certified|money }} <span style="color:#1a7f4b;">/ {{ row.schedule.totals.paid|money }}</span></td>
-              <td></td>
-            </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <div style="border:1px dashed var(--bw-teal);border-radius:9px;padding:13px;margin-bottom:12px;background:#fff;">
-        <div style="font-size:.8rem;color:var(--bw-dgrey);margin-bottom:8px;">
-          Break delivery &amp; payment into stages from the BOQ programme (tied to the Gantt).
-          Each stage must be delivered &amp; signed off before its payment can be raised.
+          </div>
+          <div class="dh-label" style="margin-bottom:8px;">Sign-off by all parties</div>
+          <div class="dh-sign-grid">
+            {% for s in row.sop.signoffs %}
+            <div class="dh-sign {% if s.signed %}is-signed{% endif %}">
+              <div class="dh-sign__role">{{ s.get_role_display }}{% if not s.is_required %} (optional){% endif %}</div>
+              <div class="dh-sign__party">{{ s.party_name|default:'-' }}</div>
+              {% if s.signed %}
+                <div style="font-size:.72rem;color:#1a7f4b;margin-top:5px;">&#10003; Signed{% if s.person_name %} by {{ s.person_name }}{% endif %}{% if s.signed_at %} &middot; {{ s.signed_at|date:"d M Y" }}{% endif %}</div>
+              {% else %}
+                <form method="post" action="{% url 'delivery-action' row.tender.pk %}" class="dh-inline" style="margin-top:7px;">{% csrf_token %}
+                  <input type="hidden" name="action" value="sign_sop"><input type="hidden" name="signoff_id" value="{{ s.pk }}">
+                  <input type="text" name="person_name" placeholder="Signatory name" class="dh-input" style="width:135px;">
+                  <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Sign</button>
+                </form>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
-        <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
-          <input type="hidden" name="action" value="generate_programme">
-          <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Generate programme from BOQ</button>
-        </form>
       </div>
-      {% endif %}
+
+      <!-- Delivery & payment programme -->
+      <div class="dh-panel">
+        <div class="dh-panel__head">
+          <h3 class="dh-panel__title">Delivery &amp; payment programme <small>&middot; BOQ stages + Gantt</small></h3>
+          {% if row.schedule and row.schedule.milestones %}
+          <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
+            <input type="hidden" name="action" value="redistribute_value">
+            <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Split value evenly</button>
+          </form>
+          {% endif %}
+        </div>
+        <div class="dh-panel__body">
+          {% if row.schedule and row.schedule.milestones %}
+          <div style="margin-bottom:14px;">
+            {% for r in row.schedule.milestones %}
+            <div class="dh-gantt-row">
+              <div class="dh-gantt-lab">{% if r.delivered %}&#10003; {% endif %}{{ r.m.name }}</div>
+              <div class="dh-gantt-track">
+                <div class="dh-gantt-bar" style="left:{{ r.left_pct }}%;width:{{ r.width_pct }}%;background:{% if r.delivered %}#1a7f4b{% elif r.m.status == 'IN_PROGRESS' %}#7fb2d9{% else %}#c3cedb{% endif %};"></div>
+              </div>
+              <div class="dh-gantt-wk">wk {{ r.m.planned_start_week }}-{{ r.m.end_week }}</div>
+            </div>
+            {% endfor %}
+            <div class="dh-legend" style="margin-top:9px;">
+              <span style="color:#1a7f4b;"><b>&#9632;</b> Delivered</span>
+              <span style="color:#7fb2d9;"><b>&#9632;</b> In progress</span>
+              <span style="color:#c3cedb;"><b>&#9632;</b> Pending</span>
+              <span>Programme span: {{ row.schedule.total_weeks }} week{{ row.schedule.total_weeks|pluralize }}</span>
+            </div>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="dh-table">
+              <thead>
+                <tr>
+                  <th>Milestone</th>
+                  <th>Delivery (compliance)</th>
+                  <th class="dh-num">Stage value</th>
+                  <th class="dh-num">Certified / paid</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in row.schedule.milestones %}
+                <tr>
+                  <td class="dh-strong">{{ r.m.name }}
+                    <div style="font-size:.66rem;font-weight:400;margin-top:2px;">
+                      {% if r.delivered %}<span style="color:#1a7f4b;">Delivered {{ r.m.delivered_at|date:"d M Y" }}</span>
+                      {% else %}<span style="color:#8494a8;">{{ r.m.get_status_display }}</span>{% endif %}
+                    </div>
+                  </td>
+                  <td style="color:#5b6b82;">
+                    {% if r.compliance.total %}{{ r.compliance.approved }}/{{ r.compliance.total }} signed off ({{ r.compliance.pct }}%){% if r.compliance.open_mandatory %} &middot; <span style="color:#c0392b;">{{ r.compliance.open_mandatory }} open</span>{% endif %}
+                    {% else %}<span style="color:#8494a8;">No checkpoints</span>{% endif %}
+                  </td>
+                  <td class="dh-num">{{ r.value|money }}{% if r.m.value_pct %}<div style="font-size:.64rem;color:#8494a8;">{{ r.m.value_pct }}%</div>{% endif %}</td>
+                  <td class="dh-num">{{ r.certified|money }}<div style="font-size:.64rem;color:#1a7f4b;">paid {{ r.paid|money }}</div></td>
+                  <td>
+                    {% if r.delivered %}
+                      <span class="dh-pill dh-pill--ok">Payment enabled</span>
+                    {% elif r.can_deliver %}
+                      <form method="post" action="{% url 'delivery-action' row.tender.pk %}" onsubmit="return confirm('Mark {{ r.m.name }} as delivered & signed off?');">{% csrf_token %}
+                        <input type="hidden" name="action" value="mark_delivered"><input type="hidden" name="milestone_id" value="{{ r.m.pk }}">
+                        <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Mark delivered</button>
+                      </form>
+                    {% else %}
+                      <span style="font-size:.68rem;color:#8494a8;">Sign off compliance to deliver</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                {% if row.schedule.totals %}
+                <tr class="dh-total">
+                  <td>Totals ({{ row.schedule.totals.delivered }}/{{ row.schedule.totals.count }} delivered)</td>
+                  <td></td>
+                  <td class="dh-num">{{ row.schedule.totals.value|money }}</td>
+                  <td class="dh-num">{{ row.schedule.totals.certified|money }} <span style="color:#1a7f4b;">/ {{ row.schedule.totals.paid|money }}</span></td>
+                  <td></td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="dh-empty">
+            <p>Break delivery &amp; payment into stages from the BOQ programme (tied to the Gantt).
+               Each stage must be delivered &amp; signed off before its payment can be raised.</p>
+            <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
+              <input type="hidden" name="action" value="generate_programme">
+              <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Generate programme from BOQ</button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
 
       <!-- Payment certificates -->
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
-        <h4 style="font-size:.82rem;font-weight:700;color:var(--bw-navy);margin:0;">Payment certificates</h4>
-        <span style="font-size:.72rem;color:var(--bw-dgrey);">{{ row.certificates|length }} certificate{{ row.certificates|length|pluralize }}</span>
-      </div>
-      {% if row.certificates %}
-      <div style="overflow-x:auto;margin-bottom:10px;">
-        <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
-          <thead>
-            <tr style="text-align:left;color:var(--bw-dgrey);font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;">
-              <th style="padding:6px 8px;">Cert</th>
-              <th style="padding:6px 8px;">Payee</th>
-              <th style="padding:6px 8px;">Type</th>
-              <th style="padding:6px 8px;text-align:right;">Gross</th>
-              <th style="padding:6px 8px;text-align:right;">Retention</th>
-              <th style="padding:6px 8px;text-align:right;">Net payable</th>
-              <th style="padding:6px 8px;">Status</th>
-              <th style="padding:6px 8px;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for c in row.certificates %}
-            <tr style="border-top:1px solid var(--bw-lgrey,#eef1f6);">
-              <td style="padding:7px 8px;font-family:monospace;font-size:.74rem;">
-                <a href="{% url 'payment-certificate-pdf' row.tender.pk c.pk %}" target="_blank" style="color:var(--bw-blue);text-decoration:none;">{{ c.cert_no }}</a>
-              </td>
-              <td style="padding:7px 8px;color:var(--bw-navy);">{{ c.payee_name|default:'&mdash;' }}<div style="font-size:.66rem;color:var(--bw-dgrey);">{{ c.get_payee_kind_display }}{% if c.milestone %} &middot; {{ c.milestone.name }}{% endif %}</div></td>
-              <td style="padding:7px 8px;color:var(--bw-dgrey);">{{ c.get_cert_type_display }}</td>
-              <td style="padding:7px 8px;text-align:right;">{{ c.gross_amount|money }}</td>
-              <td style="padding:7px 8px;text-align:right;color:#b7791f;">{{ c.retention_amount|money }}</td>
-              <td style="padding:7px 8px;text-align:right;font-weight:700;color:var(--bw-navy);">{{ c.net_payable|money }}</td>
-              <td style="padding:7px 8px;">
-                {% if c.status == 'PAID' %}<span class="bw-badge bw-badge--open">Paid (PV)</span>
-                {% elif c.status == 'REQUISITIONED' %}<span class="bw-badge bw-badge--closing">RO raised</span>
-                {% elif c.status == 'CERTIFIED' %}<span class="bw-badge bw-badge--closing">Certified</span>
-                {% else %}<span class="bw-badge bw-badge--closed">Draft</span>{% endif %}
-                {% if c.ro_no %}<div style="font-size:.64rem;color:var(--bw-dgrey);font-family:monospace;">RO {{ c.ro_no }}</div>{% endif %}
-                {% if c.pv_no %}<div style="font-size:.64rem;color:var(--bw-dgrey);font-family:monospace;">PV {{ c.pv_no }}</div>{% endif %}
-              </td>
-              <td style="padding:7px 8px;">
-                <div style="display:flex;gap:5px;flex-wrap:wrap;">
-                {% if c.status == 'DRAFT' %}
-                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
-                    <input type="hidden" name="action" value="certify_certificate"><input type="hidden" name="cert_id" value="{{ c.pk }}">
-                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Certify</button>
-                  </form>
-                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}" onsubmit="return confirm('Remove draft {{ c.cert_no }}?');">{% csrf_token %}
-                    <input type="hidden" name="action" value="delete_certificate"><input type="hidden" name="cert_id" value="{{ c.pk }}">
-                    <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Delete</button>
-                  </form>
-                {% elif c.status == 'CERTIFIED' %}
-                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="display:flex;gap:4px;align-items:center;">{% csrf_token %}
-                    <input type="hidden" name="action" value="raise_ro"><input type="hidden" name="cert_id" value="{{ c.pk }}">
-                    <input type="text" name="ro_no" placeholder="RO no. (optional)" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;width:120px;font-size:.72rem;">
-                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise RO</button>
-                  </form>
-                {% elif c.status == 'REQUISITIONED' %}
-                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">{% csrf_token %}
-                    <input type="hidden" name="action" value="raise_payment_order"><input type="hidden" name="cert_id" value="{{ c.pk }}">
-                    <select name="paid_method" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;font-size:.72rem;">
-                      <option value="BANK">Bank</option><option value="CHQ">Cheque</option><option value="MPESA">M-Pesa</option>
-                    </select>
-                    <input type="text" name="paid_reference" placeholder="Transfer ref" style="padding:4px 6px;border:1px solid #cfd8e3;border-radius:6px;width:110px;font-size:.72rem;">
-                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise Payment Order</button>
-                  </form>
-                {% else %}
-                  <span style="font-size:.7rem;color:var(--bw-dgrey);">{{ c.paid_method }} {{ c.paid_reference|default:'' }}</span>
-                {% endif %}
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p style="font-size:.8rem;color:var(--bw-dgrey);margin:0 0 10px;">No payment certificates yet. Raise an advance, interim or final certificate below.</p>
-      {% endif %}
-
-      <!-- Raise a certificate -->
-      <details style="margin-top:4px;">
-        <summary style="cursor:pointer;font-size:.8rem;font-weight:600;color:var(--bw-blue);">+ Raise a payment certificate</summary>
-        <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:13px;margin-top:10px;background:#fff;">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_certificate">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
-            {% if row.schedule and row.schedule.milestones %}
-            <label style="font-size:.72rem;color:var(--bw-dgrey);grid-column:1/-1;">Delivery milestone (required for interim/final)<br>
-              <select name="milestone_id" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-                <option value="">&mdash; select stage &mdash;</option>
-                {% for r in row.schedule.milestones %}
-                <option value="{{ r.m.pk }}"{% if not r.delivered %} disabled{% endif %}>{{ r.m.name }} &middot; {{ r.value|money }}{% if r.delivered %} (delivered){% else %} (not yet delivered){% endif %}</option>
-                {% endfor %}
-              </select>
-            </label>
-            {% endif %}
-            <label style="font-size:.72rem;color:var(--bw-dgrey);">Payee type<br>
-              <select name="payee_kind" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-                <option value="CONTRACTOR">Contractor</option>
-                <option value="CONSULTANT">Consultant</option>
-              </select>
-            </label>
-            <label style="font-size:.72rem;color:var(--bw-dgrey);">Contractor (if contractor)<br>
-              <select name="payee_org" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-                <option value="">&mdash;</option>
-                {% for o in row.payee_orgs %}<option value="{{ o.org_code }}">{{ o.name }}</option>{% endfor %}
-              </select>
-            </label>
-            <label style="font-size:.72rem;color:var(--bw-dgrey);">Consultant (if consultant)<br>
-              <select name="consultant_id" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-                <option value="">&mdash;</option>
-                {% for c in row.consultants %}<option value="{{ c.pk }}">{{ c.get_role_display }} &middot; {{ c.display_name }}</option>{% endfor %}
-              </select>
-            </label>
-            <label style="font-size:.72rem;color:var(--bw-dgrey);">Certificate type<br>
-              <select name="cert_type" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-                {% for val,label in cert_types %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
-              </select>
-            </label>
-            <label style="font-size:.72rem;color:var(--bw-dgrey);">Gross amount (this period)<br>
-              <input type="text" name="gross_amount" placeholder="0.00" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-            </label>
-            <label style="font-size:.72rem;color:var(--bw-dgrey);">Retention %<br>
-              <input type="text" name="retention_pct" value="10" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-            </label>
-            <label style="font-size:.72rem;color:var(--bw-dgrey);">Retention released (final)<br>
-              <input type="text" name="retention_released" placeholder="0.00" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-            </label>
-            <label style="font-size:.72rem;color:var(--bw-dgrey);">Period to<br>
-              <input type="date" name="period_to" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-            </label>
-          </div>
-          <label style="font-size:.72rem;color:var(--bw-dgrey);display:block;margin-top:8px;">Description / title<br>
-            <input type="text" name="title" placeholder="e.g. Interim valuation No. 1 - substructure" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
-          </label>
-          <div style="margin-top:10px;font-size:.7rem;color:var(--bw-dgrey);">Government payment procedure: <strong>Draft</strong> &rarr; <strong>Certified for payment</strong> &rarr; <strong>Requisition Order (RO)</strong> &rarr; <strong>Payment Order (PV) / transfer of funds</strong>. Retention is withheld on interim certificates and released on the final certificate.</div>
-          <div style="margin-top:10px;"><button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise draft certificate</button></div>
-        </form>
-      </details>
-    </div>
-
-    <!-- Registered bidders -->
-    <div style="padding:18px 22px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
-        <h3 style="font-size:.92rem;font-weight:700;color:var(--bw-navy);margin:0;">Companies bidding</h3>
-        <span style="font-size:.74rem;color:var(--bw-dgrey);">{{ row.bidder_count }} registered &middot; {{ row.submitted_count }} submitted</span>
-      </div>
-      {% if row.bidders %}
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:.83rem;">
-          <thead>
-            <tr style="text-align:left;color:var(--bw-dgrey);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
-              <th style="padding:6px 8px;">Company</th>
-              <th style="padding:6px 8px;">Registered</th>
-              <th style="padding:6px 8px;">BOQ</th>
-              <th style="padding:6px 8px;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for b in row.bidders %}
-            <tr style="border-top:1px solid var(--bw-lgrey,#eef1f6);">
-              <td style="padding:8px;font-weight:600;color:var(--bw-navy);">{{ b.reg.organisation.name }}</td>
-              <td style="padding:8px;color:var(--bw-dgrey);">{{ b.reg.registered_at|date:"d M Y" }}</td>
-              <td style="padding:8px;color:var(--bw-dgrey);">{% if b.reg.has_downloaded_boq %}Downloaded{% else %}&mdash;{% endif %}</td>
-              <td style="padding:8px;">
-                {% if b.submitted %}<span class="bw-badge bw-badge--open">Bid submitted</span>
-                {% else %}<span class="bw-badge bw-badge--closing">Interested</span>{% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p style="font-size:.83rem;color:var(--bw-dgrey);margin:0;">No companies have registered to bid on this tender yet.</p>
-      {% endif %}
-    </div>
-
-    <!-- Consultant team -->
-    <div style="padding:0 22px 18px;">
-      <h3 style="font-size:.92rem;font-weight:700;color:var(--bw-navy);margin:0 0 10px;">Consultant team</h3>
-      {% if row.consultants %}
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
-        {% for c in row.consultants %}
-        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:11px 13px;">
-          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--bw-teal);font-weight:700;margin-bottom:3px;">{{ c.get_role_display }}</div>
-          <div style="font-size:.85rem;font-weight:600;color:var(--bw-navy);line-height:1.3;">{{ c.display_name }}</div>
-          {% if c.address %}<div style="font-size:.74rem;color:var(--bw-dgrey);margin-top:3px;">{{ c.address }}</div>{% endif %}
-          {% if c.contact_person or c.email or c.phone %}
-          <div style="font-size:.74rem;color:var(--bw-dgrey);margin-top:2px;">{{ c.contact_person }}{% if c.email %} &middot; {{ c.email }}{% endif %}{% if c.phone %} &middot; {{ c.phone }}{% endif %}</div>
-          {% endif %}
-          {% if c.notes %}<div style="font-size:.72rem;color:var(--bw-dgrey);margin-top:4px;font-style:italic;">{{ c.notes }}</div>{% endif %}
-          <div style="margin-top:6px;">
-            {% if c.is_registered %}
-              <span class="bw-tag bw-tag--ok" style="font-size:.68rem;">Registered in BuildWatch</span>
-            {% else %}
-              <span class="bw-tag bw-tag--muted" style="font-size:.68rem;">Not yet registered</span>
-            {% endif %}
-          </div>
+      <div class="dh-panel">
+        <div class="dh-panel__head">
+          <h3 class="dh-panel__title">Payment certificates <small>&middot; certify &rarr; RO &rarr; Payment Order</small></h3>
+          <span class="dh-panel__meta">{{ row.certificates|length }} certificate{{ row.certificates|length|pluralize }}</span>
         </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <p style="font-size:.83rem;color:var(--bw-dgrey);margin:0;">No consultant team recorded for this tender yet.</p>
-      {% endif %}
-    </div>
+        <div class="dh-panel__body">
+          {% if row.certificates %}
+          <div style="overflow-x:auto;margin-bottom:12px;">
+            <table class="dh-table">
+              <thead>
+                <tr>
+                  <th>Cert</th><th>Payee</th><th>Type</th>
+                  <th class="dh-num">Gross</th><th class="dh-num">Retention</th><th class="dh-num">Net payable</th>
+                  <th>Status</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in row.certificates %}
+                <tr>
+                  <td><a href="{% url 'payment-certificate-pdf' row.tender.pk c.pk %}" target="_blank" style="color:#2f5fb0;text-decoration:none;font-family:ui-monospace,monospace;font-size:.74rem;">{{ c.cert_no }}</a></td>
+                  <td class="dh-strong">{{ c.payee_name|default:'&mdash;' }}<div style="font-size:.66rem;font-weight:400;color:#8494a8;">{{ c.get_payee_kind_display }}{% if c.milestone %} &middot; {{ c.milestone.name }}{% endif %}</div></td>
+                  <td style="color:#5b6b82;">{{ c.get_cert_type_display }}</td>
+                  <td class="dh-num">{{ c.gross_amount|money }}</td>
+                  <td class="dh-num" style="color:#b7791f;">{{ c.retention_amount|money }}</td>
+                  <td class="dh-num dh-strong">{{ c.net_payable|money }}</td>
+                  <td>
+                    {% if c.status == 'PAID' %}<span class="dh-pill dh-pill--ok">Paid (PV)</span>
+                    {% elif c.status == 'REQUISITIONED' %}<span class="dh-pill dh-pill--info">RO raised</span>
+                    {% elif c.status == 'CERTIFIED' %}<span class="dh-pill dh-pill--info">Certified</span>
+                    {% else %}<span class="dh-pill dh-pill--muted">Draft</span>{% endif %}
+                    {% if c.ro_no %}<div style="font-size:.62rem;color:#8494a8;font-family:ui-monospace,monospace;margin-top:2px;">RO {{ c.ro_no }}</div>{% endif %}
+                    {% if c.pv_no %}<div style="font-size:.62rem;color:#8494a8;font-family:ui-monospace,monospace;">PV {{ c.pv_no }}</div>{% endif %}
+                  </td>
+                  <td>
+                    <div class="dh-inline">
+                    {% if c.status == 'DRAFT' %}
+                      <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
+                        <input type="hidden" name="action" value="certify_certificate"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                        <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Certify</button>
+                      </form>
+                      <form method="post" action="{% url 'delivery-action' row.tender.pk %}" onsubmit="return confirm('Remove draft {{ c.cert_no }}?');">{% csrf_token %}
+                        <input type="hidden" name="action" value="delete_certificate"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                        <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Delete</button>
+                      </form>
+                    {% elif c.status == 'CERTIFIED' %}
+                      <form method="post" action="{% url 'delivery-action' row.tender.pk %}" class="dh-inline">{% csrf_token %}
+                        <input type="hidden" name="action" value="raise_ro"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                        <input type="text" name="ro_no" placeholder="RO no. (optional)" class="dh-input" style="width:120px;">
+                        <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise RO</button>
+                      </form>
+                    {% elif c.status == 'REQUISITIONED' %}
+                      <form method="post" action="{% url 'delivery-action' row.tender.pk %}" class="dh-inline">{% csrf_token %}
+                        <input type="hidden" name="action" value="raise_payment_order"><input type="hidden" name="cert_id" value="{{ c.pk }}">
+                        <select name="paid_method" class="dh-select" style="width:auto;">
+                          <option value="BANK">Bank</option><option value="CHQ">Cheque</option><option value="MPESA">M-Pesa</option>
+                        </select>
+                        <input type="text" name="paid_reference" placeholder="Transfer ref" class="dh-input" style="width:110px;">
+                        <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Payment Order</button>
+                      </form>
+                    {% else %}
+                      <span style="font-size:.7rem;color:#8494a8;">{{ c.paid_method }} {{ c.paid_reference|default:'' }}</span>
+                    {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p style="font-size:.82rem;color:#8494a8;margin:0 0 12px;">No payment certificates yet. Raise an advance, interim or final certificate below.</p>
+          {% endif %}
 
-    <!-- Announcements / clarifications -->
-    <div style="padding:0 22px 20px;">
-      <h3 style="font-size:.92rem;font-weight:700;color:var(--bw-navy);margin:0 0 10px;">Announcements &amp; clarifications</h3>
-      {% if row.addenda %}
-      {% for a in row.addenda %}
-      <div style="border-left:3px solid var(--bw-teal);padding:6px 12px;margin-bottom:8px;background:var(--bw-mist,#f7f9fc);border-radius:0 8px 8px 0;">
-        <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);">Addendum {{ a.addendum_no }}: {{ a.subject }}</div>
-        <div style="font-size:.78rem;color:var(--bw-dgrey);margin-top:2px;white-space:pre-wrap;">{{ a.content }}</div>
-        <div style="font-size:.7rem;color:var(--bw-dgrey);margin-top:3px;">Issued {{ a.issued_at|date:"d M Y H:i" }} &middot; {{ a.notified_count }} bidder{{ a.notified_count|pluralize }} notified</div>
+          <details>
+            <summary style="cursor:pointer;font-size:.8rem;font-weight:600;color:#2f5fb0;">+ Raise a payment certificate</summary>
+            <form method="post" action="{% url 'delivery-action' row.tender.pk %}" style="border:1px solid #e6ebf2;border-radius:11px;padding:14px;margin-top:11px;background:#fbfcfe;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_certificate">
+              <div class="dh-form-grid">
+                {% if row.schedule and row.schedule.milestones %}
+                <label class="dh-field" style="grid-column:1/-1;"><span>Delivery milestone (required for interim/final)</span>
+                  <select name="milestone_id" class="dh-select">
+                    <option value="">&mdash; select stage &mdash;</option>
+                    {% for r in row.schedule.milestones %}
+                    <option value="{{ r.m.pk }}"{% if not r.delivered %} disabled{% endif %}>{{ r.m.name }} &middot; {{ r.value|money }}{% if r.delivered %} (delivered){% else %} (not yet delivered){% endif %}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                {% endif %}
+                <label class="dh-field"><span>Payee type</span>
+                  <select name="payee_kind" class="dh-select">
+                    <option value="CONTRACTOR">Contractor</option><option value="CONSULTANT">Consultant</option>
+                  </select>
+                </label>
+                <label class="dh-field"><span>Contractor (if contractor)</span>
+                  <select name="payee_org" class="dh-select">
+                    <option value="">&mdash;</option>
+                    {% for o in row.payee_orgs %}<option value="{{ o.org_code }}">{{ o.name }}</option>{% endfor %}
+                  </select>
+                </label>
+                <label class="dh-field"><span>Consultant (if consultant)</span>
+                  <select name="consultant_id" class="dh-select">
+                    <option value="">&mdash;</option>
+                    {% for c in row.consultants %}<option value="{{ c.pk }}">{{ c.get_role_display }} &middot; {{ c.display_name }}</option>{% endfor %}
+                  </select>
+                </label>
+                <label class="dh-field"><span>Certificate type</span>
+                  <select name="cert_type" class="dh-select">
+                    {% for val,label in cert_types %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+                  </select>
+                </label>
+                <label class="dh-field"><span>Gross amount (this period)</span>
+                  <input type="text" name="gross_amount" placeholder="0.00" class="dh-input">
+                </label>
+                <label class="dh-field"><span>Retention %</span>
+                  <input type="text" name="retention_pct" value="10" class="dh-input">
+                </label>
+                <label class="dh-field"><span>Retention released (final)</span>
+                  <input type="text" name="retention_released" placeholder="0.00" class="dh-input">
+                </label>
+                <label class="dh-field"><span>Period to</span>
+                  <input type="date" name="period_to" class="dh-input">
+                </label>
+              </div>
+              <label class="dh-field" style="margin-top:11px;"><span>Description / title</span>
+                <input type="text" name="title" placeholder="e.g. Interim valuation No. 1 - substructure" class="dh-input">
+              </label>
+              <p style="margin:11px 0 0;font-size:.7rem;color:#8494a8;">Government payment procedure: <strong>Draft</strong> &rarr; <strong>Certified</strong> &rarr; <strong>Requisition Order (RO)</strong> &rarr; <strong>Payment Order (PV) / transfer of funds</strong>. Retention is withheld on interim certificates and released on the final certificate.</p>
+              <div style="margin-top:11px;"><button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Raise draft certificate</button></div>
+            </form>
+          </details>
+        </div>
       </div>
-      {% endfor %}
-      {% else %}
-      <p style="font-size:.83rem;color:var(--bw-dgrey);margin:0 0 8px;">
-        No announcements yet. Use <a href="{% url 'tender-manage' row.tender.pk %}" style="color:var(--bw-blue);">Manage</a>
-        to post clarifications, changes or updates &mdash; all registered bidders are notified.
-      </p>
-      {% endif %}
+
+      <!-- Companies bidding -->
+      <div class="dh-panel">
+        <div class="dh-panel__head">
+          <h3 class="dh-panel__title">Companies bidding</h3>
+          <span class="dh-panel__meta">{{ row.bidder_count }} registered &middot; {{ row.submitted_count }} submitted</span>
+        </div>
+        <div class="dh-panel__body">
+          {% if row.bidders %}
+          <div style="overflow-x:auto;">
+            <table class="dh-table">
+              <thead><tr><th>Company</th><th>Registered</th><th>BOQ</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for b in row.bidders %}
+                <tr>
+                  <td class="dh-strong">{{ b.reg.organisation.name }}</td>
+                  <td style="color:#5b6b82;">{{ b.reg.registered_at|date:"d M Y" }}</td>
+                  <td style="color:#5b6b82;">{% if b.reg.has_downloaded_boq %}Downloaded{% else %}&mdash;{% endif %}</td>
+                  <td>{% if b.submitted %}<span class="dh-pill dh-pill--ok">Bid submitted</span>{% else %}<span class="dh-pill dh-pill--warn">Interested</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p style="font-size:.82rem;color:#8494a8;margin:0;">No companies have registered to bid on this tender yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Consultant team -->
+      <div class="dh-panel">
+        <div class="dh-panel__head"><h3 class="dh-panel__title">Consultant team</h3></div>
+        <div class="dh-panel__body">
+          {% if row.consultants %}
+          <div class="dh-cards">
+            {% for c in row.consultants %}
+            <div class="dh-tile">
+              <div class="dh-sign__role">{{ c.get_role_display }}</div>
+              <div style="font-size:.84rem;font-weight:700;color:#16233b;line-height:1.3;margin-top:2px;">{{ c.display_name }}</div>
+              {% if c.address %}<div style="font-size:.73rem;color:#8494a8;margin-top:3px;">{{ c.address }}</div>{% endif %}
+              {% if c.contact_person or c.email or c.phone %}<div style="font-size:.73rem;color:#8494a8;margin-top:2px;">{{ c.contact_person }}{% if c.email %} &middot; {{ c.email }}{% endif %}{% if c.phone %} &middot; {{ c.phone }}{% endif %}</div>{% endif %}
+              <div style="margin-top:7px;">
+                {% if c.is_registered %}<span class="dh-pill dh-pill--ok">Registered</span>{% else %}<span class="dh-pill dh-pill--muted">Not yet registered</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p style="font-size:.82rem;color:#8494a8;margin:0;">No consultant team recorded for this tender yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Announcements -->
+      <div class="dh-panel">
+        <div class="dh-panel__head"><h3 class="dh-panel__title">Announcements &amp; clarifications</h3></div>
+        <div class="dh-panel__body">
+          {% if row.addenda %}
+          {% for a in row.addenda %}
+          <div class="dh-note">
+            <div style="font-size:.8rem;font-weight:700;color:#16233b;">Addendum {{ a.addendum_no }}: {{ a.subject }}</div>
+            <div style="font-size:.77rem;color:#5b6b82;margin-top:2px;white-space:pre-wrap;">{{ a.content }}</div>
+            <div style="font-size:.69rem;color:#8494a8;margin-top:3px;">Issued {{ a.issued_at|date:"d M Y H:i" }} &middot; {{ a.notified_count }} bidder{{ a.notified_count|pluralize }} notified</div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <p style="font-size:.82rem;color:#8494a8;margin:0;">No announcements yet. Use <a href="{% url 'tender-manage' row.tender.pk %}" style="color:#2f5fb0;">Manage</a> to post clarifications, changes or updates &mdash; all registered bidders are notified.</p>
+          {% endif %}
+        </div>
+      </div>
+
     </div>
   </div>
   {% empty %}
-  <div class="bw-card" style="text-align:center;padding:52px 24px;">
-    <div style="font-weight:600;color:var(--bw-navy);margin-bottom:8px;">No tenders published yet</div>
-    <div style="color:var(--bw-dgrey);font-size:.85rem;margin-bottom:20px;">Create or upload a tender to start receiving bids.</div>
+  <div class="dh-card" style="text-align:center;padding:52px 24px;">
+    <div style="font-weight:700;color:#16233b;margin-bottom:8px;">No tenders published yet</div>
+    <div style="color:#8494a8;font-size:.85rem;margin-bottom:20px;">Create or upload a tender to start receiving bids.</div>
     <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--primary">Create or Upload new tender</a>
   </div>
   {% endfor %}
 
+</div>
 </div>
 {% endblock %}

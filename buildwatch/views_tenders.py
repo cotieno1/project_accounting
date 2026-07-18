@@ -2453,6 +2453,40 @@ def _sponsor_activity(request, org):
                     'signoffs': list(sop.signoffs.all()),
                     'progress': sop_progress(sop),
                 }
+
+        # ── Lifecycle stepper (Award -> SOP -> Programme -> Delivery -> Payment)
+        lifecycle = None
+        if project is not None:
+            awarded_done = bool(awarded) or bool(vfm and vfm['contract_sum'])
+            sop_all = bool(sop_data and sop_data['progress']['all_signed'])
+            ms_rows = schedule['milestones'] if schedule else []
+            ms_total = len(ms_rows)
+            ms_delivered = sum(1 for r in ms_rows if r['delivered'])
+            programme_done = ms_total > 0
+            delivery_done = ms_total > 0 and ms_delivered == ms_total
+            paid_pct = vfm['pct_paid'] if vfm else 0
+            any_cert = bool(certificates)
+
+            def _state(done, active):
+                return 'done' if done else ('active' if active else 'pending')
+
+            lifecycle = [
+                {'num': 1, 'title': 'Award',
+                 'desc': 'Winning bid & contract sum recorded.',
+                 'state': _state(awarded_done, True)},
+                {'num': 2, 'title': 'Kick-off SOP',
+                 'desc': 'Pre-requisites confirmed & signed by all parties.',
+                 'state': _state(sop_all, awarded_done)},
+                {'num': 3, 'title': 'Work plan',
+                 'desc': 'BOQ delivery & payment milestones (Gantt).',
+                 'state': _state(programme_done, awarded_done)},
+                {'num': 4, 'title': 'Delivery',
+                 'desc': '%d/%d milestones delivered & signed off.' % (ms_delivered, ms_total),
+                 'state': _state(delivery_done, ms_delivered > 0 or programme_done)},
+                {'num': 5, 'title': 'Payment',
+                 'desc': 'Certify -> RO -> Payment Order. %d%% paid.' % paid_pct,
+                 'state': _state(paid_pct >= 100 and any_cert, any_cert)},
+            ]
             certificates = list(
                 project.payment_certificates
                 .select_related('payee_org', 'consultant', 'certified_by')
@@ -2491,6 +2525,7 @@ def _sponsor_activity(request, org):
             'compliance': compliance,
             'schedule': schedule,
             'sop': sop_data,
+            'lifecycle': lifecycle,
             'delivered_milestones': [
                 r['m'] for r in (schedule['milestones'] if schedule else [])
                 if r['delivered']

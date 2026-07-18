@@ -185,17 +185,17 @@
         </form>
         <a href="{{ portal_path }}" class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">Open portal</a>
         {% if arrangement.quote_status == 'QUOTE_SUBMITTED' or arrangement.quote_status == 'QUOTE_ACKNOWLEDGED' %}
-        <form method="POST" action="{% url 'subcontract-ack-quote' listing.pk arrangement.pk %}">
-          {% csrf_token %}
+      <form method="POST" action="{% url 'subcontract-ack-quote' listing.pk arrangement.pk %}">
+        {% csrf_token %}
           <button type="submit" class="bw-btn bw-btn--teal bw-btn--sm"
                   onclick="return confirm('Acknowledge this quote and import rates?');">
             Acknowledge quote
-          </button>
-        </form>
-        {% endif %}
+        </button>
+      </form>
+      {% endif %}
         {% if progress.workspace and progress.workspace.status != 'SUBMITTED' %}
         <a href="{% url 'bid-workspace' listing.pk %}" class="bw-btn bw-btn--primary bw-btn--sm">Submit main bid</a>
-        {% endif %}
+      {% endif %}
         <form method="POST" action="{% url 'subcontract-notify-award' listing.pk arrangement.pk %}">
           {% csrf_token %}
           <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm"
@@ -218,12 +218,12 @@
            class="bw-btn bw-btn--teal bw-btn--sm" target="_blank" rel="noopener">View</a>
         <a href="{% url 'bid-subcontract-agreement-pdf' listing.pk arrangement.pk %}"
            class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">PDF</a>
-        {% if arrangement.agreement_file %}
+      {% if arrangement.agreement_file %}
         <a href="{{ arrangement.agreement_file.url }}"
            class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank" rel="noopener">
           Signed upload · {{ arrangement.agreement_uploaded_at|date:"d M Y H:i" }}
         </a>
-        {% endif %}
+      {% endif %}
       </div>
       <form method="POST" enctype="multipart/form-data" class="sc-actions" style="align-items:center;">
         {% csrf_token %}

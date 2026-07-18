@@ -79,7 +79,7 @@ class DeliveryHubTests(TestCase):
         resp = self._sponsor_client().get(reverse("my-bids"))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
-        self.assertIn("Project delivery hub", html)
+        self.assertIn("Value for money", html)
         self.assertIn("Contract sum", html)
         self.assertIn("Retention held", html)
 
