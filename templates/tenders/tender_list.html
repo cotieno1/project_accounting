@@ -13,9 +13,7 @@
     <div class="bw-kicker">{{ bw_persona_kicker|default:"Public procurement exchange" }}</div>
     <h1 class="bw-title">{{ bw_persona_title|default:"Open tenders" }}</h1>
     {% if not user.is_authenticated %}
-    <p class="bw-lead">
-      {{ bw_persona_lead|default:"Browse published infrastructure tenders. Register to download BOQ documents and bid." }}
-    </p>
+    <p class="bw-lead">Browse published infrastructure tenders.</p>
     {% elif bw_persona_lead %}
     <p class="bw-lead">{{ bw_persona_lead }}</p>
     {% endif %}
@@ -30,25 +28,6 @@
           <a href="{% url 'my-bids' %}" class="bw-btn bw-btn--{% if can_publish_tender %}ghost{% else %}teal{% endif %}">{{ bw_primary_cta_label|default:"My bids" }}</a>
           <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label|default:"Set alerts" }}</a>
         {% endif %}
-      </div>
-    {% else %}
-      <div class="bw-dual-entry" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;max-width:640px;">
-        <div class="bw-panel">
-          <div class="bw-panel__bd">
-            <div class="bw-kicker">Contractors</div>
-            <strong style="display:block;color:var(--bw-navy);margin-bottom:6px;">Building &amp; infrastructure</strong>
-            <p class="bw-lead" style="font-size:0.86rem;">Browse, register interest, download BOQ and bid.</p>
-            <a href="{% url 'buildwatch-register' %}?type=CONTRACTOR" class="bw-btn bw-btn--ghost bw-btn--sm" style="margin-top:12px;">Register as contractor</a>
-          </div>
-        </div>
-        <div class="bw-panel">
-          <div class="bw-panel__bd">
-            <div class="bw-kicker">Employers</div>
-            <strong style="display:block;color:var(--bw-navy);margin-bottom:6px;">Government · DFI · private</strong>
-            <p class="bw-lead" style="font-size:0.86rem;">Publish and manage open tenders for works and services.</p>
-            <a href="{% url 'buildwatch-register' %}?type=GOV_NATIONAL" class="bw-btn bw-btn--teal bw-btn--sm" style="margin-top:12px;">Register as employer</a>
-          </div>
-        </div>
       </div>
     {% endif %}
   </header>
