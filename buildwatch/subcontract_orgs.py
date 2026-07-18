@@ -72,7 +72,7 @@ def ensure_contractor_organisation(
             contractor_type=Organization.CONTRACTOR_BUILDING,
             organization_type="CONTRACTOR",
             registration_status=Organization.STATUS_ACTIVE,
-            document_tagline="Subcontractor Operations",
+            document_tagline="Contractor Operations",
         )
         return org, True
 
@@ -181,7 +181,7 @@ def ensure_subcontractor_employee(
             staff_no=staff,
             first_name=first_name,
             last_name=last_name,
-            designation="Sub-contractor estimator",
+            designation="Estimator",
             contact_address=organization.name,
             phone=phone,
             email=email,
