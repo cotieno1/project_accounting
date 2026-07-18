@@ -695,14 +695,27 @@ def tender_list(request):
     if not request.user.is_authenticated:
         qs = qs.filter(visibility=TenderListing.PUBLIC)
 
+    # ── Sponsor scoping ───────────────────────────────────────────────────
+    # A project owner / sponsor (employer persona) only manages tenders
+    # registered under their own organisation — they have no interest in
+    # tenders published by other entities. Contractors and guests browse all.
+    sponsor_org = None
+    if request.user.is_authenticated:
+        from accounts.tenant import get_active_organization, get_exchange_persona
+        active_org = get_active_organization(request)
+        if active_org is not None and get_exchange_persona(org=active_org) == "employer":
+            sponsor_org = active_org
+            qs = qs.filter(event__project__owner_org=sponsor_org)
+
     # ── Stats for sidebar ─────────────────────────────────────────────────
-    total_active  = TenderListing.objects.filter(
-        is_published=True,
-        event__status=EvaluationEvent.STATUS_OPEN
-    ).count()
-    closing_week  = TenderListing.objects.filter(
+    stats_qs = TenderListing.objects.filter(
         is_published=True,
         event__status=EvaluationEvent.STATUS_OPEN,
+    )
+    if sponsor_org is not None:
+        stats_qs = stats_qs.filter(event__project__owner_org=sponsor_org)
+    total_active  = stats_qs.count()
+    closing_week  = stats_qs.filter(
         event__closing_date__lte=timezone.now() + timezone.timedelta(days=7),
         event__closing_date__gte=timezone.now(),
     ).count()
