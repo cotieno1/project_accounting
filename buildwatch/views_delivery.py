@@ -22,9 +22,15 @@ from django.views.decorators.http import require_POST
 from accounts.models import Organization
 
 from .delivery import record_award, value_for_money
+from .milestones import (
+    autodistribute_value,
+    generate_milestones_for_tender,
+    milestone_schedule,
+)
 from .models import (
     AuditLedger,
     PaymentCertificate,
+    ProjectMilestone,
     TenderConsultant,
     TenderListing,
 )
@@ -97,6 +103,79 @@ def delivery_action(request, listing_id):
             )
         return redirect("my-bids")
 
+    if action == "generate_programme":
+        created = generate_milestones_for_tender(listing)
+        if created:
+            messages.success(
+                request,
+                "Delivery & payment programme generated from the BOQ - %d milestones created."
+                % created,
+            )
+        else:
+            messages.info(
+                request,
+                "No new milestones to create. Load the BOQ / compliance checkpoints first, "
+                "or the programme already exists.",
+            )
+        return redirect("my-bids")
+
+    if action == "redistribute_value":
+        autodistribute_value(project, only_if_empty=False)
+        messages.success(request, "Contract sum split evenly across the milestones.")
+        return redirect("my-bids")
+
+    if action == "set_milestone":
+        m = get_object_or_404(
+            ProjectMilestone, pk=request.POST.get("milestone_id"), project=project
+        )
+        val = _dec(request.POST.get("value_amount"))
+        m.value_amount = val
+        contract = project.contract_value or Decimal("0")
+        m.value_pct = (
+            (val / contract * Decimal("100")).quantize(Decimal("0.001"))
+            if contract else Decimal("0")
+        )
+        sw = request.POST.get("planned_start_week")
+        dw = request.POST.get("duration_weeks")
+        if sw:
+            m.planned_start_week = max(1, int(_dec(sw)))
+        if dw:
+            m.duration_weeks = max(1, int(_dec(dw)))
+        m.save(update_fields=[
+            "value_amount", "value_pct", "planned_start_week", "duration_weeks", "updated_at",
+        ])
+        messages.success(request, "Updated milestone: %s." % m.name)
+        return redirect("my-bids")
+
+    if action == "mark_delivered":
+        m = get_object_or_404(
+            ProjectMilestone, pk=request.POST.get("milestone_id"), project=project
+        )
+        sched = {r["m"].pk: r for r in milestone_schedule(project)["milestones"]}
+        row = sched.get(m.pk)
+        if row and not row["compliance"]["ready"] and not caps["is_admin"]:
+            messages.error(
+                request,
+                "Cannot mark '%s' delivered - %d mandatory compliance checkpoint(s) are still "
+                "open. Sign them off first." % (m.name, row["compliance"]["open_mandatory"]),
+            )
+            return redirect("my-bids")
+        m.status = ProjectMilestone.STATUS_DELIVERED
+        m.delivered_by = ua
+        m.delivered_at = timezone.now()
+        m.save(update_fields=["status", "delivered_by", "delivered_at", "updated_at"])
+        try:
+            AuditLedger.objects.create(
+                project=project, user=ua, action="MILESTONE_DELIVERED",
+                model_name="ProjectMilestone", object_id=str(m.pk),
+                detail={"name": m.name, "value": str(m.value_amount)},
+                professional_reg=getattr(ua, "professional_reg_no", "") or "",
+            )
+        except Exception:
+            pass
+        messages.success(request, "Milestone delivered & signed off: %s." % m.name)
+        return redirect("my-bids")
+
     if action == "add_certificate":
         kind = (request.POST.get("payee_kind") or PaymentCertificate.CONTRACTOR).strip()
         payee_org = None
@@ -120,14 +199,38 @@ def delivery_action(request, listing_id):
             messages.error(request, "Enter the amount for this certificate.")
             return redirect("my-bids")
 
+        cert_type = (request.POST.get("cert_type") or PaymentCertificate.INTERIM).strip()
+
+        # Milestone gating: delivery is a pre-requisite for payment.
+        milestone = None
+        ms_id = (request.POST.get("milestone_id") or "").strip()
+        if ms_id:
+            milestone = ProjectMilestone.objects.filter(pk=ms_id, project=project).first()
+        has_milestones = project.milestones.exists()
+        if cert_type != PaymentCertificate.ADVANCE and has_milestones:
+            if milestone is None:
+                messages.error(
+                    request,
+                    "Select the delivery milestone this payment is claimed against.",
+                )
+                return redirect("my-bids")
+            if milestone.status != ProjectMilestone.STATUS_DELIVERED:
+                messages.error(
+                    request,
+                    "Milestone '%s' must be delivered & signed off before its payment can be "
+                    "raised." % milestone.name,
+                )
+                return redirect("my-bids")
+
         cert = PaymentCertificate(
             project=project,
             tender=listing,
             payee_kind=kind,
             payee_org=payee_org,
             consultant=consultant,
+            milestone=milestone,
             payee_name=payee_name[:200],
-            cert_type=(request.POST.get("cert_type") or PaymentCertificate.INTERIM).strip(),
+            cert_type=cert_type,
             title=(request.POST.get("title") or "").strip()[:200],
             gross_amount=gross,
             retention_pct=_dec(request.POST.get("retention_pct"), "10"),

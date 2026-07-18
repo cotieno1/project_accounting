@@ -42,6 +42,7 @@ from .models import (
     ComplianceCheckpoint, PaymentCertificate,
 )
 from .delivery import value_for_money
+from .milestones import milestone_schedule
 from accounts.models import Organization, UserAccount
 from accounts.tenant import (
     get_active_organization,
@@ -2431,8 +2432,10 @@ def _sponsor_activity(request, org):
         certificates = []
         awarded = None
         compliance = None
+        schedule = None
         if project is not None:
             vfm = value_for_money(project)
+            schedule = milestone_schedule(project)
             certificates = list(
                 project.payment_certificates
                 .select_related('payee_org', 'consultant', 'certified_by')
@@ -2469,6 +2472,11 @@ def _sponsor_activity(request, org):
             'certificates': certificates,
             'awarded': awarded,
             'compliance': compliance,
+            'schedule': schedule,
+            'delivered_milestones': [
+                r['m'] for r in (schedule['milestones'] if schedule else [])
+                if r['delivered']
+            ],
             'payee_orgs': [b['reg'].organisation for b in bidders],
         })
 

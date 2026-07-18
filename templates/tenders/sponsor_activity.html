@@ -113,6 +113,105 @@
       </form>
       {% endif %}
 
+      <!-- Delivery & payment programme (BOQ milestones + Gantt) -->
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0 8px;">
+        <h4 style="font-size:.82rem;font-weight:700;color:var(--bw-navy);margin:0;">Delivery &amp; payment programme <span style="font-weight:500;color:var(--bw-dgrey);">&middot; BOQ stages + Gantt</span></h4>
+        {% if row.schedule and row.schedule.milestones %}
+        <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
+          <input type="hidden" name="action" value="redistribute_value">
+          <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Split value evenly</button>
+        </form>
+        {% endif %}
+      </div>
+
+      {% if row.schedule and row.schedule.milestones %}
+      <!-- Gantt -->
+      <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:12px 13px;background:#fff;margin-bottom:10px;">
+        {% for r in row.schedule.milestones %}
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="width:190px;flex:0 0 190px;font-size:.74rem;color:var(--bw-navy);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {% if r.delivered %}&#10003; {% endif %}{{ r.m.name }}
+          </div>
+          <div style="position:relative;flex:1;height:20px;background:#f1f5f9;border-radius:5px;">
+            <div style="position:absolute;left:{{ r.left_pct }}%;width:{{ r.width_pct }}%;top:0;height:20px;border-radius:5px;background:{% if r.delivered %}#1a7f4b{% elif r.m.status == 'IN_PROGRESS' %}#7fb2d9{% else %}#c3cedb{% endif %};"></div>
+          </div>
+          <div style="width:74px;flex:0 0 74px;text-align:right;font-size:.7rem;color:var(--bw-dgrey);">wk {{ r.m.planned_start_week }}-{{ r.m.end_week }}</div>
+        </div>
+        {% endfor %}
+        <div style="font-size:.68rem;color:var(--bw-dgrey);margin-top:6px;">
+          <span style="color:#1a7f4b;font-weight:600;">&#9632; Delivered</span> &nbsp;
+          <span style="color:#7fb2d9;font-weight:600;">&#9632; In progress</span> &nbsp;
+          <span style="color:#c3cedb;font-weight:600;">&#9632; Pending</span> &nbsp; &middot; &nbsp;
+          Programme span: {{ row.schedule.total_weeks }} week{{ row.schedule.total_weeks|pluralize }}
+        </div>
+      </div>
+
+      <!-- Milestone table -->
+      <div style="overflow-x:auto;margin-bottom:12px;">
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+          <thead>
+            <tr style="text-align:left;color:var(--bw-dgrey);font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;">
+              <th style="padding:6px 8px;">Milestone</th>
+              <th style="padding:6px 8px;">Delivery (compliance)</th>
+              <th style="padding:6px 8px;text-align:right;">Stage value</th>
+              <th style="padding:6px 8px;text-align:right;">Certified / paid</th>
+              <th style="padding:6px 8px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in row.schedule.milestones %}
+            <tr style="border-top:1px solid var(--bw-lgrey,#eef1f6);">
+              <td style="padding:7px 8px;color:var(--bw-navy);font-weight:600;">{{ r.m.name }}
+                <div style="font-size:.66rem;color:var(--bw-dgrey);font-weight:400;">
+                  {% if r.delivered %}<span style="color:#1a7f4b;">Delivered {{ r.m.delivered_at|date:"d M Y" }}</span>
+                  {% else %}{{ r.m.get_status_display }}{% endif %}
+                </div>
+              </td>
+              <td style="padding:7px 8px;color:var(--bw-dgrey);">
+                {% if r.compliance.total %}{{ r.compliance.approved }}/{{ r.compliance.total }} signed off ({{ r.compliance.pct }}%){% if r.compliance.open_mandatory %} &middot; <span style="color:#c0392b;">{{ r.compliance.open_mandatory }} open</span>{% endif %}
+                {% else %}<span style="color:var(--bw-dgrey);">No checkpoints</span>{% endif %}
+              </td>
+              <td style="padding:7px 8px;text-align:right;">{{ r.value|money }}{% if r.m.value_pct %}<div style="font-size:.64rem;color:var(--bw-dgrey);">{{ r.m.value_pct }}%</div>{% endif %}</td>
+              <td style="padding:7px 8px;text-align:right;">{{ r.certified|money }}<div style="font-size:.64rem;color:#1a7f4b;">paid {{ r.paid|money }}</div></td>
+              <td style="padding:7px 8px;">
+                {% if r.delivered %}
+                  <span class="bw-badge bw-badge--open" style="font-size:.66rem;">Payment enabled</span>
+                {% elif r.can_deliver %}
+                  <form method="post" action="{% url 'delivery-action' row.tender.pk %}" onsubmit="return confirm('Mark {{ r.m.name }} as delivered & signed off?');">{% csrf_token %}
+                    <input type="hidden" name="action" value="mark_delivered"><input type="hidden" name="milestone_id" value="{{ r.m.pk }}">
+                    <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Mark delivered</button>
+                  </form>
+                {% else %}
+                  <span style="font-size:.68rem;color:var(--bw-dgrey);">Sign off compliance to deliver</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            {% if row.schedule.totals %}
+            <tr style="border-top:2px solid var(--bw-navy);font-weight:700;">
+              <td style="padding:7px 8px;color:var(--bw-navy);">Totals ({{ row.schedule.totals.delivered }}/{{ row.schedule.totals.count }} delivered)</td>
+              <td></td>
+              <td style="padding:7px 8px;text-align:right;">{{ row.schedule.totals.value|money }}</td>
+              <td style="padding:7px 8px;text-align:right;">{{ row.schedule.totals.certified|money }} <span style="color:#1a7f4b;">/ {{ row.schedule.totals.paid|money }}</span></td>
+              <td></td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="border:1px dashed var(--bw-teal);border-radius:9px;padding:13px;margin-bottom:12px;background:#fff;">
+        <div style="font-size:.8rem;color:var(--bw-dgrey);margin-bottom:8px;">
+          Break delivery &amp; payment into stages from the BOQ programme (tied to the Gantt).
+          Each stage must be delivered &amp; signed off before its payment can be raised.
+        </div>
+        <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
+          <input type="hidden" name="action" value="generate_programme">
+          <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Generate programme from BOQ</button>
+        </form>
+      </div>
+      {% endif %}
+
       <!-- Payment certificates -->
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
         <h4 style="font-size:.82rem;font-weight:700;color:var(--bw-navy);margin:0;">Payment certificates</h4>
@@ -139,7 +238,7 @@
               <td style="padding:7px 8px;font-family:monospace;font-size:.74rem;">
                 <a href="{% url 'payment-certificate-pdf' row.tender.pk c.pk %}" target="_blank" style="color:var(--bw-blue);text-decoration:none;">{{ c.cert_no }}</a>
               </td>
-              <td style="padding:7px 8px;color:var(--bw-navy);">{{ c.payee_name|default:'&mdash;' }}<div style="font-size:.66rem;color:var(--bw-dgrey);">{{ c.get_payee_kind_display }}</div></td>
+              <td style="padding:7px 8px;color:var(--bw-navy);">{{ c.payee_name|default:'&mdash;' }}<div style="font-size:.66rem;color:var(--bw-dgrey);">{{ c.get_payee_kind_display }}{% if c.milestone %} &middot; {{ c.milestone.name }}{% endif %}</div></td>
               <td style="padding:7px 8px;color:var(--bw-dgrey);">{{ c.get_cert_type_display }}</td>
               <td style="padding:7px 8px;text-align:right;">{{ c.gross_amount|money }}</td>
               <td style="padding:7px 8px;text-align:right;color:#b7791f;">{{ c.retention_amount|money }}</td>
@@ -199,6 +298,16 @@
           {% csrf_token %}
           <input type="hidden" name="action" value="add_certificate">
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+            {% if row.schedule and row.schedule.milestones %}
+            <label style="font-size:.72rem;color:var(--bw-dgrey);grid-column:1/-1;">Delivery milestone (required for interim/final)<br>
+              <select name="milestone_id" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
+                <option value="">&mdash; select stage &mdash;</option>
+                {% for r in row.schedule.milestones %}
+                <option value="{{ r.m.pk }}"{% if not r.delivered %} disabled{% endif %}>{{ r.m.name }} &middot; {{ r.value|money }}{% if r.delivered %} (delivered){% else %} (not yet delivered){% endif %}</option>
+                {% endfor %}
+              </select>
+            </label>
+            {% endif %}
             <label style="font-size:.72rem;color:var(--bw-dgrey);">Payee type<br>
               <select name="payee_kind" style="padding:6px 8px;border:1px solid #cfd8e3;border-radius:6px;width:100%;">
                 <option value="CONTRACTOR">Contractor</option>

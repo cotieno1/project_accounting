@@ -11,12 +11,15 @@ from django.utils import timezone
 from accounts.models import Organization, ProjectTask, UserAccount, UserCategory
 from accounts.roles import SENIOR_SITE_MANAGER
 from buildwatch.delivery import value_for_money
+from buildwatch.milestones import milestone_schedule
 from buildwatch.models import (
     BidderRegistration,
+    ComplianceCheckpoint,
     Country,
     EvaluationEvent,
     InfraProject,
     PaymentCertificate,
+    ProjectMilestone,
     Submission,
     TenderConsultant,
     TenderListing,
@@ -149,6 +152,89 @@ class DeliveryHubTests(TestCase):
         resp = c.get(reverse("payment-certificate-pdf", args=[self.listing.pk, cert.pk]))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "application/pdf")
+
+    def _add_checkpoints(self):
+        cp1 = ComplianceCheckpoint.objects.create(
+            tender=self.listing, code="SR-01", title="Site storage & CCTV",
+            category=ComplianceCheckpoint.SITE_READINESS)
+        cp2 = ComplianceCheckpoint.objects.create(
+            tender=self.listing, code="HP-01", title="Approval before filling",
+            category=ComplianceCheckpoint.HOLD_POINT)
+        return cp1, cp2
+
+    def test_generate_programme_and_delivery_gates_payment(self):
+        c = self._sponsor_client()
+        self.project.contract_value = Decimal("100000000")
+        self.project.save(update_fields=["contract_value"])
+        cp1, cp2 = self._add_checkpoints()
+
+        # Generate milestones from the BOQ programme
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "generate_programme"})
+        ms = list(ProjectMilestone.objects.filter(project=self.project))
+        self.assertEqual(len(ms), 2)
+        self.assertEqual(sum(m.value_amount for m in ms), Decimal("100000000.00"))
+
+        site_ms = ProjectMilestone.objects.get(project=self.project, phase_index=0)
+
+        # Interim payment refused without a milestone
+        c.post(reverse("delivery-action", args=[self.listing.pk]), {
+            "action": "add_certificate", "payee_kind": "CONTRACTOR",
+            "payee_org": self.contractor.org_code, "cert_type": "INTERIM",
+            "gross_amount": "1000000"})
+        self.assertFalse(PaymentCertificate.objects.filter(cert_type="INTERIM").exists())
+
+        # Interim payment refused when milestone not delivered
+        c.post(reverse("delivery-action", args=[self.listing.pk]), {
+            "action": "add_certificate", "payee_kind": "CONTRACTOR",
+            "payee_org": self.contractor.org_code, "cert_type": "INTERIM",
+            "gross_amount": "1000000", "milestone_id": site_ms.pk})
+        self.assertFalse(PaymentCertificate.objects.filter(cert_type="INTERIM").exists())
+
+        # Cannot deliver while a mandatory checkpoint is open
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "mark_delivered", "milestone_id": site_ms.pk})
+        site_ms.refresh_from_db()
+        self.assertNotEqual(site_ms.status, ProjectMilestone.STATUS_DELIVERED)
+
+        # Sign off the phase checkpoint, then delivery succeeds
+        cp1.status = ComplianceCheckpoint.STATUS_APPROVED
+        cp1.save(update_fields=["status"])
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "mark_delivered", "milestone_id": site_ms.pk})
+        site_ms.refresh_from_db()
+        self.assertEqual(site_ms.status, ProjectMilestone.STATUS_DELIVERED)
+
+        # Now the interim payment can be raised against the delivered milestone
+        c.post(reverse("delivery-action", args=[self.listing.pk]), {
+            "action": "add_certificate", "payee_kind": "CONTRACTOR",
+            "payee_org": self.contractor.org_code, "cert_type": "INTERIM",
+            "gross_amount": "1000000", "milestone_id": site_ms.pk})
+        cert = PaymentCertificate.objects.get(cert_type="INTERIM")
+        self.assertEqual(cert.milestone_id, site_ms.pk)
+
+    def test_advance_payment_exempt_from_milestone_gate(self):
+        c = self._sponsor_client()
+        self._add_checkpoints()
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "generate_programme"})
+        c.post(reverse("delivery-action", args=[self.listing.pk]), {
+            "action": "add_certificate", "payee_kind": "CONTRACTOR",
+            "payee_org": self.contractor.org_code, "cert_type": "ADVANCE",
+            "gross_amount": "5000000"})
+        self.assertTrue(PaymentCertificate.objects.filter(cert_type="ADVANCE").exists())
+
+    def test_schedule_rollup(self):
+        self.project.contract_value = Decimal("100000000")
+        self.project.save(update_fields=["contract_value"])
+        self._add_checkpoints()
+        self._sponsor_client().post(
+            reverse("delivery-action", args=[self.listing.pk]),
+            {"action": "generate_programme"})
+        sched = milestone_schedule(self.project)
+        self.assertEqual(sched["totals"]["count"], 2)
+        self.assertEqual(sched["totals"]["value"], Decimal("100000000.00"))
+        self.assertTrue(sched["total_weeks"] >= 1)
 
     def test_contractor_cannot_manage_hub(self):
         c = Client(); c.login(username="pioneer1", password="test-pass-123")

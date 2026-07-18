@@ -1447,8 +1447,72 @@ class SubcontractQuoteLine(models.Model):
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# PROJECT DELIVERY HUB - payment certification & value-for-money
+# PROJECT DELIVERY HUB - milestones, payment certification & value-for-money
 # ════════════════════════════════════════════════════════════════════════════
+
+class ProjectMilestone(models.Model):
+    """
+    A delivery + payment stage of the works, derived from the BOQ programme
+    (phases/trades) and shown on the PM Gantt chart.
+
+    Delivery is gated to payment: a milestone must be DELIVERED (its compliance
+    checkpoints signed off) before an interim/final payment can be raised
+    against it. This makes physical delivery a pre-requisite for payment once a
+    contractor has won the tender.
+    """
+    STATUS_PENDING = "PENDING"
+    STATUS_IN_PROGRESS = "IN_PROGRESS"
+    STATUS_DELIVERED = "DELIVERED"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Not started"),
+        (STATUS_IN_PROGRESS, "In progress"),
+        (STATUS_DELIVERED, "Delivered / signed off"),
+    ]
+
+    project = models.ForeignKey(
+        InfraProject, on_delete=models.CASCADE, related_name="milestones",
+    )
+    tender = models.ForeignKey(
+        TenderListing, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="milestones",
+    )
+    phase_index = models.PositiveSmallIntegerField(
+        default=0, help_text="Matches the BOQ programme phase (0=mobilisation ... 9=handover).",
+    )
+    seq = models.PositiveSmallIntegerField(default=0)
+    name = models.CharField(max_length=200)
+    description = models.CharField(max_length=300, blank=True)
+
+    # Gantt geometry (weeks from programme) and optional real dates
+    planned_start_week = models.PositiveSmallIntegerField(default=1)
+    duration_weeks = models.PositiveSmallIntegerField(default=2)
+    planned_start_date = models.DateField(null=True, blank=True)
+    planned_end_date = models.DateField(null=True, blank=True)
+
+    # Payment breakdown for this stage
+    value_amount = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
+    value_pct = models.DecimalField(max_digits=6, decimal_places=3, default=Decimal("0"))
+
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    delivered_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="delivered_milestones",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["seq", "phase_index", "id"]
+        unique_together = [["project", "phase_index"]]
+
+    @property
+    def end_week(self):
+        return self.planned_start_week + max(1, self.duration_weeks) - 1
+
+    def __str__(self):
+        return f"M{self.seq} {self.name} [{self.status}]"
+
 
 class PaymentCertificate(models.Model):
     """
@@ -1510,6 +1574,11 @@ class PaymentCertificate(models.Model):
     consultant = models.ForeignKey(
         TenderConsultant, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="payment_certificates",
+    )
+    milestone = models.ForeignKey(
+        ProjectMilestone, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="certificates",
+        help_text="Delivery/payment stage this certificate is claimed against.",
     )
     payee_name = models.CharField(max_length=200, blank=True)
 
