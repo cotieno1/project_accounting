@@ -666,6 +666,65 @@ class TenderAddendum(models.Model):
         return f"{self.tender.event.ref} — Addendum {self.addendum_no}: {self.subject}"
 
 
+class TenderConsultant(models.Model):
+    """A member of the professional / consultant team for a tender's works.
+
+    The Employer registers the Engineer/PM, Architect, Quantity Surveyor and the
+    specialist engineers so bidders and the sponsor can see who represents the
+    project. Where the firm is itself registered in BuildWatch (org type
+    CONSULTANT), it is linked via ``organisation``.
+    """
+    PM_ENGINEER = 'PM_ENGINEER'
+    ARCHITECT = 'ARCHITECT'
+    QS = 'QS'
+    STRUCTURAL_CIVIL = 'STRUCTURAL_CIVIL'
+    ELECTRICAL_MECHANICAL = 'ELECTRICAL_MECHANICAL'
+    SUPERVISION = 'SUPERVISION'
+    OTHER = 'OTHER'
+    ROLE_CHOICES = [
+        (PM_ENGINEER, 'Project Manager / Engineer (PM)'),
+        (ARCHITECT, 'Architect'),
+        (QS, 'Quantity Surveyor'),
+        (STRUCTURAL_CIVIL, 'Structural / Civil Engineer'),
+        (ELECTRICAL_MECHANICAL, 'Electrical / Mechanical Engineer'),
+        (SUPERVISION, 'Site Supervision'),
+        (OTHER, 'Other consultant'),
+    ]
+
+    tender         = models.ForeignKey(TenderListing, on_delete=models.CASCADE,
+                         related_name='consultants')
+    role           = models.CharField(max_length=30, choices=ROLE_CHOICES)
+    organisation   = models.ForeignKey('accounts.Organization',
+                         on_delete=models.SET_NULL, null=True, blank=True,
+                         related_name='consultant_appointments',
+                         help_text='Registered Consultant organisation in BuildWatch, if any.')
+    firm_name      = models.CharField(max_length=200, blank=True,
+                         help_text='Firm / entity name if not a registered org.')
+    address        = models.CharField(max_length=300, blank=True)
+    contact_person = models.CharField(max_length=150, blank=True)
+    email          = models.EmailField(blank=True)
+    phone          = models.CharField(max_length=40, blank=True)
+    notes          = models.CharField(max_length=300, blank=True)
+    sort_order     = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        unique_together = [['tender', 'role']]
+        ordering = ['sort_order', 'role']
+
+    def __str__(self):
+        return f"{self.get_role_display()} - {self.display_name}"
+
+    @property
+    def display_name(self):
+        if self.organisation_id:
+            return self.organisation.name
+        return self.firm_name or self.get_role_display()
+
+    @property
+    def is_registered(self):
+        return bool(self.organisation_id)
+
+
 class TenderAlert(models.Model):
     """
     Saved search — organisation gets notified when a matching tender is published.

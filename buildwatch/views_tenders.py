@@ -2396,13 +2396,59 @@ def my_subcontracts(request):
     return render(request, 'tenders/my_subcontracts.html', ctx)
 
 
+def _sponsor_activity(request, org):
+    """Employer / sponsor view of my-bids: who is bidding, the consultant team
+    and announcements for the sponsor's own tenders (no bid workspace)."""
+    tenders = (
+        TenderListing.objects
+        .filter(event__project__owner_org=org)
+        .select_related('event', 'event__project', 'country')
+        .prefetch_related('consultants', 'consultants__organisation', 'addenda')
+        .order_by('-published_at', '-id')
+    )
+
+    rows = []
+    for t in tenders:
+        regs = list(
+            BidderRegistration.objects.filter(tender=t)
+            .exclude(organisation=org)
+            .select_related('organisation', 'registered_by')
+            .order_by('-registered_at')
+        )
+        submitted_ids = set(
+            BidWorkspace.objects.filter(tender=t, status=BidWorkspace.SUBMITTED)
+            .values_list('organisation_id', flat=True)
+        )
+        bidders = [{'reg': r, 'submitted': r.organisation_id in submitted_ids} for r in regs]
+        rows.append({
+            'tender': t,
+            'bidders': bidders,
+            'bidder_count': len(bidders),
+            'submitted_count': sum(1 for b in bidders if b['submitted']),
+            'consultants': list(t.consultants.all()),
+            'addenda': list(t.addenda.all()),
+        })
+
+    ctx = {
+        'sponsor_rows': rows,
+        'org': org,
+        **branding_template_context(request),
+    }
+    return render(request, 'tenders/sponsor_activity.html', ctx)
+
+
 @login_required
 def my_bids(request):
     """
     GET /tenders/my-bids/
-    Contractor's bid history — all workspaces across all tenders.
+    Persona-aware activity page:
+      * Employer / sponsor -> registered bidders, consultant team, announcements.
+      * Contractor        -> own bid history across all tenders.
     """
-    org        = get_active_organization(request)
+    org = get_active_organization(request)
+    if org is not None and get_exchange_persona(org=org, request=request) == 'employer':
+        return _sponsor_activity(request, org)
+
     workspaces = BidWorkspace.objects.filter(
         organisation=org
     ).select_related(

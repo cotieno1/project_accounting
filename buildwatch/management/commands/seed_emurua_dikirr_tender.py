@@ -361,6 +361,42 @@ class Command(BaseCommand):
                 self.style.WARNING("  ! Compliance checkpoints skipped: %s" % exc)
             )
 
+        # Consultant / professional team (from the BOQ particulars).
+        try:
+            from buildwatch.models import TenderConsultant
+
+            owner_org = listing.event.project.owner_org
+            ministry_addr = "P.O Box 30119 - 00100, NAIROBI, KENYA"
+            team = [
+                (TenderConsultant.PM_ENGINEER, None,
+                 "The Engineer (as defined in Condition 1 of the Conditions of Contract)",
+                 "", "Or such person(s) duly authorised to represent him on behalf of the Government."),
+                (TenderConsultant.ARCHITECT, owner_org, "", ministry_addr, ""),
+                (TenderConsultant.QS, owner_org, "", ministry_addr, ""),
+                (TenderConsultant.STRUCTURAL_CIVIL, owner_org, "", ministry_addr, ""),
+                (TenderConsultant.ELECTRICAL_MECHANICAL, owner_org, "", ministry_addr, ""),
+            ]
+            made = 0
+            for i, (role, org_obj, firm, addr, note) in enumerate(team):
+                _, created = TenderConsultant.objects.update_or_create(
+                    tender=listing, role=role,
+                    defaults={
+                        "organisation": org_obj,
+                        "firm_name": firm,
+                        "address": addr,
+                        "notes": note,
+                        "sort_order": (i + 1) * 10,
+                    },
+                )
+                made += 1 if created else 0
+            self.stdout.write(self.style.SUCCESS(
+                "  + Consultant team: %d roles (%d new)" % (len(team), made)
+            ))
+        except Exception as exc:
+            self.stdout.write(
+                self.style.WARNING("  ! Consultant team skipped: %s" % exc)
+            )
+
         if not listing.is_published:
             listing.publish(ua)
             self.stdout.write(self.style.SUCCESS("  + Published to exchange"))

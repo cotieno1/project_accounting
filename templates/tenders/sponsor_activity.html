@@ -1,0 +1,136 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Tender Activity - BuildWatch{% endblock %}
+
+{% block bw_content %}
+<div style="max-width:1000px;margin:0 auto;padding:32px 24px;">
+
+  <div style="margin-bottom:24px;">
+    <div style="font-size:.7rem;font-family:monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--bw-teal);margin-bottom:6px;">
+      Procuring Entity &middot; {{ org_name }}
+    </div>
+    <h1 style="font-size:1.6rem;font-weight:700;color:var(--bw-navy);letter-spacing:-.03em;margin-bottom:6px;">Tender Activity</h1>
+    <p style="color:var(--bw-dgrey);font-size:.88rem;line-height:1.55;max-width:720px;">
+      Who has registered to bid on your tenders, your appointed consultant team, and a space to
+      post clarifications, changes or announcements to bidders. Bidding workspaces belong to the
+      contractors &mdash; you see their interest and, once submitted, their bids.
+    </p>
+  </div>
+
+  {% for row in sponsor_rows %}
+  <div class="bw-card" style="margin-bottom:22px;">
+    <div style="padding:20px 22px;border-bottom:1px solid var(--bw-lgrey,#eef1f6);">
+      <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;">
+        <div>
+          <div style="font-family:monospace;font-size:.72rem;color:var(--bw-dgrey);margin-bottom:3px;">{{ row.tender.event.ref }}</div>
+          <div style="font-size:1.02rem;font-weight:700;color:var(--bw-navy);">{{ row.tender.event.description }}</div>
+          <div style="font-size:.78rem;color:var(--bw-dgrey);margin-top:4px;">
+            {% if row.tender.event.is_open %}
+              <span class="bw-badge bw-badge--open">Open</span> &middot; closes {{ row.tender.event.closing_date|date:"d M Y H:i" }}
+            {% else %}
+              <span class="bw-badge bw-badge--closed">Closed</span>
+            {% endif %}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="{% url 'tender-detail' row.tender.pk %}" class="bw-btn bw-btn--ghost bw-btn--sm">View tender</a>
+          <a href="{% url 'tender-manage' row.tender.pk %}" class="bw-btn bw-btn--primary bw-btn--sm">Manage / post announcement</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registered bidders -->
+    <div style="padding:18px 22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
+        <h3 style="font-size:.92rem;font-weight:700;color:var(--bw-navy);margin:0;">Companies bidding</h3>
+        <span style="font-size:.74rem;color:var(--bw-dgrey);">{{ row.bidder_count }} registered &middot; {{ row.submitted_count }} submitted</span>
+      </div>
+      {% if row.bidders %}
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.83rem;">
+          <thead>
+            <tr style="text-align:left;color:var(--bw-dgrey);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
+              <th style="padding:6px 8px;">Company</th>
+              <th style="padding:6px 8px;">Registered</th>
+              <th style="padding:6px 8px;">BOQ</th>
+              <th style="padding:6px 8px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in row.bidders %}
+            <tr style="border-top:1px solid var(--bw-lgrey,#eef1f6);">
+              <td style="padding:8px;font-weight:600;color:var(--bw-navy);">{{ b.reg.organisation.name }}</td>
+              <td style="padding:8px;color:var(--bw-dgrey);">{{ b.reg.registered_at|date:"d M Y" }}</td>
+              <td style="padding:8px;color:var(--bw-dgrey);">{% if b.reg.has_downloaded_boq %}Downloaded{% else %}&mdash;{% endif %}</td>
+              <td style="padding:8px;">
+                {% if b.submitted %}<span class="bw-badge bw-badge--open">Bid submitted</span>
+                {% else %}<span class="bw-badge bw-badge--closing">Interested</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="font-size:.83rem;color:var(--bw-dgrey);margin:0;">No companies have registered to bid on this tender yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Consultant team -->
+    <div style="padding:0 22px 18px;">
+      <h3 style="font-size:.92rem;font-weight:700;color:var(--bw-navy);margin:0 0 10px;">Consultant team</h3>
+      {% if row.consultants %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+        {% for c in row.consultants %}
+        <div style="border:1px solid var(--bw-lgrey,#e3e8f0);border-radius:9px;padding:11px 13px;">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--bw-teal);font-weight:700;margin-bottom:3px;">{{ c.get_role_display }}</div>
+          <div style="font-size:.85rem;font-weight:600;color:var(--bw-navy);line-height:1.3;">{{ c.display_name }}</div>
+          {% if c.address %}<div style="font-size:.74rem;color:var(--bw-dgrey);margin-top:3px;">{{ c.address }}</div>{% endif %}
+          {% if c.contact_person or c.email or c.phone %}
+          <div style="font-size:.74rem;color:var(--bw-dgrey);margin-top:2px;">{{ c.contact_person }}{% if c.email %} &middot; {{ c.email }}{% endif %}{% if c.phone %} &middot; {{ c.phone }}{% endif %}</div>
+          {% endif %}
+          {% if c.notes %}<div style="font-size:.72rem;color:var(--bw-dgrey);margin-top:4px;font-style:italic;">{{ c.notes }}</div>{% endif %}
+          <div style="margin-top:6px;">
+            {% if c.is_registered %}
+              <span class="bw-tag bw-tag--ok" style="font-size:.68rem;">Registered in BuildWatch</span>
+            {% else %}
+              <span class="bw-tag bw-tag--muted" style="font-size:.68rem;">Not yet registered</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="font-size:.83rem;color:var(--bw-dgrey);margin:0;">No consultant team recorded for this tender yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Announcements / clarifications -->
+    <div style="padding:0 22px 20px;">
+      <h3 style="font-size:.92rem;font-weight:700;color:var(--bw-navy);margin:0 0 10px;">Announcements &amp; clarifications</h3>
+      {% if row.addenda %}
+      {% for a in row.addenda %}
+      <div style="border-left:3px solid var(--bw-teal);padding:6px 12px;margin-bottom:8px;background:var(--bw-mist,#f7f9fc);border-radius:0 8px 8px 0;">
+        <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);">Addendum {{ a.addendum_no }}: {{ a.subject }}</div>
+        <div style="font-size:.78rem;color:var(--bw-dgrey);margin-top:2px;white-space:pre-wrap;">{{ a.content }}</div>
+        <div style="font-size:.7rem;color:var(--bw-dgrey);margin-top:3px;">Issued {{ a.issued_at|date:"d M Y H:i" }} &middot; {{ a.notified_count }} bidder{{ a.notified_count|pluralize }} notified</div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p style="font-size:.83rem;color:var(--bw-dgrey);margin:0 0 8px;">
+        No announcements yet. Use <a href="{% url 'tender-manage' row.tender.pk %}" style="color:var(--bw-blue);">Manage</a>
+        to post clarifications, changes or updates &mdash; all registered bidders are notified.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="bw-card" style="text-align:center;padding:52px 24px;">
+    <div style="font-weight:600;color:var(--bw-navy);margin-bottom:8px;">No tenders published yet</div>
+    <div style="color:var(--bw-dgrey);font-size:.85rem;margin-bottom:20px;">Create or upload a tender to start receiving bids.</div>
+    <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--primary">Create or Upload new tender</a>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

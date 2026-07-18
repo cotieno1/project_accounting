@@ -435,7 +435,7 @@
       {% if user.is_authenticated %}
         {% if bw_persona == 'employer' %}
           <a href="{% url 'infra-project-list' %}" class="bw-topnav__link {% if 'infra-project' in request.resolver_match.url_name %}is-active{% endif %}">Projects Status</a>
-          <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">Bidder activity</a>
+          <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">Tender activity</a>
         {% else %}
           {# Contractor orgs (e.g. Pioneer Contracting Limited) bid only — no publish #}
           <a href="{% url 'my-bids' %}" class="bw-topnav__link {% if request.resolver_match.url_name == 'my-bids' %}is-active{% endif %}">My Bids</a>
