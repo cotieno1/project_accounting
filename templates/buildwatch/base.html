@@ -65,18 +65,38 @@
 }
 .bw-topnav__org {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1.1;
   color: var(--bw-teal);
-  letter-spacing: -0.01em;
-  padding: 5px 12px;
-  border-radius: 8px;
-  background: #e9f6f4;
-  border: 1px solid #bfe6df;
+  letter-spacing: -0.02em;
+  padding-left: 14px;
+  margin-left: 2px;
+  border-left: 2px solid var(--bw-rule);
   white-space: nowrap;
-  max-width: 320px;
+  max-width: 360px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.bw-org-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.bw-org-headline__label {
+  font-family: var(--bw-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bw-mid);
+}
+.bw-org-headline__name {
+  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+  font-weight: 800;
+  color: var(--bw-navy);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 .bw-topnav__user {
   align-self: center;
@@ -361,7 +381,7 @@
         {{ bw_brand_title|default:"BuildWatch" }}
       </a>
       {% if user.is_authenticated and org_name %}
-      <span class="bw-topnav__org" title="{{ org_name }}">{{ org_short_name|default:org_name }}</span>
+      <span class="bw-topnav__org" title="{{ org_name }}">{{ org_name }}</span>
       {% endif %}
     </div>
     <div class="bw-topnav__links">

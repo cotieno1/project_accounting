@@ -5,6 +5,12 @@
 {% block bw_content %}
 <div class="bw-wrap">
   <header style="margin-bottom:24px;">
+    {% if user.is_authenticated and org_name %}
+    <div class="bw-org-headline">
+      <span class="bw-org-headline__label">Signed in as</span>
+      <span class="bw-org-headline__name">{{ org_name }}</span>
+    </div>
+    {% endif %}
     <div class="bw-kicker">{{ bw_persona_kicker|default:"Public procurement exchange" }}</div>
     <h1 class="bw-title">{{ bw_persona_title|default:"Open tenders" }}</h1>
     <p class="bw-lead">
