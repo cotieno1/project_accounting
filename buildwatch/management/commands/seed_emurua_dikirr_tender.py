@@ -30,6 +30,7 @@ from buildwatch.models import (
     EvaluationEvent,
     InfraProject,
     TenderListing,
+    TenderPreamble,
 )
 
 REF = "ED-AHP/001/2025-2026"
@@ -311,6 +312,38 @@ class Command(BaseCommand):
         except Exception as exc:
             self.stdout.write(
                 self.style.WARNING("  ! BOQ ingest skipped: %s" % exc)
+            )
+
+        # Extract & publish the BOQ Preambles (trade measurement / materials /
+        # workmanship rules) so contractors price - and the sponsor evaluates -
+        # against the same conditions.
+        try:
+            from buildwatch.boq_ingest.preambles import extract_boq_preambles
+
+            sections = extract_boq_preambles(pdf_path)
+            if sections:
+                listing.preambles.all().delete()
+                TenderPreamble.objects.bulk_create([
+                    TenderPreamble(
+                        tender=listing,
+                        trade_code=sec.trade_code[:30],
+                        title=sec.title[:120],
+                        body=sec.body,
+                        sort_order=(i + 1) * 10,
+                        source_page=sec.source_page,
+                    )
+                    for i, sec in enumerate(sections)
+                ])
+                self.stdout.write(self.style.SUCCESS(
+                    "  + Preambles: %d trade sections" % len(sections)
+                ))
+            else:
+                self.stdout.write(self.style.WARNING(
+                    "  ! Preambles: none extracted"
+                ))
+        except Exception as exc:
+            self.stdout.write(
+                self.style.WARNING("  ! Preamble extraction skipped: %s" % exc)
             )
 
         if not listing.is_published:

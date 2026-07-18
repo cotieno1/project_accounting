@@ -159,6 +159,33 @@
       </div>
       {% endif %}
 
+      {% with preambles=listing.preambles.all %}
+      {% if preambles %}
+      <div class="bw-card" style="margin-bottom:20px;">
+        <div class="bw-card-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span>BOQ Preambles &mdash; Measurement, Materials &amp; Workmanship Rules</span>
+          <span style="font-size:.72rem;font-weight:600;color:var(--bw-navy);">{{ preambles|length }} trade section{{ preambles|length|pluralize }}</span>
+        </div>
+        <div class="bw-card-body" style="font-size:.86rem;color:var(--bw-navy);line-height:1.6;">
+          <p style="margin:0 0 12px;color:var(--bw-slate,#5a6b82);">
+            These preambles govern how the priced BOQ items must be measured and priced.
+            Rates are deemed to include everything required by the relevant trade preamble.
+            Contractors price against these rules; the sponsor evaluates all bids on the same basis.
+          </p>
+          {% for p in preambles %}
+          <details style="border:1px solid var(--bw-border,#e3e8f0);border-radius:8px;margin-bottom:8px;">
+            <summary style="cursor:pointer;padding:10px 12px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px;">
+              <span>{{ p.title }}</span>
+              {% if p.source_page %}<span style="font-size:.72rem;font-weight:500;color:var(--bw-slate,#8a97ab);">p.{{ p.source_page }}</span>{% endif %}
+            </summary>
+            <div style="padding:0 14px 14px;white-space:pre-wrap;border-top:1px solid var(--bw-border,#eef1f6);">{{ p.body }}</div>
+          </details>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+
       <!-- Mandatory requirements (only when this tender has an explicit pack) -->
       {% if mr_rows %}
       <div class="bw-card" style="margin-bottom:20px;">

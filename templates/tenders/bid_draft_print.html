@@ -63,6 +63,19 @@
   <div class="pre">{{ works_description }}</div>
   {% endif %}
 
+  {% if preambles %}
+  <h2>A2. BOQ Preambles &mdash; Measurement, Materials &amp; Workmanship Rules</h2>
+  <p class="small muted">
+    The rates in the priced Bills of Quantities (Section F) are deemed to include everything
+    required by the relevant trade preamble below. Prices have been built up against these
+    measurement, materials and workmanship rules.
+  </p>
+  {% for p in preambles %}
+  <h3 style="font-size:11px;margin:10px 0 3px;">A2.{{ forloop.counter }} {{ p.title }}{% if p.source_page %} <span class="small muted">(BOQ p.{{ p.source_page }})</span>{% endif %}</h3>
+  <div class="pre small">{{ p.body }}</div>
+  {% endfor %}
+  {% endif %}
+
   <h2>B. Form of Tender</h2>
   <p class="small">
     I/We the undersigned, having examined and understood the Tender Documents, including the Bills of Quantities,

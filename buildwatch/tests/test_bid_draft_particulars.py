@@ -1,4 +1,4 @@
-"""Draft bid PDF must use the active tender's particulars - never another tender's copy."""
+"""Draft bid PDF must use the active tender's particulars — never another tender's copy."""
 
 from datetime import timedelta
 from decimal import Decimal
@@ -15,6 +15,7 @@ from buildwatch.models import (
     EvaluationEvent,
     InfraProject,
     TenderListing,
+    TenderPreamble,
 )
 from buildwatch.views_tenders import _bid_pack_context, _bid_pack_particulars
 
@@ -95,6 +96,14 @@ class BidPackParticularsTests(TestCase):
             organisation=self.bidder,
             prepared_by=self.ua,
         )
+        TenderPreamble.objects.create(
+            tender=self.listing,
+            trade_code="EXCAVATION",
+            title="Excavation and Earthwork",
+            body="A. The Contractor must ascertain the nature of the materials to be excavated.",
+            sort_order=10,
+            source_page=3,
+        )
 
     def test_emurua_particulars_not_isiolo(self):
         p = _bid_pack_particulars(self.listing)
@@ -117,3 +126,15 @@ class BidPackParticularsTests(TestCase):
         self.assertNotIn("Sports Kenya", ctx["employer_name"])
         self.assertIn("PPRA", ctx["contract_particulars"])
         self.assertFalse(ctx["show_mr_section"])
+        self.assertEqual(len(ctx["preambles"]), 1)
+        self.assertEqual(ctx["preambles"][0].trade_code, "EXCAVATION")
+
+    def test_preambles_render_in_bid_pack(self):
+        from django.template.loader import render_to_string
+
+        request = RequestFactory().get("/tenders/%s/bid/draft.pdf/" % self.listing.pk)
+        request.user = self.ua.user
+        ctx = _bid_pack_context(request, self.listing, self.workspace, self.bidder, self.ua)
+        html = render_to_string("tenders/bid_draft_print.html", ctx)
+        self.assertIn("BOQ Preambles", html)
+        self.assertIn("Excavation and Earthwork", html)

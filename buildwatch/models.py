@@ -964,6 +964,36 @@ class TenderBoqLine(models.Model):
         return f"{self.bill_ref} — {self.description[:40]}"
 
 
+class TenderPreamble(models.Model):
+    """
+    A trade section of the BOQ Preambles (measurement, materials & workmanship
+    rules) that govern how the priced BOQ items must be interpreted and priced.
+
+    Extracted from the employer's BOQ PDF (e.g. "BILL NO. 1: PREAMBLES") and
+    published on the tender so contractors price against the same rules and the
+    sponsor can evaluate bids on a like-for-like basis.
+    """
+    tender      = models.ForeignKey(TenderListing, on_delete=models.CASCADE,
+                      related_name='preambles')
+    trade_code  = models.CharField(max_length=30,
+                      help_text='Short trade key, e.g. EXCAVATION, CONCRETE, WALLING.')
+    title       = models.CharField(max_length=120,
+                      help_text='Trade section heading, e.g. "Excavation and Earthwork".')
+    body        = models.TextField(
+                      help_text='Full clause text (lettered clauses) for this trade.')
+    sort_order  = models.PositiveSmallIntegerField(default=0)
+    source_page = models.PositiveIntegerField(
+                      null=True, blank=True,
+                      help_text='1-based PDF page where this trade section begins.')
+
+    class Meta:
+        unique_together = [['tender', 'trade_code']]
+        ordering = ['sort_order', 'trade_code']
+
+    def __str__(self):
+        return f"{self.trade_code} — {self.title}"
+
+
 class SelfAssessmentCheck(models.Model):
     """
     Contractor's self-assessment of a mandatory requirement before submitting.

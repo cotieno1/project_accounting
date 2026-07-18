@@ -1430,6 +1430,7 @@ def _bid_pack_context(request, listing, workspace, org, ua):
     currency_words = "Kenya Shillings" if (listing.currency or "").upper() in ("", "KES") else listing.currency
     ctx = {
         "listing": listing,
+        "preambles": list(listing.preambles.all()),
         "workspace": workspace,
         "org": org,
         "self_checks": self_checks,
