@@ -346,8 +346,10 @@
       {% else %}
       <a href="{% url 'home' %}" class="bw-topnav__link">Home</a>
       <a href="{% url 'login' %}?next={% url 'tender-list' %}" class="bw-topnav__link">Sign in</a>
+      {% if not hide_nav_register %}
       <a href="{% url 'buildwatch-register' %}?type=CONTRACTOR" class="bw-btn bw-btn--ghost bw-btn--sm">Contractor register</a>
       <a href="{% url 'buildwatch-register' %}?type=GOV_NATIONAL" class="bw-btn bw-btn--teal bw-btn--sm">Employer register</a>
+      {% endif %}
       {% endif %}
     </div>
   </nav>

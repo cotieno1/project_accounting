@@ -905,6 +905,9 @@ def tender_detail(request, listing_id):
         'mr_done_count': mr_done,
         'mr_total': mr_total,
         'mr_progress_pct': int((mr_done * 100) / mr_total) if mr_total else 0,
+        # Detail page has its own "Register Free / Sign In" CTA, so the split
+        # contractor/employer register buttons in the top nav are redundant here.
+        'hide_nav_register': True,
     }
     if request.user.is_authenticated:
         ctx.update(branding_template_context(request))
