@@ -1,0 +1,285 @@
+{% extends "buildwatch/base.html" %}
+{% load pioneer_tags %}
+
+{% block title %}Executing - Open Public Tender Project Task{% endblock %}
+
+{% block bw_content %}
+<style>
+  .we { color:#16233b; }
+  .we-wrap { max-width:1080px; margin:0 auto; padding:30px 22px 56px; }
+  .we-eyebrow { font:600 .68rem/1 ui-monospace,monospace; letter-spacing:.12em; text-transform:uppercase; color:#0f8a8a; }
+  .we-h1 { font-size:1.5rem; font-weight:800; letter-spacing:-.02em; margin:7px 0 6px; color:#16233b; }
+  .we-lead { color:#5b6b82; font-size:.88rem; line-height:1.6; max-width:820px; }
+
+  .we-panel { border:1px solid #e6ebf2; border-radius:13px; background:#fff; box-shadow:0 1px 3px rgba(20,35,60,.05); margin-bottom:20px; }
+  .we-panel__head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:13px 16px; border-bottom:1px solid #eef2f7; }
+  .we-panel__title { font-size:.92rem; font-weight:700; color:#16233b; margin:0; }
+  .we-panel__title small { font-weight:500; color:#8494a8; }
+  .we-panel__body { padding:16px; }
+
+  .we-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:11px; margin-bottom:14px; }
+  .we-stat { border:1px solid #e6ebf2; border-radius:11px; padding:11px 13px; background:#fbfcfe; }
+  .we-stat__k { font:700 .62rem/1 sans-serif; letter-spacing:.05em; text-transform:uppercase; color:#8494a8; }
+  .we-stat__v { font-size:1.05rem; font-weight:800; color:#16233b; margin-top:5px; font-variant-numeric:tabular-nums; }
+  .we-stat__s { font-size:.66rem; color:#8494a8; margin-top:2px; }
+
+  .we-bar { height:10px; border-radius:6px; background:#eef2f7; overflow:hidden; display:flex; }
+  .we-bar > i { display:block; height:100%; background:#1a7f4b; }
+  .we-legend { font-size:.68rem; color:#8494a8; margin-top:6px; display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+
+  .we-task { border:1px solid #e6ebf2; border-radius:13px; background:#fff; box-shadow:0 1px 3px rgba(20,35,60,.05); margin-bottom:16px; overflow:hidden; }
+  .we-task__head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:13px 16px; background:linear-gradient(180deg,#f9fbfe,#fff); border-bottom:1px solid #eef2f7; }
+  .we-badge-letter { display:inline-flex; width:30px; height:30px; border-radius:8px; background:#16233b; color:#fff; font-weight:800; align-items:center; justify-content:center; font-size:.9rem; }
+  .we-task__name { font-size:1rem; font-weight:800; color:#16233b; letter-spacing:-.01em; }
+  .we-task__sub { font-size:.72rem; color:#8494a8; }
+
+  .we-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  .we-table th { text-align:left; font:700 .62rem sans-serif; letter-spacing:.05em; text-transform:uppercase; color:#8494a8; padding:9px 10px; border-bottom:1px solid #e6ebf2; white-space:nowrap; }
+  .we-table td { padding:9px 10px; border-bottom:1px solid #f0f3f8; vertical-align:top; }
+  .we-table tbody tr:last-child td { border-bottom:none; }
+  .we-num { text-align:right; font-variant-numeric:tabular-nums; font-family:ui-monospace,monospace; }
+  .we-code { font-family:ui-monospace,monospace; font-weight:700; color:#2f5fb0; }
+
+  .we-pill { display:inline-block; padding:3px 10px; border-radius:20px; font:700 .62rem sans-serif; text-transform:uppercase; letter-spacing:.03em; }
+  .we-pill--muted { background:rgba(132,148,168,.16); color:#68758a; }
+  .we-pill--info { background:rgba(47,95,176,.13); color:#2f5fb0; }
+  .we-pill--warn { background:rgba(183,121,31,.15); color:#b7791f; }
+  .we-pill--ok { background:rgba(26,127,75,.12); color:#1a7f4b; }
+
+  .we-empty { border:1px dashed #b9d0d0; border-radius:12px; padding:20px; background:#f7fbfb; text-align:center; }
+  .we-empty p { font-size:.85rem; color:#5b6b82; margin:0 auto 14px; max-width:560px; line-height:1.6; }
+  a.we-link { color:#2f5fb0; text-decoration:none; }
+  .we-internal { border:1px solid #dbe7e6; border-left:4px solid #0f8a8a; background:#f2fafa; border-radius:0 10px 10px 0; padding:11px 14px; font-size:.84rem; color:#3f5168; line-height:1.55; }
+  .we-tag-internal { display:inline-block; background:#0f8a8a; color:#fff; font:700 .6rem sans-serif; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:5px; }
+  .we-group-label { font:700 .64rem sans-serif; letter-spacing:.05em; text-transform:uppercase; color:#8494a8; margin:0 0 8px; }
+  .we-group-label.is-ext { color:#8a5a12; }
+  .we-group-label.is-int { color:#0f8a8a; }
+  .we-parties { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:11px; }
+  .we-party { border:1px solid #e6ebf2; border-radius:10px; padding:11px 12px; background:#fbfcfe; }
+  .we-party.is-ext { border-left:4px solid #b7791f; }
+  .we-party.is-int { border-left:4px solid #0f8a8a; }
+  .we-party__role { font:700 .64rem sans-serif; text-transform:uppercase; letter-spacing:.03em; color:#16233b; }
+  .we-party__name { font-size:.85rem; font-weight:700; color:#2f5fb0; margin:2px 0 4px; }
+  .we-party__resp { font-size:.72rem; color:#5b6b82; line-height:1.5; }
+  .we-source-links { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+</style>
+
+<div class="we">
+<div class="we-wrap">
+
+  <div style="margin-bottom:20px;">
+    <div style="margin-bottom:8px;"><span class="we-tag-internal">Internal process</span></div>
+    <div class="we-eyebrow">Executing &middot; separate from the public tender exchange</div>
+    <h1 class="we-h1">Executing &mdash; Open Public Tender Project Task</h1>
+    <div style="font-family:ui-monospace,monospace;font-size:.74rem;color:#8494a8;margin-bottom:10px;">{{ listing.event.ref }}{% if overview.finance.task_id %} &middot; project task {{ overview.finance.task_id }}{% endif %}</div>
+    <div class="we-internal">
+      <strong>Internal delivery process.</strong> This is the contractor's own execution of the awarded
+      works &mdash; kept separate from browsing, bidding and award on the public tender exchange. Break
+      the BOQ into <strong>Task A &rarr; sub-tasks A-1 &hellip; n</strong> from the "Measurement, Materials
+      &amp; Workmanship" preambles, drive each to inspection, approval and a completion certificate, and
+      track earned value vs actual cost so delivery stays profitable.
+    </div>
+  </div>
+
+  <!-- Governance & parties -->
+  <div class="we-panel">
+    <div class="we-panel__head">
+      <h3 class="we-panel__title">Governance &amp; parties <small>&middot; who oversees this project task</small></h3>
+    </div>
+    <div class="we-panel__body">
+      <div class="we-group-label is-ext">External &middot; Government / Employer side</div>
+      <div class="we-parties" style="margin-bottom:14px;">
+        {% for p in overview.governance.external %}
+        <div class="we-party is-ext">
+          <div class="we-party__role">{{ p.role }}</div>
+          <div class="we-party__name">{{ p.name }}</div>
+          <div class="we-party__resp">{{ p.responsibility }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="we-group-label is-int">Internal &middot; Pioneer (Contractor)</div>
+      <div class="we-parties">
+        {% for p in overview.governance.internal %}
+        <div class="we-party is-int">
+          <div class="we-party__role">{{ p.role }}</div>
+          <div class="we-party__name">{{ p.name }}</div>
+          <div class="we-party__resp">{{ p.responsibility }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Internal control / profitability -->
+  {% with f=overview.finance t=overview.totals %}
+  <div class="we-panel">
+    <div class="we-panel__head">
+      <h3 class="we-panel__title">Internal control &middot; earned value vs cost</h3>
+      {% if f.linked %}
+        <a class="we-link" href="/ops-dashboard/?task_id={{ f.task_id|urlencode }}">Open financial dashboard &rarr; {{ f.task_id }}</a>
+      {% else %}
+        <span class="we-pill we-pill--muted">Ops task not linked</span>
+      {% endif %}
+    </div>
+    <div class="we-panel__body">
+      <div class="we-stats">
+        <div class="we-stat"><div class="we-stat__k">Contract sum</div><div class="we-stat__v">{{ f.contract|fmt_money }}</div></div>
+        <div class="we-stat"><div class="we-stat__k">Planned (WBS)</div><div class="we-stat__v">{{ t.planned|fmt_money }}</div><div class="we-stat__s">{{ t.subtasks }} sub-task{{ t.subtasks|pluralize }}</div></div>
+        <div class="we-stat"><div class="we-stat__k">Earned value</div><div class="we-stat__v" style="color:#1a7f4b;">{{ t.earned|fmt_money }}</div><div class="we-stat__s">{{ t.pct }}% of planned</div></div>
+        <div class="we-stat"><div class="we-stat__k">Actual cost (ops)</div><div class="we-stat__v" style="color:#b7791f;">{% if f.spent is not None %}{{ f.spent|fmt_money }}{% else %}&mdash;{% endif %}</div>{% if f.authorized_budget is not None %}<div class="we-stat__s">Budget {{ f.authorized_budget|money }}</div>{% endif %}</div>
+        <div class="we-stat"><div class="we-stat__k">Margin (earned &minus; cost)</div><div class="we-stat__v" style="color:{% if f.margin is not None and f.margin < 0 %}#c0392b{% else %}#16233b{% endif %};">{% if f.margin is not None %}{{ f.margin|fmt_money }}{% else %}&mdash;{% endif %}</div>{% if f.margin_pct is not None %}<div class="we-stat__s">{{ f.margin_pct }}% margin</div>{% endif %}</div>
+      </div>
+      <div class="we-bar"><i style="width:{{ t.pct }}%;"></i></div>
+      <div class="we-legend">
+        <span style="color:#1a7f4b;"><b>&#9632;</b> Earned {{ t.pct }}%</span>
+        <span>{{ t.done }}/{{ t.subtasks }} sub-tasks completed</span>
+        {% if f.spent is None and f.linked %}<span class="we-pill we-pill--muted">Connect fund ledger for live cost</span>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+
+  <!-- Sourcing & best price (within Pioneer) -->
+  <div class="we-panel">
+    <div class="we-panel__head">
+      <h3 class="we-panel__title">Sourcing &amp; best price <small>&middot; outsourced materials &amp; services</small></h3>
+      <span class="we-tag-internal">Internal &middot; Pioneer</span>
+    </div>
+    <div class="we-panel__body">
+      <p style="font-size:.84rem;color:#5b6b82;line-height:1.6;margin:0;">
+        Protect the margin: every outsourced product or service is <strong>competitively sourced
+        (minimum two quotes)</strong> and the <strong>best price</strong> selected before an order is
+        placed &mdash; materials through RFQ &rarr; bid evaluation &rarr; LPO, and services through
+        subcontracting.
+      </p>
+      {% if overview.finance.linked %}
+      <div class="we-source-links">
+        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'rfq_manager' %}?task_id={{ overview.finance.task_id|urlencode }}">Raise RFQ (&ge;2 quotes)</a>
+        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'bid_evaluation_terminal' %}?task_id={{ overview.finance.task_id|urlencode }}">Compare &amp; pick best price</a>
+        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'ro_builder' %}?task_id={{ overview.finance.task_id|urlencode }}">Requisition (RO)</a>
+        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'procurement_lpo_view' %}?task_id={{ overview.finance.task_id|urlencode }}">Issue LPO</a>
+        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'bid-subcontract' listing.pk %}">Subcontract a service</a>
+      </div>
+      {% else %}
+      <div class="we-empty" style="text-align:left;margin-top:12px;">
+        <p style="margin:0;">Link this tender to a Pioneer project task to source competitively through the
+        RFQ &rarr; bid evaluation &rarr; LPO lane and keep every outsourced input at best price.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not overview.has_wbs %}
+  <div class="we-empty">
+    <p>No work breakdown yet. Generate <strong>Task A &rarr; sub-tasks A-1&hellip;n</strong> straight
+       from this tender's BOQ trade preambles and compliance checkpoints. Each sub-task comes with its
+       inspection / approval gate and an even share of its trade's value.</p>
+    <form method="post" action="{% url 'works-execution-action' listing.pk %}">{% csrf_token %}
+      <input type="hidden" name="action" value="generate_wbs">
+      <button type="submit" class="bw-btn bw-btn--primary">Generate work breakdown from BOQ</button>
+    </form>
+  </div>
+  {% else %}
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+    <form method="post" action="{% url 'works-execution-action' listing.pk %}">{% csrf_token %}
+      <input type="hidden" name="action" value="generate_wbs">
+      <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Sync new sub-tasks from BOQ</button>
+    </form>
+  </div>
+
+  {% for task in overview.tasks %}
+  <div class="we-task">
+    <div class="we-task__head">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <span class="we-badge-letter">{{ task.letter }}</span>
+        <div>
+          <div class="we-task__name">Task {{ task.letter }} &middot; {{ task.m.name }}</div>
+          <div class="we-task__sub">Phase {{ task.m.phase_index }} &middot; weeks {{ task.m.planned_start_week }}-{{ task.m.end_week }} &middot; {{ task.approved }}/{{ task.count }} approved</div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:800;color:#16233b;font-variant-numeric:tabular-nums;">{{ task.earned|money }} <span style="color:#8494a8;font-weight:600;">/ {{ task.planned|money }}</span></div>
+        <div class="we-task__sub">earned / planned &middot; {{ task.pct }}%</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="we-table">
+        <thead>
+          <tr>
+            <th>Sub-task</th>
+            <th>Inspection / approval</th>
+            <th class="we-num">Value</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in task.subtasks %}
+          {% with st=r.st %}
+          <tr>
+            <td>
+              <span class="we-code">{{ st.code }}</span>
+              <span style="color:#16233b;font-weight:600;"> {{ st.name }}</span>
+              {% if st.certificate_ref %}<div style="font-size:.64rem;color:#8494a8;font-family:ui-monospace,monospace;">{{ st.certificate_ref }}</div>{% endif %}
+            </td>
+            <td style="color:#5b6b82;">
+              {% if r.cp %}{{ r.cp.get_category_display }}<div style="font-size:.64rem;color:#8494a8;">by {{ r.cp.get_approver_role_display }}</div>
+              {% else %}<span style="color:#8494a8;">Self-completed step</span>{% endif %}
+            </td>
+            <td class="we-num">{{ r.value|money }}</td>
+            <td>
+              {% if st.status == 'DONE' %}<span class="we-pill we-pill--ok">Completed</span>
+              {% elif st.status == 'APPROVED' %}<span class="we-pill we-pill--ok">Approved</span>
+              {% elif st.status == 'INSPECTION' %}<span class="we-pill we-pill--warn">Inspection</span>
+              {% elif st.status == 'IN_PROGRESS' %}<span class="we-pill we-pill--info">In progress</span>
+              {% else %}<span class="we-pill we-pill--muted">Planned</span>{% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+              {% if st.status == 'PLANNED' %}
+                {% if caps.is_bidder or caps.is_admin %}
+                <form method="post" action="{% url 'works-execution-action' listing.pk %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="start_subtask"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
+                  <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Start</button>
+                </form>
+                {% else %}<span style="font-size:.68rem;color:#8494a8;">Awaiting contractor</span>{% endif %}
+              {% elif st.status == 'IN_PROGRESS' %}
+                {% if caps.is_bidder or caps.is_admin %}
+                <form method="post" action="{% url 'works-execution-action' listing.pk %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="request_inspection"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
+                  <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Request inspection</button>
+                </form>
+                {% else %}<span style="font-size:.68rem;color:#8494a8;">In progress</span>{% endif %}
+              {% elif st.status == 'INSPECTION' %}
+                {% if caps.is_sponsor or caps.is_admin %}
+                <form method="post" action="{% url 'works-execution-action' listing.pk %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="approve_subtask"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
+                  <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Approve</button>
+                </form>
+                {% else %}<span style="font-size:.68rem;color:#8494a8;">Awaiting approval</span>{% endif %}
+              {% elif st.status == 'APPROVED' %}
+                {% if caps.is_bidder or caps.is_admin %}
+                <form method="post" action="{% url 'works-execution-action' listing.pk %}">{% csrf_token %}
+                  <input type="hidden" name="action" value="complete_subtask"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
+                  <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Mark complete</button>
+                </form>
+                {% else %}<span style="font-size:.68rem;color:#8494a8;">Approved</span>{% endif %}
+              {% elif st.status == 'DONE' %}
+                <a href="{% url 'works-subtask-cert' listing.pk st.pk %}" target="_blank" class="bw-btn bw-btn--ghost bw-btn--sm">Completion certificate</a>
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

@@ -17,6 +17,7 @@ from buildwatch import views_tenders as t
 from buildwatch import views_subcontract_portal as sub
 from buildwatch import views_compliance as comp
 from buildwatch import views_delivery as deliv
+from buildwatch import views_execution as execn
 
 # ── BuildWatch core (Sprint 1) ────────────────────────────────────────────────
 buildwatch_patterns = [
@@ -78,6 +79,19 @@ tender_patterns = [
     path('<int:listing_id>/delivery/sop/<int:sop_id>.pdf',
          deliv.sop_pdf,
          name='sop-pdf'),
+
+    # ── Contractor Works Execution (Task A -> sub-task A-1..n) ────────────
+    path('<int:listing_id>/execution/',
+         execn.works_execution,
+         name='works-execution'),
+
+    path('<int:listing_id>/execution/action/',
+         execn.works_execution_action,
+         name='works-execution-action'),
+
+    path('<int:listing_id>/execution/subtask/<int:subtask_id>/certificate.pdf',
+         execn.works_subtask_certificate_pdf,
+         name='works-subtask-cert'),
 
     # ── Bidder actions — login required ──────────────────────────────────
     path('<int:listing_id>/register/',

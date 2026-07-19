@@ -39,6 +39,7 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
       <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
       <a href="{% url 'bid-self-assess' listing.pk %}" class="bw-btn bw-btn--ghost">Certificates</a>
+      <a href="{% url 'works-execution' listing.pk %}" class="bw-btn bw-btn--ghost">Internal · Executing project task</a>
       <a href="#boq-main-categories" class="bw-btn bw-btn--teal">Go to main BOQ</a>
       {% if not subcontract_quota_full and planned_subcontractor_count != 0 %}
       <a href="#filter2-subcontract" class="bw-btn bw-btn--ghost">Optional · subcontracting</a>

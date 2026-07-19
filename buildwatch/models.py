@@ -1514,6 +1514,93 @@ class ProjectMilestone(models.Model):
         return f"M{self.seq} {self.name} [{self.status}]"
 
 
+class WorkSubTask(models.Model):
+    """
+    Contractor-side work breakdown: a sub-task (A-1, A-2 ... n) under a
+    ProjectMilestone ("Task A" = a trade/phase from the BOQ preambles).
+
+    Each sub-task carries an earned value (a share of its milestone's BOQ value),
+    an inspection / approval gate (linked to a ComplianceCheckpoint where one
+    exists), and a completion certificate on sign-off. This lets a contractor
+    drive delivery to completion and track profitability per slice of work.
+    """
+    STATUS_PLANNED = "PLANNED"
+    STATUS_IN_PROGRESS = "IN_PROGRESS"
+    STATUS_INSPECTION = "INSPECTION"
+    STATUS_APPROVED = "APPROVED"
+    STATUS_DONE = "DONE"
+    STATUS_CHOICES = [
+        (STATUS_PLANNED, "Planned"),
+        (STATUS_IN_PROGRESS, "In progress"),
+        (STATUS_INSPECTION, "Inspection requested"),
+        (STATUS_APPROVED, "Inspected & approved"),
+        (STATUS_DONE, "Completed & certified"),
+    ]
+
+    milestone = models.ForeignKey(
+        ProjectMilestone, on_delete=models.CASCADE, related_name="subtasks",
+    )
+    project = models.ForeignKey(
+        InfraProject, on_delete=models.CASCADE, related_name="work_subtasks",
+    )
+    tender = models.ForeignKey(
+        TenderListing, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="work_subtasks",
+    )
+    checkpoint = models.ForeignKey(
+        ComplianceCheckpoint, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="subtasks",
+        help_text="Inspection / hold-point / certificate gate for this sub-task.",
+    )
+    preamble = models.ForeignKey(
+        TenderPreamble, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="subtasks",
+        help_text="Governing BOQ trade preamble (measurement / workmanship).",
+    )
+
+    seq = models.PositiveSmallIntegerField(default=0)
+    code = models.CharField(max_length=20, blank=True, help_text="e.g. A-1")
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+
+    planned_value = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
+
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=STATUS_PLANNED)
+    started_at = models.DateTimeField(null=True, blank=True)
+    started_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="started_subtasks",
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="approved_subtasks",
+    )
+    completed_at = models.DateTimeField(null=True, blank=True)
+    completed_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="completed_subtasks",
+    )
+    certificate_ref = models.CharField(max_length=60, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["milestone_id", "seq", "id"]
+        unique_together = [["milestone", "seq"]]
+
+    def __str__(self):
+        return f"{self.code} {self.name} [{self.status}]"
+
+    @property
+    def is_approved(self):
+        return self.status in (self.STATUS_APPROVED, self.STATUS_DONE)
+
+    @property
+    def is_done(self):
+        return self.status == self.STATUS_DONE
+
+
 class PaymentCertificate(models.Model):
     """
     A certified payment to the contractor or a consultant for a project.
