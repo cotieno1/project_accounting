@@ -1,0 +1,98 @@
+{% extends "buildwatch/base.html" %}
+{% load pioneer_tags %}
+
+{% block title %}Open Tender - {{ overview.task_id }}{% endblock %}
+
+{% block bw_content %}
+<style>
+  .ot-wrap{max-width:1100px;margin:0 auto;padding:28px 20px 56px;color:#16233b}
+  .ot-tag{display:inline-block;background:#1a4f8a;color:#fff;font:700 .6rem sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:5px}
+  .ot-h1{font-size:1.35rem;font-weight:800;margin:8px 0 4px}
+  .ot-panel{border:1px solid #e6ebf2;border-radius:12px;background:#fff;margin-bottom:16px;box-shadow:0 1px 3px rgba(20,35,60,.04)}
+  .ot-panel__h{padding:12px 14px;border-bottom:1px solid #eef2f7;font-weight:700;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+  .ot-panel__b{padding:14px}
+  .ot-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+  .ot-stat{border:1px solid #e6ebf2;border-radius:10px;padding:10px 12px;background:#fbfcfe}
+  .ot-stat__k{font:700 .62rem sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#8494a8}
+  .ot-stat__v{font-size:1.05rem;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+  table.ot{width:100%;border-collapse:collapse;font-size:.82rem}
+  table.ot th{text-align:left;font:700 .62rem sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#8494a8;padding:8px;border-bottom:1px solid #e6ebf2}
+  table.ot td{padding:8px;border-bottom:1px solid #f0f3f8;vertical-align:top}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.68rem;font-weight:700}
+  .pill-boq{background:#e8f0fe;color:#1a4f8a}
+  .pill-int{background:#f2fafa;color:#0f8a8a}
+  .pill-st{background:#eef2f7;color:#3f5168}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace}
+  .bw-btn--sm{padding:5px 10px;font-size:.75rem}
+  .ot-actions{display:flex;flex-wrap:wrap;gap:6px}
+  .ot-hint{font-size:.72rem;color:#8494a8;margin-top:4px}
+</style>
+<div class="ot-wrap">
+  <div style="margin-bottom:8px">
+    <a href="{% url 'open-tender-dashboard' %}" style="font-size:.75rem;color:#1a4f8a;text-decoration:none">&larr; Open Tender - Financial Dashboard</a>
+  </div>
+  <span class="ot-tag">{{ profile.get_category_display }}</span>
+  <h1 class="ot-h1">{{ overview.tender.event.ref }}</h1>
+  <div style="font-size:.84rem;color:#5b6b82;margin-bottom:16px">
+    Task {{ overview.task_id }} - {{ overview.tender.event.description }}
+    - <a href="{% url 'public-tender-fin-ops' profile.task_id %}">Public Tender Internal Fin Ops</a>
+  </div>
+
+  <div class="ot-panel">
+    <div class="ot-panel__h">Value for money <small style="font-weight:500;color:#8494a8">- sub-task rollup</small></div>
+    <div class="ot-panel__b">
+      <div class="ot-stats">
+        <div class="ot-stat"><div class="ot-stat__k">Planned (BOQ+internal)</div><div class="ot-stat__v">{{ overview.totals.planned|money }}</div></div>
+        <div class="ot-stat"><div class="ot-stat__k">Earned (authorized)</div><div class="ot-stat__v">{{ overview.totals.earned|money }}</div></div>
+        <div class="ot-stat"><div class="ot-stat__k">Sub-tasks done</div><div class="ot-stat__v">{{ overview.totals.done }}/{{ overview.totals.count }}</div></div>
+        <div class="ot-stat"><div class="ot-stat__k">Progress</div><div class="ot-stat__v">{{ overview.totals.pct }}%</div></div>
+      </div>
+      {% if not overview.subtasks %}
+      <form method="post" action="{% url 'open-tender-action' profile.task_id %}">{% csrf_token %}
+        <input type="hidden" name="action" value="generate_subtasks">
+        <button class="bw-btn bw-btn--primary" type="submit">Generate sub-tasks from priced BOQ + internal items</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'open-tender-action' profile.task_id %}">{% csrf_token %}
+        <input type="hidden" name="action" value="generate_subtasks">
+        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Refresh from BOQ (add missing only)</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if overview.boq_subtasks %}
+  <div class="ot-panel">
+    <div class="ot-panel__h">BOQ category sub-tasks <small style="font-weight:500;color:#8494a8">- from bid workspace</small></div>
+    <div class="ot-panel__b" style="padding:0">
+      <table class="ot">
+        <thead><tr><th>Code</th><th>Category</th><th>Status</th><th class="num">Value</th><th>Actions / evidence</th></tr></thead>
+        <tbody>
+        {% for st in overview.boq_subtasks %}
+          {% include "tenders/_open_tender_subtask_row.html" with st=st profile=profile %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if overview.internal_subtasks %}
+  <div class="ot-panel">
+    <div class="ot-panel__h">Internal sub-tasks <small style="font-weight:500;color:#8494a8">- financial + non-financial impact</small></div>
+    <div class="ot-panel__b" style="padding:0">
+      <table class="ot">
+        <thead><tr><th>Code</th><th>Item</th><th>Status</th><th class="num">Value</th><th>Actions / evidence</th></tr></thead>
+        <tbody>
+        {% for st in overview.internal_subtasks %}
+          {% include "tenders/_open_tender_subtask_row.html" with st=st profile=profile %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <p class="ot-hint">Authority: Ministry of Works consultants, local staff and experts sign off / authorize. Completion requires certificate ref, certified products and proof for audit.</p>
+</div>
+{% endblock %}

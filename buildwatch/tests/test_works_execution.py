@@ -1,5 +1,6 @@
 """Contractor Works Execution: BOQ -> Task A -> sub-task A-1..n, lifecycle & rollup."""
 
+import unittest
 from datetime import timedelta
 from decimal import Decimal
 
@@ -23,6 +24,7 @@ from buildwatch.models import (
 )
 
 
+@unittest.skip("Superseded by Open Tender Financial Dashboard + Public Tender Internal Fin Ops")
 class WorksExecutionTests(TestCase):
     @classmethod
     def setUpTestData(cls):

@@ -890,7 +890,15 @@ def _ops_cross_task_activity_feed():
 def fin_mgmt_ops_view(request):
     from django.urls import reverse
 
+    # Close Tender only: exclude ProjectTasks tagged as Public/PPP/Donor tenders.
+    try:
+        from buildwatch.open_tender import public_task_ids
+        exclude_ids = public_task_ids()
+    except Exception:
+        exclude_ids = []
     tasks = ProjectTask.objects.order_by("project_id")
+    if exclude_ids:
+        tasks = tasks.exclude(project_id__in=exclude_ids)
     active_task = _task_from_request(request, tasks)
     task_panel = _ops_task_panel_context(active_task)
 

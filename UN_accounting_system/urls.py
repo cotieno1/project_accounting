@@ -29,7 +29,13 @@ from accounts import views
 from accounts import misc_variation_views as misc_var
 from django.conf import settings
 from django.conf.urls.static import static
-from buildwatch.urls import buildwatch_patterns, tender_patterns, internal_patterns
+from buildwatch.urls import (
+    buildwatch_patterns,
+    tender_patterns,
+    internal_patterns,
+    open_tender_patterns,
+    public_fin_ops_patterns,
+)
 
 
 urlpatterns = [
@@ -210,6 +216,8 @@ urlpatterns = [
     path('buildwatch/', include(buildwatch_patterns)),
     path('tenders/', include(tender_patterns)),
     path('internal/open-tender/', include(internal_patterns)),
+    path('open-tender/', include(open_tender_patterns)),
+    path('public-tender-fin-ops/', include(public_fin_ops_patterns)),
 
     # Misc variation (BuildWatch Addendum A)
     path(

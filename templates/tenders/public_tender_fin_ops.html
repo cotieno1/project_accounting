@@ -1,0 +1,113 @@
+{% extends "buildwatch/base.html" %}
+{% load pioneer_tags %}
+
+{% block title %}Public Tender Internal Fin Ops - {{ profile.task_id }}{% endblock %}
+
+{% block bw_content %}
+<style>
+  .fo-wrap{max-width:1100px;margin:0 auto;padding:28px 20px 56px;color:#16233b}
+  .fo-tag{display:inline-block;background:#0f8a8a;color:#fff;font:700 .6rem sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:5px}
+  .fo-h1{font-size:1.35rem;font-weight:800;margin:8px 0 4px}
+  .fo-panel{border:1px solid #e6ebf2;border-radius:12px;background:#fff;margin-bottom:16px}
+  .fo-panel__h{padding:12px 14px;border-bottom:1px solid #eef2f7;font-weight:700}
+  .fo-panel__b{padding:14px}
+  table.fo{width:100%;border-collapse:collapse;font-size:.82rem}
+  table.fo th{text-align:left;font:700 .62rem sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#8494a8;padding:8px;border-bottom:1px solid #e6ebf2}
+  table.fo td{padding:8px;border-bottom:1px solid #f0f3f8;vertical-align:top}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace}
+  .fo-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;align-items:end}
+  .fo-form label{font-size:.68rem;font-weight:700;color:#8494a8;display:block;margin-bottom:3px}
+  .fo-form input,.fo-form select{width:100%;padding:6px 8px;border:1px solid #cfd8e6;border-radius:6px;font-size:.8rem}
+  .phase{font-size:.72rem;color:#5b6b82;margin:2px 0}
+  .bw-btn--sm{padding:5px 10px;font-size:.75rem}
+</style>
+<div class="fo-wrap">
+  <div style="margin-bottom:8px">
+    <a href="{% url 'public-tender-fin-ops-index' %}" style="font-size:.75rem;color:#0f8a8a;text-decoration:none">&larr; Public Tender Internal Fin Ops</a>
+    - <a href="{% url 'open-tender-detail' profile.task_id %}" style="font-size:.75rem;color:#1a4f8a;text-decoration:none">Open Tender Financial</a>
+  </div>
+  <span class="fo-tag">Just-in-time - phased quantities</span>
+  <h1 class="fo-h1">{{ overview.tender.event.ref }}</h1>
+  <div style="font-size:.84rem;color:#5b6b82;margin-bottom:16px">Task {{ overview.task_id }} - products &amp; resources for CCTV, clearing, securing, equipment, explosives, materials</div>
+
+  <div class="fo-panel">
+    <div class="fo-panel__h">Add resource / product under a sub-task</div>
+    <div class="fo-panel__b">
+      <form method="post" action="{% url 'public-tender-fin-ops-action' profile.task_id %}" class="fo-form">{% csrf_token %}
+        <input type="hidden" name="action" value="add_resource">
+        <div>
+          <label>Sub-task</label>
+          <select name="subtask_id" required>
+            {% for st in subtasks %}
+            <option value="{{ st.pk }}">{{ st.code }} - {{ st.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div><label>Name</label><input name="name" required placeholder="e.g. Cement bags / CCTV kit"></div>
+        <div>
+          <label>Kind</label>
+          <select name="resource_kind">
+            {% for k,v in overview.resource_kinds %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label>Unit</label><input name="unit" value="No"></div>
+        <div><label>Total qty (project)</label><input name="total_qty" value="10000" required></div>
+        <div><button class="bw-btn bw-btn--primary bw-btn--sm" type="submit">Add</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="fo-panel">
+    <div class="fo-panel__h">Resources - phase split &amp; internal RO</div>
+    <div class="fo-panel__b" style="padding:0">
+      {% if overview.rows %}
+      <table class="fo">
+        <thead><tr><th>Resource</th><th>Sub-task</th><th class="num">Total</th><th>Phases</th><th>Actions</th></tr></thead>
+        <tbody>
+        {% for row in overview.rows %}
+        <tr>
+          <td>
+            <strong>{{ row.resource.name }}</strong>
+            <div style="font-size:.7rem;color:#8494a8">{{ row.resource.get_resource_kind_display }}</div>
+          </td>
+          <td>{{ row.subtask.code }}</td>
+          <td class="num">{{ row.resource.total_qty }} {{ row.resource.unit }}</td>
+          <td>
+            {% for p in row.phases %}
+            <div class="phase">{{ p.phase_name|default:p.phase_index }}: <strong>{{ p.qty }}</strong> - {{ p.get_status_display }}{% if p.ro_ref %} - RO {{ p.ro_ref }}{% endif %}</div>
+            {% empty %}
+            <div class="phase">No phases yet - split total (e.g. 5000,2500,2500)</div>
+            {% endfor %}
+          </td>
+          <td>
+            <form method="post" action="{% url 'public-tender-fin-ops-action' profile.task_id %}" style="margin-bottom:6px">{% csrf_token %}
+              <input type="hidden" name="action" value="set_phases">
+              <input type="hidden" name="resource_id" value="{{ row.resource.pk }}">
+              <input name="phase_qtys" placeholder="5000,2500,2500" style="width:140px;padding:4px 8px;font-size:.75rem;border:1px solid #cfd8e6;border-radius:6px">
+              <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Set phases</button>
+            </form>
+            {% for p in row.phases %}
+              {% if p.status == 'PLANNED' %}
+              <form method="post" action="{% url 'public-tender-fin-ops-action' profile.task_id %}" style="margin-bottom:4px">{% csrf_token %}
+                <input type="hidden" name="action" value="raise_phase_ro">
+                <input type="hidden" name="phase_id" value="{{ p.pk }}">
+                <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Raise RO - {{ p.phase_name|default:p.phase_index }}</button>
+              </form>
+              {% endif %}
+            {% endfor %}
+            {% if row.phases %}
+            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'ro_builder' %}?task_id={{ profile.task_id|urlencode }}">RO builder</a>
+            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'rfq_manager' %}?task_id={{ profile.task_id|urlencode }}">RFQ best price</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:20px;color:#5b6b82;font-size:.88rem">No resources yet. Add cement, CCTV, clearing, equipment, etc. above, then split into phases.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1514,31 +1514,93 @@ class ProjectMilestone(models.Model):
         return f"M{self.seq} {self.name} [{self.status}]"
 
 
+class PublicTenderProfile(models.Model):
+    """
+    Tags an accounts.ProjectTask as a special category for public / PPP / donor
+    tenders. Keeps Close Tender (untagged ProjectTasks) completely separate.
+    """
+    CATEGORY_PUBLIC_TENDER = "PUBLIC_TENDER"
+    CATEGORY_PPP = "PPP"
+    CATEGORY_DONOR = "DONOR"
+    CATEGORY_PRIVATE = "PRIVATE"
+    CATEGORY_CHOICES = [
+        (CATEGORY_PUBLIC_TENDER, "Public Tender (GOK open)"),
+        (CATEGORY_PPP, "PPP Tender"),
+        (CATEGORY_DONOR, "Donor / DFI Tender"),
+        (CATEGORY_PRIVATE, "Private open tender"),
+    ]
+
+    task = models.OneToOneField(
+        "accounts.ProjectTask", on_delete=models.CASCADE,
+        related_name="public_tender_profile",
+        primary_key=True,
+    )
+    tender = models.ForeignKey(
+        TenderListing, on_delete=models.PROTECT, related_name="public_profiles",
+    )
+    category = models.CharField(
+        max_length=20, choices=CATEGORY_CHOICES, default=CATEGORY_PUBLIC_TENDER,
+    )
+    contractor_org = models.ForeignKey(
+        "accounts.Organization", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="public_tender_profiles",
+    )
+    award_letter_ref = models.CharField(max_length=120, blank=True)
+    awarded_at = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.task_id} [{self.category}] -> {self.tender_id}"
+
+
 class WorkSubTask(models.Model):
     """
-    Contractor-side work breakdown: a sub-task (A-1, A-2 ... n) under a
-    ProjectMilestone ("Task A" = a trade/phase from the BOQ preambles).
+    Open Tender delivery sub-task under a PublicTenderProfile / awarded tender.
 
-    Each sub-task carries an earned value (a share of its milestone's BOQ value),
-    an inspection / approval gate (linked to a ComplianceCheckpoint where one
-    exists), and a completion certificate on sign-off. This lets a contractor
-    drive delivery to completion and track profitability per slice of work.
+    Source mixture:
+      KIND_BOQ      - priced BOQ category/package from the bid workspace
+      KIND_INTERNAL - Pioneer internal item with financial and/or non-financial
+                      impact that was not a priced bill line (mobilisation,
+                      site clearance, CCTV/security, temp works, insurances, QA)
+
+    Lifecycle (GOK + Pioneer sync):
+      PLANNED -> IN_PROGRESS -> INSPECTION -> INSPECTED (QA / MoW / local / expert)
+              -> AUTHORIZED (consulting engineer nod) -> DONE
+      On DONE: sign-off, completion certificate, certified products, audit proof.
     """
+    KIND_BOQ = "BOQ"
+    KIND_INTERNAL = "INTERNAL"
+    KIND_CHOICES = [
+        (KIND_BOQ, "Priced BOQ category"),
+        (KIND_INTERNAL, "Internal (financial + non-financial)"),
+    ]
+
     STATUS_PLANNED = "PLANNED"
     STATUS_IN_PROGRESS = "IN_PROGRESS"
     STATUS_INSPECTION = "INSPECTION"
-    STATUS_APPROVED = "APPROVED"
+    STATUS_INSPECTED = "INSPECTED"
+    STATUS_AUTHORIZED = "AUTHORIZED"
     STATUS_DONE = "DONE"
     STATUS_CHOICES = [
         (STATUS_PLANNED, "Planned"),
         (STATUS_IN_PROGRESS, "In progress"),
         (STATUS_INSPECTION, "Inspection requested"),
-        (STATUS_APPROVED, "Inspected & approved"),
+        (STATUS_INSPECTED, "Inspected & signed off"),
+        (STATUS_AUTHORIZED, "Authorized (Engineer nod)"),
         (STATUS_DONE, "Completed & certified"),
     ]
+    STATUS_ORDER = [
+        STATUS_PLANNED, STATUS_IN_PROGRESS, STATUS_INSPECTION,
+        STATUS_INSPECTED, STATUS_AUTHORIZED, STATUS_DONE,
+    ]
 
-    milestone = models.ForeignKey(
-        ProjectMilestone, on_delete=models.CASCADE, related_name="subtasks",
+    profile = models.ForeignKey(
+        PublicTenderProfile, on_delete=models.CASCADE, null=True, blank=True,
+        related_name="subtasks",
     )
     project = models.ForeignKey(
         InfraProject, on_delete=models.CASCADE, related_name="work_subtasks",
@@ -1547,30 +1609,45 @@ class WorkSubTask(models.Model):
         TenderListing, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="work_subtasks",
     )
+    milestone = models.ForeignKey(
+        ProjectMilestone, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="subtasks",
+    )
     checkpoint = models.ForeignKey(
         ComplianceCheckpoint, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="subtasks",
-        help_text="Inspection / hold-point / certificate gate for this sub-task.",
     )
     preamble = models.ForeignKey(
         TenderPreamble, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="subtasks",
-        help_text="Governing BOQ trade preamble (measurement / workmanship).",
+        help_text="Governing BOQ preamble trade rules for this category.",
     )
 
+    kind = models.CharField(max_length=12, choices=KIND_CHOICES, default=KIND_BOQ)
+    package_code = models.CharField(max_length=40, blank=True,
+        help_text="TenderBoqPackage.code when kind=BOQ.")
     seq = models.PositiveSmallIntegerField(default=0)
-    code = models.CharField(max_length=20, blank=True, help_text="e.g. A-1")
+    code = models.CharField(max_length=20, blank=True, help_text="e.g. ST-01")
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-
+    has_financial_impact = models.BooleanField(default=True)
+    has_non_financial_impact = models.BooleanField(default=False)
     planned_value = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
 
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=STATUS_PLANNED)
+
     started_at = models.DateTimeField(null=True, blank=True)
     started_by = models.ForeignKey(
         "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="started_subtasks",
     )
+    inspected_at = models.DateTimeField(null=True, blank=True)
+    inspected_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="inspected_subtasks",
+    )
+    signoff_authority = models.CharField(max_length=200, blank=True,
+        help_text="MoW consultant / local staff / expert who signed off.")
     approved_at = models.DateTimeField(null=True, blank=True)
     approved_by = models.ForeignKey(
         "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
@@ -1582,23 +1659,119 @@ class WorkSubTask(models.Model):
         related_name="completed_subtasks",
     )
     certificate_ref = models.CharField(max_length=60, blank=True)
+    certified_products = models.TextField(blank=True,
+        help_text="Certified products used (brands / standards / certs).")
+    proof_notes = models.TextField(blank=True,
+        help_text="Proof for audit / examination (DN, photos, tests, certs).")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["milestone_id", "seq", "id"]
-        unique_together = [["milestone", "seq"]]
+        ordering = ["kind", "seq", "id"]
 
     def __str__(self):
         return f"{self.code} {self.name} [{self.status}]"
 
+    def _at_least(self, status):
+        try:
+            return self.STATUS_ORDER.index(self.status) >= self.STATUS_ORDER.index(status)
+        except ValueError:
+            return False
+
+    @property
+    def is_inspected(self):
+        return self._at_least(self.STATUS_INSPECTED)
+
+    @property
+    def is_authorized(self):
+        return self._at_least(self.STATUS_AUTHORIZED)
+
     @property
     def is_approved(self):
-        return self.status in (self.STATUS_APPROVED, self.STATUS_DONE)
+        return self.is_authorized
 
     @property
     def is_done(self):
         return self.status == self.STATUS_DONE
+
+
+class SubTaskResource(models.Model):
+    """
+    Product or resource needed to execute a sub-task (Public Tender Internal Fin Ops).
+    Examples: cement bags, CCTV kit, clearing labour, securing materials,
+    equipment hire, explosives.
+    """
+    KIND_MATERIAL = "MATERIAL"
+    KIND_CCTV = "CCTV"
+    KIND_CLEARING = "CLEARING"
+    KIND_SECURITY = "SECURITY"
+    KIND_EQUIPMENT = "EQUIPMENT"
+    KIND_EXPLOSIVES = "EXPLOSIVES"
+    KIND_LABOUR = "LABOUR"
+    KIND_OTHER = "OTHER"
+    KIND_CHOICES = [
+        (KIND_MATERIAL, "Material / product"),
+        (KIND_CCTV, "CCTV / surveillance"),
+        (KIND_CLEARING, "Site clearing"),
+        (KIND_SECURITY, "Securing site"),
+        (KIND_EQUIPMENT, "Equipment"),
+        (KIND_EXPLOSIVES, "Explosives"),
+        (KIND_LABOUR, "Labour / resources"),
+        (KIND_OTHER, "Other"),
+    ]
+
+    subtask = models.ForeignKey(
+        WorkSubTask, on_delete=models.CASCADE, related_name="resources",
+    )
+    name = models.CharField(max_length=200)
+    resource_kind = models.CharField(max_length=20, choices=KIND_CHOICES, default=KIND_MATERIAL)
+    unit = models.CharField(max_length=30, blank=True, default="No")
+    total_qty = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0"))
+    notes = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["resource_kind", "name", "id"]
+
+    def __str__(self):
+        return f"{self.name} ({self.total_qty} {self.unit})"
+
+    @property
+    def phased_qty(self):
+        return sum((p.qty for p in self.phases.all()), Decimal("0"))
+
+
+class SubTaskResourcePhase(models.Model):
+    """Partial / phased allocation of a resource (e.g. cement 10000 = 5000+2500+2500)."""
+    STATUS_PLANNED = "PLANNED"
+    STATUS_RO_RAISED = "RO_RAISED"
+    STATUS_SOURCED = "SOURCED"
+    STATUS_DELIVERED = "DELIVERED"
+    STATUS_CHOICES = [
+        (STATUS_PLANNED, "Planned"),
+        (STATUS_RO_RAISED, "Internal RO raised"),
+        (STATUS_SOURCED, "Sourced (best price)"),
+        (STATUS_DELIVERED, "Delivered on site"),
+    ]
+
+    resource = models.ForeignKey(
+        SubTaskResource, on_delete=models.CASCADE, related_name="phases",
+    )
+    phase_index = models.PositiveSmallIntegerField(default=1)
+    phase_name = models.CharField(max_length=80, blank=True)
+    qty = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0"))
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=STATUS_PLANNED)
+    ro_ref = models.CharField(max_length=80, blank=True,
+        help_text="Internal RO raised by Onsite Snr Site Engineer.")
+    notes = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["phase_index", "id"]
+        unique_together = [["resource", "phase_index"]]
+
+    def __str__(self):
+        label = self.phase_name or ("Phase %s" % self.phase_index)
+        return f"{label}: {self.qty} [{self.status}]"
 
 
 class PaymentCertificate(models.Model):

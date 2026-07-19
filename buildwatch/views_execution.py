@@ -179,7 +179,7 @@ def works_execution_action(request, listing_id):
         if not can_approve:
             messages.error(request, "Only the employer / PM can approve an inspection.")
             return redirect("works-execution", listing_id=listing.pk)
-        st.status = WorkSubTask.STATUS_APPROVED
+        st.status = WorkSubTask.STATUS_AUTHORIZED
         st.approved_at = timezone.now()
         st.approved_by = ua
         st.save(update_fields=["status", "approved_at", "approved_by", "updated_at"])
@@ -189,7 +189,7 @@ def works_execution_action(request, listing_id):
             cp.signed_off_by = ua
             cp.signed_off_at = timezone.now()
             cp.save(update_fields=["status", "signed_off_by", "signed_off_at", "updated_at"])
-        messages.success(request, "Inspected & approved: %s." % st.code)
+        messages.success(request, "Authorized (Engineer nod): %s." % st.code)
 
     elif action == "complete_subtask":
         if not can_drive:

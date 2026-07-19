@@ -18,6 +18,7 @@ from buildwatch import views_subcontract_portal as sub
 from buildwatch import views_compliance as comp
 from buildwatch import views_delivery as deliv
 from buildwatch import views_execution as execn
+from buildwatch import views_open_tender as ot
 
 # ── BuildWatch core (Sprint 1) ────────────────────────────────────────────────
 buildwatch_patterns = [
@@ -176,10 +177,7 @@ tender_patterns = [
          name='tender-publish-toggle'),
 ]
 
-# ── Internal Public Open Tender Process ──────────────────────────────────────
-# Pioneer's (the contractor's) OWN internal delivery of an awarded open public
-# tender. This deliberately lives OUTSIDE the /tenders/ public exchange - it is
-# reached from the contractor's platform workspace, not the Ministry's exchange.
+# ── Legacy internal execution (kept for old links; prefer open-tender dashboards)
 internal_patterns = [
     path('',
          execn.works_execution_index,
@@ -196,4 +194,33 @@ internal_patterns = [
     path('<int:listing_id>/subtask/<int:subtask_id>/certificate.pdf',
          execn.works_subtask_certificate_pdf,
          name='works-subtask-cert'),
+]
+
+# ── Open Tender - Financial Dashboard (BOQ + internal sub-tasks)
+open_tender_patterns = [
+    path('',
+         ot.open_tender_dashboard,
+         name='open-tender-dashboard'),
+    path('from-listing/<int:listing_id>/',
+         ot.create_open_tender_from_listing,
+         name='open-tender-from-listing'),
+    path('<str:task_id>/',
+         ot.open_tender_detail,
+         name='open-tender-detail'),
+    path('<str:task_id>/action/',
+         ot.open_tender_action,
+         name='open-tender-action'),
+]
+
+# ── Public Tender Internal Fin Ops (phased products + resources)
+public_fin_ops_patterns = [
+    path('',
+         ot.public_tender_fin_ops,
+         name='public-tender-fin-ops-index'),
+    path('<str:task_id>/',
+         ot.public_tender_fin_ops,
+         name='public-tender-fin-ops'),
+    path('<str:task_id>/action/',
+         ot.public_tender_fin_ops_action,
+         name='public-tender-fin-ops-action'),
 ]
