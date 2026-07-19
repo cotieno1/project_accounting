@@ -1,0 +1,66 @@
+{% extends "buildwatch/base.html" %}
+{% load pioneer_tags %}
+
+{% block title %}Internal Public Open Tender Process{% endblock %}
+
+{% block bw_content %}
+<style>
+  .wei-wrap { max-width:1040px; margin:0 auto; padding:30px 22px 56px; color:#16233b; }
+  .wei-eyebrow { font:600 .68rem/1 ui-monospace,monospace; letter-spacing:.12em; text-transform:uppercase; color:#0f8a8a; }
+  .wei-h1 { font-size:1.5rem; font-weight:800; letter-spacing:-.02em; margin:7px 0 6px; }
+  .wei-lead { color:#5b6b82; font-size:.88rem; line-height:1.6; max-width:820px; }
+  .wei-tag { display:inline-block; background:#0f8a8a; color:#fff; font:700 .6rem sans-serif; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:5px; }
+  .wei-card { border:1px solid #e6ebf2; border-left:4px solid #0f8a8a; border-radius:12px; background:#fff; box-shadow:0 1px 3px rgba(20,35,60,.05); padding:15px 17px; margin-bottom:13px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
+  .wei-ref { font:600 .72rem ui-monospace,monospace; color:#8494a8; }
+  .wei-title { font-size:1rem; font-weight:800; margin:3px 0; }
+  .wei-owner { font-size:.78rem; color:#5b6b82; }
+  .wei-meta { text-align:right; min-width:170px; }
+  .wei-bar { height:8px; border-radius:5px; background:#eef2f7; overflow:hidden; margin:6px 0 4px; }
+  .wei-bar > i { display:block; height:100%; background:#1a7f4b; }
+  .wei-small { font-size:.7rem; color:#8494a8; }
+  .wei-empty { border:1px dashed #cfd8e6; border-radius:12px; padding:34px 20px; text-align:center; color:#5b6b82; background:#fbfcfe; }
+  .bw-btn--sm { padding:6px 12px; font-size:.78rem; }
+</style>
+
+<div class="wei-wrap">
+
+  <div style="margin-bottom:22px;">
+    <div style="margin-bottom:8px;"><span class="wei-tag">Internal &middot; {{ org_name|default:"Contractor" }}</span></div>
+    <div class="wei-eyebrow">Executing awarded open public tenders</div>
+    <h1 class="wei-h1">Internal Public Open Tender Process</h1>
+    <p class="wei-lead">
+      Your own delivery workspace for open public tenders you have been awarded. Break each
+      BOQ into <strong>Task A &rarr; sub-tasks A-1 &hellip; n</strong>, drive every sub-task to
+      inspection, approval and a completion certificate, and track earned value against actual
+      cost so delivery stays profitable.
+    </p>
+  </div>
+
+  {% if rows %}
+    {% for r in rows %}
+    <div class="wei-card">
+      <div>
+        <div class="wei-ref">{{ r.listing.event.ref }}</div>
+        <div class="wei-title">{{ r.listing.event.description }}</div>
+        <div class="wei-owner">Employer: {{ r.owner.name|default:"&mdash;" }}</div>
+      </div>
+      <div class="wei-meta">
+        {% if r.has_wbs %}
+          <div class="wei-bar"><i style="width:{{ r.pct }}%;"></i></div>
+          <div class="wei-small">{{ r.done }}/{{ r.subtasks }} sub-tasks complete &middot; {{ r.pct }}%</div>
+        {% else %}
+          <div class="wei-small">No work breakdown yet</div>
+        {% endif %}
+        <a class="bw-btn bw-btn--primary bw-btn--sm" href="{% url 'works-execution' r.listing.pk %}" style="margin-top:8px;display:inline-block;">Open workspace</a>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="wei-empty">
+      <p style="margin:0 0 4px;font-weight:700;">No awarded open public tenders to execute yet.</p>
+      <p style="margin:0;font-size:.82rem;">Once you register interest and win an open public tender, it appears here for internal delivery.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

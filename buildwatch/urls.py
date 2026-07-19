@@ -80,19 +80,6 @@ tender_patterns = [
          deliv.sop_pdf,
          name='sop-pdf'),
 
-    # ── Contractor Works Execution (Task A -> sub-task A-1..n) ────────────
-    path('<int:listing_id>/execution/',
-         execn.works_execution,
-         name='works-execution'),
-
-    path('<int:listing_id>/execution/action/',
-         execn.works_execution_action,
-         name='works-execution-action'),
-
-    path('<int:listing_id>/execution/subtask/<int:subtask_id>/certificate.pdf',
-         execn.works_subtask_certificate_pdf,
-         name='works-subtask-cert'),
-
     # ── Bidder actions — login required ──────────────────────────────────
     path('<int:listing_id>/register/',
          t.tender_register,
@@ -187,4 +174,26 @@ tender_patterns = [
     path('manage/<int:listing_id>/toggle-publish/',
          t.tender_publish_toggle,
          name='tender-publish-toggle'),
+]
+
+# ── Internal Public Open Tender Process ──────────────────────────────────────
+# Pioneer's (the contractor's) OWN internal delivery of an awarded open public
+# tender. This deliberately lives OUTSIDE the /tenders/ public exchange - it is
+# reached from the contractor's platform workspace, not the Ministry's exchange.
+internal_patterns = [
+    path('',
+         execn.works_execution_index,
+         name='works-execution-index'),
+
+    path('<int:listing_id>/',
+         execn.works_execution,
+         name='works-execution'),
+
+    path('<int:listing_id>/action/',
+         execn.works_execution_action,
+         name='works-execution-action'),
+
+    path('<int:listing_id>/subtask/<int:subtask_id>/certificate.pdf',
+         execn.works_subtask_certificate_pdf,
+         name='works-subtask-cert'),
 ]

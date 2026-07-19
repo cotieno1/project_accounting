@@ -1,14 +1,19 @@
 # ============================================================================
 # buildwatch/views_execution.py
 #
-# Contractor "Works Execution" workspace: break a tender's BOQ into
+# "Internal Public Open Tender Process": Pioneer's (the contractor's) OWN
+# internal delivery of an AWARDED open public tender. Break the BOQ into
 # Task A -> sub-tasks A-1..n, drive each to completion (start -> inspection ->
 # approval -> completion certificate) and watch profitability (earned value vs
 # actual cost from the linked Pioneer ops task).
 #
-#   works_execution          GET  /tenders/<id>/execution/
-#   works_execution_action   POST /tenders/<id>/execution/action/
-#   works_subtask_cert_pdf   GET  /tenders/<id>/execution/subtask/<sid>/certificate.pdf
+# This lives OUTSIDE the /tenders/ public exchange - it is reached from the
+# contractor's platform workspace, not the Ministry's tender exchange.
+#
+#   works_execution_index    GET  /internal/open-tender/
+#   works_execution          GET  /internal/open-tender/<id>/
+#   works_execution_action   POST /internal/open-tender/<id>/action/
+#   works_subtask_cert_pdf   GET  /internal/open-tender/<id>/subtask/<sid>/certificate.pdf
 # ============================================================================
 from __future__ import annotations
 
@@ -18,15 +23,59 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.tenant import branding_template_context
+from accounts.tenant import branding_template_context, get_active_organization
 
 from .execution import generate_wbs_for_tender, wbs_overview
-from .models import ComplianceCheckpoint, TenderListing, WorkSubTask
+from .models import BidderRegistration, ComplianceCheckpoint, TenderListing, WorkSubTask
 from .views_compliance import _access, _current_ua, _name
 
 
 def _project(listing):
     return getattr(listing.event, "project", None)
+
+
+@login_required
+def works_execution_index(request):
+    """Pioneer's internal landing: the awarded open public tenders it is executing."""
+    org = get_active_organization(request)
+    is_admin = bool(request.user.is_superuser)
+
+    qs = TenderListing.objects.select_related(
+        "event", "event__project", "event__project__owner_org"
+    ).filter(event__project__isnull=False)
+
+    if is_admin:
+        listings = list(qs)
+    elif org:
+        reg_ids = list(
+            BidderRegistration.objects.filter(organisation=org).values_list("tender_id", flat=True)
+        )
+        listings = list(qs.filter(pk__in=reg_ids))
+    else:
+        listings = []
+
+    rows = []
+    for lst in listings:
+        project = _project(lst)
+        subs = WorkSubTask.objects.filter(project=project)
+        total = subs.count()
+        done = subs.filter(status=WorkSubTask.STATUS_DONE).count()
+        rows.append({
+            "listing": lst,
+            "project": project,
+            "owner": getattr(project, "owner_org", None),
+            "subtasks": total,
+            "done": done,
+            "has_wbs": total > 0,
+            "pct": (round(done * 100.0 / total) if total else 0),
+        })
+
+    ctx = {
+        "rows": rows,
+        "org_name": getattr(org, "name", ""),
+        **branding_template_context(request),
+    }
+    return render(request, "tenders/works_execution_index.html", ctx)
 
 
 @login_required

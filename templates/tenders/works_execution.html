@@ -68,16 +68,19 @@
 <div class="we-wrap">
 
   <div style="margin-bottom:20px;">
-    <div style="margin-bottom:8px;"><span class="we-tag-internal">Internal process</span></div>
-    <div class="we-eyebrow">Executing &middot; separate from the public tender exchange</div>
-    <h1 class="we-h1">Executing &mdash; Open Public Tender Project Task</h1>
+    <div style="margin-bottom:8px;">
+      <a href="{% url 'works-execution-index' %}" style="font-size:.75rem;color:#0f8a8a;text-decoration:none;">&larr; Internal Public Open Tender Process</a>
+    </div>
+    <div style="margin-bottom:8px;"><span class="we-tag-internal">Internal &middot; {{ caps.org.name|default:"Contractor" }}</span></div>
+    <div class="we-eyebrow">Executing an awarded open public tender</div>
+    <h1 class="we-h1">Internal Public Open Tender Process</h1>
     <div style="font-family:ui-monospace,monospace;font-size:.74rem;color:#8494a8;margin-bottom:10px;">{{ listing.event.ref }}{% if overview.finance.task_id %} &middot; project task {{ overview.finance.task_id }}{% endif %}</div>
     <div class="we-internal">
-      <strong>Internal delivery process.</strong> This is the contractor's own execution of the awarded
-      works &mdash; kept separate from browsing, bidding and award on the public tender exchange. Break
-      the BOQ into <strong>Task A &rarr; sub-tasks A-1 &hellip; n</strong> from the "Measurement, Materials
-      &amp; Workmanship" preambles, drive each to inspection, approval and a completion certificate, and
-      track earned value vs actual cost so delivery stays profitable.
+      <strong>Your internal delivery of an awarded open public tender.</strong> Break the BOQ into
+      <strong>Task A &rarr; sub-tasks A-1 &hellip; n</strong> from the "Measurement, Materials &amp;
+      Workmanship" preambles, drive each to inspection, approval and a completion certificate, and
+      track earned value vs actual cost so delivery stays profitable. Government parties (QA, PM,
+      consulting engineers, accountant) supervise, authorize and process payment; your team executes.
     </div>
   </div>
 

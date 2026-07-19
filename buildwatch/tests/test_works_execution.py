@@ -139,8 +139,8 @@ class WorksExecutionTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
         self.assertIn("Executing", html)
-        self.assertIn("Open Public Tender Project Task", html)
-        self.assertIn("Internal process", html)
+        self.assertIn("Internal Public Open Tender Process", html)
+        self.assertIn("Internal", html)
         # Governance: external government parties + internal Pioneer
         self.assertIn("Governance", html)
         self.assertIn("QA - Quality Assurance", html)
@@ -176,3 +176,11 @@ class WorksExecutionTests(TestCase):
                       {"action": "generate_wbs"})
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(WorkSubTask.objects.count(), 3)
+
+    def test_internal_index_lists_registered_tender(self):
+        c = self._contractor()
+        resp = c.get(reverse("works-execution-index"))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        self.assertIn("Internal Public Open Tender Process", html)
+        self.assertIn(self.listing.event.ref, html)
