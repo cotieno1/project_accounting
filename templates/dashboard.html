@@ -154,13 +154,11 @@
 		<div class="tab" onclick="showSection('platform-tenants')">Building Contractors</div>
 		{% endif %}
 		<a href="{% url 'tender-list' %}" class="tab">Public Procurement Bid Dashboard</a>
-		<a href="{% url 'works-execution-index' %}" class="tab">Internal Public Open Tender Process</a>
 		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
         <a href="{% url 'ops_dashboard' %}" class="tab">Close Tender - Financial Dashboard</a>
         {% else %}
 		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
 		<a href="{% url 'tender-list' %}" class="tab">Public Procurement Bid Dashboard</a>
-		<a href="{% url 'works-execution-index' %}" class="tab">Internal Public Open Tender Process</a>
 		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
         <a href="{% url 'ops_dashboard' %}" class="tab">Close Tender - Financial Dashboard</a>
         {% endif %}
