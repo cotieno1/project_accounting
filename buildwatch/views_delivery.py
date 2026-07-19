@@ -193,6 +193,39 @@ def delivery_action(request, listing_id):
             messages.info(request, "A kick-off SOP already exists for this tender.")
         return redirect("my-bids")
 
+    if action == "share_sop":
+        sop = get_object_or_404(
+            ProjectKickoffSOP, pk=request.POST.get("sop_id"), project=project
+        )
+        if sop.status == ProjectKickoffSOP.STATUS_SIGNED:
+            messages.info(request, "This SOP is already fully signed off.")
+            return redirect("my-bids")
+        parties = list(sop.signoffs.all())
+        sop.shared_at = timezone.now()
+        sop.shared_by = ua
+        sop.shared_parties = len(parties)
+        if sop.status == ProjectKickoffSOP.STATUS_DRAFT:
+            sop.status = ProjectKickoffSOP.STATUS_CIRCULATED
+        sop.save(update_fields=["shared_at", "shared_by", "shared_parties", "status", "updated_at"])
+        try:
+            AuditLedger.objects.create(
+                project=project, user=ua, action="SOP_SHARED",
+                model_name="ProjectKickoffSOP", object_id=str(sop.pk),
+                detail={
+                    "parties": [s.get_role_display() for s in parties],
+                    "count": len(parties),
+                },
+                professional_reg=getattr(ua, "professional_reg_no", "") or "",
+            )
+        except Exception:
+            pass
+        names = ", ".join(s.get_role_display() for s in parties) or "all parties"
+        messages.success(
+            request,
+            "Draft SOP shared with all parties for sign-off (%s)." % names,
+        )
+        return redirect("my-bids")
+
     if action == "toggle_prereq":
         pr = get_object_or_404(
             SOPPrerequisite, pk=request.POST.get("prereq_id"), sop__project=project

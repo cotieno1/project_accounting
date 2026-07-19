@@ -1700,6 +1700,12 @@ class ProjectKickoffSOP(models.Model):
     )
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     notes = models.TextField(blank=True)
+    shared_at = models.DateTimeField(null=True, blank=True)
+    shared_by = models.ForeignKey(
+        "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="shared_sops",
+    )
+    shared_parties = models.PositiveIntegerField(default=0)
     created_by = models.ForeignKey(
         "accounts.UserAccount", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="created_sops",
@@ -1716,7 +1722,7 @@ class ProjectKickoffSOP(models.Model):
         any_signed = self.signoffs.filter(signed=True).exists()
         if required and len(signed) == len(required):
             self.status = self.STATUS_SIGNED
-        elif any_signed:
+        elif any_signed or self.shared_at:
             self.status = self.STATUS_CIRCULATED
         else:
             self.status = self.STATUS_DRAFT

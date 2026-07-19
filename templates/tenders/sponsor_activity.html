@@ -215,8 +215,14 @@
           {% if row.sop %}
           <div class="dh-inline">
             {% if row.sop.progress.all_signed %}<span class="dh-pill dh-pill--ok">Signed by all parties</span>
-            {% elif row.sop.sop.status == 'CIRCULATED' %}<span class="dh-pill dh-pill--warn">Awaiting signatures</span>
+            {% elif row.sop.sop.status == 'CIRCULATED' %}<span class="dh-pill dh-pill--warn">Shared &middot; awaiting signatures</span>
             {% else %}<span class="dh-pill dh-pill--muted">Draft</span>{% endif %}
+            {% if not row.sop.progress.all_signed %}
+            <form method="post" action="{% url 'delivery-action' row.tender.pk %}">{% csrf_token %}
+              <input type="hidden" name="action" value="share_sop"><input type="hidden" name="sop_id" value="{{ row.sop.sop.pk }}">
+              <button type="submit" class="bw-btn bw-btn--teal bw-btn--sm">{% if row.sop.sop.shared_at %}Re-share draft{% else %}Share draft with all parties{% endif %}</button>
+            </form>
+            {% endif %}
             <a href="{% url 'sop-pdf' row.tender.pk row.sop.sop.pk %}" target="_blank" class="bw-btn bw-btn--ghost bw-btn--sm">Print SOP</a>
           </div>
           {% endif %}
@@ -236,6 +242,7 @@
           <div class="dh-panel__meta" style="margin-bottom:12px;">
             Pre-requisites {{ row.sop.progress.prereq_done }}/{{ row.sop.progress.prereq_total }} confirmed ({{ row.sop.progress.prereq_pct }}%)
             &middot; Signatures {{ row.sop.progress.sign_done }}/{{ row.sop.progress.sign_total }}
+            {% if row.sop.sop.shared_at %}&middot; <span style="color:#0f8a8a;">Shared with {{ row.sop.sop.shared_parties }} part{{ row.sop.sop.shared_parties|pluralize:"y,ies" }} on {{ row.sop.sop.shared_at|date:"d M Y H:i" }}</span>{% endif %}
           </div>
           <div style="margin-bottom:14px;">
             {% for p in row.sop.prerequisites %}

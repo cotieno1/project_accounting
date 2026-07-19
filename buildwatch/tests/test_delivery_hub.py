@@ -255,6 +255,21 @@ class DeliveryHubTests(TestCase):
         sop.refresh_from_db()
         self.assertEqual(sop.status, ProjectKickoffSOP.STATUS_SIGNED)
 
+    def test_share_sop_with_all_parties(self):
+        c = self._sponsor_client()
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "generate_sop"})
+        sop = ProjectKickoffSOP.objects.get(project=self.project)
+        self.assertEqual(sop.status, ProjectKickoffSOP.STATUS_DRAFT)
+        c.post(reverse("delivery-action", args=[self.listing.pk]),
+               {"action": "share_sop", "sop_id": sop.pk})
+        sop.refresh_from_db()
+        self.assertEqual(sop.status, ProjectKickoffSOP.STATUS_CIRCULATED)
+        self.assertIsNotNone(sop.shared_at)
+        self.assertEqual(sop.shared_parties, sop.signoffs.count())
+        # A share does not regress once someone starts signing
+        self.assertTrue(sop.shared_parties >= 4)
+
     def test_toggle_prerequisite(self):
         c = self._sponsor_client()
         c.post(reverse("delivery-action", args=[self.listing.pk]),
