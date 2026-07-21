@@ -88,6 +88,39 @@ class OpenTenderFinOpsTests(TestCase):
         TenderBoqPackage.objects.create(
             tender=cls.listing, code="BA-B01-E02", title="Concrete Work", sort_order=2,
         )
+        # Pilot packages: R.C Frame (concrete) + Internal Finishes (tiling)
+        cls.pkg_rc = TenderBoqPackage.objects.create(
+            tender=cls.listing, code="BA-B04-E02",
+            title="Block A / El 2 R.C FRAME", sort_order=10,
+        )
+        cls.pkg_fin = TenderBoqPackage.objects.create(
+            tender=cls.listing, code="BA-B04-E07",
+            title="Block A / El 7 INTERNAL FINISHES", sort_order=11,
+        )
+        from buildwatch.models import TenderBoqLine
+        TenderBoqLine.objects.create(
+            package=cls.pkg_rc, bill_ref="E02-A", description="Columns",
+            unit="CM", quantity=Decimal("10"), sort_order=1,
+        )
+        TenderBoqLine.objects.create(
+            package=cls.pkg_rc, bill_ref="E02-E", description="130mm thick suspended slabs",
+            unit="SM", quantity=Decimal("100"), sort_order=2,
+        )
+        TenderBoqLine.objects.create(
+            package=cls.pkg_fin, bill_ref="E07-C",
+            description="Supply and Fix ceramic wall tiles on prepared backings",
+            unit="SM", quantity=Decimal("50"), sort_order=1,
+        )
+        TenderBoqLine.objects.create(
+            package=cls.pkg_fin, bill_ref="E07-F2",
+            description="Supply and Fix Ceramic tiles; on prepared bed floors",
+            unit="SM", quantity=Decimal("40"), sort_order=2,
+        )
+        TenderBoqLine.objects.create(
+            package=cls.pkg_fin, bill_ref="E07-G",
+            description="Ditto Non Slip Ceramic Tiles",
+            unit="SM", quantity=Decimal("20"), sort_order=3,
+        )
         cls.ws = BidWorkspace.objects.create(
             tender=cls.listing,
             organisation=cls.contractor_org,
@@ -233,3 +266,52 @@ class OpenTenderFinOpsTests(TestCase):
         self.assertIn("Bamburi", st.certified_products)
         self.assertIn("DN-001", st.proof_notes)
         self.assertEqual(st.signoff_authority, "MoW Structural Engineer")
+
+    def test_activities_and_activity_based_budget(self):
+        from buildwatch.models import OpenTenderActivity
+        from buildwatch.open_tender import generate_activities_from_boq_lines
+
+        task = ProjectTask.objects.create(project_id="PT-ACT-1", description="Public")
+        profile = PublicTenderProfile.objects.create(
+            task=task, tender=self.listing, category="PUBLIC_TENDER",
+            contractor_org=self.contractor_org,
+        )
+        result = generate_activities_from_boq_lines(profile, with_draft_budget=True)
+        self.assertGreaterEqual(result["activities"], 5)
+        self.assertGreater(result["budget_lines"], 0)
+
+        tile = OpenTenderActivity.objects.filter(code="E07-C").first()
+        self.assertIsNotNone(tile)
+        self.assertEqual(tile.measure_unit, "m2")
+        self.assertIn("wet areas", tile.location_hint.lower())
+        self.assertGreater(tile.budget_lines.count(), 0)
+        kinds = set(tile.budget_lines.values_list("kind", flat=True))
+        self.assertIn("MATERIAL", kinds)
+        self.assertIn("LABOUR", kinds)
+
+        col = OpenTenderActivity.objects.filter(code="E02-A").first()
+        self.assertIsNotNone(col)
+        self.assertEqual(col.measure_unit, "m3")
+        self.assertEqual(col.location_hint, "Columns")
+
+        c = self._client()
+        resp = c.post(reverse("open-tender-action", args=[profile.pk]), {
+            "action": "generate_activities",
+        })
+        self.assertEqual(resp.status_code, 302)
+        detail = c.get(reverse("open-tender-detail", args=[profile.pk]))
+        self.assertEqual(detail.status_code, 200)
+        html = detail.content.decode("utf-8")
+        self.assertIn("activity-based budget", html)
+        self.assertIn("ceramic wall tiles", html.lower())
+        self.assertIn("Columns", html)
+
+    def test_project_wbs_page(self):
+        c = self._client()
+        resp = c.get(reverse("tender-project-wbs", args=[self.listing.pk]))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        self.assertIn("Complete Project WBS", html)
+        self.assertIn("BA-B04-E02", html)
+        self.assertIn("Columns", html)
+        self.assertIn("ceramic wall tiles", html.lower())

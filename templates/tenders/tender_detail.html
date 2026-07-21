@@ -404,8 +404,12 @@
               Bid submitted on {{ workspace.submitted_at|date:"d M Y" }}.
             </div>
             <a href="{% url 'my-bids' %}"
-               class="bw-btn bw-btn--ghost" style="width:100%;justify-content:center;">
+               class="bw-btn bw-btn--ghost" style="width:100%;justify-content:center;margin-bottom:8px;">
               View My Bids
+            </a>
+            <a href="{% url 'tender-project-wbs' listing.pk %}"
+               class="bw-btn bw-btn--ghost" style="width:100%;justify-content:center;">
+              Project WBS
             </a>
 
           {% else %}
@@ -454,8 +458,13 @@
                 Open BOQ Workspace
                 <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
               </a>
+              <a href="{% url 'tender-project-wbs' listing.pk %}"
+                 class="bw-btn bw-btn--ghost"
+                 style="width:100%;justify-content:center;margin-bottom:8px;">
+                Project WBS
+              </a>
               <div style="font-size:.72rem;color:var(--bw-dgrey);text-align:center;margin-bottom:10px;">
-                Available now — not blocked by certificate progress.
+                Complete work breakdown: area &rarr; task &rarr; activity (measure + qty).
               </div>
             {% endif %}
 
@@ -494,6 +503,19 @@
 
       <!-- Compliance & sign-off -->
       {% if user.is_authenticated %}
+      <div class="bw-card" style="margin-bottom:16px;">
+        <div class="bw-card-header">Project WBS</div>
+        <div class="bw-card-body" style="padding:14px 18px;">
+          <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:10px;line-height:1.5;">
+            Complete work breakdown for this tender: building/area &rarr; task (element) &rarr;
+            activity (BOQ line) with measure and quantity.
+          </div>
+          <a href="{% url 'tender-project-wbs' listing.pk %}"
+             class="bw-btn bw-btn--primary" style="width:100%;justify-content:center;">
+            Open Project WBS
+          </a>
+        </div>
+      </div>
       <div class="bw-card" style="margin-bottom:16px;">
         <div class="bw-card-header">Compliance &amp; Sign-off</div>
         <div class="bw-card-body" style="padding:14px 18px;">

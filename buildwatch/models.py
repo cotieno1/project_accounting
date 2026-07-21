@@ -1695,6 +1695,92 @@ class WorkSubTask(models.Model):
         return self.status == self.STATUS_DONE
 
 
+class OpenTenderActivity(models.Model):
+    """
+    Measurable delivery activity under a WorkSubTask (BOQ category).
+
+    Sourced from a TenderBoqLine (priced bill item). Example:
+      Sub-task = Internal Finishes
+      Activity  = Supply and fix ceramic wall tiles (kitchen/wet areas) - SM / m2
+
+    The BOQ preamble (e.g. Concrete Work) governs quality; this row is what
+    you measure and activity-budget.
+    """
+    subtask = models.ForeignKey(
+        WorkSubTask, on_delete=models.CASCADE, related_name="activities",
+    )
+    boq_line = models.ForeignKey(
+        "TenderBoqLine", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="open_activities",
+    )
+    seq = models.PositiveSmallIntegerField(default=0)
+    code = models.CharField(max_length=30, blank=True, help_text="e.g. E07-C")
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    unit = models.CharField(max_length=30, blank=True, help_text="BOQ unit: SM, CM, Lm, Kg")
+    measure_unit = models.CharField(
+        max_length=20, blank=True,
+        help_text="Display unit for activity-based budget: m2, m3, m, kg",
+    )
+    quantity = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0"))
+    unit_rate = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
+    amount = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
+    location_hint = models.CharField(
+        max_length=120, blank=True,
+        help_text="e.g. Kitchen, Bedroom ensuite, Lift lobby, GF slab",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["subtask_id", "seq", "id"]
+
+    def __str__(self):
+        return f"{self.code} {self.name}"
+
+    @property
+    def budget_total(self):
+        return sum((b.amount for b in self.budget_lines.all()), Decimal("0"))
+
+
+class ActivityBudgetLine(models.Model):
+    """Activity-based budget component under an OpenTenderActivity."""
+    KIND_MATERIAL = "MATERIAL"
+    KIND_LABOUR = "LABOUR"
+    KIND_EQUIPMENT = "EQUIPMENT"
+    KIND_INTERNAL = "INTERNAL"
+    KIND_SUBCONTRACT = "SUBCONTRACT"
+    KIND_CHOICES = [
+        (KIND_MATERIAL, "Materials / products"),
+        (KIND_LABOUR, "Labour / resources"),
+        (KIND_EQUIPMENT, "Equipment"),
+        (KIND_INTERNAL, "Internal (non-BOQ / Pioneer)"),
+        (KIND_SUBCONTRACT, "Subcontract"),
+    ]
+
+    activity = models.ForeignKey(
+        OpenTenderActivity, on_delete=models.CASCADE, related_name="budget_lines",
+    )
+    kind = models.CharField(max_length=15, choices=KIND_CHOICES, default=KIND_MATERIAL)
+    name = models.CharField(max_length=200)
+    unit = models.CharField(max_length=30, blank=True)
+    quantity = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0"))
+    rate = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
+    amount = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0"))
+    notes = models.CharField(max_length=300, blank=True)
+    seq = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["seq", "kind", "id"]
+
+    def save(self, *args, **kwargs):
+        self.amount = (self.quantity * self.rate).quantize(Decimal("0.01"))
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.kind}: {self.name} = {self.amount}"
+
+
 class SubTaskResource(models.Model):
     """
     Product or resource needed to execute a sub-task (Public Tender Internal Fin Ops).

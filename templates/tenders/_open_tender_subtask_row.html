@@ -1,3 +1,4 @@
+{% load pioneer_tags %}
 <tr>
   <td><strong>{{ st.code }}</strong><div class="ot-hint">{% if st.kind == 'BOQ' %}<span class="pill pill-boq">BOQ</span>{% else %}<span class="pill pill-int">Internal</span>{% endif %}{% if st.package_code %} - {{ st.package_code }}{% endif %}</div></td>
   <td>

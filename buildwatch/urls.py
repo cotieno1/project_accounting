@@ -51,6 +51,10 @@ tender_patterns = [
          t.tender_detail,
          name='tender-detail'),
 
+    path('<int:listing_id>/wbs/',
+         ot.tender_project_wbs,
+         name='tender-project-wbs'),
+
     path('sponsors/<str:org_code>/',
          t.sponsor_landing,
          name='sponsor-landing'),

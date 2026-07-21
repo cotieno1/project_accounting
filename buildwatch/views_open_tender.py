@@ -26,8 +26,10 @@ from .models import (
 )
 from .open_tender import (
     add_resource,
+    build_project_wbs,
     ensure_public_profile,
     fin_ops_overview,
+    generate_activities_from_boq_lines,
     generate_subtasks_from_boq,
     open_tender_overview,
     set_resource_phases,
@@ -121,6 +123,26 @@ def open_tender_detail(request, task_id):
 
 
 @login_required
+def tender_project_wbs(request, listing_id):
+    """Complete Project WBS for Pioneer from the tender BOQ (packages -> activities)."""
+    listing = get_object_or_404(
+        TenderListing.objects.select_related("event", "event__project"),
+        pk=listing_id,
+        is_published=True,
+    )
+    wbs = build_project_wbs(listing)
+    profile = PublicTenderProfile.objects.filter(tender=listing).first()
+    ctx = {
+        "listing": listing,
+        "wbs": wbs,
+        "profile": profile,
+        "org_name": getattr(_contractor_org(request), "name", ""),
+        **branding_template_context(request),
+    }
+    return render(request, "tenders/project_wbs.html", ctx)
+
+
+@login_required
 @require_POST
 def open_tender_action(request, task_id):
     profile = get_object_or_404(PublicTenderProfile, pk=task_id)
@@ -140,6 +162,18 @@ def open_tender_action(request, task_id):
             )
         else:
             messages.info(request, "No new sub-tasks to create (already seeded).")
+        return redirect("open-tender-detail", task_id=profile.pk)
+
+    if action == "generate_activities":
+        # Ensure category sub-tasks exist first.
+        generate_subtasks_from_boq(profile, ua)
+        result = generate_activities_from_boq_lines(profile, with_draft_budget=True)
+        messages.success(
+            request,
+            "Activities from BOQ lines: %d new; draft activity-budget lines: %d "
+            "(pilot: R.C Frame + Internal Finishes / tiling)."
+            % (result["activities"], result["budget_lines"]),
+        )
         return redirect("open-tender-detail", task_id=profile.pk)
 
     st = get_object_or_404(WorkSubTask, pk=request.POST.get("subtask_id"), profile=profile)

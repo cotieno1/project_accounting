@@ -1,0 +1,108 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Project WBS - {{ wbs.ref }}{% endblock %}
+
+{% block bw_content %}
+<style>
+  .wbs-wrap{max-width:1100px;margin:0 auto;padding:28px 20px 56px;color:#16233b}
+  .wbs-tag{display:inline-block;background:#16233b;color:#fff;font:700 .6rem sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:5px}
+  .wbs-h1{font-size:1.4rem;font-weight:800;margin:8px 0 4px}
+  .wbs-lead{color:#5b6b82;font-size:.88rem;line-height:1.55;max-width:860px;margin-bottom:16px}
+  .wbs-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px}
+  .wbs-stat{border:1px solid #e6ebf2;border-radius:10px;padding:10px 12px;background:#fbfcfe}
+  .wbs-stat__k{font:700 .62rem sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#8494a8}
+  .wbs-stat__v{font-size:1.1rem;font-weight:800;margin-top:4px}
+  .wbs-group{border:1px solid #e6ebf2;border-radius:12px;background:#fff;margin-bottom:14px;overflow:hidden}
+  .wbs-group__h{padding:12px 14px;background:linear-gradient(180deg,#f7fafc,#fff);border-bottom:1px solid #eef2f7;font-weight:800;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .wbs-task{border-top:1px solid #eef2f7}
+  .wbs-task__h{padding:10px 14px;font-weight:700;font-size:.9rem;background:#fbfcfe;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+  .wbs-task__h:hover{background:#f3f7fb}
+  .wbs-acts{padding:0 14px 12px}
+  table.wbs{width:100%;border-collapse:collapse;font-size:.8rem}
+  table.wbs th{text-align:left;font:700 .62rem sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#8494a8;padding:7px 6px;border-bottom:1px solid #e6ebf2}
+  table.wbs td{padding:7px 6px;border-bottom:1px solid #f0f3f8;vertical-align:top}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace}
+  .hint{font-size:.7rem;color:#8494a8}
+  .pill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:.66rem;font-weight:700;background:#eef2f7;color:#3f5168}
+  details.wbs-task > summary{list-style:none}
+  details.wbs-task > summary::-webkit-details-marker{display:none}
+</style>
+
+<div class="wbs-wrap">
+  <div style="margin-bottom:8px">
+    <a href="{% url 'tender-detail' listing.pk %}" style="font-size:.75rem;color:#1a4f8a;text-decoration:none">&larr; Back to tender</a>
+  </div>
+  <span class="wbs-tag">Complete Project WBS</span>
+  <h1 class="wbs-h1">{{ wbs.ref }}</h1>
+  <p class="wbs-lead">
+    {{ wbs.title }} - full work breakdown for Pioneer from the priced BOQ structure:
+    <strong>Building / area</strong> &rarr; <strong>Task (element)</strong> &rarr; <strong>Activity (BOQ line)</strong> with measure units.
+    Use this to plan delivery; activity-based budgets live on Open Tender Financial after award.
+  </p>
+
+  <div class="wbs-stats">
+    <div class="wbs-stat"><div class="wbs-stat__k">Areas</div><div class="wbs-stat__v">{{ wbs.totals.groups }}</div></div>
+    <div class="wbs-stat"><div class="wbs-stat__k">Tasks</div><div class="wbs-stat__v">{{ wbs.totals.tasks }}</div></div>
+    <div class="wbs-stat"><div class="wbs-stat__k">Activities</div><div class="wbs-stat__v">{{ wbs.totals.activities }}</div></div>
+  </div>
+
+  {% if profile %}
+  <div style="margin-bottom:14px">
+    <a class="bw-btn bw-btn--primary bw-btn--sm" href="{% url 'open-tender-detail' profile.task_id %}">Open Tender - activity budget</a>
+    <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'public-tender-fin-ops' profile.task_id %}">Public Tender Internal Fin Ops</a>
+  </div>
+  {% endif %}
+
+  {% if wbs.groups %}
+    {% for g in wbs.groups %}
+    <div class="wbs-group">
+      <div class="wbs-group__h">
+        <span>{{ g.code }} - {{ g.name }}</span>
+        <span class="pill">{{ g.tasks|length }} task{{ g.tasks|length|pluralize }} - {{ g.activity_count }} activit{{ g.activity_count|pluralize:"y,ies" }}</span>
+      </div>
+      {% for task in g.tasks %}
+      <details class="wbs-task"{% if forloop.parentloop.first and forloop.first %} open{% endif %}>
+        <summary class="wbs-task__h">
+          <span><span class="pill">{{ task.code }}</span> {{ task.name }}</span>
+          <span class="hint">{{ task.activity_count }} activities</span>
+        </summary>
+        <div class="wbs-acts">
+          {% if task.activities %}
+          <table class="wbs">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Activity</th>
+                <th>Measure</th>
+                <th class="num">Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for a in task.activities %}
+              <tr>
+                <td><strong>{{ a.code }}</strong></td>
+                <td>
+                  {{ a.name }}
+                  {% if a.location_hint %}<div class="hint">{{ a.location_hint }}</div>{% endif %}
+                </td>
+                <td>{{ a.measure_unit|default:a.unit }} <span class="hint">({{ a.unit }})</span></td>
+                <td class="num">{{ a.quantity }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="hint" style="padding:8px 0">No BOQ lines under this task yet.</div>
+          {% endif %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="border:1px dashed #cfd8e6;border-radius:12px;padding:28px;text-align:center;color:#5b6b82">
+      No BOQ packages loaded for this tender yet. Load the PDF BOQ into the bid workspace first.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

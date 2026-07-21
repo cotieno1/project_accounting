@@ -18,10 +18,13 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from .models import (
+    ActivityBudgetLine,
     BidWorkspace,
+    OpenTenderActivity,
     PublicTenderProfile,
     SubTaskResource,
     SubTaskResourcePhase,
+    TenderBoqLine,
     TenderBoqPackage,
     TenderListing,
     WorkspaceBillPrice,
@@ -197,16 +200,267 @@ def generate_subtasks_from_boq(profile, ua=None):
     return created
 
 
+# Pilot packages for activity + activity-based budget demos (Block A).
+PILOT_ACTIVITY_PACKAGES = ("BA-B04-E02", "BA-B04-E07")  # R.C Frame, Internal Finishes
+
+_UNIT_MAP = {
+    "SM": "m2",
+    "CM": "m3",
+    "LM": "m",
+    "KG": "kg",
+    "NO": "No",
+    "ITEM": "Item",
+    "SUM": "Sum",
+}
+
+
+def _measure_unit(boq_unit):
+    u = (boq_unit or "").strip().upper()
+    return _UNIT_MAP.get(u, (boq_unit or "").strip() or "No")
+
+
+def _location_hint(description, package_title=""):
+    text = ("%s %s" % (description or "", package_title or "")).lower()
+    if "lift lobby" in text or "lift" in text and "lobby" in text:
+        return "Lift lobby"
+    if "landing" in text:
+        return "Stair landings"
+    if "tread" in text or "riser" in text:
+        return "Staircases"
+    if "tank" in text:
+        return "Tank / roof"
+    if "non slip" in text or "non-slip" in text:
+        return "Wet areas (kitchen / bathroom / balcony)"
+    if "ceramic wall" in text or "wall tile" in text:
+        return "Walls (wet areas / kitchens)"
+    if "floor tile" in text or "ceramic tile" in text and "wall" not in text:
+        return "Floors (rooms / corridors)"
+    if "skirting" in text:
+        return "Room perimeters"
+    if "column" in text:
+        return "Columns"
+    if "beam" in text:
+        return "Beams"
+    if "slab" in text:
+        return "Suspended slabs"
+    if "staircase" in text or "stair" in text:
+        return "Staircases"
+    if "reinforcement" in text or "brc" in text:
+        return "Structural members"
+    if "formwork" in text or "soffit" in text or "sides of" in text:
+        return "Formwork contact surfaces"
+    return ""
+
+
+def _activity_name(description, location_hint=""):
+    name = (description or "BOQ activity").strip()
+    if len(name) > 180:
+        name = name[:177] + "..."
+    if location_hint and location_hint.lower() not in name.lower():
+        return ("%s [%s]" % (name, location_hint))[:255]
+    return name[:255]
+
+
+def _draft_budget_lines(activity):
+    """
+    Seed a draft activity-based budget from the BOQ amount.
+    Splits by activity type (tiling / concrete / formwork / rebar / default).
+    Rates are draft placeholders for Pioneer to refine in Fin Ops.
+    """
+    if activity.budget_lines.exists():
+        return 0
+    amt = activity.amount
+    provisional = False
+    if amt <= 0 and (activity.quantity or Z) > 0:
+        # Provisional envelope until the bid line is priced.
+        amt = _q(activity.quantity * Decimal("1000"))
+        provisional = True
+    elif amt <= 0:
+        return 0
+    qty = activity.quantity or Decimal("1")
+    mu = activity.measure_unit or activity.unit or "No"
+    text = (activity.name or "").lower()
+    created = 0
+    note_suffix = (
+        "Provisional draft - replace with priced BOQ / best-price RFQ"
+        if provisional else
+        "Draft activity budget - refine with best-price RFQ"
+    )
+
+    def add(kind, name, share, unit=None, notes=""):
+        nonlocal created
+        share_amt = _q(amt * Decimal(str(share)))
+        if share_amt <= 0:
+            return
+        rate = _q(share_amt / qty) if qty else share_amt
+        ActivityBudgetLine.objects.create(
+            activity=activity,
+            kind=kind,
+            name=name[:200],
+            unit=(unit or mu)[:30],
+            quantity=qty,
+            rate=rate,
+            notes=((notes + " - " if notes else "") + note_suffix)[:300],
+            seq=created + 1,
+        )
+        created += 1
+
+    if any(k in text for k in ("tile", "ceramic", "porcelain", "skirting")):
+        add(ActivityBudgetLine.KIND_MATERIAL, "Tiles / adhesives / grout / screed make-up", 0.55,
+            notes="Certified products per finishes preamble")
+        add(ActivityBudgetLine.KIND_LABOUR, "Tilers + helpers", 0.30)
+        add(ActivityBudgetLine.KIND_EQUIPMENT, "Tile cutter / mixer hire", 0.08)
+        add(ActivityBudgetLine.KIND_INTERNAL, "Protection, cleaning, QA samples", 0.07)
+    elif any(k in text for k in ("reinforcement", "brc", "steel bar")):
+        add(ActivityBudgetLine.KIND_MATERIAL, "Reinforcement steel + tying wire + chairs", 0.70,
+            notes="Per Concrete Work preamble / bending schedules")
+        add(ActivityBudgetLine.KIND_LABOUR, "Steel fixers", 0.22)
+        add(ActivityBudgetLine.KIND_EQUIPMENT, "Bar bender / cutter", 0.05)
+        add(ActivityBudgetLine.KIND_INTERNAL, "Inspection hold for Engineer check", 0.03)
+    elif any(k in text for k in ("formwork", "soffit", "sides of", "shutter")):
+        add(ActivityBudgetLine.KIND_MATERIAL, "Formwork timber / plywood / oil", 0.45)
+        add(ActivityBudgetLine.KIND_LABOUR, "Carpenters + striking gang", 0.40)
+        add(ActivityBudgetLine.KIND_EQUIPMENT, "Props / scaffolding", 0.10)
+        add(ActivityBudgetLine.KIND_INTERNAL, "Striking-time compliance (preamble)", 0.05)
+    elif any(k in text for k in ("column", "beam", "slab", "concrete", "blinding", "staircase")) \
+            or (activity.unit or "").upper() == "CM":
+        add(ActivityBudgetLine.KIND_MATERIAL, "Cement + fine/coarse aggregate + water", 0.50,
+            notes="OPC per BS; samples + mill certs (Concrete Work preamble)")
+        add(ActivityBudgetLine.KIND_LABOUR, "Concreting gang + curing", 0.28)
+        add(ActivityBudgetLine.KIND_EQUIPMENT, "Batch mixer + vibrator", 0.15)
+        add(ActivityBudgetLine.KIND_INTERNAL, "Cube tests / Clerk of Works attendance", 0.07)
+    else:
+        add(ActivityBudgetLine.KIND_MATERIAL, "Materials / products", 0.50)
+        add(ActivityBudgetLine.KIND_LABOUR, "Labour / resources", 0.35)
+        add(ActivityBudgetLine.KIND_EQUIPMENT, "Equipment", 0.10)
+        add(ActivityBudgetLine.KIND_INTERNAL, "Internal / QA", 0.05)
+    return created
+
+
+def generate_activities_from_boq_lines(profile, package_codes=None, with_draft_budget=True):
+    """
+    Expand BOQ category sub-tasks into measurable activities (one per BOQ line).
+    Default pilot: Block A R.C Frame + Internal Finishes (concrete + tiling).
+    """
+    package_codes = list(package_codes) if package_codes else list(PILOT_ACTIVITY_PACKAGES)
+    tender = profile.tender
+    project = getattr(getattr(tender, "event", None), "project", None)
+    workspace = _best_workspace(tender, profile.contractor_org)
+    created = 0
+    budgeted = 0
+
+    # Ensure pilot package sub-tasks exist (even if not in selected_package_codes).
+    if project is not None:
+        existing_boq = {
+            st.package_code: st
+            for st in profile.subtasks.filter(kind=WorkSubTask.KIND_BOQ).exclude(package_code="")
+        }
+        next_seq = (max([st.seq for st in profile.subtasks.all()], default=0)) + 1
+        for code in package_codes:
+            if code in existing_boq:
+                continue
+            pkg = TenderBoqPackage.objects.filter(tender=tender, code=code).first()
+            if not pkg:
+                continue
+            WorkSubTask.objects.create(
+                profile=profile,
+                project=project,
+                tender=tender,
+                kind=WorkSubTask.KIND_BOQ,
+                package_code=code,
+                seq=next_seq,
+                code="BOQ-%02d" % next_seq,
+                name=pkg.title[:200],
+                description="Priced BOQ category %s" % code,
+                has_financial_impact=True,
+                planned_value=_package_value(workspace, code),
+            )
+            next_seq += 1
+
+    for st in profile.subtasks.filter(kind=WorkSubTask.KIND_BOQ, package_code__in=package_codes):
+        pkg = TenderBoqPackage.objects.filter(tender=tender, code=st.package_code).first()
+        if not pkg:
+            continue
+        existing = {
+            a.code: a for a in st.activities.exclude(code="")
+        }
+        seq = 1
+        for line in pkg.lines.order_by("sort_order", "bill_ref"):
+            code = (line.bill_ref or ("L%s" % line.pk))[:30]
+            # Prefer contractor priced rate if present.
+            price = None
+            if workspace:
+                price = WorkspaceBillPrice.objects.filter(
+                    workspace=workspace, package_code=st.package_code, bill_ref=line.bill_ref,
+                ).first()
+            qty = (price.quantity if price and price.quantity else line.quantity) or Z
+            rate = (price.unit_rate if price else Z) or Z
+            amount = _q(price.amount) if price else _q(qty * rate)
+            hint = _location_hint(line.description, pkg.title)
+            name = _activity_name(line.description, hint)
+
+            if code in existing:
+                act = existing[code]
+                act.quantity = qty
+                act.unit_rate = rate
+                act.amount = amount
+                act.unit = (line.unit or "")[:30]
+                act.measure_unit = _measure_unit(line.unit)
+                act.location_hint = hint[:120]
+                act.name = name
+                act.save()
+            else:
+                act = OpenTenderActivity.objects.create(
+                    subtask=st,
+                    boq_line=line,
+                    seq=seq,
+                    code=code,
+                    name=name,
+                    description=(line.description or "")[:2000],
+                    unit=(line.unit or "")[:30],
+                    measure_unit=_measure_unit(line.unit),
+                    quantity=qty,
+                    unit_rate=rate,
+                    amount=amount,
+                    location_hint=hint[:120],
+                )
+                created += 1
+            seq += 1
+            if with_draft_budget:
+                budgeted += _draft_budget_lines(act)
+
+    return {"activities": created, "budget_lines": budgeted}
+
+
 def open_tender_overview(profile):
     """Rollup for Open Tender - Financial Dashboard."""
     subtasks = list(
-        profile.subtasks.prefetch_related("resources", "resources__phases").all()
+        profile.subtasks.prefetch_related(
+            "resources", "resources__phases",
+            "activities", "activities__budget_lines",
+        ).all()
     )
     boq = [s for s in subtasks if s.kind == WorkSubTask.KIND_BOQ]
     internal = [s for s in subtasks if s.kind == WorkSubTask.KIND_INTERNAL]
     planned = sum((_q(s.planned_value) for s in subtasks), Z)
     earned = sum((_q(s.planned_value) for s in subtasks if s.is_authorized), Z)
     done = sum(1 for s in subtasks if s.is_done)
+
+    # Activity + activity-budget rollup (pilot packages first).
+    activity_rows = []
+    for st in boq:
+        acts = list(st.activities.all())
+        if not acts:
+            continue
+        budget_sum = sum((_q(a.budget_total) for a in acts), Z)
+        activity_rows.append({
+            "subtask": st,
+            "activities": acts,
+            "count": len(acts),
+            "boq_amount": sum((_q(a.amount) for a in acts), Z),
+            "budget_total": budget_sum,
+        })
+
     return {
         "profile": profile,
         "tender": profile.tender,
@@ -214,12 +468,16 @@ def open_tender_overview(profile):
         "boq_subtasks": boq,
         "internal_subtasks": internal,
         "subtasks": subtasks,
+        "activity_groups": activity_rows,
+        "pilot_packages": list(PILOT_ACTIVITY_PACKAGES),
         "totals": {
             "planned": _q(planned),
             "earned": _q(earned),
             "count": len(subtasks),
             "done": done,
             "pct": int(round(done * 100 / len(subtasks))) if subtasks else 0,
+            "activities": sum(g["count"] for g in activity_rows),
+            "activity_budget": _q(sum((g["budget_total"] for g in activity_rows), Z)),
         },
     }
 
@@ -285,3 +543,80 @@ def set_resource_phases(resource, phase_qtys):
             )
         )
     return created
+
+def _wbs_group_key(package):
+    """Group packages by building / works area from code prefix (BA, SH, CV...)."""
+    code = (package.code or "").strip()
+    prefix = code.split("-")[0] if code else "OTHER"
+    title = package.title or ""
+    label = title.split("/")[0].strip() if title else prefix
+    return prefix, (label or prefix)
+
+
+def build_project_wbs(listing):
+    """
+    Complete Project WBS from the employer BOQ packages + lines.
+
+      Level 0 = Project (tender)
+      Level 1 = Building / works area (BA Block A, SH Social Hall, CV Civil...)
+      Level 2 = Element / category (R.C Frame, Internal Finishes...)  = Task
+      Level 3 = BOQ line activity (Columns, ceramic wall tiles...)     = Activity
+    """
+    packages = list(
+        TenderBoqPackage.objects.filter(tender=listing)
+        .prefetch_related("lines")
+        .order_by("sort_order", "code")
+    )
+    groups_map = {}
+    tot_packages = 0
+    tot_activities = 0
+
+    for pkg in packages:
+        prefix, label = _wbs_group_key(pkg)
+        if prefix not in groups_map:
+            groups_map[prefix] = {
+                "code": prefix,
+                "name": label,
+                "tasks": [],
+                "activity_count": 0,
+            }
+        activities = []
+        for i, line in enumerate(pkg.lines.all(), start=1):
+            hint = _location_hint(line.description, pkg.title)
+            activities.append({
+                "seq": i,
+                "code": line.bill_ref or ("L%s" % line.pk),
+                "name": _activity_name(line.description, hint),
+                "description": line.description or "",
+                "unit": line.unit or "",
+                "measure_unit": _measure_unit(line.unit),
+                "quantity": line.quantity,
+                "location_hint": hint,
+            })
+            tot_activities += 1
+        groups_map[prefix]["tasks"].append({
+            "code": pkg.code,
+            "name": pkg.title,
+            "sort_order": pkg.sort_order,
+            "activities": activities,
+            "activity_count": len(activities),
+        })
+        groups_map[prefix]["activity_count"] += len(activities)
+        tot_packages += 1
+
+    groups = sorted(groups_map.values(), key=lambda g: g["code"])
+    for g in groups:
+        g["tasks"].sort(key=lambda t: (t["sort_order"], t["code"]))
+
+    return {
+        "listing": listing,
+        "ref": listing.event.ref,
+        "title": listing.event.description,
+        "groups": groups,
+        "totals": {
+            "groups": len(groups),
+            "tasks": tot_packages,
+            "activities": tot_activities,
+        },
+    }
+

@@ -53,13 +53,75 @@
         <button class="bw-btn bw-btn--primary" type="submit">Generate sub-tasks from priced BOQ + internal items</button>
       </form>
       {% else %}
-      <form method="post" action="{% url 'open-tender-action' profile.task_id %}">{% csrf_token %}
+      <form method="post" action="{% url 'open-tender-action' profile.task_id %}" style="display:inline">{% csrf_token %}
         <input type="hidden" name="action" value="generate_subtasks">
         <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Refresh from BOQ (add missing only)</button>
+      </form>
+      <form method="post" action="{% url 'open-tender-action' profile.task_id %}" style="display:inline;margin-left:8px">{% csrf_token %}
+        <input type="hidden" name="action" value="generate_activities">
+        <button class="bw-btn bw-btn--primary bw-btn--sm" type="submit">Generate activities + activity budget (Concrete + Tiling pilot)</button>
       </form>
       {% endif %}
     </div>
   </div>
+
+  {% if overview.activity_groups %}
+  <div class="ot-panel">
+    <div class="ot-panel__h">
+      Activities &amp; activity-based budget
+      <small style="font-weight:500;color:#8494a8">- measure from BOQ lines; budget = materials + labour + equipment + internal</small>
+    </div>
+    <div class="ot-panel__b">
+      <div class="ot-stats" style="margin-bottom:14px">
+        <div class="ot-stat"><div class="ot-stat__k">Activities</div><div class="ot-stat__v">{{ overview.totals.activities }}</div></div>
+        <div class="ot-stat"><div class="ot-stat__k">Activity budget (draft)</div><div class="ot-stat__v">{{ overview.totals.activity_budget|money }}</div></div>
+      </div>
+      {% for g in overview.activity_groups %}
+      <div style="margin-bottom:18px">
+        <div style="font-weight:800;margin-bottom:6px">{{ g.subtask.code }} - {{ g.subtask.name }}
+          <span class="pill pill-boq">{{ g.subtask.package_code }}</span>
+          <span class="ot-hint" style="display:inline;margin-left:6px">{{ g.count }} activities - BOQ {{ g.boq_amount|money }} - budget {{ g.budget_total|money }}</span>
+        </div>
+        <table class="ot">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Activity (describe)</th>
+              <th>Measure</th>
+              <th class="num">Qty</th>
+              <th class="num">BOQ amount</th>
+              <th>Activity budget</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for a in g.activities %}
+            <tr>
+              <td><strong>{{ a.code }}</strong></td>
+              <td>
+                {{ a.name }}
+                {% if a.location_hint %}<div class="ot-hint">Location: {{ a.location_hint }}</div>{% endif %}
+              </td>
+              <td>{{ a.measure_unit|default:a.unit }} <span class="ot-hint">({{ a.unit }})</span></td>
+              <td class="num">{{ a.quantity }}</td>
+              <td class="num">{{ a.amount|money }}</td>
+              <td>
+                {% for b in a.budget_lines.all %}
+                <div class="ot-hint">{{ b.get_kind_display }}: {{ b.name }} - {{ b.amount|money }}</div>
+                {% empty %}
+                <span class="ot-hint">No draft budget yet</span>
+                {% endfor %}
+                <div class="ot-hint" style="font-weight:700;margin-top:2px">Total {{ a.budget_total|money }}</div>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+      <p class="ot-hint">Preamble (e.g. Concrete Work) = quality rules &amp; certified products. Activity = what you measure and budget. Refine rates via Public Tender Internal Fin Ops / RFQ.</p>
+    </div>
+  </div>
+  {% endif %}
 
   {% if overview.boq_subtasks %}
   <div class="ot-panel">
