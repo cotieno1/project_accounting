@@ -5,47 +5,61 @@
     {{ st.name }}
     <div class="ot-hint">
       {% if st.has_financial_impact %}Financial{% endif %}
-      {% if st.has_financial_impact and st.has_non_financial_impact %} - {% endif %}
+      {% if st.has_financial_impact and st.has_non_financial_impact %} · {% endif %}
       {% if st.has_non_financial_impact %}Non-financial{% endif %}
     </div>
     {% if st.certificate_ref %}<div class="ot-hint">Cert {{ st.certificate_ref }}</div>{% endif %}
-    {% if st.signoff_authority %}<div class="ot-hint">Signed: {{ st.signoff_authority }}</div>{% endif %}
+    {% if st.signoff_authority %}<div class="ot-hint">Inspected by: {{ st.signoff_authority }}</div>{% endif %}
   </td>
-  <td><span class="pill pill-st">{{ st.get_status_display }}</span></td>
+  <td><span class="pill pill-st">{{ st.get_status_display }}</span>
+    {% if st.next_gate %}<div class="ot-hint">Next: {{ st.next_gate }}</div>{% endif %}
+  </td>
   <td class="num">{{ st.planned_value|money }}</td>
   <td>
     <div class="ot-actions">
       {% if st.status == 'PLANNED' %}
       <form method="post" action="{% url 'open-tender-action' profile.task_id %}">{% csrf_token %}
         <input type="hidden" name="action" value="start_subtask"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
-        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Start</button>
+        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">1. Start work</button>
       </form>
       {% endif %}
       {% if st.status == 'IN_PROGRESS' %}
       <form method="post" action="{% url 'open-tender-action' profile.task_id %}">{% csrf_token %}
         <input type="hidden" name="action" value="request_inspection"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
-        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Request inspection</button>
+        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">2. Request inspection</button>
       </form>
       {% endif %}
       {% if st.status == 'INSPECTION' %}
       <form method="post" action="{% url 'open-tender-action' profile.task_id %}" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">{% csrf_token %}
         <input type="hidden" name="action" value="signoff_subtask"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
-        <input name="signoff_authority" placeholder="MoW consultant / local / expert" style="min-width:160px;padding:4px 8px;font-size:.75rem;border:1px solid #cfd8e6;border-radius:6px">
-        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Sign off</button>
+        <input name="signoff_authority" placeholder="MoW / local / expert" style="min-width:140px;padding:4px 8px;font-size:.75rem;border:1px solid #cfd8e6;border-radius:6px">
+        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">2b. Inspect pass</button>
       </form>
       {% endif %}
       {% if st.status == 'INSPECTED' %}
+      <form method="post" action="{% url 'open-tender-action' profile.task_id %}" style="display:flex;flex-direction:column;gap:4px;min-width:200px">{% csrf_token %}
+        <input type="hidden" name="action" value="certify_subtask"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
+        <input name="certified_products" placeholder="Certified products" style="padding:4px 8px;font-size:.75rem;border:1px solid #cfd8e6;border-radius:6px">
+        <input name="proof_notes" placeholder="Proof for audit" style="padding:4px 8px;font-size:.75rem;border:1px solid #cfd8e6;border-radius:6px">
+        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">3. Certify</button>
+      </form>
+      {% endif %}
+      {% if st.status == 'CERTIFIED' %}
       <form method="post" action="{% url 'open-tender-action' profile.task_id %}">{% csrf_token %}
         <input type="hidden" name="action" value="authorize_subtask"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
-        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Engineer nod</button>
+        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">4. Engineer nod</button>
       </form>
       {% endif %}
       {% if st.status == 'AUTHORIZED' %}
-      <form method="post" action="{% url 'open-tender-action' profile.task_id %}" style="display:flex;flex-direction:column;gap:4px;min-width:220px">{% csrf_token %}
-        <input type="hidden" name="action" value="complete_subtask"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
-        <input name="certified_products" placeholder="Certified products" style="padding:4px 8px;font-size:.75rem;border:1px solid #cfd8e6;border-radius:6px">
-        <input name="proof_notes" placeholder="Proof for audit / examination" style="padding:4px 8px;font-size:.75rem;border:1px solid #cfd8e6;border-radius:6px">
-        <button class="bw-btn bw-btn--primary bw-btn--sm" type="submit">Completion certificate</button>
+      <form method="post" action="{% url 'open-tender-action' profile.task_id %}">{% csrf_token %}
+        <input type="hidden" name="action" value="mark_payable"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
+        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">5a. Mark payable</button>
+      </form>
+      {% endif %}
+      {% if st.status == 'PAYABLE' %}
+      <form method="post" action="{% url 'open-tender-action' profile.task_id %}">{% csrf_token %}
+        <input type="hidden" name="action" value="mark_paid"><input type="hidden" name="subtask_id" value="{{ st.pk }}">
+        <button class="bw-btn bw-btn--primary bw-btn--sm" type="submit">5b. Mark paid (PV)</button>
       </form>
       {% endif %}
     </div>

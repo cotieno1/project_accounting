@@ -470,6 +470,12 @@ def open_tender_overview(profile):
         "subtasks": subtasks,
         "activity_groups": activity_rows,
         "pilot_packages": list(PILOT_ACTIVITY_PACKAGES),
+        "gate_chain": WorkSubTask.GATE_CHAIN,
+        "dependencies": list(
+            profile.activity_dependencies.select_related(
+                "predecessor_subtask", "successor_subtask",
+            )
+        ),
         "totals": {
             "planned": _q(planned),
             "earned": _q(earned),

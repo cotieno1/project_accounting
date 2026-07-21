@@ -122,12 +122,12 @@ class WorksExecutionTests(TestCase):
         st.refresh_from_db(); self.assertEqual(st.status, WorkSubTask.STATUS_INSPECTION)
 
         sponsor.post(url, {"action": "approve_subtask", "subtask_id": st.pk})
-        st.refresh_from_db(); self.assertEqual(st.status, WorkSubTask.STATUS_APPROVED)
+        st.refresh_from_db(); self.assertEqual(st.status, WorkSubTask.STATUS_AUTHORIZED)
         self.assertEqual(st.checkpoint.status, ComplianceCheckpoint.STATUS_APPROVED)
 
         contractor.post(url, {"action": "complete_subtask", "subtask_id": st.pk})
         st.refresh_from_db()
-        self.assertEqual(st.status, WorkSubTask.STATUS_DONE)
+        self.assertEqual(st.status, WorkSubTask.STATUS_PAID)
         self.assertTrue(st.certificate_ref)
 
         # Earned value now reflects the approved/done sub-task

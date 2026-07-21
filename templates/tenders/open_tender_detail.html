@@ -39,6 +39,56 @@
   </div>
 
   <div class="ot-panel">
+    <div class="ot-panel__h">Gate order (milestones) <small style="font-weight:500;color:#8494a8">- same sub-task = finish-to-start; different sub-tasks = parallel unless FS-linked</small></div>
+    <div class="ot-panel__b">
+      <ol style="margin:0 0 12px 18px;padding:0;font-size:.84rem;line-height:1.6;color:#3f5168">
+        {% for code, label, who in overview.gate_chain %}
+        <li><strong>{{ label }}</strong> - {{ who }}</li>
+        {% endfor %}
+      </ol>
+      <p class="ot-hint" style="margin:0 0 12px">
+        Payment never starts without approval. Across areas (e.g. kitchen tiling vs columns) work may run in parallel.
+        Add an FS link only when a hold-point requires X before Y.
+      </p>
+      {% if overview.dependencies %}
+      <div style="font-size:.8rem;margin-bottom:10px">
+        <strong>FS links:</strong>
+        {% for d in overview.dependencies %}
+        <div class="ot-hint">{{ d.predecessor_subtask.code }} must reach {{ d.required_status }} before {{ d.successor_subtask.code }} starts{% if d.note %} ({{ d.note }}){% endif %}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if overview.subtasks|length >= 2 %}
+      <form method="post" action="{% url 'open-tender-action' profile.task_id %}" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end">{% csrf_token %}
+        <input type="hidden" name="action" value="add_fs_dependency">
+        <div>
+          <label class="ot-hint">Before (predecessor)</label><br>
+          <select name="predecessor_id" style="padding:5px 8px;font-size:.78rem;border:1px solid #cfd8e6;border-radius:6px">
+            {% for st in overview.subtasks %}<option value="{{ st.pk }}">{{ st.code }} - {{ st.name|truncatechars:40 }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="ot-hint">Then (successor)</label><br>
+          <select name="successor_id" style="padding:5px 8px;font-size:.78rem;border:1px solid #cfd8e6;border-radius:6px">
+            {% for st in overview.subtasks %}<option value="{{ st.pk }}">{{ st.code }} - {{ st.name|truncatechars:40 }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="ot-hint">Required gate</label><br>
+          <select name="required_status" style="padding:5px 8px;font-size:.78rem;border:1px solid #cfd8e6;border-radius:6px">
+            <option value="AUTHORIZED">AUTHORIZED (nod)</option>
+            <option value="CERTIFIED">CERTIFIED</option>
+            <option value="INSPECTED">INSPECTED</option>
+            <option value="PAID">PAID</option>
+          </select>
+        </div>
+        <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Add FS link</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="ot-panel">
     <div class="ot-panel__h">Value for money <small style="font-weight:500;color:#8494a8">- sub-task rollup</small></div>
     <div class="ot-panel__b">
       <div class="ot-stats">

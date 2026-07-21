@@ -18,6 +18,7 @@ from accounts.models import ProjectTask
 from accounts.tenant import branding_template_context, get_active_organization
 
 from .models import (
+    ActivityDependency,
     PublicTenderProfile,
     SubTaskResource,
     SubTaskResourcePhase,
@@ -178,56 +179,139 @@ def open_tender_action(request, task_id):
 
     st = get_object_or_404(WorkSubTask, pk=request.POST.get("subtask_id"), profile=profile)
 
+    def _advance(to_status, ok_msg, extra_fields=None):
+        if not st.can_advance_to(to_status):
+            messages.error(
+                request,
+                "Gate order is finish-to-start on this sub-task. Next allowed step: %s (now %s)."
+                % (st.next_gate() or "none - complete", st.status),
+            )
+            return False
+        st.status = to_status
+        fields = ["status", "updated_at"]
+        if extra_fields:
+            for k, v in extra_fields.items():
+                setattr(st, k, v)
+                fields.append(k)
+            fields = list(dict.fromkeys(fields))
+        st.save(update_fields=fields)
+        messages.success(request, ok_msg)
+        return True
+
+    def _fs_ok_to_start():
+        blockers = []
+        for link in st.predecessor_links.select_related("predecessor_subtask"):
+            if not link.is_satisfied():
+                blockers.append(
+                    "%s must reach %s first"
+                    % (link.predecessor_subtask.code, link.required_status)
+                )
+        return blockers
+
     if action == "start_subtask":
-        st.status = WorkSubTask.STATUS_IN_PROGRESS
-        st.started_at = timezone.now()
-        st.started_by = ua
-        st.save(update_fields=["status", "started_at", "started_by", "updated_at"])
-        messages.success(request, "Started %s." % st.code)
+        blockers = _fs_ok_to_start()
+        if blockers:
+            messages.error(
+                request,
+                "Cannot start %s yet (FS dependency): %s"
+                % (st.code, "; ".join(blockers)),
+            )
+        else:
+            _advance(
+                WorkSubTask.STATUS_IN_PROGRESS,
+                "Started %s (work in progress). Parallel OK with other sub-tasks unless FS-linked."
+                % st.code,
+                {"started_at": timezone.now(), "started_by": ua},
+            )
 
     elif action == "request_inspection":
-        st.status = WorkSubTask.STATUS_INSPECTION
-        st.save(update_fields=["status", "updated_at"])
-        messages.success(request, "Inspection requested for %s." % st.code)
+        _advance(
+            WorkSubTask.STATUS_INSPECTION,
+            "Inspection requested for %s." % st.code,
+        )
 
     elif action == "signoff_subtask":
         authority = (request.POST.get("signoff_authority") or "").strip()
-        st.status = WorkSubTask.STATUS_INSPECTED
-        st.inspected_at = timezone.now()
-        st.inspected_by = ua
-        st.signoff_authority = authority[:200]
-        st.save(update_fields=[
-            "status", "inspected_at", "inspected_by", "signoff_authority", "updated_at",
-        ])
-        messages.success(request, "Signed off %s (%s)." % (st.code, authority or "authority"))
+        _advance(
+            WorkSubTask.STATUS_INSPECTED,
+            "Inspected %s (%s)." % (st.code, authority or "QA / MoW / local"),
+            {
+                "inspected_at": timezone.now(),
+                "inspected_by": ua,
+                "signoff_authority": authority[:200],
+            },
+        )
+
+    elif action == "certify_subtask":
+        products = (request.POST.get("certified_products") or "")[:4000]
+        proof = (request.POST.get("proof_notes") or "")[:4000]
+        ref = st.certificate_ref
+        if not ref:
+            base = (profile.tender.event.ref or "T").split("/")[0][:8]
+            ref = "OTC-%s-%s" % (base, st.pk)
+        _advance(
+            WorkSubTask.STATUS_CERTIFIED,
+            "Certified %s - %s (proof retained for audit)." % (st.code, ref),
+            {
+                "certified_products": products,
+                "proof_notes": proof,
+                "certificate_ref": ref,
+                "completed_at": timezone.now(),
+                "completed_by": ua,
+            },
+        )
 
     elif action == "authorize_subtask":
-        st.status = WorkSubTask.STATUS_AUTHORIZED
-        st.approved_at = timezone.now()
-        st.approved_by = ua
-        st.save(update_fields=["status", "approved_at", "approved_by", "updated_at"])
-        messages.success(request, "Authorized (Engineer nod): %s." % st.code)
+        _advance(
+            WorkSubTask.STATUS_AUTHORIZED,
+            "Authorized (Engineer nod): %s." % st.code,
+            {"approved_at": timezone.now(), "approved_by": ua},
+        )
 
+    elif action == "mark_payable":
+        _advance(
+            WorkSubTask.STATUS_PAYABLE,
+            "%s is payable - raise payment certificate then RO -> PV." % st.code,
+        )
+
+    elif action == "mark_paid":
+        _advance(
+            WorkSubTask.STATUS_PAID,
+            "%s marked paid (PV / funds transferred)." % st.code,
+        )
+
+    elif action == "add_fs_dependency":
+        pred = get_object_or_404(
+            WorkSubTask, pk=request.POST.get("predecessor_id"), profile=profile,
+        )
+        succ = get_object_or_404(
+            WorkSubTask, pk=request.POST.get("successor_id"), profile=profile,
+        )
+        if pred.pk == succ.pk:
+            messages.error(request, "A sub-task cannot depend on itself.")
+        else:
+            req = (request.POST.get("required_status") or WorkSubTask.STATUS_AUTHORIZED)[:15]
+            ActivityDependency.objects.update_or_create(
+                predecessor_subtask=pred,
+                successor_subtask=succ,
+                defaults={
+                    "profile": profile,
+                    "dep_type": ActivityDependency.TYPE_FS,
+                    "required_status": req,
+                    "note": (request.POST.get("note") or "")[:200],
+                },
+            )
+            messages.success(
+                request,
+                "FS link: %s must reach %s before %s may start. Other sub-tasks stay parallel."
+                % (pred.code, req, succ.code),
+            )
+
+    # Legacy alias from older UI
     elif action == "complete_subtask":
-        if not st.is_authorized:
-            messages.error(request, "Sub-task must be authorized before completion certificate.")
-            return redirect("open-tender-detail", task_id=profile.pk)
-        st.status = WorkSubTask.STATUS_DONE
-        st.completed_at = timezone.now()
-        st.completed_by = ua
-        st.certified_products = (request.POST.get("certified_products") or "")[:4000]
-        st.proof_notes = (request.POST.get("proof_notes") or "")[:4000]
-        if not st.certificate_ref:
-            ref = (profile.tender.event.ref or "T").split("/")[0][:8]
-            st.certificate_ref = "OTC-%s-%s" % (ref, st.pk)
-        st.save(update_fields=[
-            "status", "completed_at", "completed_by", "certified_products",
-            "proof_notes", "certificate_ref", "updated_at",
-        ])
-        messages.success(
+        messages.error(
             request,
-            "Completed %s - certificate %s (proof retained for audit)."
-            % (st.code, st.certificate_ref),
+            "Use Certify -> Authorize -> Payable -> Paid (confirmed gate order).",
         )
     else:
         messages.error(request, "Unknown action.")

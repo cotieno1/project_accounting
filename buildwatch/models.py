@@ -1567,10 +1567,15 @@ class WorkSubTask(models.Model):
                       impact that was not a priced bill line (mobilisation,
                       site clearance, CCTV/security, temp works, insurances, QA)
 
-    Lifecycle (GOK + Pioneer sync):
-      PLANNED -> IN_PROGRESS -> INSPECTION -> INSPECTED (QA / MoW / local / expert)
-              -> AUTHORIZED (consulting engineer nod) -> DONE
-      On DONE: sign-off, completion certificate, certified products, audit proof.
+    Lifecycle (GOK + Pioneer sync) - finish-to-start on the SAME sub-task:
+      PLANNED -> IN_PROGRESS (work)
+              -> INSPECTION -> INSPECTED (QA / MoW / local / expert)
+              -> CERTIFIED (completion cert + certified products + audit proof)
+              -> AUTHORIZED (consulting engineer nod)
+              -> PAYABLE -> PAID (Gov Accountant: Cert -> RO -> PV)
+
+    Different sub-tasks / activities may run in parallel unless an FS dependency
+    (ActivityDependency) says otherwise.
     """
     KIND_BOQ = "BOQ"
     KIND_INTERNAL = "INTERNAL"
@@ -1583,19 +1588,35 @@ class WorkSubTask(models.Model):
     STATUS_IN_PROGRESS = "IN_PROGRESS"
     STATUS_INSPECTION = "INSPECTION"
     STATUS_INSPECTED = "INSPECTED"
+    STATUS_CERTIFIED = "CERTIFIED"
     STATUS_AUTHORIZED = "AUTHORIZED"
-    STATUS_DONE = "DONE"
+    STATUS_PAYABLE = "PAYABLE"
+    STATUS_PAID = "PAID"
     STATUS_CHOICES = [
         (STATUS_PLANNED, "Planned"),
-        (STATUS_IN_PROGRESS, "In progress"),
+        (STATUS_IN_PROGRESS, "In progress (work)"),
         (STATUS_INSPECTION, "Inspection requested"),
-        (STATUS_INSPECTED, "Inspected & signed off"),
+        (STATUS_INSPECTED, "Inspected (QA)"),
+        (STATUS_CERTIFIED, "Certified (cert + products + proof)"),
         (STATUS_AUTHORIZED, "Authorized (Engineer nod)"),
-        (STATUS_DONE, "Completed & certified"),
+        (STATUS_PAYABLE, "Payable (ready for RO/PV)"),
+        (STATUS_PAID, "Paid (PV / funds transferred)"),
     ]
+    # Legacy alias kept for older rows / templates.
+    STATUS_DONE = STATUS_PAID
     STATUS_ORDER = [
         STATUS_PLANNED, STATUS_IN_PROGRESS, STATUS_INSPECTION,
-        STATUS_INSPECTED, STATUS_AUTHORIZED, STATUS_DONE,
+        STATUS_INSPECTED, STATUS_CERTIFIED, STATUS_AUTHORIZED,
+        STATUS_PAYABLE, STATUS_PAID,
+    ]
+
+    # Confirmed gate chain (same activity = FS).
+    GATE_CHAIN = [
+        ("WORK", "Work done", "Pioneer executes"),
+        ("INSPECT", "Inspection", "QA / MoW / local staff"),
+        ("CERTIFY", "Certification", "Completion cert + certified products + proof"),
+        ("APPROVE", "Approval (nod)", "Consulting Engineer / MoW / expert"),
+        ("PAY", "Payment", "Gov Accountant: Cert -> RO -> PV"),
     ]
 
     profile = models.ForeignKey(
@@ -1683,6 +1704,10 @@ class WorkSubTask(models.Model):
         return self._at_least(self.STATUS_INSPECTED)
 
     @property
+    def is_certified(self):
+        return self._at_least(self.STATUS_CERTIFIED)
+
+    @property
     def is_authorized(self):
         return self._at_least(self.STATUS_AUTHORIZED)
 
@@ -1691,8 +1716,75 @@ class WorkSubTask(models.Model):
         return self.is_authorized
 
     @property
+    def is_payable(self):
+        return self._at_least(self.STATUS_PAYABLE)
+
+    @property
+    def is_paid(self):
+        return self.status == self.STATUS_PAID
+
+    @property
     def is_done(self):
-        return self.status == self.STATUS_DONE
+        return self.is_paid
+
+    def next_gate(self):
+        """Return the next status in the FS chain, or None if complete."""
+        try:
+            i = self.STATUS_ORDER.index(self.status)
+        except ValueError:
+            return None
+        if i + 1 >= len(self.STATUS_ORDER):
+            return None
+        return self.STATUS_ORDER[i + 1]
+
+    def can_advance_to(self, new_status):
+        """Strict FS: may only move exactly one step forward."""
+        nxt = self.next_gate()
+        return nxt == new_status
+
+
+class ActivityDependency(models.Model):
+    """
+    Finish-to-start link between Open Tender activities (or sub-tasks).
+
+    Default: no row = activities may run in parallel.
+    FS row: successor cannot start until predecessor is at least `required_status`.
+    """
+    TYPE_FS = "FS"
+    TYPE_CHOICES = [(TYPE_FS, "Finish-to-start (must wait)")]
+
+    profile = models.ForeignKey(
+        PublicTenderProfile, on_delete=models.CASCADE, related_name="activity_dependencies",
+    )
+    predecessor_subtask = models.ForeignKey(
+        WorkSubTask, on_delete=models.CASCADE, related_name="successor_links",
+    )
+    successor_subtask = models.ForeignKey(
+        WorkSubTask, on_delete=models.CASCADE, related_name="predecessor_links",
+    )
+    dep_type = models.CharField(max_length=4, choices=TYPE_CHOICES, default=TYPE_FS)
+    required_status = models.CharField(
+        max_length=15, default="AUTHORIZED",
+        help_text="Predecessor must reach this gate before successor may start.",
+    )
+    note = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [["predecessor_subtask", "successor_subtask"]]
+        ordering = ["id"]
+
+    def __str__(self):
+        return "%s -FS-> %s" % (self.predecessor_subtask_id, self.successor_subtask_id)
+
+    def is_satisfied(self):
+        pred = self.predecessor_subtask
+        try:
+            return pred.STATUS_ORDER.index(pred.status) >= pred.STATUS_ORDER.index(
+                self.required_status
+            )
+        except ValueError:
+            return False
 
 
 class OpenTenderActivity(models.Model):

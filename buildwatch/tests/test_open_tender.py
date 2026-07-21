@@ -248,24 +248,67 @@ class OpenTenderFinOpsTests(TestCase):
         )
         c = self._client()
         url = reverse("open-tender-action", args=[profile.pk])
+        # Strict FS gate order on same sub-task
         c.post(url, {"action": "start_subtask", "subtask_id": st.pk})
+        st.refresh_from_db()
+        self.assertEqual(st.status, WorkSubTask.STATUS_IN_PROGRESS)
+
+        # Cannot skip to authorize
+        c.post(url, {"action": "authorize_subtask", "subtask_id": st.pk})
+        st.refresh_from_db()
+        self.assertEqual(st.status, WorkSubTask.STATUS_IN_PROGRESS)
+
         c.post(url, {"action": "request_inspection", "subtask_id": st.pk})
         c.post(url, {
             "action": "signoff_subtask", "subtask_id": st.pk,
             "signoff_authority": "MoW Structural Engineer",
         })
-        c.post(url, {"action": "authorize_subtask", "subtask_id": st.pk})
         c.post(url, {
-            "action": "complete_subtask", "subtask_id": st.pk,
+            "action": "certify_subtask", "subtask_id": st.pk,
             "certified_products": "Bamburi CEM I 42.5",
             "proof_notes": "DN-001 + cube tests",
         })
+        c.post(url, {"action": "authorize_subtask", "subtask_id": st.pk})
+        c.post(url, {"action": "mark_payable", "subtask_id": st.pk})
+        c.post(url, {"action": "mark_paid", "subtask_id": st.pk})
         st.refresh_from_db()
-        self.assertEqual(st.status, WorkSubTask.STATUS_DONE)
+        self.assertEqual(st.status, WorkSubTask.STATUS_PAID)
+        self.assertTrue(st.is_done)
         self.assertTrue(st.certificate_ref)
         self.assertIn("Bamburi", st.certified_products)
         self.assertIn("DN-001", st.proof_notes)
         self.assertEqual(st.signoff_authority, "MoW Structural Engineer")
+
+    def test_fs_dependency_blocks_parallel_start(self):
+        from buildwatch.models import ActivityDependency
+
+        task = ProjectTask.objects.create(project_id="PT-FS-1", description="Public")
+        profile = PublicTenderProfile.objects.create(
+            task=task, tender=self.listing, category="PUBLIC_TENDER",
+            contractor_org=self.contractor_org,
+        )
+        a = WorkSubTask.objects.create(
+            profile=profile, project=self.project, tender=self.listing,
+            kind=WorkSubTask.KIND_BOQ, code="A", name="First", planned_value=Decimal("10"),
+        )
+        b = WorkSubTask.objects.create(
+            profile=profile, project=self.project, tender=self.listing,
+            kind=WorkSubTask.KIND_BOQ, code="B", name="Second", planned_value=Decimal("10"),
+        )
+        ActivityDependency.objects.create(
+            profile=profile, predecessor_subtask=a, successor_subtask=b,
+            required_status=WorkSubTask.STATUS_AUTHORIZED,
+        )
+        c = self._client()
+        url = reverse("open-tender-action", args=[profile.pk])
+        c.post(url, {"action": "start_subtask", "subtask_id": b.pk})
+        b.refresh_from_db()
+        self.assertEqual(b.status, WorkSubTask.STATUS_PLANNED)
+
+        # Without FS link, parallel start would work; A can start freely
+        c.post(url, {"action": "start_subtask", "subtask_id": a.pk})
+        a.refresh_from_db()
+        self.assertEqual(a.status, WorkSubTask.STATUS_IN_PROGRESS)
 
     def test_activities_and_activity_based_budget(self):
         from buildwatch.models import OpenTenderActivity
