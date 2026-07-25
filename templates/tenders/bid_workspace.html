@@ -2,8 +2,96 @@
 
 {% block title %}BOQ Workspace — {{ listing.event.ref }}{% endblock %}
 
+{% block extra_head %}
+{{ block.super }}
+<style>
+/* Bid workspace — phone / small tablet */
+.bw-bid-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 22px;
+  align-items: start;
+}
+.bw-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.bw-boq-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.bw-boq-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.bw-boq-table .bw-input {
+  min-width: 96px;
+  min-height: 44px;
+  font-size: 16px; /* stop iOS zoom */
+  padding: 8px 10px;
+}
+.bw-mobile-hint {
+  display: none;
+  font-size: 0.75rem;
+  color: var(--bw-mid);
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  background: var(--bw-mist);
+  border-radius: 8px;
+}
+.bw-bid-sticky-save {
+  display: none;
+}
+@media (max-width: 900px) {
+  .bw-bid-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .bw-bid-aside {
+    order: -1; /* status / totals first on phone */
+  }
+  .bw-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .bw-mobile-hint { display: block; }
+  .bw-bid-actions .bw-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .bw-page { padding: 16px 12px 88px; }
+  .bw-card-header, .bw-card-body { padding-left: 14px; padding-right: 14px; }
+  .bw-title { font-size: 1.35rem; }
+  .bw-lead { font-size: 0.9rem; }
+  .bw-bid-sticky-save {
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 40;
+    gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255,255,255,.96);
+    border-top: 1px solid var(--bw-rule);
+    box-shadow: 0 -8px 24px rgba(15, 31, 51, 0.08);
+  }
+  .bw-bid-sticky-save .bw-btn {
+    flex: 1;
+    min-height: 46px;
+    justify-content: center;
+  }
+}
+@media (max-width: 480px) {
+  .bw-boq-table { min-width: 560px; font-size: 0.78rem; }
+}
+</style>
+{% endblock %}
+
 {% block bw_content %}
-<div class="bw-wrap">
+<div class="bw-wrap bw-bid-workspace">
 
   <div class="bw-ref" style="margin-bottom:18px;">
     <a href="{% url 'tender-list' %}">Tenders</a>
@@ -36,12 +124,12 @@
       Then print the draft bid for approval when ready.
       {% endif %}
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-      <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender detail</a>
+    <div class="bw-bid-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+      <a href="{% url 'tender-detail' listing.pk %}" class="bw-btn bw-btn--ghost">← Tender</a>
       <a href="{% url 'bid-self-assess' listing.pk %}" class="bw-btn bw-btn--ghost">Certificates</a>
-      <a href="#boq-main-categories" class="bw-btn bw-btn--teal">Go to main BOQ</a>
+      <a href="#boq-main-categories" class="bw-btn bw-btn--teal">Main BOQ</a>
       {% if not subcontract_quota_full and planned_subcontractor_count != 0 %}
-      <a href="#filter2-subcontract" class="bw-btn bw-btn--ghost">Optional · subcontracting</a>
+      <a href="#filter2-subcontract" class="bw-btn bw-btn--ghost">Subcontract</a>
       {% endif %}
     </div>
   </header>
@@ -251,7 +339,7 @@
             </label>
           </div>
           <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:8px;">BOQ categories for sub (BOM)</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:180px;overflow:auto;border:1px solid var(--bw-rule);border-radius:8px;padding:10px;background:var(--bw-mist);margin-bottom:12px;">
+          <div class="bw-grid-2" style="max-height:180px;overflow:auto;border:1px solid var(--bw-rule);border-radius:8px;padding:10px;background:var(--bw-mist);margin-bottom:12px;">
             {% for pkg in packages %}
             <label style="display:flex;gap:8px;align-items:flex-start;font-size:.82rem;{% if pkg.code|upper in subcontracted_codes %}opacity:.45;{% endif %}">
               <input type="checkbox" name="sub_package_code" value="{{ pkg.code }}"
@@ -262,7 +350,7 @@
             <p style="margin:0;color:var(--bw-mid);font-size:.82rem;">No packages loaded.</p>
             {% endfor %}
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="bw-grid-2" style="gap:12px;">
             <div>
               <label style="display:block;font-size:.78rem;font-weight:600;color:var(--bw-navy);margin-bottom:4px;" for="ws_sub_company">Sub company *</label>
               <input id="ws_sub_company" name="sub_company_name" maxlength="200"
@@ -302,8 +390,8 @@
   </div>
   {% endif %}
 
-  <div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;">
-    <div>
+  <div class="bw-bid-layout">
+    <div class="bw-bid-main">
       {% if main_packages %}
       <div class="bw-card" style="margin-bottom:16px;" id="boq-main-categories">
         <div class="bw-card-header">Main BOQ categories</div>
@@ -314,7 +402,7 @@
           <form method="POST" action="{% url 'bid-workspace' listing.pk %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="select_packages">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+            <div class="bw-grid-2" style="margin-bottom:14px;">
               {% for pkg in main_packages %}
               <label style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;
                 border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;
@@ -365,8 +453,9 @@
                    class="bw-btn bw-btn--ghost bw-btn--sm" style="margin-left:8px;">Sub hub</a>
               </div>
             </div>
-            <div style="overflow-x:auto;opacity:.85;filter:grayscale(.25);">
-              <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+            <div class="bw-boq-scroll" style="opacity:.85;filter:grayscale(.25);">
+              <p class="bw-mobile-hint">Swipe sideways to see rates and amounts.</p>
+              <table class="bw-boq-table">
                 <thead>
                   <tr style="background:#f1f5f9;border-bottom:1px solid var(--bw-rule);">
                     <th style="padding:8px 12px;text-align:left;">Ref</th>
@@ -472,8 +561,10 @@
               Page sub-total {{ listing.currency }} {{ section.subtotal|floatformat:2 }}
             </span>
           </div>
-          <div class="bw-card-body" style="padding:0;overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+          <div class="bw-card-body" style="padding:0;">
+            <p class="bw-mobile-hint" style="margin:10px 12px;">Swipe sideways to enter unit rates.</p>
+            <div class="bw-boq-scroll">
+            <table class="bw-boq-table">
               <thead>
                 <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
                   <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:90px;">Ref</th>
@@ -509,7 +600,7 @@
                     {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
                     <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
                            step="0.01" min="0" class="bw-input"
-                           style="text-align:right;padding:7px 8px;"
+                           style="text-align:right;"
                            data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
                            data-pkg="{{ row.package.code }}" data-bill="{{ row.bill_key }}"
                            onchange="recalcRow(this)" oninput="recalcRow(this)">
@@ -532,6 +623,7 @@
                 </tr>
               </tbody>
             </table>
+            </div>
           </div>
         </div>
         {% endfor %}
@@ -554,8 +646,10 @@
           <div class="bw-card-header">{{ section.package.title }}
             <span style="font-family:var(--bw-mono);font-weight:500;color:var(--bw-mid);margin-left:8px;">{{ section.package.code }}</span>
           </div>
-          <div class="bw-card-body" style="padding:0;overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+          <div class="bw-card-body" style="padding:0;">
+            <p class="bw-mobile-hint" style="margin:10px 12px;">Swipe sideways to enter unit rates.</p>
+            <div class="bw-boq-scroll">
+            <table class="bw-boq-table">
               <thead>
                 <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
                   <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;width:90px;">Ref</th>
@@ -585,7 +679,7 @@
                     {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
                     <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
                            step="0.01" min="0" class="bw-input"
-                           style="text-align:right;padding:7px 8px;"
+                           style="text-align:right;"
                            data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
                            data-pkg="{{ section.package.code }}" data-bill="{{ group.bill_key }}"
                            onchange="recalcRow(this)" oninput="recalcRow(this)">
@@ -627,7 +721,7 @@
                     {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
                     <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
                            step="0.01" min="0" class="bw-input"
-                           style="text-align:right;padding:7px 8px;"
+                           style="text-align:right;"
                            data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
                            data-pkg="{{ section.package.code }}"
                            onchange="recalcRow(this)" oninput="recalcRow(this)">
@@ -651,6 +745,7 @@
                 </tr>
               </tbody>
             </table>
+            </div>
           </div>
         </div>
         {% endfor %}
@@ -658,7 +753,7 @@
         {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
         <div class="bw-card" style="margin-bottom:14px;">
           <div class="bw-card-body" style="display:flex;justify-content:flex-end;">
-            <button type="submit" class="bw-btn bw-btn--teal">Save prices</button>
+            <button type="submit" class="bw-btn bw-btn--teal" id="save-prices-btn">Save prices</button>
           </div>
         </div>
         {% endif %}
@@ -767,7 +862,7 @@
 
     </div>
 
-    <aside>
+    <aside class="bw-bid-aside">
       <div class="bw-card" style="margin-bottom:14px;">
         <div class="bw-card-header">Status</div>
         <div class="bw-card-body">
@@ -880,6 +975,15 @@
       {% endif %}
     </aside>
   </div>
+
+  {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
+  {% if package_sections or page_sections %}
+  <div class="bw-bid-sticky-save">
+    <a href="#boq-main-categories" class="bw-btn bw-btn--ghost">Categories</a>
+    <button type="submit" form="boq-form" class="bw-btn bw-btn--teal">Save prices</button>
+  </div>
+  {% endif %}
+  {% endif %}
 </div>
 
 <script>
