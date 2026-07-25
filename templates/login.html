@@ -73,7 +73,8 @@
             background: #0f172a;
             border-color: #334155;
             color: var(--home-text);
-            font-size: 0.9375rem;
+            /* 16px prevents iOS zoom-on-focus which feels like a broken login */
+            font-size: 16px;
         }
         .form-control:focus {
             background: #0f172a;
@@ -85,8 +86,9 @@
             background-color: var(--home-primary);
             border: none;
             font-weight: 600;
-            font-size: 0.9375rem;
-            padding: 0.55rem 1rem;
+            font-size: 1rem;
+            padding: 0.65rem 1rem;
+            min-height: 48px;
         }
         .btn-primary:hover { background-color: #1d4ed8; }
         .alert-danger {
@@ -103,6 +105,11 @@
         }
         .login-footer a { color: var(--login-brand-color); text-decoration: none; }
         .login-footer a:hover { text-decoration: underline; }
+        .login-hint {
+            color: var(--home-muted);
+            font-size: 0.75rem;
+            margin-top: 0.35rem;
+        }
     </style>
 </head>
 <body>
@@ -114,20 +121,25 @@
 
         {% if form.errors %}
         <div class="alert alert-danger py-2" role="alert">
-            Invalid username or password. Please try again.
+            Invalid username/email or password. Check for auto-capital letters on your phone keyboard, then try again.
         </div>
         {% endif %}
 
-        <form method="post" action="{% url 'login' %}">
+        <form method="post" action="{% url 'login' %}" novalidate>
             {% csrf_token %}
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="mb-3">
-                <label for="id_username">Username</label>
-                <input type="text" name="username" id="id_username" class="form-control" required autofocus autocomplete="username" value="{{ form.username.value|default:'' }}">
+                <label for="id_username">Username or email</label>
+                <input type="text" name="username" id="id_username" class="form-control" required autofocus
+                       autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+                       inputmode="text" enterkeyhint="next"
+                       value="{{ form.username.value|default:'' }}">
+                <div class="login-hint">Same username as on desktop (not case-sensitive). Email also works.</div>
             </div>
             <div class="mb-4">
                 <label for="id_password">Password</label>
-                <input type="password" name="password" id="id_password" class="form-control" required autocomplete="current-password">
+                <input type="password" name="password" id="id_password" class="form-control" required
+                       autocomplete="current-password" enterkeyhint="go">
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
         </form>

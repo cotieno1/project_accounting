@@ -82,7 +82,11 @@ if _railway_domain:
     if _railway_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(_railway_origin)
 if _on_railway:
-    for origin in _csrf_origins_for_hosts(['.railway.app']):
+    # *.railway.app only matches one label (x.railway.app), not x.up.railway.app
+    for origin in (
+        'https://*.railway.app',
+        'https://*.up.railway.app',
+    ):
         if origin not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(origin)
 for origin in _csrf_origins_for_hosts(ALLOWED_HOSTS):

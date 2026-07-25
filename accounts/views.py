@@ -22,6 +22,8 @@ from django.db.models import Sum, F, Count, Q
 from django.db import IntegrityError, transaction
 from collections import defaultdict
 
+from .forms import MobileFriendlyLoginForm
+
 # SINGLE UNIFIED IMPORT BLOCK - All models imported exactly once
 from .roles import can_manage_users, can_manage_tenants
 from .tenant import get_active_organization, branding_template_context
@@ -349,6 +351,7 @@ def _bid_eval_sidebar_tools_enabled(workspace):
 class CustomLoginView(LoginView):
     template_name = 'login.html'
     redirect_authenticated_user = True
+    authentication_form = MobileFriendlyLoginForm
 
     @method_decorator(ensure_csrf_cookie)
     def dispatch(self, request, *args, **kwargs):

@@ -69,6 +69,21 @@ class PlatformRoutingTests(TestCase):
         )
         self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
 
+    def test_mobile_login_accepts_capitalized_username_and_email(self):
+        # Phone keyboards often capitalize the first letter.
+        response = self.client.post(
+            reverse("login"),
+            {"username": "Pioneer1", "password": "test-pass-123"},
+        )
+        self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
+
+        self.client.logout()
+        response = self.client.post(
+            reverse("login"),
+            {"username": "  pioneer@example.com  ", "password": "test-pass-123"},
+        )
+        self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
+
     def test_main_admin_dashboard_redirects_to_platform(self):
         self.client.login(username="mainadmin", password="test-pass-123")
         response = self.client.get(reverse("dashboard"))
