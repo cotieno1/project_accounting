@@ -5,7 +5,7 @@
 {% block extra_head %}
 {{ block.super }}
 <style>
-/* Bid workspace — phone / small tablet */
+/* Bid workspace layout */
 .bw-bid-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
@@ -17,56 +17,176 @@
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
-.bw-boq-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
+.bw-shell, .bw-page, .bw-wrap { overflow-x: clip; }
+.bw-pkg-pick {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--bw-rule);
+  border-radius: 8px;
+  cursor: pointer;
 }
+.bw-pkg-pick__text {
+  min-width: 0;
+  flex: 1;
+}
+.bw-pkg-pick__title,
+.bw-pkg-pick__meta,
+.bw-boq-desc {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  max-width: 100%;
+}
+.bw-pkg-pick__title {
+  display: block;
+  color: var(--bw-navy);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+.bw-pkg-pick__meta {
+  display: block;
+  font-family: var(--bw-mono);
+  font-size: 0.7rem;
+  color: var(--bw-mid);
+  margin-top: 4px;
+}
+
+/* Desktop: compact table */
+.bw-boq-scroll { overflow-x: auto; }
 .bw-boq-table {
   width: 100%;
-  min-width: 640px;
   border-collapse: collapse;
   font-size: 0.82rem;
 }
 .bw-boq-table .bw-input {
   min-width: 96px;
-  min-height: 44px;
-  font-size: 16px; /* stop iOS zoom */
+  min-height: 40px;
+  font-size: 0.88rem;
   padding: 8px 10px;
 }
-.bw-mobile-hint {
-  display: none;
-  font-size: 0.75rem;
-  color: var(--bw-mid);
-  margin: 0 0 10px;
-  padding: 8px 10px;
-  background: var(--bw-mist);
-  border-radius: 8px;
-}
-.bw-bid-sticky-save {
-  display: none;
-}
+.bw-mobile-hint { display: none; }
+.bw-bid-sticky-save { display: none; }
+
 @media (max-width: 900px) {
   .bw-bid-layout {
     grid-template-columns: 1fr;
     gap: 14px;
   }
-  .bw-bid-aside {
-    order: -1; /* status / totals first on phone */
-  }
-  .bw-grid-2 {
-    grid-template-columns: 1fr;
-  }
-  .bw-mobile-hint { display: block; }
+  .bw-bid-aside { order: -1; }
+  .bw-grid-2 { grid-template-columns: 1fr; }
+  .bw-page { padding: 16px 12px 88px; }
+  .bw-card-header, .bw-card-body { padding-left: 14px; padding-right: 14px; }
+  .bw-title { font-size: 1.35rem; }
+  .bw-lead { font-size: 0.9rem; overflow-wrap: anywhere; }
   .bw-bid-actions .bw-btn {
     flex: 1 1 auto;
     min-height: 44px;
     justify-content: center;
   }
-  .bw-page { padding: 16px 12px 88px; }
-  .bw-card-header, .bw-card-body { padding-left: 14px; padding-right: 14px; }
-  .bw-title { font-size: 1.35rem; }
-  .bw-lead { font-size: 0.9rem; }
+  .bw-mobile-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--bw-mid);
+    margin: 10px 12px;
+    padding: 8px 10px;
+    background: var(--bw-mist);
+    border-radius: 8px;
+    line-height: 1.4;
+  }
+
+  /*
+   * Best practice for large BOQs on phones:
+   * one line = one card, description wraps fully, rate field full-width.
+   * No horizontal scroll / clipped text.
+   */
+  .bw-boq-scroll {
+    overflow: visible;
+    -webkit-overflow-scrolling: auto;
+  }
+  .bw-boq-table {
+    min-width: 0 !important;
+    width: 100%;
+    display: block;
+  }
+  .bw-boq-table thead { display: none; }
+  .bw-boq-table tbody { display: block; width: 100%; }
+  .bw-boq-table tbody tr {
+    display: block;
+    width: auto;
+    margin: 10px 12px;
+    padding: 12px;
+    border: 1px solid var(--bw-rule) !important;
+    border-radius: 10px;
+    background: var(--bw-white);
+    box-sizing: border-box;
+  }
+  .bw-boq-table tbody tr.bw-boq-subtotal-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--bw-mist);
+    margin-top: 4px;
+  }
+  .bw-boq-table td {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    width: 100% !important;
+    max-width: 100%;
+    padding: 7px 0 !important;
+    border: 0 !important;
+    text-align: left !important;
+    box-sizing: border-box;
+  }
+  .bw-boq-table td::before {
+    content: attr(data-label);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bw-mid);
+    padding-top: 2px;
+  }
+  .bw-boq-table td.bw-boq-desc {
+    display: block;
+    padding-bottom: 10px !important;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--bw-mist) !important;
+  }
+  .bw-boq-table td.bw-boq-desc::before {
+    display: block;
+    margin-bottom: 4px;
+  }
+  .bw-boq-table td.bw-boq-rate,
+  .bw-boq-table td.bw-boq-amount {
+    align-items: center;
+  }
+  .bw-boq-table .bw-input {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    font-size: 16px; /* prevent iOS zoom */
+    text-align: right;
+  }
+  .bw-boq-subtotal-row td {
+    display: block;
+    width: auto !important;
+    padding: 0 !important;
+    grid-template-columns: none;
+  }
+  .bw-boq-subtotal-row td::before { content: none; }
+  .bw-boq-subtotal-row td[colspan] { flex: 1 1 auto; text-align: left !important; }
+  .bw-boq-subtotal-row td:last-child {
+    flex: 0 0 auto;
+    font-family: var(--bw-mono);
+    font-weight: 700;
+  }
+
   .bw-bid-sticky-save {
     display: flex;
     position: fixed;
@@ -83,9 +203,6 @@
     min-height: 46px;
     justify-content: center;
   }
-}
-@media (max-width: 480px) {
-  .bw-boq-table { min-width: 560px; font-size: 0.78rem; }
 }
 </style>
 {% endblock %}
@@ -404,16 +521,15 @@
             <input type="hidden" name="action" value="select_packages">
             <div class="bw-grid-2" style="margin-bottom:14px;">
               {% for pkg in main_packages %}
-              <label style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;
-                border:1px solid var(--bw-rule);border-radius:8px;cursor:pointer;
-                background:{% if pkg.code in selected_codes %}#f0fdf9{% else %}var(--bw-white){% endif %};">
+              <label class="bw-pkg-pick"
+                style="background:{% if pkg.code in selected_codes %}#f0fdf9{% else %}var(--bw-white){% endif %};">
                 <input type="checkbox" name="package_code" value="{{ pkg.code }}"
                        {% if pkg.code in selected_codes %}checked{% endif %}
                        {% if workspace.status == 'SUBMITTED' or not listing.event.is_open %}disabled{% endif %}
-                       style="margin-top:3px;">
-                <span>
-                  <strong style="display:block;color:var(--bw-navy);font-size:.88rem;">{{ pkg.title }}</strong>
-                  <span style="font-family:var(--bw-mono);font-size:.7rem;color:var(--bw-mid);">{{ pkg.code }} · {{ pkg.lines.all|length }} line{{ pkg.lines.all|length|pluralize }}</span>
+                       style="margin-top:3px;flex-shrink:0;">
+                <span class="bw-pkg-pick__text">
+                  <strong class="bw-pkg-pick__title">{{ pkg.title }}</strong>
+                  <span class="bw-pkg-pick__meta">{{ pkg.code }} · {{ pkg.lines.all|length }} line{{ pkg.lines.all|length|pluralize }}</span>
                 </span>
               </label>
               {% endfor %}
@@ -454,7 +570,7 @@
               </div>
             </div>
             <div class="bw-boq-scroll" style="opacity:.85;filter:grayscale(.25);">
-              <p class="bw-mobile-hint">Swipe sideways to see rates and amounts.</p>
+              <p class="bw-mobile-hint">Each BOQ line is a card — full description wraps on screen. Scroll down through the package.</p>
               <table class="bw-boq-table">
                 <thead>
                   <tr style="background:#f1f5f9;border-bottom:1px solid var(--bw-rule);">
@@ -469,15 +585,15 @@
                 <tbody>
                   {% for row in section.rows %}
                   <tr style="border-bottom:1px solid var(--bw-rule);background:#fafbfc;color:var(--bw-mid);">
-                    <td style="padding:8px 12px;font-family:var(--bw-mono);">{{ row.line.bill_ref }}</td>
-                    <td style="padding:8px 12px;">{{ row.line.description }}</td>
-                    <td style="padding:8px 12px;text-align:center;">{{ row.line.unit }}</td>
-                    <td style="padding:8px 12px;text-align:right;font-family:var(--bw-mono);">{{ row.line.quantity }}</td>
-                    <td style="padding:8px 12px;text-align:right;font-family:var(--bw-mono);">{{ row.rate|floatformat:2 }}</td>
-                    <td style="padding:8px 12px;text-align:right;font-family:var(--bw-mono);">{{ row.amount|floatformat:2 }}</td>
+                    <td data-label="Ref" style="padding:8px 12px;font-family:var(--bw-mono);">{{ row.line.bill_ref }}</td>
+                    <td data-label="Description" class="bw-boq-desc" style="padding:8px 12px;">{{ row.line.description }}</td>
+                    <td data-label="Unit" style="padding:8px 12px;text-align:center;">{{ row.line.unit }}</td>
+                    <td data-label="Qty" style="padding:8px 12px;text-align:right;font-family:var(--bw-mono);">{{ row.line.quantity }}</td>
+                    <td data-label="Unit rate" class="bw-boq-rate" style="padding:8px 12px;text-align:right;font-family:var(--bw-mono);">{{ row.rate|floatformat:2 }}</td>
+                    <td data-label="Amount" class="bw-boq-amount" style="padding:8px 12px;text-align:right;font-family:var(--bw-mono);">{{ row.amount|floatformat:2 }}</td>
                   </tr>
                   {% endfor %}
-                  <tr style="background:#eef2f6;border-top:2px solid var(--bw-rule);">
+                  <tr class="bw-boq-subtotal-row" style="background:#eef2f6;border-top:2px solid var(--bw-rule);">
                     <td colspan="5" style="padding:10px 12px;text-align:right;font-weight:600;color:var(--bw-mid);">
                       Package sub-total (sub-contract)
                     </td>
@@ -562,7 +678,7 @@
             </span>
           </div>
           <div class="bw-card-body" style="padding:0;">
-            <p class="bw-mobile-hint" style="margin:10px 12px;">Swipe sideways to enter unit rates.</p>
+            <p class="bw-mobile-hint">Large BOQ: each line is its own card. Read the full description, then enter the unit rate below it.</p>
             <div class="bw-boq-scroll">
             <table class="bw-boq-table">
               <thead>
@@ -582,7 +698,7 @@
                     data-boq-line
                     data-page-key="{{ section.page_key }}"
                     data-pkg="{{ row.package.code }}">
-                  <td style="padding:10px 14px;">
+                  <td data-label="Ref" style="padding:10px 14px;">
                     <input type="hidden" name="bill_ref" value="{{ row.line.bill_ref }}">
                     <input type="hidden" name="pkg_{{ row.line.bill_ref }}" value="{{ row.package.code }}">
                     <input type="hidden" name="desc_{{ row.line.bill_ref }}" value="{{ row.line.description }}">
@@ -590,16 +706,16 @@
                     <input type="hidden" name="qty_{{ row.line.bill_ref }}" value="{{ row.line.quantity }}">
                     <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);">{{ row.line.bill_ref }}</span>
                   </td>
-                  <td style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
-                  <td style="padding:10px 14px;">
+                  <td data-label="Description" class="bw-boq-desc" style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
+                  <td data-label="Category" style="padding:10px 14px;">
                     <span style="font-family:var(--bw-mono);font-size:.72rem;color:var(--bw-mid);">{{ row.package.code }}</span>
                   </td>
-                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
-                  <td style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:-3 }}</td>
-                  <td style="padding:10px 14px;">
+                  <td data-label="Unit" style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
+                  <td data-label="Qty" style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:-3 }}</td>
+                  <td data-label="Unit rate" class="bw-boq-rate" style="padding:10px 14px;">
                     {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
                     <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
-                           step="0.01" min="0" class="bw-input"
+                           step="0.01" min="0" class="bw-input" inputmode="decimal"
                            style="text-align:right;"
                            data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
                            data-pkg="{{ row.package.code }}" data-bill="{{ row.bill_key }}"
@@ -608,12 +724,12 @@
                     <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
                     {% endif %}
                   </td>
-                  <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
-                      id="amount-{{ row.line.bill_ref }}" class="boq-amount"
+                  <td data-label="Amount" id="amount-{{ row.line.bill_ref }}" class="boq-amount bw-boq-amount"
+                      style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
                       data-pkg="{{ row.package.code }}" data-bill="{{ row.bill_key }}">{{ row.amount|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
-                <tr style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
+                <tr class="bw-boq-subtotal-row" style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
                   <td colspan="6" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;">
                     {{ section.page_label }} sub-total
                   </td>
@@ -643,11 +759,11 @@
 
         {% for section in package_sections %}
         <div class="bw-card" style="margin-bottom:14px;" data-pkg="{{ section.package.code }}">
-          <div class="bw-card-header">{{ section.package.title }}
+          <div class="bw-card-header" style="overflow-wrap:anywhere;word-break:break-word;">{{ section.package.title }}
             <span style="font-family:var(--bw-mono);font-weight:500;color:var(--bw-mid);margin-left:8px;">{{ section.package.code }}</span>
           </div>
           <div class="bw-card-body" style="padding:0;">
-            <p class="bw-mobile-hint" style="margin:10px 12px;">Swipe sideways to enter unit rates.</p>
+            <p class="bw-mobile-hint">Large BOQ: each line is its own card. Full description wraps on screen; enter the unit rate on the same card.</p>
             <div class="bw-boq-scroll">
             <table class="bw-boq-table">
               <thead>
@@ -664,7 +780,7 @@
                 {% for group in section.bill_groups %}
                 {% for row in group.rows %}
                 <tr style="border-bottom:1px solid var(--bw-rule);">
-                  <td style="padding:10px 14px;">
+                  <td data-label="Ref" style="padding:10px 14px;">
                     <input type="hidden" name="bill_ref" value="{{ row.line.bill_ref }}">
                     <input type="hidden" name="pkg_{{ row.line.bill_ref }}" value="{{ section.package.code }}">
                     <input type="hidden" name="desc_{{ row.line.bill_ref }}" value="{{ row.line.description }}">
@@ -672,13 +788,13 @@
                     <input type="hidden" name="qty_{{ row.line.bill_ref }}" value="{{ row.line.quantity }}">
                     <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);">{{ row.line.bill_ref }}</span>
                   </td>
-                  <td style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
-                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
-                  <td style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:-3 }}</td>
-                  <td style="padding:10px 14px;">
+                  <td data-label="Description" class="bw-boq-desc" style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
+                  <td data-label="Unit" style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
+                  <td data-label="Qty" style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:-3 }}</td>
+                  <td data-label="Unit rate" class="bw-boq-rate" style="padding:10px 14px;">
                     {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
                     <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
-                           step="0.01" min="0" class="bw-input"
+                           step="0.01" min="0" class="bw-input" inputmode="decimal"
                            style="text-align:right;"
                            data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
                            data-pkg="{{ section.package.code }}" data-bill="{{ group.bill_key }}"
@@ -687,12 +803,12 @@
                     <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
                     {% endif %}
                   </td>
-                  <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
-                      id="amount-{{ row.line.bill_ref }}" class="boq-amount"
+                  <td data-label="Amount" id="amount-{{ row.line.bill_ref }}" class="boq-amount bw-boq-amount"
+                      style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
                       data-pkg="{{ section.package.code }}" data-bill="{{ group.bill_key }}">{{ row.amount|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
-                <tr style="background:#f0f7ff;border-top:1px solid var(--bw-rule);">
+                <tr class="bw-boq-subtotal-row" style="background:#f0f7ff;border-top:1px solid var(--bw-rule);">
                   <td colspan="5" style="padding:10px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.82rem;">
                     Cat sub-total — {{ group.bill_label }}
                   </td>
@@ -706,7 +822,7 @@
                 {% empty %}
                 {% for row in section.rows %}
                 <tr style="border-bottom:1px solid var(--bw-rule);">
-                  <td style="padding:10px 14px;">
+                  <td data-label="Ref" style="padding:10px 14px;">
                     <input type="hidden" name="bill_ref" value="{{ row.line.bill_ref }}">
                     <input type="hidden" name="pkg_{{ row.line.bill_ref }}" value="{{ section.package.code }}">
                     <input type="hidden" name="desc_{{ row.line.bill_ref }}" value="{{ row.line.description }}">
@@ -714,13 +830,13 @@
                     <input type="hidden" name="qty_{{ row.line.bill_ref }}" value="{{ row.line.quantity }}">
                     <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);">{{ row.line.bill_ref }}</span>
                   </td>
-                  <td style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
-                  <td style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
-                  <td style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:-3 }}</td>
-                  <td style="padding:10px 14px;">
+                  <td data-label="Description" class="bw-boq-desc" style="padding:10px 14px;color:var(--bw-navy);">{{ row.line.description }}</td>
+                  <td data-label="Unit" style="padding:10px 14px;text-align:center;color:var(--bw-mid);">{{ row.line.unit }}</td>
+                  <td data-label="Qty" style="padding:10px 14px;text-align:right;color:var(--bw-mid);">{{ row.line.quantity|floatformat:-3 }}</td>
+                  <td data-label="Unit rate" class="bw-boq-rate" style="padding:10px 14px;">
                     {% if listing.event.is_open and workspace.status != 'SUBMITTED' %}
                     <input type="number" name="rate_{{ row.line.bill_ref }}" value="{{ row.rate }}"
-                           step="0.01" min="0" class="bw-input"
+                           step="0.01" min="0" class="bw-input" inputmode="decimal"
                            style="text-align:right;"
                            data-ref="{{ row.line.bill_ref }}" data-qty="{{ row.line.quantity }}"
                            data-pkg="{{ section.package.code }}"
@@ -729,12 +845,13 @@
                     <div style="text-align:right;font-weight:600;color:var(--bw-navy);">{{ row.rate|floatformat:2 }}</div>
                     {% endif %}
                   </td>
-                  <td style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
-                      id="amount-{{ row.line.bill_ref }}" class="boq-amount" data-pkg="{{ section.package.code }}">{{ row.amount|floatformat:2 }}</td>
+                  <td data-label="Amount" id="amount-{{ row.line.bill_ref }}" class="boq-amount bw-boq-amount"
+                      style="padding:10px 14px;text-align:right;font-weight:600;color:var(--bw-navy);"
+                      data-pkg="{{ section.package.code }}">{{ row.amount|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
                 {% endfor %}
-                <tr style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
+                <tr class="bw-boq-subtotal-row" style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
                   <td colspan="5" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;">
                     Package sub-total — {{ section.package.title }}
                   </td>
@@ -775,7 +892,7 @@
             <tbody>
               {% for row in category_summary %}
               <tr style="border-bottom:1px solid var(--bw-rule);{% if row.subcontracted %}background:#f8fafc;color:var(--bw-mid);opacity:.88;{% elif row.subtotal is None %}opacity:.55;{% endif %}">
-                <td style="padding:10px 14px;">
+                <td style="padding:10px 14px;overflow-wrap:anywhere;word-break:break-word;">
                   <strong>{% if row.subcontracted %}Sub-contract · {% endif %}{{ row.title }}</strong>
                   <span style="font-family:var(--bw-mono);font-size:.72rem;color:var(--bw-mid);margin-left:8px;">{{ row.code }}</span>
                   {% if row.subcontracted and row.sub_company %}
