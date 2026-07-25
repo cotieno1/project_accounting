@@ -603,8 +603,8 @@
                   </tr>
                   {% endfor %}
                   <tr class="bw-boq-subtotal-row" style="background:#eef2f6;border-top:2px solid var(--bw-rule);">
-                    <td colspan="5" style="padding:10px 12px;text-align:right;font-weight:600;color:var(--bw-mid);">
-                      Package sub-total (sub-contract)
+                    <td colspan="5" style="padding:10px 12px;text-align:right;font-weight:600;color:var(--bw-mid);overflow-wrap:anywhere;">
+                      Sub-total for {{ section.package.code }} — {{ section.package.title }} (sub-contract)
                     </td>
                     <td style="padding:10px 12px;text-align:right;font-family:var(--bw-mono);font-weight:600;color:var(--bw-mid);">
                       {{ section.subtotal|floatformat:2 }}
@@ -739,8 +739,8 @@
                 </tr>
                 {% endfor %}
                 <tr class="bw-boq-subtotal-row" style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
-                  <td colspan="6" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;">
-                    {{ section.page_label }} sub-total
+                  <td colspan="6" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;overflow-wrap:anywhere;">
+                    Sub-total for {{ section.page_label }} (this PDF page only)
                   </td>
                   <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);">
                     {{ section.subtotal|floatformat:2 }}
@@ -818,8 +818,8 @@
                 </tr>
                 {% endfor %}
                 <tr class="bw-boq-subtotal-row" style="background:#f0f7ff;border-top:1px solid var(--bw-rule);">
-                  <td colspan="5" style="padding:10px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.82rem;">
-                    Cat sub-total — {{ group.bill_label }}
+                  <td colspan="5" style="padding:10px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.82rem;overflow-wrap:anywhere;">
+                    Sub-total for {{ group.bill_label }} · under {{ section.package.code }} — {{ section.package.title }}
                   </td>
                   <td style="padding:10px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);"
                       id="bill-subtotal-{{ section.package.code }}-{{ group.bill_key }}"
@@ -861,8 +861,8 @@
                 {% endfor %}
                 {% endfor %}
                 <tr class="bw-boq-subtotal-row" style="background:var(--bw-mist);border-top:2px solid var(--bw-rule);">
-                  <td colspan="5" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;">
-                    Package sub-total — {{ section.package.title }}
+                  <td colspan="5" style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-size:.84rem;overflow-wrap:anywhere;">
+                    Package total for {{ section.package.code }} — {{ section.package.title }}
                   </td>
                   <td style="padding:12px 14px;text-align:right;font-weight:700;color:var(--bw-navy);font-family:var(--bw-mono);"
                       id="subtotal-{{ section.package.code }}">
@@ -887,10 +887,12 @@
       {% endif %}
       {% endif %}
       {% if category_summary %}
-      <div class="bw-card" style="margin-bottom:14px;">
-        <div class="bw-card-header">Category summary</div>
+      <div class="bw-card" style="margin-bottom:14px;" id="boq-category-rollup">
+        <div class="bw-card-header">Bid roll-up by category</div>
         <div class="bw-card-body" style="padding:0;">
-          <table style="width:100%;border-collapse:collapse;font-size:.84rem;">
+          <p class="bw-mobile-hint" style="margin:10px 12px;">
+            This is the named summary of what you priced — each row is a BOQ category (package), not a mystery code.
+          </p>          <table style="width:100%;border-collapse:collapse;font-size:.84rem;">
             <thead>
               <tr style="background:var(--bw-mist);border-bottom:1px solid var(--bw-rule);">
                 <th style="padding:10px 14px;text-align:left;color:var(--bw-navy);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Category</th>
@@ -1011,29 +1013,38 @@
       </div>
 
       {% if package_sections or subcontract_package_sections %}
-      <div class="bw-card" style="margin-bottom:14px;">
-        <div class="bw-card-header">Sub-totals</div>
+      <div class="bw-card bw-aside-subtotals" style="margin-bottom:14px;">
+        <div class="bw-card-header">Package roll-up</div>
         <div class="bw-card-body" style="padding:10px 0;">
+          <p style="font-size:.72rem;color:var(--bw-mid);margin:0 12px 8px;line-height:1.35;">
+            Running totals by named package. On phone, use the sub-total under each package’s own lines instead.
+          </p>
           {% for section in subcontract_package_sections %}
-          <div style="display:flex;justify-content:space-between;gap:8px;padding:8px 16px;border-bottom:1px solid var(--bw-rule);font-size:.8rem;opacity:.75;">
-            <span style="color:var(--bw-mid);">{{ section.package.code }} (sub)</span>
-            <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-mid);">{{ section.subtotal|floatformat:2 }}</span>
+          <div style="display:flex;justify-content:space-between;gap:10px;padding:8px 16px;border-bottom:1px solid var(--bw-rule);font-size:.8rem;opacity:.75;">
+            <span style="color:var(--bw-mid);min-width:0;overflow-wrap:anywhere;">
+              <strong style="display:block;font-weight:600;">{{ section.package.title }}</strong>
+              <span style="font-family:var(--bw-mono);font-size:.68rem;">{{ section.package.code }} · sub-contract</span>
+            </span>
+            <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-mid);flex-shrink:0;">{{ section.subtotal|floatformat:2 }}</span>
           </div>
           {% endfor %}
           {% for section in package_sections %}
-          <div style="display:flex;justify-content:space-between;gap:8px;padding:8px 16px;border-bottom:1px solid var(--bw-rule);font-size:.8rem;">
-            <span style="color:var(--bw-mid);">{{ section.package.code }}</span>
-            <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);" id="aside-{{ section.package.code }}">{{ section.subtotal|floatformat:2 }}</span>
+          <div style="display:flex;justify-content:space-between;gap:10px;padding:8px 16px;border-bottom:1px solid var(--bw-rule);font-size:.8rem;">
+            <span style="color:var(--bw-mid);min-width:0;overflow-wrap:anywhere;">
+              <strong style="display:block;font-weight:600;color:var(--bw-navy);">{{ section.package.title }}</strong>
+              <span style="font-family:var(--bw-mono);font-size:.68rem;">{{ section.package.code }}</span>
+            </span>
+            <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-navy);flex-shrink:0;" id="aside-{{ section.package.code }}">{{ section.subtotal|floatformat:2 }}</span>
           </div>
           {% endfor %}
           {% if subcontract_package_sections %}
           <div style="display:flex;justify-content:space-between;gap:8px;padding:8px 16px;border-bottom:1px solid var(--bw-rule);font-size:.8rem;">
-            <span style="color:var(--bw-mid);">Sub-contract total</span>
+            <span style="color:var(--bw-mid);">All sub-contract packages</span>
             <span style="font-family:var(--bw-mono);font-weight:600;color:var(--bw-mid);">{{ subcontract_grand_total|floatformat:2 }}</span>
           </div>
           {% endif %}
           <div style="display:flex;justify-content:space-between;gap:8px;padding:10px 16px;font-size:.86rem;">
-            <strong style="color:var(--bw-navy);">{% if subcontract_package_sections %}Combined total{% else %}Total{% endif %}</strong>
+            <strong style="color:var(--bw-navy);">{% if subcontract_package_sections %}Combined bid total{% else %}Bid total (all priced packages){% endif %}</strong>
             <strong style="font-family:var(--bw-mono);color:var(--bw-navy);" id="aside-grand" data-sub-total="{{ subcontract_grand_total }}">{{ combined_grand_total|floatformat:2 }}</strong>
           </div>
         </div>
