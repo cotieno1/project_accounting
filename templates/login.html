@@ -38,9 +38,7 @@
             max-width: 420px;
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
         }
-        .login-brand {
-            margin-bottom: 1.25rem;
-        }
+        .login-brand { margin-bottom: 1.25rem; }
         .login-brand h1 {
             font-size: var(--login-brand-size);
             font-weight: 800;
@@ -73,14 +71,28 @@
             background: #0f172a;
             border-color: #334155;
             color: var(--home-text);
-            /* 16px prevents iOS zoom-on-focus which feels like a broken login */
-            font-size: 16px;
+            font-size: 16px; /* prevents iOS zoom-on-focus */
         }
         .form-control:focus {
             background: #0f172a;
             border-color: var(--home-primary);
             color: var(--home-text);
             box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+        .password-row { position: relative; }
+        .password-row .form-control { padding-right: 4.5rem; }
+        .toggle-pw {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            background: transparent;
+            color: var(--login-brand-color);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 6px 8px;
+            min-height: 44px;
         }
         .btn-primary {
             background-color: var(--home-primary);
@@ -121,11 +133,11 @@
 
         {% if form.errors %}
         <div class="alert alert-danger py-2" role="alert">
-            Invalid username/email or password. Check for auto-capital letters on your phone keyboard, then try again.
+            Invalid username/email or password. On phones: tap <strong>Show</strong>, confirm the password ends with <strong>#</strong>, and that you typed letter <strong>O</strong> (not zero). Clear any saved wrong password from Chrome, then type it manually.
         </div>
         {% endif %}
 
-        <form method="post" action="{% url 'login' %}" novalidate>
+        <form method="post" action="{% url 'login' %}" novalidate autocomplete="on">
             {% csrf_token %}
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="mb-3">
@@ -134,16 +146,33 @@
                        autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
                        inputmode="text" enterkeyhint="next"
                        value="{{ form.username.value|default:'' }}">
-                <div class="login-hint">Same username as on desktop (not case-sensitive). Email also works.</div>
+                <div class="login-hint">Use <code>temp_admin</code> exactly (case no longer matters).</div>
             </div>
             <div class="mb-4">
                 <label for="id_password">Password</label>
-                <input type="password" name="password" id="id_password" class="form-control" required
-                       autocomplete="current-password" enterkeyhint="go">
+                <div class="password-row">
+                    <input type="password" name="password" id="id_password" class="form-control" required
+                           autocomplete="current-password" enterkeyhint="go"
+                           autocapitalize="none" autocorrect="off" spellcheck="false">
+                    <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Show password">Show</button>
+                </div>
+                <div class="login-hint">Tap Show and check the last character is # before Login.</div>
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
         </form>
         <p class="login-footer mb-0"><a href="{% url 'home' %}">Back to home</a></p>
     </div>
+    <script>
+    (function () {
+        var input = document.getElementById('id_password');
+        var btn = document.getElementById('toggle-pw');
+        if (!input || !btn) return;
+        btn.addEventListener('click', function () {
+            var show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            btn.textContent = show ? 'Hide' : 'Show';
+        });
+    })();
+    </script>
 </body>
 </html>

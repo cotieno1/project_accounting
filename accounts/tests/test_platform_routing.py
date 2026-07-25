@@ -84,6 +84,13 @@ class PlatformRoutingTests(TestCase):
         )
         self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
 
+    def test_mobile_login_strips_trailing_password_whitespace(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": "pioneer1", "password": "test-pass-123 \n"},
+        )
+        self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
+
     def test_main_admin_dashboard_redirects_to_platform(self):
         self.client.login(username="mainadmin", password="test-pass-123")
         response = self.client.get(reverse("dashboard"))

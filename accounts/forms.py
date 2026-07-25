@@ -8,7 +8,7 @@ from .models import ProjectBudget, LPOTransaction, LPOItem
 class MobileFriendlyLoginForm(AuthenticationForm):
     """
     Phone keyboards often capitalize the first letter or autocorrect usernames,
-    and users sometimes paste a trailing space or type their email instead.
+    and paste/autofill can add trailing spaces to either field.
     Resolve those before authenticate() so mobile login matches desktop.
     """
 
@@ -21,6 +21,16 @@ class MobileFriendlyLoginForm(AuthenticationForm):
                 "spellcheck": "false",
                 "autocomplete": "username",
                 "inputmode": "text",
+                "class": "form-control",
+            }
+        ),
+    )
+    password = forms.CharField(
+        label="Password",
+        strip=False,  # we strip ourselves so leading intentional spaces stay rare; trailing is the mobile issue
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "current-password",
                 "class": "form-control",
             }
         ),
@@ -45,6 +55,27 @@ class MobileFriendlyLoginForm(AuthenticationForm):
             if ua is not None:
                 user = ua.user
         return user.username if user is not None else raw
+
+    def clean_password(self):
+        # Mobile paste / password-manager autofill often appends a trailing space or newline.
+        return (self.cleaned_data.get("password") or "").strip()
+
+    def clean(self):
+        import logging
+        cleaned = super().clean()
+        if self.errors:
+            raw_user = (self.data.get("username") or "").strip()
+            raw_pw = self.data.get("password") or ""
+            logging.getLogger("accounts.login").warning(
+                "login_failed username=%r username_len=%s password_len=%s "
+                "password_endswith_space=%s password_last_ord=%s",
+                raw_user,
+                len(raw_user),
+                len(raw_pw),
+                raw_pw.endswith((" ", "\n", "\r", "\t")),
+                ord(raw_pw[-1]) if raw_pw else None,
+            )
+        return cleaned
 
 
 
