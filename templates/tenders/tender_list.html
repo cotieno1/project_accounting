@@ -118,7 +118,7 @@
   .bw-filter-body { display: block !important; }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .bw-page { padding: 16px 12px 40px; }
   .bw-tender-list-layout { gap: 14px; }
   .bw-filter-toggle { display: flex; margin-bottom: 0; }
@@ -141,6 +141,9 @@
     min-height: 44px;
     justify-content: center;
   }
+  /* Logged-in clutter: nav already has My bids / Alerts / Projects */
+  .bw-tender-actions__nav-dup { display: none; }
+  .bw-tender-list-header .bw-lead { display: none; }
   .bw-tender-card__chips .bw-tag {
     max-width: 100%;
     overflow-wrap: anywhere;
@@ -153,7 +156,7 @@
 
 {% block bw_content %}
 <div class="bw-wrap">
-  <header style="margin-bottom:24px;">
+  <header class="bw-tender-list-header" style="margin-bottom:24px;">
     {% if user.is_authenticated and org_name %}
     <div class="bw-org-headline">
       <span class="bw-org-headline__name">{{ org_name }}</span>
@@ -172,10 +175,10 @@
           <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal">Upload new tender (PDF)</a>
         {% endif %}
         {% if bw_persona == 'employer' %}
-          <a href="{% url 'infra-project-list' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label|default:"Manage projects" }}</a>
+          <a href="{% url 'infra-project-list' %}" class="bw-btn bw-btn--ghost bw-tender-actions__nav-dup">{{ bw_secondary_cta_label|default:"Manage projects" }}</a>
         {% elif bw_persona == 'contractor' %}
-          <a href="{% url 'my-bids' %}" class="bw-btn bw-btn--{% if can_publish_tender %}ghost{% else %}teal{% endif %}">{{ bw_primary_cta_label|default:"My bids" }}</a>
-          <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost">{{ bw_secondary_cta_label|default:"Set alerts" }}</a>
+          <a href="{% url 'my-bids' %}" class="bw-btn bw-btn--{% if can_publish_tender %}ghost{% else %}teal{% endif %} bw-tender-actions__nav-dup">{{ bw_primary_cta_label|default:"My bids" }}</a>
+          <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost bw-tender-actions__nav-dup">{{ bw_secondary_cta_label|default:"Set alerts" }}</a>
         {% endif %}
       </div>
     {% endif %}
