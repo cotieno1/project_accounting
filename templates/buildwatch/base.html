@@ -193,33 +193,28 @@
 .bw-topnav__dd-item:hover { background: var(--bw-mist); }
 .bw-topnav__dd-item small { display: block; color: var(--bw-mid); font-weight: 400; font-size: 0.72rem; margin-top: 1px; }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .bw-topnav {
     flex-wrap: wrap;
     padding: 10px 12px;
-    gap: 8px;
-    align-items: center;
+    gap: 10px;
   }
-  .bw-topnav__left {
-    flex: 1 1 auto;
-    min-width: 0;
+  .bw-topnav__left { flex: 1 1 auto; flex-wrap: wrap; row-gap: 4px; min-width: 0; }
+  .bw-topnav__brand { flex: 0 0 auto; }
+  /* Show the full company name on its own line under the logo (not truncated) */
+  .bw-topnav__org {
+    flex-basis: 100%;
+    max-width: 100%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    padding-left: 0;
+    margin-left: 0;
+    border-left: 0;
+    font-size: 0.92rem;
+    line-height: 1.25;
   }
-  .bw-topnav__brand {
-    font-size: 0.95rem;
-  }
-  /* Org lives in the open menu on phones — bar is too narrow for long company names */
-  .bw-topnav__org { display: none; }
-  .bw-topnav__org-in-menu {
-    display: block;
-    padding: 10px 12px 8px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--bw-teal);
-    border-bottom: 1px solid var(--bw-rule);
-    margin-bottom: 4px;
-    overflow-wrap: anywhere;
-  }
-  .bw-topnav__toggle { display: inline-flex; flex-shrink: 0; }
+  .bw-topnav__toggle { display: inline-flex; margin-left: auto; align-self: flex-start; }
   .bw-topnav__links {
     display: none;
     width: 100%;
@@ -246,20 +241,10 @@
   }
   .bw-topnav__dd.is-open .bw-topnav__dd-menu,
   .bw-topnav__dd:focus-within .bw-topnav__dd-menu { display: block; }
-  .bw-topnav__dd-item { white-space: normal; overflow-wrap: anywhere; }
-  .bw-topnav__user {
-    padding: 8px 12px;
-    overflow-wrap: anywhere;
-  }
+  .bw-topnav__user { padding: 8px 12px; }
   .bw-page { padding: 16px 12px 40px; }
   .bw-card-header, .bw-card-body, .bw-panel__hd, .bw-panel__bd { padding-left: 14px; padding-right: 14px; }
-  .bw-org-headline { display: none; } /* avoid double org with nav / menu */
-  .bw-footer { font-size: 0.72rem; padding: 14px 12px; }
 }
-@media (min-width: 901px) {
-  .bw-topnav__org-in-menu { display: none; }
-}
-
 
 .bw-btn {
   display: inline-flex;
@@ -424,9 +409,6 @@
   .bw-row2, .bw-row3 { grid-template-columns: 1fr; }
   .bw-layout { grid-template-columns: 1fr !important; }
 }
-@media (max-width: 900px) {
-  .bw-layout { grid-template-columns: 1fr !important; }
-}
 
 .bw-layout {
   display: grid;
@@ -514,11 +496,8 @@
       <span aria-hidden="true"></span>
     </button>
     <div class="bw-topnav__links" id="bw-topnav-links">
-      {% if user.is_authenticated and org_name %}
-      <div class="bw-topnav__org-in-menu">{{ org_name }}</div>
-      {% endif %}
       {% if user.is_authenticated %}
-      <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">Dashboard</a>
+      <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">← Main dashboard</a>
       {% endif %}
       {% if user.is_authenticated and bw_persona == 'employer' %}
       <div class="bw-topnav__dd">
@@ -586,27 +565,11 @@
 (function () {
   var nav = document.getElementById('bw-topnav');
   var btn = document.getElementById('bw-nav-toggle');
-  if (nav && btn) {
-    btn.addEventListener('click', function () {
-      var open = nav.classList.toggle('is-open');
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-    });
-  }
-  // Touch: expand employer Tenders submenu without relying on hover
-  document.querySelectorAll('.bw-topnav__dd > .bw-topnav__link').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      if (window.matchMedia('(max-width: 900px)').matches) {
-        var dd = link.parentElement;
-        if (dd && !dd.classList.contains('is-open')) {
-          e.preventDefault();
-          document.querySelectorAll('.bw-topnav__dd.is-open').forEach(function (other) {
-            if (other !== dd) other.classList.remove('is-open');
-          });
-          dd.classList.add('is-open');
-        }
-      }
-    });
+  if (!nav || !btn) return;
+  btn.addEventListener('click', function () {
+    var open = nav.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
   });
 })();
 </script>
