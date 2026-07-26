@@ -2,25 +2,138 @@
 
 {% block title %}{{ listing.event.ref }} — BuildWatch{% endblock %}
 
+{% block extra_head %}
+{{ block.super }}
+<style>
+.bw-td-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px clamp(12px, 3vw, 24px) 40px;
+  min-width: 0;
+}
+.bw-td-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
+  align-items: start;
+  grid-template-areas:
+    "hero aside"
+    "docs aside";
+}
+.bw-td-hero { grid-area: hero; min-width: 0; }
+.bw-td-docs { grid-area: docs; min-width: 0; }
+.bw-td-aside { grid-area: aside; min-width: 0; }
+.bw-td-page,
+.bw-td-card-text {
+  min-width: 0;
+  max-width: 100%;
+}
+.bw-td-title {
+  font-size: clamp(1.2rem, 4vw, 1.5rem);
+  font-weight: 700;
+  color: var(--bw-navy);
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bw-td-chips {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.bw-td-chips .bw-badge,
+.bw-td-chips .bw-tag {
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.bw-td-facts {
+  border-top: 1px solid var(--bw-rule);
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  background: var(--bw-mist);
+  border-radius: 0 0 10px 10px;
+}
+.bw-td-fact__label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bw-mid);
+  margin-bottom: 3px;
+}
+.bw-td-fact__value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bw-navy);
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+.bw-td-card-text {
+  font-size: 0.88rem;
+  color: var(--bw-navy);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bw-td-aside .bw-btn {
+  min-height: 44px;
+}
+.bw-td-crumb {
+  font-size: 0.78rem;
+  color: var(--bw-mid);
+  margin-bottom: 16px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .bw-td-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    grid-template-areas:
+      "hero"
+      "aside"
+      "docs";
+  }
+  .bw-td-page { padding: 16px 12px 48px; }
+  .bw-td-header-pad { padding: 18px 14px !important; }
+  .bw-td-facts { padding: 14px; gap: 12px; }
+  .bw-card-header,
+  .bw-card-body { padding-left: 14px; padding-right: 14px; }
+  .bw-td-preamble-body {
+    max-height: 280px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+</style>
+{% endblock %}
+
 {% block bw_content %}
-<div style="max-width:1100px;margin:0 auto;padding:32px 24px;">
+<div class="bw-td-page">
 
   <!-- Breadcrumb -->
-  <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:20px;">
-    <a href="{% url 'tender-list' %}" style="color:var(--bw-blue);text-decoration:none;">
+  <div class="bw-td-crumb">
+    <a href="{% url 'tender-list' %}" style="color:var(--bw-teal);text-decoration:none;">
       Tenders
     </a>
     &nbsp;/&nbsp; {{ listing.event.ref }}
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 320px;gap:28px;">
+  <div class="bw-td-layout">
 
     <!-- ── Main content ─────────────────────────────────────────────────── -->
-    <div>
+    <div class="bw-td-hero">
       <!-- Header card -->
       <div class="bw-card" style="margin-bottom:20px;">
-        <div style="padding:28px;">
-          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <div class="bw-td-header-pad" style="padding:28px;">
+          <div class="bw-td-chips">
             <span class="bw-badge bw-badge--{{ listing.tender_type|lower }}">
               {{ listing.get_tender_type_display }}
             </span>
@@ -34,54 +147,45 @@
             {% endif %}
           </div>
 
-          <div style="font-family:monospace;font-size:.78rem;color:var(--bw-dgrey);margin-bottom:6px;">
+          <div style="font-family:var(--bw-mono);font-size:.78rem;color:var(--bw-mid);margin-bottom:6px;">
             Ref: {{ listing.event.ref }}
           </div>
-          <h1 style="font-size:1.5rem;font-weight:700;color:var(--bw-navy);
-            letter-spacing:-.02em;margin-bottom:14px;line-height:1.25;">
+          <h1 class="bw-td-title">
             {{ listing.event.description }}
           </h1>
 
           {% if listing.summary %}
-            <p style="font-size:.88rem;color:var(--bw-dgrey);line-height:1.6;
-              margin-bottom:0;">
+            <p style="font-size:.88rem;color:var(--bw-mid);line-height:1.6;margin:0;overflow-wrap:anywhere;">
               {{ listing.summary }}
             </p>
           {% endif %}
         </div>
 
         <!-- Key details strip -->
-        <div style="border-top:1px solid var(--bw-mgrey);padding:16px 28px;
-          display:flex;gap:28px;flex-wrap:wrap;background:var(--bw-lgrey);
-          border-radius:0 0 10px 10px;">
+        <div class="bw-td-facts">
           {% if listing.country %}
           <div>
-            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
-              color:var(--bw-dgrey);margin-bottom:3px;">Location</div>
-            <div style="font-size:.85rem;font-weight:600;color:var(--bw-navy);">
+            <div class="bw-td-fact__label">Location</div>
+            <div class="bw-td-fact__value">
               {{ listing.country.name }}{% if listing.county_region %}, {{ listing.county_region }}{% endif %}
             </div>
           </div>
           {% endif %}
           <div>
-            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
-              color:var(--bw-dgrey);margin-bottom:3px;">Estimated Value</div>
-            <div style="font-size:.85rem;font-weight:600;color:var(--bw-navy);">
+            <div class="bw-td-fact__label">Estimated Value</div>
+            <div class="bw-td-fact__value">
               {{ listing.value_range_display }}
             </div>
           </div>
           <div>
-            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
-              color:var(--bw-dgrey);margin-bottom:3px;">Issue Date</div>
-            <div style="font-size:.85rem;font-weight:600;color:var(--bw-navy);">
+            <div class="bw-td-fact__label">Issue Date</div>
+            <div class="bw-td-fact__value">
               {{ listing.event.issue_date|date:"d M Y" }}
             </div>
           </div>
           <div>
-            <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
-              color:var(--bw-dgrey);margin-bottom:3px;">Closing Date</div>
-            <div style="font-size:.85rem;font-weight:600;
-              color:{% if listing.is_closing_soon %}var(--bw-amber){% elif listing.event.is_open %}var(--bw-navy){% else %}var(--bw-red){% endif %};">
+            <div class="bw-td-fact__label">Closing Date</div>
+            <div class="bw-td-fact__value" style="color:{% if listing.is_closing_soon %}var(--bw-warn){% elif listing.event.is_open %}var(--bw-navy){% else %}var(--bw-danger){% endif %};">
               {{ listing.event.closing_date|date:"d M Y H:i" }}
               {% if listing.event.is_open %}
                 ({{ listing.event.days_remaining }} day{{ listing.event.days_remaining|pluralize }} remaining)
@@ -145,17 +249,20 @@
       {% endif %}
       {% endwith %}
 
+    </div>
+
+    <div class="bw-td-docs">
       {% if listing.works_description %}
       <div class="bw-card" style="margin-bottom:20px;">
         <div class="bw-card-header">Description of the Works</div>
-        <div class="bw-card-body" style="font-size:.88rem;color:var(--bw-navy);line-height:1.65;white-space:pre-wrap;">{{ listing.works_description }}</div>
+        <div class="bw-card-body bw-td-card-text">{{ listing.works_description }}</div>
       </div>
       {% endif %}
 
       {% if listing.contract_particulars %}
       <div class="bw-card" style="margin-bottom:20px;">
         <div class="bw-card-header">Contract Particulars / Conditions</div>
-        <div class="bw-card-body" style="font-size:.88rem;color:var(--bw-navy);line-height:1.65;white-space:pre-wrap;">{{ listing.contract_particulars }}</div>
+        <div class="bw-card-body bw-td-card-text">{{ listing.contract_particulars }}</div>
       </div>
       {% endif %}
 
@@ -178,7 +285,7 @@
               <span>{{ p.title }}</span>
               {% if p.source_page %}<span style="font-size:.72rem;font-weight:500;color:var(--bw-slate,#8a97ab);">p.{{ p.source_page }}</span>{% endif %}
             </summary>
-            <div style="padding:0 14px 14px;white-space:pre-wrap;border-top:1px solid var(--bw-border,#eef1f6);">{{ p.body }}</div>
+            <div class="bw-td-card-text bw-td-preamble-body" style="padding:0 14px 14px;border-top:1px solid var(--bw-rule);">{{ p.body }}</div>
           </details>
           {% endfor %}
         </div>
@@ -349,24 +456,24 @@
     </div>
 
     <!-- ── Action sidebar ───────────────────────────────────────────────── -->
-    <div>
+    <aside class="bw-td-aside">
 
       <!-- Countdown -->
       {% if listing.event.is_open %}
       <div class="bw-card" style="margin-bottom:16px;
-        border-left:4px solid {% if listing.is_closing_soon %}var(--bw-amber){% else %}var(--bw-teal){% endif %};">
+        border-left:4px solid {% if listing.is_closing_soon %}var(--bw-warn){% else %}var(--bw-teal){% endif %};">
         <div style="padding:16px 18px;">
           <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
-            color:var(--bw-dgrey);margin-bottom:6px;">Time Remaining</div>
+            color:var(--bw-mid);margin-bottom:6px;">Time Remaining</div>
           <div style="font-size:1.6rem;font-weight:700;
-            color:{% if listing.is_closing_soon %}var(--bw-amber){% else %}var(--bw-navy){% endif %};">
+            color:{% if listing.is_closing_soon %}var(--bw-warn){% else %}var(--bw-navy){% endif %};">
             {{ listing.event.days_remaining }} day{{ listing.event.days_remaining|pluralize }}
           </div>
-          <div style="font-size:.75rem;color:var(--bw-dgrey);margin-top:4px;">
+          <div style="font-size:.75rem;color:var(--bw-mid);margin-top:4px;overflow-wrap:anywhere;">
             Closes {{ listing.event.closing_date|date:"d M Y \a\t H:i" }}
           </div>
           {% if listing.clarification_deadline %}
-            <div style="font-size:.75rem;color:var(--bw-amber);margin-top:6px;">
+            <div style="font-size:.75rem;color:var(--bw-warn);margin-top:6px;">
               Clarifications by {{ listing.clarification_deadline|date:"d M Y" }}
             </div>
           {% endif %}
@@ -586,7 +693,7 @@
       </div>
       {% endif %}
 
-    </div>
+    </aside>
   </div>
 </div>
 {% endblock %}
