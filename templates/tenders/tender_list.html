@@ -2,6 +2,155 @@
 
 {% block title %}Tenders — BuildWatch{% endblock %}
 
+{% block extra_head %}
+{{ block.super }}
+<style>
+.bw-tender-list-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "results"
+    "filters";
+  align-items: start;
+}
+.bw-tender-filters { grid-area: filters; min-width: 0; }
+.bw-tender-results { grid-area: results; min-width: 0; }
+
+.bw-filter-toggle {
+  display: none;
+  width: 100%;
+  min-height: 46px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--bw-rule);
+  border-radius: var(--bw-radius);
+  background: var(--bw-white);
+  color: var(--bw-navy);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.bw-filter-toggle__meta {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--bw-mid);
+}
+.bw-filter-body { min-width: 0; }
+.bw-filter-panel .bw-panel { position: sticky; top: 72px; }
+
+.bw-tender-card {
+  display: block;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--bw-rule);
+  min-width: 0;
+}
+.bw-tender-card:last-child { border-bottom: none; }
+.bw-tender-card:hover { background: var(--bw-mist); }
+.bw-tender-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.bw-tender-card__ref {
+  font-family: var(--bw-mono);
+  font-size: 0.75rem;
+  color: var(--bw-mid);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.bw-tender-card__status { flex-shrink: 0; }
+.bw-tender-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.02rem;
+  color: var(--bw-navy);
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bw-tender-card__summary {
+  margin: 0;
+  color: var(--bw-mid);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.bw-tender-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 10px;
+  color: var(--bw-mid);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.bw-tender-card__meta span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.bw-tender-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.bw-tender-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+@media (min-width: 701px) {
+  .bw-tender-list-layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-areas: "filters results";
+  }
+  .bw-filter-toggle { display: none !important; }
+  .bw-filter-body { display: block !important; }
+}
+
+@media (max-width: 700px) {
+  .bw-page { padding: 16px 12px 40px; }
+  .bw-tender-list-layout { gap: 14px; }
+  .bw-filter-toggle { display: flex; margin-bottom: 0; }
+  .bw-filter-panel.is-open .bw-filter-toggle {
+    border-radius: var(--bw-radius) var(--bw-radius) 0 0;
+    border-bottom-color: transparent;
+  }
+  .bw-filter-body { display: none; }
+  .bw-filter-panel.is-open .bw-filter-body { display: block; }
+  .bw-filter-panel .bw-panel {
+    position: static;
+    border-radius: 0 0 var(--bw-radius) var(--bw-radius);
+  }
+  .bw-filter-panel:not(.is-open) .bw-panel { display: none; }
+  .bw-filter-panel .bw-panel__hd { display: none; }
+  .bw-tender-card { padding: 14px; }
+  .bw-tender-card h3 { font-size: 0.98rem; }
+  .bw-tender-actions .bw-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .bw-tender-card__chips .bw-tag {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    line-height: 1.3;
+  }
+}
+</style>
+{% endblock %}
+
 {% block bw_content %}
 <div class="bw-wrap">
   <header style="margin-bottom:24px;">
@@ -18,7 +167,7 @@
     <p class="bw-lead">{{ bw_persona_lead }}</p>
     {% endif %}
     {% if user.is_authenticated %}
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+      <div class="bw-tender-actions">
         {% if can_publish_tender %}
           <a href="{% url 'tender-publish' %}" class="bw-btn bw-btn--teal">Upload new tender (PDF)</a>
         {% endif %}
@@ -32,66 +181,77 @@
     {% endif %}
   </header>
 
-  <div class="bw-layout">
-    <aside>
-      <form method="GET" action="{% url 'tender-list' %}" class="bw-panel" style="position:sticky;top:72px;">
-        <div class="bw-panel__hd">Filter</div>
-        <div class="bw-panel__bd">
-          <div class="bw-field">
-            <label class="bw-label">Search</label>
-            <input class="bw-input" type="text" name="q" value="{{ search }}" placeholder="Ref, description, location">
-          </div>
-          <div class="bw-field">
-            <label class="bw-label">Type</label>
-            <select class="bw-select" name="type">
-              <option value="">All types</option>
-              {% for val, label in TENDER_TYPES %}
-                <option value="{{ val }}" {% if filter_type == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="bw-field">
-            <label class="bw-label">Sector</label>
-            <select class="bw-select" name="sector">
-              <option value="">All sectors</option>
-              {% for val, label in SECTORS %}
-                <option value="{{ val }}" {% if filter_sector == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="bw-field">
-            <label class="bw-label">Country</label>
-            <select class="bw-select" name="country">
-              <option value="">All countries</option>
-              {% for c in countries %}
-                <option value="{{ c.code }}" {% if filter_country == c.code %}selected{% endif %}>{{ c.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="bw-field">
-            <label class="bw-label">Funding</label>
-            <select class="bw-select" name="funding">
-              <option value="">All sources</option>
-              {% for val, label in FUNDING_TYPES %}
-                <option value="{{ val }}" {% if filter_funding == val %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="bw-field">
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;cursor:pointer;">
-              <input type="checkbox" name="closing_soon" value="1" {% if filter_closing %}checked{% endif %}>
-              Closing within 7 days
-            </label>
-          </div>
-          <button type="submit" class="bw-btn bw-btn--primary" style="width:100%;">Apply</button>
-          {% if search or filter_type or filter_sector or filter_country or filter_funding or filter_closing %}
-            <a href="{% url 'tender-list' %}" class="bw-btn bw-btn--ghost" style="width:100%;margin-top:8px;">Clear</a>
-          {% endif %}
+  <div class="bw-tender-list-layout">
+    <aside class="bw-tender-filters">
+      <div class="bw-filter-panel{% if search or filter_type or filter_sector or filter_country or filter_funding or filter_closing %} is-open{% endif %}" id="bw-filter-panel">
+        <button type="button" class="bw-filter-toggle" id="bw-filter-toggle"
+                aria-expanded="{% if search or filter_type or filter_sector or filter_country or filter_funding or filter_closing %}true{% else %}false{% endif %}"
+                aria-controls="bw-filter-body">
+          <span>Filter tenders</span>
+          <span class="bw-filter-toggle__meta">{% if search or filter_type or filter_sector or filter_country or filter_funding or filter_closing %}Filters on{% else %}Optional{% endif %}</span>
+        </button>
+        <div class="bw-filter-body" id="bw-filter-body">
+          <form method="GET" action="{% url 'tender-list' %}" class="bw-panel">
+            <div class="bw-panel__hd">Filter</div>
+            <div class="bw-panel__bd">
+              <div class="bw-field">
+                <label class="bw-label" for="tender-q">Search</label>
+                <input class="bw-input" id="tender-q" type="search" name="q" value="{{ search }}"
+                       placeholder="Ref, description, location" enterkeyhint="search">
+              </div>
+              <div class="bw-field">
+                <label class="bw-label" for="tender-type">Type</label>
+                <select class="bw-select" id="tender-type" name="type">
+                  <option value="">All types</option>
+                  {% for val, label in TENDER_TYPES %}
+                    <option value="{{ val }}" {% if filter_type == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="bw-field">
+                <label class="bw-label" for="tender-sector">Sector</label>
+                <select class="bw-select" id="tender-sector" name="sector">
+                  <option value="">All sectors</option>
+                  {% for val, label in SECTORS %}
+                    <option value="{{ val }}" {% if filter_sector == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="bw-field">
+                <label class="bw-label" for="tender-country">Country</label>
+                <select class="bw-select" id="tender-country" name="country">
+                  <option value="">All countries</option>
+                  {% for c in countries %}
+                    <option value="{{ c.code }}" {% if filter_country == c.code %}selected{% endif %}>{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="bw-field">
+                <label class="bw-label" for="tender-funding">Funding</label>
+                <select class="bw-select" id="tender-funding" name="funding">
+                  <option value="">All sources</option>
+                  {% for val, label in FUNDING_TYPES %}
+                    <option value="{{ val }}" {% if filter_funding == val %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="bw-field">
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;cursor:pointer;min-height:44px;">
+                  <input type="checkbox" name="closing_soon" value="1" {% if filter_closing %}checked{% endif %}>
+                  Closing within 7 days
+                </label>
+              </div>
+              <button type="submit" class="bw-btn bw-btn--primary" style="width:100%;min-height:44px;">Apply filters</button>
+              {% if search or filter_type or filter_sector or filter_country or filter_funding or filter_closing %}
+                <a href="{% url 'tender-list' %}" class="bw-btn bw-btn--ghost" style="width:100%;margin-top:8px;min-height:44px;">Clear</a>
+              {% endif %}
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </aside>
 
-    <section>
+    <section class="bw-tender-results">
       <div class="bw-meta" style="margin-bottom:12px;">
         <span><strong>{{ listings|length }}</strong> result{{ listings|length|pluralize }}</span>
         {% if total_active %}<span><strong>{{ total_active }}</strong> active</span>{% endif %}
@@ -103,23 +263,19 @@
         <div class="bw-panel__bd">
           <h2 style="margin:0 0 8px;font-size:1.05rem;color:var(--bw-navy);">No matching tenders</h2>
           <p class="bw-lead">Broaden the filters or set an alert for new publications.</p>
-          <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-            <a href="{% url 'tender-list' %}" class="bw-btn bw-btn--ghost bw-btn--sm">Clear filters</a>
-            <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--primary bw-btn--sm">Set alert</a>
+          <div class="bw-tender-actions">
+            <a href="{% url 'tender-list' %}" class="bw-btn bw-btn--ghost">Clear filters</a>
+            <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--primary">Set alert</a>
           </div>
         </div>
       </div>
       {% else %}
       <div class="bw-panel">
         {% for listing in listings %}
-        <a class="bw-list-item" href="{% url 'tender-detail' listing.pk %}">
-          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-            <div class="bw-ref">{{ listing.event.ref }}</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              <span class="bw-tag">{{ listing.get_tender_type_display }}</span>
-              {% if listing.boq_document %}
-                <span class="bw-tag bw-tag--ok">BOQ PDF</span>
-              {% endif %}
+        <a class="bw-tender-card" href="{% url 'tender-detail' listing.pk %}">
+          <div class="bw-tender-card__top">
+            <div class="bw-tender-card__ref">{{ listing.event.ref }}</div>
+            <div class="bw-tender-card__status">
               {% if listing.is_closing_soon %}
                 <span class="bw-tag bw-tag--warn">Closing soon</span>
               {% elif listing.event.is_open %}
@@ -131,9 +287,9 @@
           </div>
           <h3>{{ listing.event.description }}</h3>
           {% if listing.summary %}
-            <p>{{ listing.summary|truncatewords:28 }}</p>
+            <p class="bw-tender-card__summary">{{ listing.summary|truncatewords:28 }}</p>
           {% endif %}
-          <div class="bw-meta" style="margin-top:10px;">
+          <div class="bw-tender-card__meta">
             {% if listing.country %}
               <span>{{ listing.country.name }}{% if listing.county_region %} · {{ listing.county_region }}{% endif %}</span>
             {% endif %}
@@ -144,14 +300,31 @@
               <span>Closed {{ listing.event.closing_date|date:"d M Y" }}</span>
             {% endif %}
           </div>
+          <div class="bw-tender-card__chips">
+            <span class="bw-tag">{{ listing.get_tender_type_display }}</span>
+            {% if listing.boq_document %}
+              <span class="bw-tag bw-tag--ok">BOQ PDF</span>
+            {% endif %}
+          </div>
         </a>
         {% endfor %}
       </div>
       <div style="margin-top:14px;">
-        <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost bw-btn--sm">Save search as alert</a>
+        <a href="{% url 'tender-alerts' %}" class="bw-btn bw-btn--ghost">Save search as alert</a>
       </div>
       {% endif %}
     </section>
   </div>
 </div>
+<script>
+(function () {
+  var panel = document.getElementById('bw-filter-panel');
+  var btn = document.getElementById('bw-filter-toggle');
+  if (!panel || !btn) return;
+  btn.addEventListener('click', function () {
+    var open = panel.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+})();
+</script>
 {% endblock %}
