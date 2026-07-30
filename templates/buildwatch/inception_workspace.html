@@ -1,0 +1,406 @@
+{% extends "buildwatch/base.html" %}
+{% block title %}Project Concept - Inception{% endblock %}
+{% block extra_head %}
+{{ block.super }}
+<style>
+.bw-incept { max-width: 1180px; margin: 0 auto; }
+.bw-incept__hero {
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--bw-rule);
+}
+.bw-incept__kicker {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bw-mid);
+}
+.bw-incept__title {
+  margin: 0 0 10px;
+  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  font-weight: 800;
+  color: var(--bw-navy);
+  letter-spacing: -0.03em;
+}
+.bw-incept__def {
+  margin: 0;
+  max-width: 62rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #3f5168;
+}
+.bw-incept__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: end;
+  margin: 16px 0 20px;
+}
+.bw-incept__toolbar label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--bw-mid);
+  margin-bottom: 4px;
+}
+.bw-incept__toolbar select,
+.bw-incept__toolbar input[type="text"] {
+  min-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid #cfd8e6;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.bw-incept__id {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #e8f7f2;
+  color: var(--bw-teal);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.bw-incept__lanes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.bw-incept-lane {
+  background: var(--bw-white);
+  border: 1px solid var(--bw-rule);
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bw-incept-lane h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--bw-navy);
+}
+.bw-incept-lane .role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--bw-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.bw-incept-lane .prompts {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 0.78rem;
+  color: #5a6b80;
+  line-height: 1.45;
+}
+.bw-incept-lane textarea {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  border: 1px solid #cfd8e6;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.bw-incept-lane .meta {
+  font-size: 0.72rem;
+  color: var(--bw-mid);
+}
+.bw-incept__grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.bw-incept-panel {
+  background: var(--bw-white);
+  border: 1px solid var(--bw-rule);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.bw-incept-panel h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--bw-navy);
+}
+.bw-incept-panel .hint {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  color: #5a6b80;
+  line-height: 1.4;
+}
+.bw-incept-fields { display: grid; gap: 10px; }
+.bw-incept-fields label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--bw-mid);
+  margin-bottom: 4px;
+}
+.bw-incept-fields select,
+.bw-incept-fields input,
+.bw-incept-fields textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #cfd8e6;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+.bw-incept__bottom {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.bw-incept-check { list-style: none; margin: 0; padding: 0; }
+.bw-incept-check li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.84rem;
+  padding: 6px 0;
+  border-bottom: 1px solid #eef2f7;
+  color: #3f5168;
+}
+.bw-incept-check .ok { color: var(--bw-teal); font-weight: 800; }
+.bw-incept-check .no { color: #b45309; font-weight: 800; }
+.bw-incept-activity {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 0.8rem;
+  color: #3f5168;
+}
+.bw-incept-activity li {
+  padding: 6px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+.bw-incept-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+.bw-incept-actions input[name="decision_note"] {
+  flex: 1 1 200px;
+  min-width: 160px;
+  padding: 8px 10px;
+  border: 1px solid #cfd8e6;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+@media (max-width: 900px) {
+  .bw-incept__lanes,
+  .bw-incept__grid2,
+  .bw-incept__bottom { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block bw_content %}
+<div class="bw-incept">
+  <header class="bw-incept__hero">
+    <p class="bw-incept__kicker">Project Concept | BuildWatch Inception</p>
+    <h1 class="bw-incept__title">Living brief - collaboration workspace</h1>
+    <p class="bw-incept__def">{{ product_definition }}</p>
+  </header>
+
+  <form method="post" action="">
+    {% csrf_token %}
+    <input type="hidden" name="profile_id" value="{{ profile.id }}">
+
+    <div class="bw-incept__toolbar">
+      <div>
+        <label for="brief_title">Initiative title (pre-ID)</label>
+        <input id="brief_title" type="text" name="title" value="{{ brief.title }}"
+               placeholder="e.g. Regional water storage / Fibre corridor / Lunar DC study">
+      </div>
+      <div>
+        <label for="profile_switch">Programme profile</label>
+        <select id="profile_switch" name="profile_pick">
+          {% for p in profiles %}
+          <option value="{{ p.id }}"{% if p.id == profile.id %} selected{% endif %}>{{ p.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <input type="hidden" name="action" id="form_action" value="save">
+      {% if brief.project_id %}
+      <div class="bw-incept__id" title="Provisional until Django models mint a permanent ProjectTask">
+        Identity: {{ brief.project_id }}
+      </div>
+      {% else %}
+      <div class="bw-incept__id" style="background:#f3f6fb;color:#5a6b80;">
+        No BuildWatch ID yet - concept gate mints identity
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="bw-incept__lanes" aria-label="Living brief lanes">
+      {% for lane in lanes_ui %}
+      <section class="bw-incept-lane">
+        <div class="role">{{ lane.owner_role }}</div>
+        <h3>{{ lane.label }}</h3>
+        {% if lane.prompts %}
+        <ul class="prompts">
+          {% for q in lane.prompts %}<li>{{ q }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        <textarea name="lane_{{ lane.id }}" placeholder="Co-author this lane...">{{ lane.body }}</textarea>
+        <div class="meta">
+          {% if lane.meta.updated_at %}
+            Last: {{ lane.meta.updated_by }} - {{ lane.meta.updated_at }}
+          {% endif %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+
+    <div class="bw-incept__grid2">
+      <section class="bw-incept-panel">
+        <h3>Asset / site custody</h3>
+        <p class="hint">Not land-only - rights over place or asset (ROW, spectrum, catchment, landing zone). Types come from the profile.</p>
+        <div class="bw-incept-fields">
+          <div>
+            <label for="custody_type">Custody type</label>
+            <select id="custody_type" name="custody_type">
+              <option value="">- select -</option>
+              {% for t in profile.custody_types %}
+              <option value="{{ t.id }}"{% if brief.custody.type_id == t.id %} selected{% endif %}>{{ t.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="custody_status">Status</label>
+            <select id="custody_status" name="custody_status">
+              {% for code, label in custody_statuses %}
+              <option value="{{ code }}"{% if brief.custody.status == code %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="custody_owner">Who holds / owns interest?</label>
+            <input id="custody_owner" type="text" name="custody_owner" value="{{ brief.custody.owner_note }}">
+          </div>
+          <div>
+            <label for="custody_route">How is custody secured?</label>
+            <textarea id="custody_route" name="custody_route" rows="3">{{ brief.custody.route_note }}</textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="bw-incept-panel">
+        <h3>Resource commitment (funding)</h3>
+        <p class="hint">Where resources come from and the envelope for this initiative - sources from the profile.</p>
+        <div class="bw-incept-fields">
+          <div>
+            <label for="funding_type">Funding type</label>
+            <select id="funding_type" name="funding_type">
+              <option value="">- select -</option>
+              {% for t in profile.funding_types %}
+              <option value="{{ t.id }}"{% if brief.funding.type_id == t.id %} selected{% endif %}>{{ t.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="funding_status">Status</label>
+            <select id="funding_status" name="funding_status">
+              {% for code, label in funding_statuses %}
+              <option value="{{ code }}"{% if brief.funding.status == code %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="funding_envelope">Envelope (order of magnitude)</label>
+            <input id="funding_envelope" type="text" name="funding_envelope" value="{{ brief.funding.envelope }}" placeholder="e.g. USD 120M / KES 15B">
+          </div>
+          <div>
+            <label for="funding_note">Approval / source note</label>
+            <textarea id="funding_note" name="funding_note" rows="3">{{ brief.funding.source_note }}</textarea>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="bw-incept__bottom">
+      <section class="bw-incept-panel">
+        <h3>Decision gates</h3>
+        <p class="hint">Same gate flow for every profile. Readiness below is for <strong>concept approved</strong>.</p>
+        <ol style="margin:0 0 12px 18px;padding:0;font-size:.84rem;color:#3f5168;line-height:1.5">
+          {% for g in profile.gates %}
+          <li><strong>{{ g.label }}</strong> <span style="color:#8494a8">({{ g.id }})</span></li>
+          {% endfor %}
+        </ol>
+        <ul class="bw-incept-check">
+          {% for c in readiness.checks %}
+          <li>
+            <span class="{% if c.ok %}ok{% else %}no{% endif %}">{% if c.ok %}OK{% else %}o{% endif %}</span>
+            <span>{{ c.label }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="bw-incept-actions">
+          <button type="submit" class="bw-btn bw-btn--ghost" onclick="document.getElementById('form_action').value='save'">Save brief</button>
+          <input type="text" name="decision_note" placeholder="Optional sponsor decision note">
+          <button type="submit" class="bw-btn bw-btn--primary"
+                  onclick="document.getElementById('form_action').value='request_concept'">
+            Sponsor: approve concept
+          </button>
+        </div>
+        {% if brief.decisions %}
+        <div style="margin-top:14px;font-size:.8rem;color:#3f5168">
+          <strong>Recorded decisions</strong>
+          {% for d in brief.decisions %}
+          <div>{{ d.at }} | {{ d.gate }} | {{ d.by }}{% if d.project_id %} - {{ d.project_id }}{% endif %}{% if d.note %} - {{ d.note }}{% endif %}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+
+      <section class="bw-incept-panel">
+        <h3>Activity</h3>
+        <ul class="bw-incept-activity">
+          {% for a in brief.activity %}
+          <li><strong>{{ a.at }}</strong> | {{ a.who }} - {{ a.text }}</li>
+          {% empty %}
+          <li>No activity yet. Start co-authoring the three lanes.</li>
+          {% endfor %}
+        </ul>
+        <p class="hint" style="margin-top:12px">
+          Profile: <strong>{{ profile.title }}</strong> - {{ profile.summary }}
+          Downstream modules:
+          {% for m in profile.downstream_modules %}{{ m }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}.
+        </p>
+      </section>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  var sel = document.getElementById('profile_switch');
+  var act = document.getElementById('form_action');
+  if (!sel || !act) return;
+  sel.addEventListener('change', function () {
+    act.value = 'switch_profile';
+    var hidden = document.querySelector('input[name="profile_id"]');
+    if (hidden) hidden.value = sel.value;
+    sel.form.submit();
+  });
+})();
+</script>
+{% endblock %}

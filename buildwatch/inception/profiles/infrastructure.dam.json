@@ -1,0 +1,65 @@
+{
+  "id": "infrastructure.dam",
+  "title": "Dam / water resources",
+  "summary": "Reservoir, hydropower or multipurpose dam programme.",
+  "lanes": [
+    {
+      "id": "mandate",
+      "label": "WHY - Mandate",
+      "owner_role": "SPONSOR",
+      "prompts": [
+        "Why this water / power outcome now?",
+        "Strategic fit (irrigation, flood, generation, urban supply)?",
+        "What happens if we do not proceed?"
+      ]
+    },
+    {
+      "id": "requirements",
+      "label": "WHAT - Requirements",
+      "owner_role": "BUSINESS_OWNER",
+      "prompts": [
+        "Capacity targets (MW, Mm3, beneficiaries)?",
+        "Operating standards and environmental obligations?",
+        "Phasing / staged release of water or power?"
+      ]
+    },
+    {
+      "id": "feasibility",
+      "label": "HOW + HOW MUCH - Feasibility",
+      "owner_role": "TECHNICAL_LEAD",
+      "prompts": [
+        "Basin / river reach and geology constraints?",
+        "Order-of-magnitude cost and major risk drivers?",
+        "Resettlement and downstream impact approach?"
+      ]
+    }
+  ],
+  "custody_types": [
+    {"id": "catchment_rights", "label": "Catchment / water rights"},
+    {"id": "land_acquisition", "label": "Land / inundation acquisition"},
+    {"id": "international_waters", "label": "Transboundary water agreement"}
+  ],
+  "funding_types": [
+    {"id": "exchequer", "label": "National exchequer / sector vote"},
+    {"id": "mfi", "label": "Multilateral / development finance"},
+    {"id": "ppp", "label": "PPP / concession"}
+  ],
+  "gates": [
+    {
+      "id": "concept_approved",
+      "label": "Concept approved",
+      "requires": ["mandate.minimal", "custody.route", "funding.envelope"]
+    },
+    {
+      "id": "design_direction_approved",
+      "label": "Design direction approved",
+      "requires": ["feasibility.ome_refined", "custody.in_progress_or_secured"]
+    },
+    {
+      "id": "package_approved",
+      "label": "Delivery package approved",
+      "requires": ["requirements.locked", "funding.committed"]
+    }
+  ],
+  "downstream_modules": ["study_phase", "works_tender"]
+}

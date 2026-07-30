@@ -1,0 +1,65 @@
+{
+  "id": "space.lunar_facility",
+  "title": "Lunar facility (extreme stress profile)",
+  "summary": "Stress-test profile: facility / data centre on lunar surface. Same gate flow; no BOQ required.",
+  "lanes": [
+    {
+      "id": "mandate",
+      "label": "WHY - Mandate",
+      "owner_role": "SPONSOR",
+      "prompts": [
+        "Why this capability (scientific, commercial, strategic)?",
+        "Treaty / agency alignment?",
+        "What decision does concept approval enable next?"
+      ]
+    },
+    {
+      "id": "requirements",
+      "label": "WHAT - Requirements",
+      "owner_role": "BUSINESS_OWNER",
+      "prompts": [
+        "Power, compute, uptime, crew or robotic ops?",
+        "Mission lifetime and success criteria?",
+        "Data / comms requirements?"
+      ]
+    },
+    {
+      "id": "feasibility",
+      "label": "HOW + HOW MUCH - Feasibility",
+      "owner_role": "TECHNICAL_LEAD",
+      "prompts": [
+        "Landing zone and surface constraints?",
+        "Launch mass, radiation, thermal, dust?",
+        "Order-of-magnitude programme cost?"
+      ]
+    }
+  ],
+  "custody_types": [
+    {"id": "landing_zone", "label": "Landing / surface zone claim"},
+    {"id": "launch_clearance", "label": "Launch / range clearance"},
+    {"id": "orbital_comms", "label": "Comms / orbital slot coordination"}
+  ],
+  "funding_types": [
+    {"id": "agency_budget", "label": "Agency multi-year budget"},
+    {"id": "commercial", "label": "Commercial / consortium"},
+    {"id": "international", "label": "International partnership basket"}
+  ],
+  "gates": [
+    {
+      "id": "concept_approved",
+      "label": "Concept approved",
+      "requires": ["mandate.minimal", "custody.route", "funding.envelope"]
+    },
+    {
+      "id": "design_direction_approved",
+      "label": "Architecture direction approved",
+      "requires": ["feasibility.ome_refined", "custody.in_progress_or_secured"]
+    },
+    {
+      "id": "package_approved",
+      "label": "Phase-0 package approved",
+      "requires": ["requirements.locked", "funding.committed"]
+    }
+  ],
+  "downstream_modules": ["phase0_study", "agency_budget"]
+}

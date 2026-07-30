@@ -19,6 +19,7 @@ from buildwatch import views_compliance as comp
 from buildwatch import views_delivery as deliv
 from buildwatch import views_execution as execn
 from buildwatch import views_open_tender as ot
+from buildwatch import views_inception as inception
 
 # ── BuildWatch core (Sprint 1) ────────────────────────────────────────────────
 buildwatch_patterns = [
@@ -37,6 +38,11 @@ buildwatch_patterns = [
     path('isiolo/',
          bw.isiolo_stadium_pilot,
          name='isiolo-stadium-pilot'),
+
+    # ── Inception / Project Concept (pre-project collaboration) ──────────
+    path('inception/',
+         inception.inception_workspace,
+         name='inception-workspace'),
 ]
 
 # ── Tender Exchange (Sprint 2) ────────────────────────────────────────────────

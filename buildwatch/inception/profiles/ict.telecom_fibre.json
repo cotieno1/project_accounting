@@ -1,0 +1,65 @@
+{
+  "id": "ict.telecom_fibre",
+  "title": "Telecom fibre rollout",
+  "summary": "National or regional fibre backbone / last-mile programme.",
+  "lanes": [
+    {
+      "id": "mandate",
+      "label": "WHY - Mandate",
+      "owner_role": "SPONSOR",
+      "prompts": [
+        "Why this corridor / coverage now?",
+        "Digital inclusion or commercial case?",
+        "Policy or universal-service obligations?"
+      ]
+    },
+    {
+      "id": "requirements",
+      "label": "WHAT - Requirements",
+      "owner_role": "BUSINESS_OWNER",
+      "prompts": [
+        "Route length, nodes, and service levels?",
+        "Users / institutions to connect?",
+        "Standards (open access, redundancy)?"
+      ]
+    },
+    {
+      "id": "feasibility",
+      "label": "HOW + HOW MUCH - Feasibility",
+      "owner_role": "TECHNICAL_LEAD",
+      "prompts": [
+        "Civil works vs aerial vs duct strategy?",
+        "OME cost per km and key risk corridors?",
+        "Interconnect and power for sites?"
+      ]
+    }
+  ],
+  "custody_types": [
+    {"id": "wayleave", "label": "Wayleave / ROW"},
+    {"id": "spectrum", "label": "Spectrum (if wireless backhaul)"},
+    {"id": "duct_lease", "label": "Duct / pole lease"}
+  ],
+  "funding_types": [
+    {"id": "exchequer", "label": "Public programme budget"},
+    {"id": "usf", "label": "Universal service fund"},
+    {"id": "commercial", "label": "Operator / private capital"}
+  ],
+  "gates": [
+    {
+      "id": "concept_approved",
+      "label": "Concept approved",
+      "requires": ["mandate.minimal", "custody.route", "funding.envelope"]
+    },
+    {
+      "id": "design_direction_approved",
+      "label": "Network design direction approved",
+      "requires": ["feasibility.ome_refined", "custody.in_progress_or_secured"]
+    },
+    {
+      "id": "package_approved",
+      "label": "Procurement / rollout package approved",
+      "requires": ["requirements.locked", "funding.committed"]
+    }
+  ],
+  "downstream_modules": ["vendor_rfp", "license_track"]
+}
