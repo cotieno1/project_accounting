@@ -1,0 +1,32 @@
+{% extends "buildwatch/base.html" %}
+{% block title %}Inception Projects{% endblock %}
+{% block bw_content %}
+<div style="max-width:960px;margin:0 auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+    <div>
+      <h1 style="margin:0;font-size:1.35rem;color:var(--bw-navy);">Inception Projects</h1>
+      <p style="margin:6px 0 0;font-size:.85rem;color:#5a6b80;">Phase 1 of the delivery breakdown - concept collaboration before design and work plan.</p>
+    </div>
+    <a class="bw-btn bw-btn--primary bw-btn--sm" href="{% url 'inception-workspace' %}">Open / create workspace</a>
+  </div>
+  <div class="bw-card">
+    <div class="bw-card-body" style="padding:0;">
+      {% for row in inceptions %}
+        <a href="{% url 'inception-detail' row.pk %}" style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #eef2f7;text-decoration:none;color:inherit;">
+          <div>
+            <div style="font-family:monospace;font-size:.72rem;color:#8494a8;">{{ row.inception_ref }}</div>
+            <div style="font-weight:700;color:var(--bw-navy);">{{ row.title|default:row.profile_id }}</div>
+            <div style="font-size:.78rem;color:#5a6b80;">{{ row.profile_id }} | {{ row.get_sector_display }}</div>
+          </div>
+          <div style="text-align:right;font-size:.78rem;">
+            <div style="font-weight:700;color:var(--bw-teal);">{{ row.get_stage_display }}</div>
+            <div style="color:#8494a8;">{{ row.updated_at|date:"d M Y H:i" }}</div>
+          </div>
+        </a>
+      {% empty %}
+        <div style="padding:24px;color:#5a6b80;font-size:.9rem;">No inception records yet. Open the workspace to start.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

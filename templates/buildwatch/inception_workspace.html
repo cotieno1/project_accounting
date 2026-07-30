@@ -1,861 +1,628 @@
 {% extends "buildwatch/base.html" %}
 
-{% block title %}Project Concept - Inception{% endblock %}
+{% block title %}{{ inception.inception_ref }} - Inception Workspace{% endblock %}
 
 {% block extra_head %}
 {{ block.super }}
 <style>
-.bw-incept { max-width: 1180px; margin: 0 auto; }
-
-.bw-incept__hero {
-
-  margin-bottom: 22px;
-
-  padding-bottom: 16px;
-
-  border-bottom: 1px solid var(--bw-rule);
-
+:root {
+  --bw-blue: #2F6FED;
+  --bw-mgrey: #cfd8e6;
+  --bw-lgrey: #eef2f7;
+  --bw-dgrey: #5a6b80;
+  --bw-amber: #b45309;
+  --bw-green: #1A7A6E;
+  --bw-red: #b91c1c;
+  --bw-shadow: 0 8px 24px rgba(27,58,92,.12);
 }
-
-.bw-incept__kicker {
-
-  margin: 0 0 6px;
-
-  font-size: 0.72rem;
-
-  font-weight: 700;
-
-  letter-spacing: 0.1em;
-
-  text-transform: uppercase;
-
-  color: var(--bw-mid);
-
-}
-
-.bw-incept__title {
-
-  margin: 0 0 10px;
-
-  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
-
-  font-weight: 800;
-
-  color: var(--bw-navy);
-
-  letter-spacing: -0.03em;
-
-}
-
-.bw-incept__def {
-
-  margin: 0;
-
-  max-width: 62rem;
-
-  font-size: 0.95rem;
-
-  line-height: 1.55;
-
-  color: #3f5168;
-
-}
-
-.bw-incept__toolbar {
-
-  display: flex;
-
-  flex-wrap: wrap;
-
-  gap: 10px 14px;
-
-  align-items: end;
-
-  margin: 16px 0 20px;
-
-}
-
-.bw-incept__toolbar label {
-
-  display: block;
-
-  font-size: 0.72rem;
-
-  font-weight: 700;
-
-  color: var(--bw-mid);
-
-  margin-bottom: 4px;
-
-}
-
-.bw-incept__toolbar select,
-
-.bw-incept__toolbar input[type="text"] {
-
-  min-width: 220px;
-
-  padding: 8px 10px;
-
-  border: 1px solid #cfd8e6;
-
-  border-radius: 8px;
-
-  font-size: 0.9rem;
-
-}
-
-.bw-incept__id {
-
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  padding: 8px 12px;
-
-  border-radius: 8px;
-
-  background: #e8f7f2;
-
-  color: var(--bw-teal);
-
-  font-size: 0.85rem;
-
-  font-weight: 700;
-
-}
-
-.bw-incept__lanes {
-
+.inc-wrap { max-width: 1200px; margin: 0 auto; padding: 8px 0 32px; }
+.inc-grid {
   display: grid;
-
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-
-  gap: 14px;
-
-  margin-bottom: 18px;
-
-}
-
-.bw-incept-lane {
-
-  background: var(--bw-white);
-
-  border: 1px solid var(--bw-rule);
-
-  border-radius: 12px;
-
-  padding: 14px;
-
-  min-width: 0;
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 8px;
-
-}
-
-.bw-incept-lane h3 {
-
-  margin: 0;
-
-  font-size: 0.95rem;
-
-  font-weight: 800;
-
-  color: var(--bw-navy);
-
-}
-
-.bw-incept-lane .role {
-
-  font-size: 0.72rem;
-
-  font-weight: 700;
-
-  color: var(--bw-teal);
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.06em;
-
-}
-
-.bw-incept-lane .prompts {
-
-  margin: 0;
-
-  padding-left: 16px;
-
-  font-size: 0.78rem;
-
-  color: #5a6b80;
-
-  line-height: 1.45;
-
-}
-
-.bw-incept-lane textarea {
-
-  width: 100%;
-
-  min-height: 160px;
-
-  resize: vertical;
-
-  border: 1px solid #cfd8e6;
-
-  border-radius: 8px;
-
-  padding: 10px;
-
-  font-size: 0.88rem;
-
-  line-height: 1.45;
-
-  font-family: inherit;
-
-  box-sizing: border-box;
-
-}
-
-.bw-incept-lane .meta {
-
-  font-size: 0.72rem;
-
-  color: var(--bw-mid);
-
-}
-
-.bw-incept__grid2 {
-
-  display: grid;
-
-  grid-template-columns: 1fr 1fr;
-
-  gap: 14px;
-
-  margin-bottom: 18px;
-
-}
-
-.bw-incept-panel {
-
-  background: var(--bw-white);
-
-  border: 1px solid var(--bw-rule);
-
-  border-radius: 12px;
-
-  padding: 14px 16px;
-
-}
-
-.bw-incept-panel h3 {
-
-  margin: 0 0 10px;
-
-  font-size: 0.95rem;
-
-  font-weight: 800;
-
-  color: var(--bw-navy);
-
-}
-
-.bw-incept-panel .hint {
-
-  margin: 0 0 10px;
-
-  font-size: 0.8rem;
-
-  color: #5a6b80;
-
-  line-height: 1.4;
-
-}
-
-.bw-incept-fields { display: grid; gap: 10px; }
-
-.bw-incept-fields label {
-
-  display: block;
-
-  font-size: 0.72rem;
-
-  font-weight: 700;
-
-  color: var(--bw-mid);
-
-  margin-bottom: 4px;
-
-}
-
-.bw-incept-fields select,
-
-.bw-incept-fields input,
-
-.bw-incept-fields textarea {
-
-  width: 100%;
-
-  box-sizing: border-box;
-
-  padding: 8px 10px;
-
-  border: 1px solid #cfd8e6;
-
-  border-radius: 8px;
-
-  font-size: 0.85rem;
-
-  font-family: inherit;
-
-}
-
-.bw-incept__bottom {
-
-  display: grid;
-
-  grid-template-columns: 1.2fr 0.8fr;
-
-  gap: 14px;
-
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
   margin-bottom: 24px;
-
 }
+@media (max-width: 900px) { .inc-grid { grid-template-columns: 1fr; } }
 
-.bw-incept-check { list-style: none; margin: 0; padding: 0; }
-
-.bw-incept-check li {
-
+.inc-col {
+  border-radius: 10px;
+  border: 1px solid var(--bw-mgrey);
+  overflow: hidden;
+  background: #fff;
+}
+.inc-col__header {
+  padding: 14px 18px;
+  font-size: .82rem;
+  font-weight: 700;
   display: flex;
-
-  gap: 8px;
-
-  align-items: flex-start;
-
-  font-size: 0.84rem;
-
-  padding: 6px 0;
-
-  border-bottom: 1px solid #eef2f7;
-
-  color: #3f5168;
-
-}
-
-.bw-incept-check .ok { color: var(--bw-teal); font-weight: 800; }
-
-.bw-incept-check .no { color: #b45309; font-weight: 800; }
-
-.bw-incept-activity {
-
-  list-style: none;
-
-  margin: 0;
-
-  padding: 0;
-
-  max-height: 220px;
-
-  overflow-y: auto;
-
-  font-size: 0.8rem;
-
-  color: #3f5168;
-
-}
-
-.bw-incept-activity li {
-
-  padding: 6px 0;
-
-  border-bottom: 1px solid #eef2f7;
-
-}
-
-.bw-incept-actions {
-
-  display: flex;
-
-  flex-wrap: wrap;
-
-  gap: 10px;
-
   align-items: center;
-
-  margin-top: 12px;
-
+  gap: 10px;
+  color: #fff;
 }
+.inc-col__header svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none;
+  stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+}
+.inc-col--sponsor .inc-col__header { background: var(--bw-navy); }
+.inc-col--business .inc-col__header { background: var(--bw-blue); }
+.inc-col--technical .inc-col__header { background: var(--bw-teal); }
+.inc-col__body { padding: 16px; background: #fff; }
 
-.bw-incept-actions input[name="decision_note"] {
-
-  flex: 1 1 200px;
-
-  min-width: 160px;
-
-  padding: 8px 10px;
-
-  border: 1px solid #cfd8e6;
-
+.contrib-block {
+  margin-bottom: 16px;
+  border: 1px solid var(--bw-lgrey);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.contrib-block__label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--bw-dgrey);
+  padding: 8px 12px;
+  background: var(--bw-lgrey);
+  border-bottom: 1px solid var(--bw-mgrey);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.contrib-block__content {
+  padding: 10px 12px;
+  font-size: .82rem;
+  color: var(--bw-navy);
+  line-height: 1.55;
+  min-height: 48px;
+  white-space: pre-wrap;
+}
+.contrib-block__content.empty {
+  color: var(--bw-dgrey);
+  font-style: italic;
+  white-space: normal;
+}
+.contrib-block__edit {
+  padding: 8px 12px;
+  border-top: 1px solid var(--bw-lgrey);
+  display: none;
+}
+.contrib-block__edit.visible { display: block; }
+.contrib-block__edit textarea {
+  width: 100%;
+  border: 1px solid var(--bw-mgrey);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: .82rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  outline: none;
+  box-sizing: border-box;
+}
+.contrib-block__edit textarea:focus { border-color: var(--bw-blue); }
+.contrib-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+.btn-xs {
+  padding: 4px 10px;
+  font-size: .72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+}
+.btn-xs--save { background: var(--bw-teal); color: #fff; }
+.btn-xs--edit { background: var(--bw-lgrey); color: var(--bw-navy); border: 1px solid var(--bw-mgrey); }
+.final-tick { color: var(--bw-teal); font-size: .68rem; }
+.stage-bar {
+  display: flex;
+  margin-bottom: 28px;
   border-radius: 8px;
-
-  font-size: 0.85rem;
-
+  overflow: hidden;
+  border: 1px solid var(--bw-mgrey);
 }
-
-@media (max-width: 900px) {
-
-  .bw-incept__lanes,
-
-  .bw-incept__grid2,
-
-  .bw-incept__bottom { grid-template-columns: 1fr; }
-
+.stage-step {
+  flex: 1;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--bw-dgrey);
+  background: var(--bw-lgrey);
+  border-right: 1px solid var(--bw-mgrey);
+  line-height: 1.3;
 }
-
+.stage-step:last-child { border-right: none; }
+.stage-step.active { background: var(--bw-navy); color: #fff; }
+.stage-step.done { background: var(--bw-teal); color: #fff; }
+.saving-indicator { font-size: .72rem; color: var(--bw-amber); display: none; }
+.inc-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) { .inc-meta-grid { grid-template-columns: 1fr; } }
 </style>
-
 {% endblock %}
 
-
-
 {% block bw_content %}
+<div class="inc-wrap">
 
-<div class="bw-incept">
+  <div style="font-size:.78rem;color:var(--bw-dgrey);margin-bottom:16px;">
+    <a href="{% url 'inception-list' %}" style="color:var(--bw-blue);text-decoration:none;">Inception Projects</a>
+    &nbsp;/&nbsp; {{ inception.inception_ref }}
+  </div>
 
-  <header class="bw-incept__hero">
-
-    <p class="bw-incept__kicker">Project Concept | BuildWatch Inception</p>
-
-    {% if inception_org %}
-    <p class="bw-incept__org-banner" style="margin:0 0 10px;font-size:.92rem;font-weight:700;color:var(--bw-teal);">
-      {{ inception_org.short_name|default:inception_org.name }}
-      {% if brief.inception_ref %} · {{ brief.inception_ref }}{% endif %}
-      {% if brief.seed_project_ref %} · {{ brief.seed_project_ref }}{% endif %}
-      · {{ brief.stage_label|default:"Conceptualization" }}
-    </p>
-    {% endif %}
-
-    <h1 class="bw-incept__title">Living brief - collaboration workspace</h1>
-
-    <p class="bw-incept__def">{{ product_definition }}</p>
-
-  </header>
-
-
-
-  <form method="post" action="">
-
-    {% csrf_token %}
-
-    <input type="hidden" name="profile_id" value="{{ profile.id }}">
-
-
-
-    <div class="bw-incept__toolbar">
-
-      <div>
-
-        <label for="brief_title">Initiative title (pre-ID)</label>
-
-        <input id="brief_title" type="text" name="title" value="{{ brief.title }}"
-
-               placeholder="e.g. Regional water storage / Fibre corridor / Lunar DC study">
-
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
+    <div>
+      <div style="font-family:monospace;font-size:.72rem;color:var(--bw-dgrey);margin-bottom:4px;">{{ inception.inception_ref }}</div>
+      <h1 style="font-size:1.4rem;font-weight:700;color:var(--bw-navy);letter-spacing:-.02em;margin:0 0 4px;">{{ inception.title|default:profile.title }}</h1>
+      <div style="font-size:.78rem;color:var(--bw-dgrey);">
+        {{ inception.get_sector_display }}
+        {% if inception.seed_project_ref %} | {{ inception.seed_project_ref }}{% endif %}
+        {% if inception.county_region %} | {{ inception.county_region }}{% endif %}
+        {% if inception.country %} | {{ inception.country.name }}{% endif %}
+        | Profile: {{ profile.title }}
       </div>
-
-      <div>
-
-        <label for="profile_switch">Programme profile</label>
-
-        <select id="profile_switch" name="profile_pick">
-
-          {% for p in profiles %}
-
-          <option value="{{ p.id }}"{% if p.id == profile.id %} selected{% endif %}>{{ p.title }}</option>
-
-          {% endfor %}
-
-        </select>
-
-      </div>
-
-      <input type="hidden" name="action" id="form_action" value="save">
-
-      {% if brief.project_id %}
-
-      <div class="bw-incept__id" title="Minted from inception approval">
-
-        Identity: {{ brief.project_id }}
-
-      </div>
-
-      {% else %}
-
-      <div class="bw-incept__id" style="background:#f3f6fb;color:#5a6b80;">
-
-        No BuildWatch ID yet - sponsor approval mints InfraProject
-
-      </div>
-
+      {% if profile.summary %}
+      <p style="margin:8px 0 0;font-size:.82rem;color:#3f5168;max-width:46rem;">{{ profile.summary }}</p>
       {% endif %}
-
+      <p style="margin:10px 0 0;font-size:.85rem;color:#3f5168;max-width:46rem;line-height:1.45;">{{ product_definition }}</p>
     </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      {% if is_sponsor and inception.stage == 'SPONSOR_REVIEW' %}
+        <a href="#approval-section" class="bw-btn bw-btn--primary bw-btn--sm">Review and Approve</a>
+      {% endif %}
+      <a href="{% url 'inception-pack' inception.pk %}" class="bw-btn bw-btn--ghost bw-btn--sm" target="_blank">Approval Pack</a>
+      {% if inception.infra_project_id %}
+        <a href="{% url 'work-plan-project' inception.infra_project_id %}" class="bw-btn bw-btn--ghost bw-btn--sm">Work Plan</a>
+      {% endif %}
+      {% if is_sponsor %}
+        <a href="#invite-section" class="bw-btn bw-btn--ghost bw-btn--sm">Invite Participant</a>
+      {% endif %}
+    </div>
+  </div>
 
-
-
-    <div class="bw-incept__lanes" aria-label="Living brief lanes">
-
-      {% for lane in lanes_ui %}
-
-      <section class="bw-incept-lane">
-
-        <div class="role">{{ lane.owner_role }}</div>
-
-        <h3>{{ lane.label }}</h3>
-
-        {% if lane.prompts %}
-
-        <ul class="prompts">
-
-          {% for q in lane.prompts %}<li>{{ q }}</li>{% endfor %}
-
-        </ul>
-
-        {% endif %}
-
-        <textarea name="lane_{{ lane.id }}" placeholder="Co-author this lane...">{{ lane.body }}</textarea>
-
-        <div class="meta">
-
-          {% if lane.meta.updated_at %}
-
-            Last: {{ lane.meta.updated_by }} - {{ lane.meta.updated_at }}
-
-          {% endif %}
-
+  <div class="stage-bar">
+    {% for val, label in inception.STAGE_CHOICES %}
+      {% if val != 'CANCELLED' %}
+        <div class="stage-step {% if inception.stage == val %}active{% elif inception.stage_number > forloop.counter %}done{% endif %}">
+          {{ forloop.counter }}. {{ label|truncatewords:3 }}
         </div>
+      {% endif %}
+    {% endfor %}
+  </div>
 
-      </section>
+  {% if participant and participant.accepted is None %}
+    <div class="bw-alert bw-alert--info" style="margin-bottom:20px;">
+      You have been invited as <strong>{{ participant.get_role_display }}</strong>.
+      <form method="post" action="{% url 'inception-accept' inception.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="bw-btn bw-btn--teal bw-btn--sm" style="margin-left:12px;">Accept Invitation</button>
+      </form>
+    </div>
+  {% endif %}
 
+  <form method="post" action="{% url 'inception-detail' inception.pk %}" style="margin-bottom:16px;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="switch_profile">
+    <label style="font-size:.72rem;font-weight:700;color:var(--bw-dgrey);">Programme profile</label>
+    <select name="profile_pick" onchange="this.form.submit()" style="margin-left:8px;padding:6px 10px;border:1px solid var(--bw-mgrey);border-radius:6px;">
+      {% for p in profiles %}
+      <option value="{{ p.id }}"{% if p.id == profile.id %} selected{% endif %}>{{ p.title }}</option>
       {% endfor %}
-
-    </div>
-
-
-
-    <div class="bw-incept__grid2">
-
-      <section class="bw-incept-panel">
-
-        <h3>Asset / site custody</h3>
-
-        <p class="hint">Not land-only - rights over place or asset (ROW, spectrum, catchment, landing zone). Types come from the profile.</p>
-
-        <div class="bw-incept-fields">
-
-          <div>
-
-            <label for="custody_type">Custody type</label>
-
-            <select id="custody_type" name="custody_type">
-
-              <option value="">- select -</option>
-
-              {% for t in profile.custody_types %}
-
-              <option value="{{ t.id }}"{% if brief.custody.type_id == t.id %} selected{% endif %}>{{ t.label }}</option>
-
-              {% endfor %}
-
-            </select>
-
-          </div>
-
-          <div>
-
-            <label for="custody_status">Status</label>
-
-            <select id="custody_status" name="custody_status">
-
-              {% for code, label in custody_statuses %}
-
-              <option value="{{ code }}"{% if brief.custody.status == code %} selected{% endif %}>{{ label }}</option>
-
-              {% endfor %}
-
-            </select>
-
-          </div>
-
-          <div>
-
-            <label for="custody_owner">Who holds / owns interest?</label>
-
-            <input id="custody_owner" type="text" name="custody_owner" value="{{ brief.custody.owner_note }}">
-
-          </div>
-
-          <div>
-
-            <label for="custody_route">How is custody secured?</label>
-
-            <textarea id="custody_route" name="custody_route" rows="3">{{ brief.custody.route_note }}</textarea>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-
-      <section class="bw-incept-panel">
-
-        <h3>Resource commitment (funding)</h3>
-
-        <p class="hint">Where resources come from and the envelope for this initiative - sources from the profile.</p>
-
-        <div class="bw-incept-fields">
-
-          <div>
-
-            <label for="funding_type">Funding type</label>
-
-            <select id="funding_type" name="funding_type">
-
-              <option value="">- select -</option>
-
-              {% for t in profile.funding_types %}
-
-              <option value="{{ t.id }}"{% if brief.funding.type_id == t.id %} selected{% endif %}>{{ t.label }}</option>
-
-              {% endfor %}
-
-            </select>
-
-          </div>
-
-          <div>
-
-            <label for="funding_status">Status</label>
-
-            <select id="funding_status" name="funding_status">
-
-              {% for code, label in funding_statuses %}
-
-              <option value="{{ code }}"{% if brief.funding.status == code %} selected{% endif %}>{{ label }}</option>
-
-              {% endfor %}
-
-            </select>
-
-          </div>
-
-          <div>
-
-            <label for="funding_envelope">Envelope (order of magnitude)</label>
-
-            <input id="funding_envelope" type="text" name="funding_envelope" value="{{ brief.funding.envelope }}" placeholder="e.g. USD 120M / KES 15B">
-
-          </div>
-
-          <div>
-
-            <label for="funding_note">Approval / source note</label>
-
-            <textarea id="funding_note" name="funding_note" rows="3">{{ brief.funding.source_note }}</textarea>
-
-          </div>
-
-        </div>
-
-      </section>
-
-    </div>
-
-
-
-    {% if budget_lines %}
-    <section class="bw-incept-panel" style="margin-bottom:18px;">
-      <h3>Concept budget (profile lines)</h3>
-      <p class="hint">OME / elemental lines seeded from the programme profile. Buildings pack uses classic QS elements; telecom / dam / lunar use sector lines.</p>
-      <div class="bw-incept-fields" style="grid-template-columns:1fr 1fr;display:grid;gap:10px;">
-        <div>
-          <label for="budget_currency">Currency</label>
-          <input id="budget_currency" type="text" name="budget_currency" value="{{ budget.currency|default:'KES' }}">
-        </div>
-        <div>
-          <label for="budget_accuracy">Accuracy</label>
-          <select id="budget_accuracy" name="budget_accuracy">
-            <option value="PM30"{% if budget.accuracy == "PM30" %} selected{% endif %}>+/-30% OME</option>
-            <option value="PM20"{% if budget.accuracy == "PM20" %} selected{% endif %}>+/-20%</option>
-            <option value="PM10"{% if budget.accuracy == "PM10" %} selected{% endif %}>+/-10%</option>
-            <option value="PM5"{% if budget.accuracy == "PM5" %} selected{% endif %}>+/-5%</option>
-          </select>
-        </div>
-        <div style="grid-column:1 / -1;">
-          <label for="budget_basis">Basis of estimate</label>
-          <textarea id="budget_basis" name="budget_basis" rows="2">{{ budget.basis_of_estimate }}</textarea>
-        </div>
-        {% for line in budget_lines %}
-        <div>
-          <label for="budget_line_{{ line.code }}">{{ line.label }}{% if line.group %} ({{ line.group }}){% endif %}</label>
-          <input id="budget_line_{{ line.code }}" type="text" name="budget_line_{{ line.code }}" value="{{ line.amount }}">
-        </div>
+    </select>
+  </form>
+
+  {% if participant and participant.accepted or is_sponsor %}
+  <div class="inc-grid">
+
+    <div class="inc-col inc-col--sponsor">
+      <div class="inc-col__header">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Sponsor - WHY
+        {% if sponsor_done %}<span style="margin-left:auto;font-size:.7rem;">Complete</span>{% endif %}
+      </div>
+      <div class="inc-col__body">
+        <p style="font-size:.75rem;color:var(--bw-dgrey);margin-bottom:14px;line-height:1.5;">
+          Strategic rationale - why this programme must exist, how it is funded, and what success looks like.
+        </p>
+        {% for block in sponsor_blocks %}
+          {% include "buildwatch/partials/inception_contrib_block.html" with block=block can_edit=is_sponsor|default:False role_ok=True %}
         {% endfor %}
       </div>
-      {% if budget %}
-      <p class="hint" style="margin-top:10px;">Line total: <strong>{{ budget.currency }} {{ budget.total_amount }}</strong>
-        {% if budget.is_approved %} · Approved{% endif %}
-      </p>
-      {% endif %}
-    </section>
-    {% endif %}
-
-
-
-    <div class="bw-incept__bottom">
-
-      <section class="bw-incept-panel">
-
-        <h3>Decision gates</h3>
-
-        <p class="hint">Same gate flow for every profile. Readiness below is for <strong>concept approved</strong>.</p>
-
-        <ol style="margin:0 0 12px 18px;padding:0;font-size:.84rem;color:#3f5168;line-height:1.5">
-
-          {% for g in profile.gates %}
-
-          <li><strong>{{ g.label }}</strong> <span style="color:#8494a8">({{ g.id }})</span></li>
-
-          {% endfor %}
-
-        </ol>
-
-        <ul class="bw-incept-check">
-
-          {% for c in readiness.checks %}
-
-          <li>
-
-            <span class="{% if c.ok %}ok{% else %}no{% endif %}">{% if c.ok %}OK{% else %}o{% endif %}</span>
-
-            <span>{{ c.label }}</span>
-
-          </li>
-
-          {% endfor %}
-
-        </ul>
-
-        <div class="bw-incept-actions">
-
-          <button type="submit" class="bw-btn bw-btn--ghost" onclick="document.getElementById('form_action').value='save'">Save brief</button>
-
-          <input type="text" name="decision_note" placeholder="Optional sponsor decision note">
-
-          <button type="submit" class="bw-btn bw-btn--primary"
-
-                  onclick="document.getElementById('form_action').value='request_concept'">
-
-            Sponsor: approve concept
-
-          </button>
-
-          {% if brief.project_id %}
-          <a class="bw-btn bw-btn--ghost" href="{% url 'work-plan-workspace' %}">Open Work Plan (rollout / BOM)</a>
-          {% endif %}
-
-        </div>
-
-        {% if brief.decisions %}
-
-        <div style="margin-top:14px;font-size:.8rem;color:#3f5168">
-
-          <strong>Recorded decisions</strong>
-
-          {% for d in brief.decisions %}
-
-          <div>{{ d.at }} | {{ d.gate }} | {{ d.by }}{% if d.project_id %} - {{ d.project_id }}{% endif %}{% if d.note %} - {{ d.note }}{% endif %}</div>
-
-          {% endfor %}
-
-        </div>
-
-        {% endif %}
-
-      </section>
-
-
-
-      <section class="bw-incept-panel">
-
-        <h3>Activity</h3>
-
-        <ul class="bw-incept-activity">
-
-          {% for a in brief.activity %}
-
-          <li><strong>{{ a.at }}</strong> | {{ a.who }} - {{ a.text }}</li>
-
-          {% empty %}
-
-          <li>No activity yet. Start co-authoring the three lanes.</li>
-
-          {% endfor %}
-
-        </ul>
-
-        <p class="hint" style="margin-top:12px">
-
-          Profile: <strong>{{ profile.title }}</strong> - {{ profile.summary }}
-
-          Downstream modules:
-
-          {% for m in profile.downstream_modules %}{{ m }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}.
-
-        </p>
-
-      </section>
-
     </div>
 
+    <div class="inc-col inc-col--business">
+      <div class="inc-col__header">
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        Business - WHAT
+        {% if business_done %}<span style="margin-left:auto;font-size:.7rem;">Complete</span>{% endif %}
+      </div>
+      <div class="inc-col__body">
+        <p style="font-size:.75rem;color:var(--bw-dgrey);margin-bottom:14px;line-height:1.5;">
+          Need, users, wish list and priorities - what the programme must deliver.
+        </p>
+        {% for block in business_blocks %}
+          {% include "buildwatch/partials/inception_contrib_block.html" with block=block can_edit=True role_ok=True %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="inc-col inc-col--technical">
+      <div class="inc-col__header">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Technical - HOW + COST
+        {% if technical_done %}<span style="margin-left:auto;font-size:.7rem;">Complete</span>{% endif %}
+      </div>
+      <div class="inc-col__body">
+        <p style="font-size:.75rem;color:var(--bw-dgrey);margin-bottom:14px;line-height:1.5;">
+          Site / design viability, risks, programme, and high-level budget.
+        </p>
+        {% for block in technical_blocks %}
+          {% include "buildwatch/partials/inception_contrib_block.html" with block=block can_edit=True role_ok=True %}
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+  {% else %}
+    <div class="bw-alert bw-alert--info" style="margin-bottom:20px;">
+      Accept your invitation (or sign in as the sponsor organisation) to edit the three collaboration columns.
+    </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'inception-detail' inception.pk %}" class="bw-card" id="budget-section" style="margin-bottom:20px;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_meta">
+    <div class="bw-card-header">Custody, funding envelope and concept budget</div>
+    <div class="bw-card-body">
+      <div class="inc-meta-grid">
+        <div class="bw-field">
+          <label class="bw-label">Working title</label>
+          <input class="bw-input" name="title" value="{{ inception.title }}">
+        </div>
+        <div class="bw-field">
+          <label class="bw-label">County / region</label>
+          <input class="bw-input" name="county_region" value="{{ inception.county_region }}">
+        </div>
+        <div class="bw-field">
+          <label class="bw-label">Custody type</label>
+          <select class="bw-select" name="custody_type">
+            <option value="">- select -</option>
+            {% for t in profile.custody_types %}
+            <option value="{{ t.id }}"{% if inception.custody_type_id == t.id %} selected{% endif %}>{{ t.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="bw-field">
+          <label class="bw-label">Custody status</label>
+          <select class="bw-select" name="custody_status">
+            <option value="UNKNOWN"{% if inception.custody_status == "UNKNOWN" %} selected{% endif %}>Unknown</option>
+            <option value="UNDER_INQUIRY"{% if inception.custody_status == "UNDER_INQUIRY" %} selected{% endif %}>Under inquiry</option>
+            <option value="ROUTE_IDENTIFIED"{% if inception.custody_status == "ROUTE_IDENTIFIED" %} selected{% endif %}>Route identified</option>
+            <option value="ACQUISITION_IN_PROGRESS"{% if inception.custody_status == "ACQUISITION_IN_PROGRESS" %} selected{% endif %}>Acquisition in progress</option>
+            <option value="SECURED"{% if inception.custody_status == "SECURED" %} selected{% endif %}>Secured</option>
+          </select>
+        </div>
+        <div class="bw-field">
+          <label class="bw-label">Funding type</label>
+          <select class="bw-select" name="funding_type">
+            <option value="">- select -</option>
+            {% for t in profile.funding_types %}
+            <option value="{{ t.id }}"{% if inception.funding_type_id == t.id %} selected{% endif %}>{{ t.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="bw-field">
+          <label class="bw-label">Funding status</label>
+          <select class="bw-select" name="funding_status">
+            <option value="UNFUNDED"{% if inception.funding_status == "UNFUNDED" %} selected{% endif %}>Unfunded</option>
+            <option value="INDICATIVE"{% if inception.funding_status == "INDICATIVE" %} selected{% endif %}>Indicative</option>
+            <option value="BUDGET_PROVISIONED"{% if inception.funding_status == "BUDGET_PROVISIONED" %} selected{% endif %}>Budget provisioned</option>
+            <option value="COMMITTED"{% if inception.funding_status == "COMMITTED" %} selected{% endif %}>Committed</option>
+          </select>
+        </div>
+        <div class="bw-field" style="grid-column:1 / -1;">
+          <label class="bw-label">Funding envelope (text)</label>
+          <input class="bw-input" name="funding_envelope" value="{{ inception.funding_envelope }}" placeholder="e.g. USD 50M">
+        </div>
+      </div>
+      {% if budget_lines %}
+      <div style="margin-top:12px;">
+        <div style="font-size:.8rem;font-weight:700;color:var(--bw-navy);margin-bottom:8px;">Concept budget lines ({{ budget.currency }})</div>
+        <div class="inc-meta-grid">
+          {% for line in budget_lines %}
+          <div class="bw-field">
+            <label class="bw-label">{{ line.label }}</label>
+            <input class="bw-input" name="budget_line_{{ line.code }}" value="{{ line.amount }}">
+          </div>
+          {% endfor %}
+        </div>
+        <p style="font-size:.8rem;color:var(--bw-dgrey);margin-top:8px;">Line total: <strong>{{ budget.currency }} {{ budget.total_amount }}</strong></p>
+      </div>
+      {% endif %}
+      <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm" style="margin-top:12px;">Save custody / funding / budget</button>
+    </div>
   </form>
+
+  <div class="bw-card" style="margin-bottom:20px;">
+    <div class="bw-card-header">Documents - sketches, site photos, references</div>
+    <div class="bw-card-body">
+      {% if participant and participant.accepted or is_sponsor %}
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;">
+          <div class="bw-field" style="margin:0;flex:1;min-width:180px;">
+            <label class="bw-label">Document type</label>
+            <select class="bw-select" id="doc-type">
+              {% for val, label in doc_types %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="bw-field" style="margin:0;flex:2;min-width:200px;">
+            <label class="bw-label">Title</label>
+            <input class="bw-input" type="text" id="doc-title" placeholder="e.g. Site plan sketch">
+          </div>
+          <div>
+            <input type="file" id="doc-file" style="display:none;" onchange="uploadDoc({{ inception.pk }})">
+            <button type="button" class="bw-btn bw-btn--ghost bw-btn--sm" onclick="document.getElementById('doc-file').click()">Upload File</button>
+          </div>
+        </div>
+        <div id="upload-status" style="font-size:.78rem;color:var(--bw-teal);display:none;margin-bottom:12px;"></div>
+      {% endif %}
+
+      {% if documents %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+          {% for doc in documents %}
+            <a href="{% if doc.file %}{{ doc.file.url }}{% else %}#{% endif %}" target="_blank" rel="noopener"
+               style="border:1px solid var(--bw-mgrey);border-radius:8px;padding:12px;text-decoration:none;display:block;">
+              <div style="font-size:.8rem;font-weight:600;color:var(--bw-navy);margin-bottom:3px;">{{ doc.title|truncatewords:8 }}</div>
+              <div style="font-size:.7rem;color:var(--bw-dgrey);">{{ doc.get_doc_type_display }}</div>
+              <div style="font-size:.68rem;color:var(--bw-dgrey);margin-top:4px;">{{ doc.uploaded_at|date:"d M Y" }}</div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="text-align:center;padding:24px;color:var(--bw-dgrey);font-size:.85rem;border:1px dashed var(--bw-mgrey);border-radius:8px;">
+          No documents yet. Upload sketches, site photos or reference projects.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+    <div class="bw-card">
+      <div class="bw-card-header">Participants</div>
+      <div class="bw-card-body" style="padding:0;">
+        {% for p in participants %}
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--bw-lgrey);">
+            <div style="width:32px;height:32px;border-radius:50%;background:{% if p.role == 'SPONSOR' %}var(--bw-navy){% elif p.role == 'BUSINESS' %}var(--bw-blue){% else %}var(--bw-teal){% endif %};display:grid;place-content:center;color:white;font-size:.7rem;font-weight:700;flex-shrink:0;">
+              {{ p.role|slice:":1" }}
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:.83rem;font-weight:600;color:var(--bw-navy);">
+                {{ p.user.first_name }} {{ p.user.last_name }}
+              </div>
+              <div style="font-size:.72rem;color:var(--bw-dgrey);">
+                {{ p.get_role_display }}
+                {% if p.technical_discipline %} - {{ p.technical_discipline }}{% endif %}
+                | {{ p.organisation.short_name }}
+              </div>
+            </div>
+            {% if p.accepted %}
+              <span class="bw-pill bw-pill--green" style="font-size:.65rem;">Active</span>
+            {% elif p.accepted is None %}
+              <span class="bw-pill" style="font-size:.65rem;background:#fff7ed;color:var(--bw-amber);">Pending</span>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div style="padding:16px;font-size:.82rem;color:var(--bw-dgrey);">No participants yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if is_sponsor %}
+    <div class="bw-card" id="invite-section">
+      <div class="bw-card-header">Invite Participant</div>
+      <div class="bw-card-body">
+        <form method="post" action="{% url 'inception-invite' inception.pk %}">
+          {% csrf_token %}
+          <div class="bw-field">
+            <label class="bw-label">Email address <span class="req">*</span></label>
+            <div class="bw-hint">Must already be registered on BuildWatch</div>
+            <input class="bw-input" type="email" name="email" placeholder="qs@firm.co.ke" required>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label">Role <span class="req">*</span></label>
+            <select class="bw-select" name="role" required>
+              <option value="BUSINESS">Business - needs and requirements</option>
+              <option value="TECHNICAL">Technical - QS / Architect / Engineer</option>
+            </select>
+          </div>
+          <div class="bw-field">
+            <label class="bw-label">Discipline</label>
+            <input class="bw-input" type="text" name="discipline" placeholder="e.g. Quantity Surveyor, RF Planner">
+          </div>
+          <button type="submit" class="bw-btn bw-btn--primary bw-btn--sm">Send Invitation</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if all_sections_done and inception.stage == 'DOCUMENTED' %}
+    <div class="bw-card" style="margin-bottom:20px;border:1px solid var(--bw-teal);">
+      <div class="bw-card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:600;color:var(--bw-navy);margin-bottom:4px;">All sections complete - ready for sponsor review</div>
+          <div style="font-size:.82rem;color:var(--bw-dgrey);">Submit the inception brief and budget to the sponsor for approval.</div>
+        </div>
+        <form method="post" action="{% url 'inception-submit-review' inception.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="bw-btn bw-btn--teal">Submit for Sponsor Review</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if is_sponsor and inception.stage == 'SPONSOR_REVIEW' or is_sponsor and inception.stage == 'DOCUMENTED' %}
+    <div class="bw-card" id="approval-section" style="border:1px solid var(--bw-navy);margin-bottom:20px;">
+      <div class="bw-card-header" style="background:var(--bw-navy);color:white;">Sponsor Approval</div>
+      <div class="bw-card-body">
+        {% if budget %}
+          <div class="bw-alert bw-alert--info" style="margin-bottom:20px;">
+            <strong>Proposed budget:</strong>
+            {{ budget.currency }} {{ budget.total_amount }}
+            ({{ budget.get_accuracy_display }})
+          </div>
+        {% endif %}
+        <form method="post" action="{% url 'inception-approve' inception.pk %}">
+          {% csrf_token %}
+          <div class="bw-field">
+            <label class="bw-label">Your decision <span class="req">*</span></label>
+            <select class="bw-select" name="action" required onchange="toggleBudgetField(this.value)">
+              <option value="" disabled selected>Select...</option>
+              <option value="APPROVED">Approved - proceed to design</option>
+              <option value="REVISE">Revise - return to workshop</option>
+              <option value="CANCELLED">Cancelled - project not proceeding</option>
+            </select>
+          </div>
+          <div class="bw-field" id="budget-field">
+            <label class="bw-label">Approved budget ceiling</label>
+            <div class="bw-hint">Leave blank to adopt the concept budget total.</div>
+            <input class="bw-input" type="number" name="approved_budget" step="1" placeholder="{% if budget %}{{ budget.total_amount }}{% else %}0{% endif %}">
+          </div>
+          <div class="bw-field">
+            <label class="bw-label">Comments / conditions <span class="req">*</span></label>
+            <textarea class="bw-textarea" name="comments" rows="4" required placeholder="Approval notes, conditions or revision instructions..."></textarea>
+          </div>
+          <button type="submit" class="bw-btn bw-btn--primary">Submit Decision</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if approvals %}
+    <div class="bw-card" style="margin-top:20px;">
+      <div class="bw-card-header">Approval History</div>
+      <div class="bw-card-body" style="padding:0;">
+        {% for a in approvals %}
+          <div style="padding:12px 16px;border-bottom:1px solid var(--bw-lgrey);{% if a.action == 'APPROVED' %}background:#F0FAF3;{% endif %}">
+            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:4px;">
+              <span style="font-weight:600;color:{% if a.action == 'APPROVED' %}var(--bw-green){% elif a.action == 'REVISE' %}var(--bw-amber){% else %}var(--bw-red){% endif %};">
+                {{ a.get_action_display }}
+              </span>
+              <span style="color:var(--bw-dgrey);">
+                {{ a.actioned_at|date:"d M Y H:i" }} | {{ a.actioned_by_name|default:a.actioned_by }}
+              </span>
+            </div>
+            {% if a.approved_budget %}
+              <div style="font-size:.78rem;color:var(--bw-navy);margin-bottom:4px;">
+                Approved budget: {{ a.currency }} {{ a.approved_budget }}
+              </div>
+            {% endif %}
+            <div style="font-size:.8rem;color:var(--bw-dgrey);line-height:1.5;">{{ a.comments }}</div>
+            {% if a.minted_project_id %}
+              <div style="font-size:.78rem;margin-top:4px;">Project ID: <strong>{{ a.minted_project_id }}</strong></div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
 
 </div>
 
 <script>
+const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+const CONTRIB_URL = "{% url 'inception-contribute' inception.pk %}";
+const UPLOAD_URL = "{% url 'inception-upload' inception.pk %}";
 
-(function () {
+function toggleEdit(type, show) {
+  const edit = document.getElementById('edit-' + type);
+  if (edit) edit.classList.toggle('visible', !!show);
+}
 
-  var sel = document.getElementById('profile_switch');
-
-  var act = document.getElementById('form_action');
-
-  if (!sel || !act) return;
-
-  sel.addEventListener('change', function () {
-
-    act.value = 'switch_profile';
-
-    var hidden = document.querySelector('input[name="profile_id"]');
-
-    if (hidden) hidden.value = sel.value;
-
-    sel.form.submit();
-
+function saveContrib(type) {
+  const ta = document.getElementById('ta-' + type);
+  const saving = document.getElementById('saving-' + type);
+  const content = document.getElementById('content-' + type);
+  if (!ta) return;
+  if (saving) saving.style.display = 'inline';
+  const fd = new FormData();
+  fd.append('contribution_type', type);
+  fd.append('content', ta.value);
+  fd.append('csrfmiddlewaretoken', CSRF);
+  fetch(CONTRIB_URL, {
+    method: 'POST',
+    body: fd,
+    headers: {'X-Requested-With': 'XMLHttpRequest'},
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (saving) saving.style.display = 'none';
+    if (data.ok) {
+      content.textContent = ta.value;
+      content.classList.toggle('empty', !ta.value.trim());
+      toggleEdit(type, false);
+      const tick = document.getElementById('tick-' + type);
+      if (tick && ta.value.trim()) tick.style.display = 'inline';
+    } else {
+      alert('Save failed: ' + (data.error || 'Please try again'));
+    }
+  })
+  .catch(() => {
+    if (saving) saving.style.display = 'none';
+    alert('Network error - please try again');
   });
+}
 
-})();
+function uploadDoc(inceptionId) {
+  const file = document.getElementById('doc-file').files[0];
+  const type = document.getElementById('doc-type').value;
+  const title = document.getElementById('doc-title').value || (file ? file.name : 'Document');
+  const status = document.getElementById('upload-status');
+  if (!file) return;
+  status.style.display = 'block';
+  status.textContent = 'Uploading...';
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('doc_type', type);
+  fd.append('title', title);
+  fd.append('csrfmiddlewaretoken', CSRF);
+  fetch(UPLOAD_URL, {
+    method: 'POST',
+    body: fd,
+    headers: {'X-Requested-With': 'XMLHttpRequest'},
+    credentials: 'same-origin'
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      status.textContent = data.title + ' uploaded';
+      setTimeout(() => location.reload(), 800);
+    } else {
+      status.textContent = 'Upload failed: ' + (data.error || 'Try again');
+    }
+  })
+  .catch(() => { status.textContent = 'Network error'; });
+}
 
+function toggleBudgetField(val) {
+  const f = document.getElementById('budget-field');
+  if (f) f.style.display = val === 'APPROVED' ? 'block' : 'none';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.querySelector('[name=action]');
+  if (sel) toggleBudgetField(sel.value);
+});
 </script>
-
 {% endblock %}
-

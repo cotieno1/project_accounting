@@ -1,0 +1,44 @@
+{% with key=block.key label=block.label contrib=block.contrib is_budget=block.is_budget %}
+<div class="contrib-block" id="block-{{ key }}">
+  <div class="contrib-block__label">
+    {{ label }}
+    {% if contrib and contrib.content %}
+      <span class="final-tick" id="tick-{{ key }}">Saved</span>
+    {% else %}
+      <span class="final-tick" id="tick-{{ key }}" style="display:none;">Saved</span>
+    {% endif %}
+  </div>
+
+  {% if is_budget %}
+    <div class="contrib-block__content {% if not budget or not budget.total_amount %}empty{% endif %}" id="content-{{ key }}">
+      {% if budget %}
+        {{ budget.currency }} {{ budget.total_amount }} ({{ budget.get_accuracy_display }})
+      {% else %}
+        Open budget section below to enter profile cost lines.
+      {% endif %}
+    </div>
+    <div style="padding:8px 12px;border-top:1px solid var(--bw-lgrey);">
+      <a href="#budget-section" class="btn-xs btn-xs--save" style="text-decoration:none;display:inline-block;">
+        {% if budget %}Edit Budget{% else %}Enter Budget{% endif %}
+      </a>
+    </div>
+  {% else %}
+    <div class="contrib-block__content {% if not contrib or not contrib.content %}empty{% endif %}" id="content-{{ key }}">{% if contrib and contrib.content %}{{ contrib.content }}{% else %}Click Edit to contribute.{% endif %}</div>
+    {% if participant and participant.accepted or is_sponsor %}
+      <div class="contrib-block__edit" id="edit-{{ key }}">
+        <textarea id="ta-{{ key }}" placeholder="Enter notes...">{% if contrib %}{{ contrib.content }}{% endif %}</textarea>
+        <div class="contrib-actions">
+          <span class="saving-indicator" id="saving-{{ key }}">Saving...</span>
+          <button type="button" class="btn-xs btn-xs--edit" onclick="toggleEdit('{{ key }}', false)">Cancel</button>
+          <button type="button" class="btn-xs btn-xs--save" onclick="saveContrib('{{ key }}')">Save</button>
+        </div>
+      </div>
+      <div style="padding:6px 12px;border-top:1px solid var(--bw-lgrey);">
+        <button type="button" class="btn-xs btn-xs--edit" onclick="toggleEdit('{{ key }}', true)">
+          {% if contrib and contrib.content %}Edit{% else %}+ Add{% endif %}
+        </button>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endwith %}

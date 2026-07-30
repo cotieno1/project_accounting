@@ -1,0 +1,39 @@
+{% extends "buildwatch/base.html" %}
+{% block title %}Approval Pack - {{ inception.inception_ref }}{% endblock %}
+{% block bw_content %}
+<div style="max-width:900px;margin:0 auto;">
+  <h1 style="color:var(--bw-navy);">{{ inception.inception_ref }} - Approval Pack</h1>
+  <p style="color:#5a6b80;">{{ inception.title }} | {{ inception.get_stage_display }} | {{ profile.title }}</p>
+  <hr>
+  <h2 style="font-size:1rem;color:var(--bw-navy);">Sponsor</h2>
+  {% for b in sponsor_blocks %}
+    <div style="margin-bottom:12px;">
+      <strong>{{ b.label }}</strong>
+      <div style="white-space:pre-wrap;font-size:.85rem;">{% if b.contrib %}{{ b.contrib.content }}{% else %}(empty){% endif %}</div>
+    </div>
+  {% endfor %}
+  <h2 style="font-size:1rem;color:var(--bw-navy);">Business</h2>
+  {% for b in business_blocks %}
+    <div style="margin-bottom:12px;">
+      <strong>{{ b.label }}</strong>
+      <div style="white-space:pre-wrap;font-size:.85rem;">{% if b.contrib %}{{ b.contrib.content }}{% else %}(empty){% endif %}</div>
+    </div>
+  {% endfor %}
+  <h2 style="font-size:1rem;color:var(--bw-navy);">Technical</h2>
+  {% for b in technical_blocks %}
+    <div style="margin-bottom:12px;">
+      <strong>{{ b.label }}</strong>
+      <div style="white-space:pre-wrap;font-size:.85rem;">{% if b.is_budget and budget %}{{ budget.currency }} {{ budget.total_amount }}{% elif b.contrib %}{{ b.contrib.content }}{% else %}(empty){% endif %}</div>
+    </div>
+  {% endfor %}
+  {% if budget_lines %}
+  <h2 style="font-size:1rem;color:var(--bw-navy);">Concept budget</h2>
+  <ul>
+    {% for line in budget_lines %}
+    <li>{{ line.label }}: {{ budget.currency }} {{ line.amount }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <p style="margin-top:24px;"><button onclick="window.print()" class="bw-btn bw-btn--ghost bw-btn--sm">Print</button></p>
+</div>
+{% endblock %}

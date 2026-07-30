@@ -74,6 +74,20 @@
     }
   ],
   "downstream_modules": ["vendor_rfp", "license_track", "site_build", "fibre_build"],
+  "contribution_types": [
+    {"id": "SPONSOR_WHY", "label": "Why: Coverage / capacity case", "role": "SPONSOR"},
+    {"id": "SPONSOR_FUNDING", "label": "Funding: CAPEX and release path", "role": "SPONSOR"},
+    {"id": "SPONSOR_OUTCOME", "label": "Outcome: Network KPIs / markets", "role": "SPONSOR"},
+    {"id": "BUSINESS_NEED", "label": "Need: Markets and service gaps", "role": "BUSINESS"},
+    {"id": "BUSINESS_USERS", "label": "Users: Subscribers / corridors", "role": "BUSINESS"},
+    {"id": "BUSINESS_WISHLIST", "label": "Wish list: Sites, tech mix, SLA", "role": "BUSINESS"},
+    {"id": "BUSINESS_PRIORITY", "label": "Priority: Must-have vs later waves", "role": "BUSINESS"},
+    {"id": "TECH_SITE", "label": "Sites: Towers, compounds, wayleave", "role": "TECHNICAL"},
+    {"id": "TECH_CONCEPT", "label": "Concept: RAN / fibre / power approach", "role": "TECHNICAL"},
+    {"id": "TECH_RISKS", "label": "Risks: Land, security, logistics, spectrum", "role": "TECHNICAL"},
+    {"id": "TECH_BUDGET", "label": "Budget: High-level OME (QS / planner)", "role": "TECHNICAL"},
+    {"id": "TECH_PROGRAMME", "label": "Programme: Test to commissioning", "role": "TECHNICAL"}
+  ],
   "work_plan": {
     "title": "Telecom network rollout work plan",
     "currency": "USD",

@@ -201,15 +201,14 @@ class InceptionWorkspaceViewTests(TestCase):
         response = self.client.get(reverse("inception-workspace"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "BuildWatch Inception is an open collaboration")
-        self.assertContains(response, "Living brief")
-        self.assertContains(response, "Asset / site custody")
-        self.assertContains(response, "Resource commitment")
+        self.assertContains(response, "Sponsor - WHY")
+        self.assertContains(response, "Business - WHAT")
+        self.assertContains(response, "Technical - HOW + COST")
         self.assertContains(response, "Main Dashboard")
         self.assertContains(response, "Log out")
         self.assertNotContains(response, "Projects Status")
         self.assertNotContains(response, "Tender activity")
         self.assertNotContains(response, ">Tenders <")
-        # Persisted inception identity
         self.assertContains(response, "INC-")
 
     def test_mtn_tenant_defaults_telecom_profile_and_title(self):
@@ -238,6 +237,7 @@ class InceptionWorkspaceViewTests(TestCase):
         self.assertContains(response, "Telecom operator network")
         self.assertContains(response, "base stations")
         self.assertContains(response, "transmission towers")
+        self.assertContains(response, "Sponsor - WHY")
         self.assertContains(response, "Concept budget")
         self.assertNotContains(response, "Ministry of Works")
         self.assertNotContains(response, "ckorir")
