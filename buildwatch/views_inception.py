@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """BuildWatch Inception - collaborative living brief (pre-project).
 
-Phase 1: profile-driven UI + session-backed draft (no Django models yet).
+Phase 1: profile-driven UI + session-backed draft scoped per org + user.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from buildwatch.inception.loader import (
     readiness,
 )
 
-SESSION_KEY = "inception_brief_v1"
+SESSION_STORE = "inception_briefs_by_tenant"
 PRODUCT_DEFINITION = (
     "BuildWatch Inception is an open collaboration and decision platform where any "
     "sponsor, business owner, and technical team co-develop a living brief, resolve "
@@ -28,6 +28,20 @@ PRODUCT_DEFINITION = (
     "explicit gates - with sector-specific behaviour supplied by profiles, not "
     "hardcoded in the core."
 )
+
+# Known tenant packs: preferred inception profile + working title seed
+TENANT_INCEPTION_DEFAULTS = {
+    "MTNSS": {
+        "profile_id": "ict.telecom_fibre",
+        "title": "MTN South Sudan - Telecom Infrastructure Programme",
+        "project_ref": "MTN-SSD-TEL-001",
+    },
+    "MTNTEL": {
+        "profile_id": "ict.telecom_fibre",
+        "title": "MTN South Sudan - Telecom Infrastructure Programme",
+        "project_ref": "MTN-SSD-TEL-001",
+    },
+}
 
 
 def _username(request) -> str:
@@ -37,22 +51,57 @@ def _username(request) -> str:
     return "guest"
 
 
-def _load_brief(request, profile: dict) -> dict:
-    stored = request.session.get(SESSION_KEY) or {}
-    if stored.get("profile_id") == profile.get("id") and stored.get("lanes"):
-        # Merge any new lane ids from profile upgrades
+def _tenant_key(request, org) -> str:
+    org_code = getattr(org, "org_code", None) or "NONE"
+    uid = getattr(getattr(request, "user", None), "id", None) or "anon"
+    return f"{org_code}:{uid}"
+
+
+def _session_store(request) -> dict:
+    store = request.session.get(SESSION_STORE)
+    if not isinstance(store, dict):
+        store = {}
+        request.session[SESSION_STORE] = store
+    return store
+
+
+def _load_brief(request, profile: dict, org) -> dict:
+    key = _tenant_key(request, org)
+    store = _session_store(request)
+    stored = store.get(key) or {}
+    # Drop legacy shared key so MoW / other tenants cannot leak into this workspace
+    request.session.pop("inception_brief_v1", None)
+
+    if (
+        stored.get("org_code") == getattr(org, "org_code", None)
+        and stored.get("profile_id") == profile.get("id")
+        and stored.get("lanes")
+    ):
         brief = empty_brief(profile)
         brief.update({k: v for k, v in stored.items() if k != "lanes"})
         for lid, lane in (stored.get("lanes") or {}).items():
             if lid in brief["lanes"]:
                 brief["lanes"][lid] = lane
         brief["profile_id"] = profile["id"]
+        brief["org_code"] = getattr(org, "org_code", "") or ""
         return brief
-    return empty_brief(profile)
+
+    brief = empty_brief(profile)
+    brief["org_code"] = getattr(org, "org_code", "") or ""
+    defaults = TENANT_INCEPTION_DEFAULTS.get(brief["org_code"] or "", {})
+    if defaults.get("title"):
+        brief["title"] = defaults["title"]
+    if defaults.get("project_ref"):
+        brief["seed_project_ref"] = defaults["project_ref"]
+    return brief
 
 
-def _save_brief(request, brief: dict) -> None:
-    request.session[SESSION_KEY] = brief
+def _save_brief(request, brief: dict, org) -> None:
+    key = _tenant_key(request, org)
+    store = _session_store(request)
+    brief["org_code"] = getattr(org, "org_code", "") or ""
+    store[key] = brief
+    request.session[SESSION_STORE] = store
     request.session.modified = True
 
 
@@ -69,23 +118,30 @@ def _append_activity(brief: dict, text: str, who: str) -> None:
     brief["activity"] = activity[:40]
 
 
+def _preferred_profile_id(org, request) -> str:
+    org_code = getattr(org, "org_code", "") or ""
+    tenant = TENANT_INCEPTION_DEFAULTS.get(org_code, {})
+    return (
+        request.POST.get("profile_id")
+        or request.GET.get("profile")
+        or tenant.get("profile_id")
+        or default_profile_id()
+    )
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def inception_workspace(request):
     """Collaborative inception canvas - one living brief, three lanes, gates."""
+    org = get_active_organization(request)
     profiles = list_profiles()
-    profile_id = (
-        request.POST.get("profile_id")
-        or request.GET.get("profile")
-        or (request.session.get(SESSION_KEY) or {}).get("profile_id")
-        or default_profile_id()
-    )
+    profile_id = _preferred_profile_id(org, request)
     profile = get_profile(profile_id) or get_profile(default_profile_id())
     if profile is None:
         messages.error(request, "No inception profiles are configured.")
         return redirect("platform_admin")
 
-    brief = _load_brief(request, profile)
+    brief = _load_brief(request, profile, org)
     who = _username(request)
 
     if request.method == "POST":
@@ -99,8 +155,14 @@ def inception_workspace(request):
             new_profile = get_profile(new_id)
             if new_profile:
                 brief = empty_brief(new_profile)
+                brief["org_code"] = getattr(org, "org_code", "") or ""
+                defaults = TENANT_INCEPTION_DEFAULTS.get(brief["org_code"], {})
+                if defaults.get("title"):
+                    brief["title"] = defaults["title"]
+                if defaults.get("project_ref"):
+                    brief["seed_project_ref"] = defaults["project_ref"]
                 _append_activity(brief, f"Switched profile to {new_profile.get('title')}", who)
-                _save_brief(request, brief)
+                _save_brief(request, brief, org)
                 messages.info(
                     request,
                     "Profile changed. Living brief reset for the new sector pack "
@@ -110,7 +172,6 @@ def inception_workspace(request):
             messages.error(request, "Unknown profile.")
             return redirect("inception-workspace")
 
-        # Save living brief fields
         brief["title"] = (request.POST.get("title") or "").strip()[:200]
         for lane in profile.get("lanes") or []:
             lid = lane["id"]
@@ -153,7 +214,6 @@ def inception_workspace(request):
                     "feasibility, custody, and funding first.",
                 )
             else:
-                # Mint a provisional identity (session only until models land)
                 stamp = timezone.now().strftime("%Y%m%d%H%M")
                 slug = (brief.get("title") or "initiative").upper().replace(" ", "-")[:24]
                 provisional = f"INCEPT-{slug}-{stamp}"
@@ -181,17 +241,15 @@ def inception_workspace(request):
                     "Persistent project minting lands with Django models next.",
                 )
 
-        _save_brief(request, brief)
+        _save_brief(request, brief, org)
         return redirect(f"{request.path}?profile={profile['id']}")
 
     ready = readiness(brief, profile)
-    # Annotate lanes with current bodies for clean template binding
     lanes_ui = []
     for lane in profile.get("lanes") or []:
         data = (brief.get("lanes") or {}).get(lane["id"]) or {}
         lanes_ui.append({**lane, "body": data.get("body", ""), "meta": data})
 
-    org = get_active_organization(request)
     ctx = {
         "product_definition": PRODUCT_DEFINITION,
         "profiles": profiles,
@@ -199,6 +257,8 @@ def inception_workspace(request):
         "lanes_ui": lanes_ui,
         "brief": brief,
         "readiness": ready,
+        "inception_org": org,
+        "inception_user": request.user,
         "custody_statuses": [
             ("UNKNOWN", "Unknown"),
             ("UNDER_INQUIRY", "Under inquiry"),
@@ -217,5 +277,8 @@ def inception_workspace(request):
         "active_org": org,
         **branding_template_context(request),
         "bw_nav_mode": "inception",
+        # Force branding to the logged-in tenant (never bleed another org)
+        "org_name": (org.name if org else "") or "",
+        "org_short_name": (org.short_name if org else "") or "",
     }
     return render(request, "buildwatch/inception_workspace.html", ctx)

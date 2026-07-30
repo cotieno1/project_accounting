@@ -70,3 +70,32 @@ class InceptionWorkspaceViewTests(TestCase):
         self.assertNotContains(response, "Projects Status")
         self.assertNotContains(response, "Tender activity")
         self.assertNotContains(response, ">Tenders <")
+
+    def test_mtn_tenant_defaults_telecom_profile_and_title(self):
+        from accounts.models import Organization
+
+        org = Organization.objects.create(
+            org_code="MTNSS",
+            name="MTN South Sudan",
+            short_name="MTN South Sudan",
+            organization_type="PRIVATE",
+            registered_address="Juba",
+            contact_address="Juba",
+            phone="+211",
+            email="ops@mtn.com.ss",
+        )
+        ua = UserAccount.objects.get(user=self.user)
+        ua.organization = org
+        ua.save(update_fields=["organization"])
+
+        self.client.login(username="incept1", password="test-pass-123")
+        response = self.client.get(reverse("inception-workspace"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "MTN South Sudan")
+        self.assertContains(response, "MTN-SSD-TEL-001")
+        self.assertContains(
+            response, "MTN South Sudan - Telecom Infrastructure Programme"
+        )
+        self.assertContains(response, "Telecom fibre rollout")
+        self.assertNotContains(response, "Ministry of Works")
+        self.assertNotContains(response, "ckorir")

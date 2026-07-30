@@ -133,7 +133,7 @@
 
         {% if form.errors %}
         <div class="alert alert-danger py-2" role="alert">
-            Invalid username/email or password. On phones: tap <strong>Show</strong>, confirm the password ends with <strong>#</strong>, and that you typed letter <strong>O</strong> (not zero). Clear any saved wrong password from Chrome, then type it manually.
+            Invalid username or password. On a phone, tap <strong>Show</strong> to confirm what you typed, then try again.
         </div>
         {% endif %}
 
@@ -146,7 +146,6 @@
                        autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
                        inputmode="text" enterkeyhint="next"
                        value="{{ form.username.value|default:'' }}">
-                <div class="login-hint">Use <code>temp_admin</code> exactly (case no longer matters).</div>
             </div>
             <div class="mb-4">
                 <label for="id_password">Password</label>
@@ -156,7 +155,6 @@
                            autocapitalize="none" autocorrect="off" spellcheck="false">
                     <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Show password">Show</button>
                 </div>
-                <div class="login-hint">Tap Show and check the last character is # before Login.</div>
             </div>
             <button type="submit" class="btn btn-primary w-100">Login</button>
         </form>

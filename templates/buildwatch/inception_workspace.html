@@ -433,6 +433,14 @@
 
     <p class="bw-incept__kicker">Project Concept | BuildWatch Inception</p>
 
+    {% if inception_org %}
+    <p class="bw-incept__org-banner" style="margin:0 0 10px;font-size:.92rem;font-weight:700;color:var(--bw-teal);">
+      {{ inception_org.short_name|default:inception_org.name }}
+      {% if brief.seed_project_ref %} · {{ brief.seed_project_ref }}{% endif %}
+      · Conceptualization
+    </p>
+    {% endif %}
+
     <h1 class="bw-incept__title">Living brief - collaboration workspace</h1>
 
     <p class="bw-incept__def">{{ product_definition }}</p>

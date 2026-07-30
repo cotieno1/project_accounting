@@ -6,7 +6,7 @@ Creates:
   - Sponsor org MTNSS (PRIVATE project owner) for conceptualization
   - Contractor org MTNTEL (TELECOM infrastructure) as main contractor
   - ICT InfraProject in conceptualization phase
-  - Login Weshiwani (W. Eshiwani) as Senior Site Engineer on the contractor org
+  - Login Weshiwani (W. Eshiwani) as Senior Site Engineer on the sponsor org (MTN employee)
 
 Usage:
     python manage.py register_mtn_south_sudan_telecom
@@ -241,7 +241,7 @@ class Command(BaseCommand):
         ua.phone = "+211-000-000000"
         ua.email = email
         ua.access_level = category
-        ua.organization = contractor
+        ua.organization = sponsor
         ua.buildwatch_role = "ENGINEER"
         ua.registration_pending_review = False
         ua.must_change_password = bool(opts["force_change"])
@@ -254,11 +254,12 @@ class Command(BaseCommand):
         )
         self.stdout.write(self.style.SUCCESS(
             f"Registered Senior Site Engineer: username='{username}' "
-            f"password='{password}' ({note})."
+            f"password='{password}' on sponsor org {SPONSOR_CODE} ({note})."
         ))
         self.stdout.write(
             "Sponsor workspace: org MTNSS (PRIVATE) | Contractor: MTNTEL (TELECOM)\n"
             f"Project: {PROJECT_ID} - conceptualization\n"
+            "Login as weshiwani -> Main Dashboard / Project Concept\n"
             "Inception: /buildwatch/inception/?profile=ict.telecom_fibre\n"
-            f"Home: telecom category now available under Register as a contractor"
+            "Home: telecom category available under Register as a contractor"
         )
