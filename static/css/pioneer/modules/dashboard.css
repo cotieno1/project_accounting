@@ -375,9 +375,26 @@ html.command-center-root {
     flex: 0 1 auto;
 }
 
-.command-center .tab:hover {
+.command-center .tab:hover:not(.tab--disabled) {
     color: var(--text-strong);
     background: var(--focus-ring);
+}
+
+/* Platform nav: highlight follows pointer; selected tab shows when pointer leaves */
+.command-center .nav-tabs .tab.tab--pointer,
+.command-center .nav-tabs .tab.tab--pointer:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.command-center .nav-tabs:not(.has-pointer) .tab.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+.command-center .nav-tabs.has-pointer .tab.active {
+    background: transparent;
+    color: var(--text-muted);
 }
 
 .command-center .tab.active {

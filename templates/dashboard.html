@@ -711,33 +711,53 @@ const MasterRegistry = (function () {
     document.addEventListener("DOMContentLoaded",function(){ loadOpts(); bindOrgSwitcher(); document.getElementById("masterSearch").addEventListener("input",render); document.getElementById("masterEntityForm").addEventListener("submit",saveForm); document.getElementById("masterListAddBtn").addEventListener("click",function(){openAdd(activeEntityType);}); var rib=document.getElementById("masterResendInviteBtn"); if(rib) rib.addEventListener("click", resendInviteEmail); document.addEventListener("click",function(e){ var m=document.getElementById("setupDropdown"), b=document.getElementById("setupMenuBtn"); if(m&&b&&!m.contains(e.target)&&!b.contains(e.target)) m.classList.remove("is-open"); }); document.addEventListener("keydown",function(e){ if(e.key==="Escape") closePanels(); }); });
     return { openList:openList, openAdd:openAdd, openSingleton:openSingleton, editRecord:editRecord, viewRecord:viewRecord, deleteRecord:deleteRecord, backToList:backToList, closePanels:closePanels, toggleSetupMenu:toggleSetupMenu };
 })();
+function setNavTabActive(tab) {
+    var navTabs = document.querySelector('.nav-tabs.nav-tabs--compact');
+    if (!navTabs) return;
+    navTabs.querySelectorAll('.tab').forEach(function (t) {
+        t.classList.remove('active');
+        t.classList.remove('tab--pointer');
+    });
+    navTabs.classList.remove('has-pointer');
+    if (tab) tab.classList.add('active');
+}
+
 function showSection(id) {
     document.querySelectorAll('.section').forEach(function (s) { s.style.display = 'none'; });
-    document.querySelectorAll('.nav-tabs .tab').forEach(function (t) { t.classList.remove('active'); });
     var el = document.getElementById(id);
     if (el) el.style.display = 'block';
-    document.querySelectorAll('.nav-tabs .tab').forEach(function (t) {
-        if (t.dataset.section === id) t.classList.add('active');
-    });
+    var match = document.querySelector('.nav-tabs .tab[data-section="' + id + '"]');
+    setNavTabActive(match);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    var tabs = document.querySelectorAll('.nav-tabs .tab');
-    if (!tabs.length) return;
+    var navTabs = document.querySelector('.nav-tabs.nav-tabs--compact');
+    if (!navTabs) return;
+    var tabs = navTabs.querySelectorAll('.tab');
+
+    function clearPointer() {
+        tabs.forEach(function (t) { t.classList.remove('tab--pointer'); });
+        navTabs.classList.remove('has-pointer');
+    }
 
     tabs.forEach(function (tab) {
         if (tab.classList.contains('tab--disabled')) return;
+        tab.addEventListener('mouseenter', function () {
+            tabs.forEach(function (t) { t.classList.remove('tab--pointer'); });
+            tab.classList.add('tab--pointer');
+            navTabs.classList.add('has-pointer');
+        });
         tab.addEventListener('click', function () {
-            tabs.forEach(function (t) { t.classList.remove('active'); });
-            tab.classList.add('active');
+            setNavTabActive(tab);
         });
     });
 
+    navTabs.addEventListener('mouseleave', clearPointer);
+
     var visibleSection = document.querySelector('.section:not([style*="display:none"])');
     var sectionId = visibleSection ? visibleSection.id : 'overview';
-    tabs.forEach(function (t) { t.classList.remove('active'); });
-    var initial = document.querySelector('.nav-tabs .tab[data-section="' + sectionId + '"]');
-    if (initial) initial.classList.add('active');
+    var initial = navTabs.querySelector('.tab[data-section="' + sectionId + '"]');
+    setNavTabActive(initial);
 });
 </script>
 <script>
