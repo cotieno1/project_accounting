@@ -5,8 +5,8 @@ Creates:
   - Country: South Sudan
   - Sponsor org MTNSS (PRIVATE project owner) for conceptualization
   - Contractor org MTNTEL (TELECOM infrastructure) as main contractor
-  - ICT InfraProject in conceptualization phase
-  - Login Weshiwani (W. Eshiwani) as Senior Site Engineer on the sponsor org (MTN employee)
+  - ICT InfraProject covering fibre, base stations, and transmission towers
+  - Login Weshiwani (W. Eshiwani) as Senior Site Engineer on the sponsor org
 
 Usage:
     python manage.py register_mtn_south_sudan_telecom
@@ -26,7 +26,7 @@ SPONSOR_NAME = "MTN South Sudan"
 SPONSOR_SHORT = "MTN South Sudan"
 
 CONTRACTOR_CODE = "MTNTEL"
-CONTRACTOR_NAME = "MTN South Sudan - Telecom Infrastructure"
+CONTRACTOR_NAME = "MTN South Sudan - Telecommunications"
 CONTRACTOR_SHORT = "MTN Telecom"
 
 ORG_ADDRESS = (
@@ -35,18 +35,23 @@ ORG_ADDRESS = (
     "Republic of South Sudan"
 )
 PROFILE_SPONSOR = (
-    "MTN South Sudan is the project sponsor / corporate owner for telecom "
-    "infrastructure programmes in South Sudan. Current initiatives are in the "
-    "Project Concept (inception) phase on BuildWatch before design and "
-    "procurement packages are published."
+    "MTN South Sudan is a telecommunications company and the project sponsor / "
+    "corporate owner for network programmes in South Sudan. Scope is not fibre-only: "
+    "it includes fibre backbone and access, radio base stations (BTS / eNodeB / gNodeB), "
+    "and transmission towers / masts. Current work is in the Project Concept "
+    "(inception) phase on BuildWatch before design and build packages proceed."
 )
 PROFILE_CONTRACTOR = (
-    "MTN South Sudan registered as the main telecom infrastructure contractor "
-    "for its own South Sudan network programmes (owner-operator / self-perform). "
-    "Category: Telecom infrastructure."
+    "MTN South Sudan registered as the main telecommunications contractor "
+    "(owner-operator / self-perform) for its South Sudan network: fibre, base "
+    "stations, and transmission towers. Category: Telecom infrastructure."
 )
 PROJECT_ID = "MTN-SSD-TEL-001"
-PROJECT_TITLE = "MTN South Sudan - National Telecom Infrastructure Programme"
+PROJECT_TITLE = (
+    "MTN South Sudan - Telecommunications Network Programme "
+    "(fibre, base stations, transmission towers)"
+)
+INCEPTION_PROFILE = "ict.telecom_operator"
 
 
 class Command(BaseCommand):
@@ -76,7 +81,6 @@ class Command(BaseCommand):
 
         User = get_user_model()
 
-        # 1) Country
         country, c_created = Country.objects.get_or_create(
             code="SS",
             defaults={
@@ -92,7 +96,6 @@ class Command(BaseCommand):
             f"{'Created' if c_created else 'Found'} country {country.code}: {country.name}"
         ))
 
-        # 2) Sponsor organisation (project owner - conceptualization)
         sponsor, s_created = Organization.objects.get_or_create(
             org_code=SPONSOR_CODE,
             defaults={
@@ -105,7 +108,7 @@ class Command(BaseCommand):
                 "contact_address": ORG_ADDRESS,
                 "phone": "+211-000-000000",
                 "email": "projects@mtn.com.ss",
-                "document_tagline": "Telecom infrastructure - South Sudan",
+                "document_tagline": "Telecommunications - South Sudan",
                 "accounting_officer_name": "W. Eshiwani",
                 "accounting_officer_title": "Senior Site Engineer",
                 "profile_summary": PROFILE_SPONSOR,
@@ -123,12 +126,12 @@ class Command(BaseCommand):
             sponsor.accounting_officer_name = "W. Eshiwani"
             sponsor.accounting_officer_title = "Senior Site Engineer"
             sponsor.profile_summary = PROFILE_SPONSOR
+            sponsor.document_tagline = "Telecommunications - South Sudan"
             sponsor.save()
         self.stdout.write(self.style.SUCCESS(
             f"{'Created' if s_created else 'Updated'} sponsor {SPONSOR_CODE}: {SPONSOR_NAME}"
         ))
 
-        # 3) Main contractor organisation (telecom infrastructure category)
         contractor, t_created = Organization.objects.get_or_create(
             org_code=CONTRACTOR_CODE,
             defaults={
@@ -141,7 +144,7 @@ class Command(BaseCommand):
                 "contact_address": ORG_ADDRESS,
                 "phone": "+211-000-000000",
                 "email": "delivery@mtn.com.ss",
-                "document_tagline": "Telecom infrastructure contractor",
+                "document_tagline": "Telecom: fibre, BTS, towers",
                 "accounting_officer_name": "W. Eshiwani",
                 "accounting_officer_title": "Senior Site Engineer",
                 "profile_summary": PROFILE_CONTRACTOR,
@@ -159,13 +162,13 @@ class Command(BaseCommand):
             contractor.accounting_officer_name = "W. Eshiwani"
             contractor.accounting_officer_title = "Senior Site Engineer"
             contractor.profile_summary = PROFILE_CONTRACTOR
+            contractor.document_tagline = "Telecom: fibre, BTS, towers"
             contractor.save()
         self.stdout.write(self.style.SUCCESS(
             f"{'Created' if t_created else 'Updated'} contractor {CONTRACTOR_CODE} "
-            f"(Telecom infrastructure)"
+            f"(Telecom - fibre, base stations, towers)"
         ))
 
-        # 4) Conceptualization project (sponsor-owned)
         task, task_created = ProjectTask.objects.get_or_create(
             project_id=PROJECT_ID,
             defaults={"description": PROJECT_TITLE},
@@ -195,10 +198,9 @@ class Command(BaseCommand):
             project.save()
         self.stdout.write(self.style.SUCCESS(
             f"{'Created' if p_created else 'Updated'} project {PROJECT_ID} "
-            f"(ICT / conceptualization - no tender yet)"
+            f"(ICT / conceptualization - fibre + BTS + towers)"
         ))
 
-        # 5) Senior Site Engineer login on contractor org
         category, _ = UserCategory.objects.get_or_create(
             code=SENIOR_SITE_MANAGER,
             defaults={
@@ -258,8 +260,9 @@ class Command(BaseCommand):
         ))
         self.stdout.write(
             "Sponsor workspace: org MTNSS (PRIVATE) | Contractor: MTNTEL (TELECOM)\n"
-            f"Project: {PROJECT_ID} - conceptualization\n"
+            f"Project: {PROJECT_ID} - conceptualization "
+            "(fibre + base stations + transmission towers)\n"
             "Login as weshiwani -> Main Dashboard / Project Concept\n"
-            "Inception: /buildwatch/inception/?profile=ict.telecom_fibre\n"
+            f"Inception: /buildwatch/inception/?profile={INCEPTION_PROFILE}\n"
             "Home: telecom category available under Register as a contractor"
         )

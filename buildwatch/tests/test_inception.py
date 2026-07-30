@@ -13,16 +13,36 @@ class InceptionProfileTests(TestCase):
         ids = {p["id"] for p in list_profiles()}
         self.assertIn("infrastructure.dam", ids)
         self.assertIn("ict.telecom_fibre", ids)
+        self.assertIn("ict.telecom_operator", ids)
         self.assertIn("space.lunar_facility", ids)
 
     def test_same_gate_ids_across_profiles(self):
-        for pid in ("infrastructure.dam", "ict.telecom_fibre", "space.lunar_facility"):
+        for pid in (
+            "infrastructure.dam",
+            "ict.telecom_fibre",
+            "ict.telecom_operator",
+            "space.lunar_facility",
+        ):
             profile = get_profile(pid)
             gate_ids = [g["id"] for g in profile["gates"]]
             self.assertEqual(
                 gate_ids,
                 ["concept_approved", "design_direction_approved", "package_approved"],
             )
+
+    def test_telecom_operator_profile_covers_towers_and_bts(self):
+        profile = get_profile("ict.telecom_operator")
+        custody_ids = {c["id"] for c in profile["custody_types"]}
+        self.assertIn("tower_site", custody_ids)
+        self.assertIn("bts_compound", custody_ids)
+        self.assertIn("wayleave", custody_ids)
+        self.assertIn("spectrum", custody_ids)
+        text = " ".join(
+            " ".join(lane.get("prompts") or []) for lane in profile["lanes"]
+        ).lower()
+        self.assertIn("tower", text)
+        self.assertIn("base station", text)
+        self.assertIn("fibre", text)
 
     def test_concept_readiness_requires_lanes_custody_funding(self):
         profile = get_profile("infrastructure.dam")
@@ -94,8 +114,10 @@ class InceptionWorkspaceViewTests(TestCase):
         self.assertContains(response, "MTN South Sudan")
         self.assertContains(response, "MTN-SSD-TEL-001")
         self.assertContains(
-            response, "MTN South Sudan - Telecom Infrastructure Programme"
+            response, "MTN South Sudan - Telecommunications Network Programme"
         )
-        self.assertContains(response, "Telecom fibre rollout")
+        self.assertContains(response, "Telecom operator network")
+        self.assertContains(response, "base stations")
+        self.assertContains(response, "transmission towers")
         self.assertNotContains(response, "Ministry of Works")
         self.assertNotContains(response, "ckorir")

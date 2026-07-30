@@ -1,0 +1,68 @@
+{
+  "id": "ict.telecom_operator",
+  "title": "Telecom operator network (fibre + radio)",
+  "summary": "Full mobile / telecom operator programme: fibre backbone, base stations (BTS/eNodeB/gNodeB), and transmission towers - not fibre-only.",
+  "lanes": [
+    {
+      "id": "mandate",
+      "label": "WHY - Mandate",
+      "owner_role": "SPONSOR",
+      "prompts": [
+        "Why expand coverage / capacity / quality now (commercial, licence, social)?",
+        "Which markets or corridors (urban, highway, rural) are priority?",
+        "Regulatory / spectrum / universal-service obligations?"
+      ]
+    },
+    {
+      "id": "requirements",
+      "label": "WHAT - Requirements",
+      "owner_role": "BUSINESS_OWNER",
+      "prompts": [
+        "Coverage and capacity targets (sites, sectors, subscribers, throughput)?",
+        "Mix of fibre backhaul, microwave, and radio access (2G/3G/4G/5G)?",
+        "Base station and tower count, co-location vs greenfield, power and access?"
+      ]
+    },
+    {
+      "id": "feasibility",
+      "label": "HOW + HOW MUCH - Feasibility",
+      "owner_role": "TECHNICAL_LEAD",
+      "prompts": [
+        "Site acquisition, tower structural class, RF planning, and fibre routes?",
+        "OME for towers, BTS/RAN, fibre, power (grid/solar/generator), and civil works?",
+        "Key risks: land, security, logistics, spectrum, power, weather?"
+      ]
+    }
+  ],
+  "custody_types": [
+    {"id": "tower_site", "label": "Tower / mast site (title, lease, or co-location)"},
+    {"id": "bts_compound", "label": "Base station compound / shelter"},
+    {"id": "wayleave", "label": "Fibre wayleave / ROW"},
+    {"id": "spectrum", "label": "Spectrum / radio licence"},
+    {"id": "duct_lease", "label": "Duct / pole / shared infrastructure lease"}
+  ],
+  "funding_types": [
+    {"id": "commercial", "label": "Operator / private capital (MTN group / local)"},
+    {"id": "capex_programme", "label": "Approved network CAPEX programme"},
+    {"id": "vendor_finance", "label": "Vendor financing / equipment supply credit"},
+    {"id": "dfi", "label": "Development finance / partner funding"}
+  ],
+  "gates": [
+    {
+      "id": "concept_approved",
+      "label": "Concept approved",
+      "requires": ["mandate.minimal", "custody.route", "funding.envelope"]
+    },
+    {
+      "id": "design_direction_approved",
+      "label": "Network design direction approved",
+      "requires": ["feasibility.ome_refined", "custody.in_progress_or_secured"]
+    },
+    {
+      "id": "package_approved",
+      "label": "Build / rollout package approved",
+      "requires": ["requirements.locked", "funding.committed"]
+    }
+  ],
+  "downstream_modules": ["vendor_rfp", "license_track", "site_build", "fibre_build"]
+}

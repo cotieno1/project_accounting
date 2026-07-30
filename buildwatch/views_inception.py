@@ -32,13 +32,13 @@ PRODUCT_DEFINITION = (
 # Known tenant packs: preferred inception profile + working title seed
 TENANT_INCEPTION_DEFAULTS = {
     "MTNSS": {
-        "profile_id": "ict.telecom_fibre",
-        "title": "MTN South Sudan - Telecom Infrastructure Programme",
+        "profile_id": "ict.telecom_operator",
+        "title": "MTN South Sudan - Telecommunications Network Programme",
         "project_ref": "MTN-SSD-TEL-001",
     },
     "MTNTEL": {
-        "profile_id": "ict.telecom_fibre",
-        "title": "MTN South Sudan - Telecom Infrastructure Programme",
+        "profile_id": "ict.telecom_operator",
+        "title": "MTN South Sudan - Telecommunications Network Programme",
         "project_ref": "MTN-SSD-TEL-001",
     },
 }
