@@ -1,0 +1,192 @@
+{% extends "buildwatch/base.html" %}
+
+{% block title %}Project Work Plan{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+.bw-wp { max-width: 1180px; margin: 0 auto; }
+.bw-wp__hero { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--bw-rule); }
+.bw-wp__kicker { margin: 0 0 6px; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--bw-mid); }
+.bw-wp__title { margin: 0 0 8px; font-size: clamp(1.3rem, 2.2vw, 1.7rem); font-weight: 800; color: var(--bw-navy); }
+.bw-wp__def { margin: 0; color: #3f5168; font-size: .92rem; line-height: 1.5; max-width: 60rem; }
+.bw-wp-panel { background: var(--bw-white); border: 1px solid var(--bw-rule); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+.bw-wp-panel h3 { margin: 0 0 10px; font-size: .95rem; font-weight: 800; color: var(--bw-navy); }
+.bw-wp-panel .hint { margin: 0 0 10px; font-size: .8rem; color: #5a6b80; line-height: 1.4; }
+.bw-wp-fields { display: grid; gap: 10px; }
+.bw-wp-fields label { display: block; font-size: .72rem; font-weight: 700; color: var(--bw-mid); margin-bottom: 4px; }
+.bw-wp-fields input, .bw-wp-fields textarea, .bw-wp-fields select {
+  width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cfd8e6; border-radius: 8px; font: inherit; font-size: .85rem;
+}
+.bw-wp-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bw-wp-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.bw-wp-table th, .bw-wp-table td { border-bottom: 1px solid #eef2f7; padding: 8px 6px; text-align: left; vertical-align: top; }
+.bw-wp-table th { color: var(--bw-mid); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+.bw-wp-table input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cfd8e6; border-radius: 6px; font: inherit; font-size: .8rem; }
+.bw-wp-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+.bw-wp-phase-kind { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--bw-teal); }
+.bw-wp-stat { font-size: .85rem; color: #3f5168; }
+@media (max-width: 900px) { .bw-wp-grid2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block bw_content %}
+<div class="bw-wp">
+  <header class="bw-wp__hero">
+    <p class="bw-wp__kicker">Project Work Plan | Rollout | Financing | BOM</p>
+    <h1 class="bw-wp__title">{{ plan.title|default:"Programme work plan" }}</h1>
+    <p class="bw-wp__def">
+      Break down the rollout from <strong>test</strong> through <strong>commissioning</strong>,
+      stagger financing releases by phase, and hold the programme BOM for materials and equipment.
+      Project: <strong>{{ project.task.project_id }}</strong>
+      {% if inception %} | Inception {{ inception.inception_ref }} ({{ inception.get_stage_display }}){% endif %}
+    </p>
+  </header>
+
+  <form method="post" action="">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="form_action" value="save">
+
+    <section class="bw-wp-panel">
+      <h3>Programme envelope</h3>
+      <div class="bw-wp-grid2 bw-wp-fields">
+        <div>
+          <label for="title">Work plan title</label>
+          <input id="title" name="title" type="text" value="{{ plan.title }}">
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            {% for code, label in plan.STATUS_CHOICES %}
+            <option value="{{ code }}"{% if plan.status == code %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="currency">Currency</label>
+          <input id="currency" name="currency" type="text" value="{{ plan.currency }}">
+        </div>
+        <div>
+          <label for="total_envelope">Strategic financing envelope</label>
+          <input id="total_envelope" name="total_envelope" type="text" value="{{ plan.total_envelope }}">
+        </div>
+        <div style="grid-column:1 / -1;">
+          <label for="strategy_note">Staggering strategy</label>
+          <textarea id="strategy_note" name="strategy_note" rows="3">{{ plan.strategy_note }}</textarea>
+        </div>
+      </div>
+      <p class="bw-wp-stat" style="margin-top:10px;">
+        Financing allocated across phases: <strong>{{ plan.currency }} {{ financing_allocated }}</strong>
+        | Programme BOM total: <strong>{{ plan.currency }} {{ bom_total }}</strong>
+      </p>
+    </section>
+
+    <section class="bw-wp-panel">
+      <h3>Rollout plan (test ? commissioning)</h3>
+      <p class="hint">Strategic stagger: each phase has scope, exit criteria, and a financing release trigger.</p>
+      <div style="overflow-x:auto;">
+        <table class="bw-wp-table">
+          <thead>
+            <tr>
+              <th>Phase</th>
+              <th>Scope</th>
+              <th>Objective / exit</th>
+              <th>% / amount</th>
+              <th>Release trigger</th>
+              <th>Done</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in phases %}
+            <tr>
+              <td>
+                <span class="bw-wp-phase-kind">{{ p.get_kind_display }}</span><br>
+                <strong>{{ p.label }}</strong><br>
+                <span style="color:#8494a8;">{{ p.code }}</span>
+              </td>
+              <td><input name="phase_scope_{{ p.code }}" value="{{ p.site_or_scope }}" placeholder="Sites / corridor"></td>
+              <td>
+                <input name="phase_objective_{{ p.code }}" value="{{ p.objective }}" placeholder="Objective" style="margin-bottom:6px;">
+                <input name="phase_exit_{{ p.code }}" value="{{ p.exit_criteria }}" placeholder="Exit criteria">
+              </td>
+              <td>
+                <input name="phase_pct_{{ p.code }}" value="{{ p.financing_pct }}" placeholder="%" style="margin-bottom:6px;">
+                <input name="phase_amt_{{ p.code }}" value="{{ p.financing_amount }}" placeholder="Amount">
+              </td>
+              <td><input name="phase_trigger_{{ p.code }}" value="{{ p.financing_trigger }}"></td>
+              <td><input type="checkbox" name="phase_done_{{ p.code }}"{% if p.is_complete %} checked{% endif %}></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No phases seeded - choose a profile with a work_plan pack (telecom operator / buildings).</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bw-wp-panel">
+      <h3>Programme BOM</h3>
+      <p class="hint">Materials / equipment for the rollout. Quantities can later feed Pioneer BOM / procurement.</p>
+      <div style="overflow-x:auto;">
+        <table class="bw-wp-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Description</th>
+              <th>Phase</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Unit cost</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in bom_lines %}
+            <tr>
+              <td>{{ line.item_code|default:"-" }}</td>
+              <td><input name="bom_desc_{{ line.id }}" value="{{ line.description }}"></td>
+              <td>{% if line.phase %}{{ line.phase.code }}{% else %}-{% endif %}</td>
+              <td><input name="bom_qty_{{ line.id }}" value="{{ line.quantity }}"></td>
+              <td>{{ line.unit }}</td>
+              <td><input name="bom_cost_{{ line.id }}" value="{{ line.unit_cost }}"></td>
+              <td>{{ line.line_total }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">No BOM lines yet.</td></tr>
+            {% endfor %}
+            <tr>
+              <td><input name="bom_new_code" placeholder="New code"></td>
+              <td><input name="bom_new_description" placeholder="Add BOM line description"></td>
+              <td>-</td>
+              <td><input name="bom_new_qty" placeholder="Qty"></td>
+              <td><input name="bom_new_unit" placeholder="Nr" value="Nr"></td>
+              <td><input name="bom_new_cost" placeholder="Cost"></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bw-wp-panel">
+      <div class="bw-wp-actions">
+        <button type="submit" class="bw-btn bw-btn--primary" onclick="document.getElementById('form_action').value='save'">Save work plan</button>
+        <button type="submit" class="bw-btn bw-btn--ghost" onclick="document.getElementById('form_action').value='approve_plan'">Approve plan</button>
+        <button type="submit" class="bw-btn bw-btn--ghost" onclick="document.getElementById('form_action').value='activate_plan'">Activate rollout</button>
+        <a class="bw-btn bw-btn--ghost" href="{% url 'inception-workspace' %}">Back to Project Concept</a>
+      </div>
+    </section>
+
+    <section class="bw-wp-panel">
+      <h3>Activity</h3>
+      <ul style="list-style:none;margin:0;padding:0;font-size:.8rem;color:#3f5168;">
+        {% for a in activities %}
+        <li style="padding:6px 0;border-bottom:1px solid #eef2f7;"><strong>{{ a.at|date:"Y-m-d H:i" }}</strong> | {{ a.who }} - {{ a.text }}</li>
+        {% empty %}
+        <li>No activity yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </form>
+</div>
+{% endblock %}

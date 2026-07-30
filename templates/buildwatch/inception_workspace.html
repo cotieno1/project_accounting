@@ -769,6 +769,10 @@
 
           </button>
 
+          {% if brief.project_id %}
+          <a class="bw-btn bw-btn--ghost" href="{% url 'work-plan-workspace' %}">Open Work Plan (rollout / BOM)</a>
+          {% endif %}
+
         </div>
 
         {% if brief.decisions %}

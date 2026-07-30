@@ -2244,3 +2244,12 @@ from buildwatch.models_inception import (  # noqa: E402
     WorkshopContribution,
 )
 
+
+# Project work plan (rollout + financing + programme BOM)
+from buildwatch.models_workplan import (  # noqa: E402
+    ProjectWorkPlan,
+    WorkPlanActivity,
+    WorkPlanBomLine,
+    WorkPlanPhase,
+)
+

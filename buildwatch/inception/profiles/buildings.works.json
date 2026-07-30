@@ -83,5 +83,84 @@
       "requires": ["requirements.locked", "funding.committed"]
     }
   ],
-  "downstream_modules": ["tender_exchange", "works_execution"]
+  "downstream_modules": ["tender_exchange", "works_execution"],
+  "work_plan": {
+    "title": "Buildings / works delivery work plan",
+    "currency": "KES",
+    "strategy_note": "Mobilise and prove methods on a pilot block, then stagger construction packages with financing releases tied to inspection gates through commissioning and handover.",
+    "phases": [
+      {
+        "id": "TEST",
+        "label": "Method / mock-up test",
+        "kind": "TEST",
+        "sort_order": 10,
+        "scope": "Sample unit / mock-up",
+        "objective": "Prove materials and workmanship standards.",
+        "exit_criteria": "Mock-up accepted by sponsor / QS.",
+        "financing_pct": 5,
+        "financing_trigger": "Mock-up approval"
+      },
+      {
+        "id": "PILOT",
+        "label": "Pilot block / first package",
+        "kind": "PILOT",
+        "sort_order": 20,
+        "scope": "First building block",
+        "objective": "Establish production rate and cost certainty.",
+        "exit_criteria": "Pilot practical completion.",
+        "financing_pct": 20,
+        "financing_trigger": "Pilot PC certificate"
+      },
+      {
+        "id": "WAVE_1",
+        "label": "Construction wave 1",
+        "kind": "WAVE",
+        "sort_order": 30,
+        "scope": "Main packages",
+        "objective": "Deliver core GFA / units.",
+        "exit_criteria": "Wave-1 inspection gates cleared.",
+        "financing_pct": 35,
+        "financing_trigger": "Wave-1 valuation approved"
+      },
+      {
+        "id": "WAVE_2",
+        "label": "Construction wave 2",
+        "kind": "WAVE",
+        "sort_order": 40,
+        "scope": "Balance packages",
+        "objective": "Complete remaining works.",
+        "exit_criteria": "Works complete for commissioning.",
+        "financing_pct": 25,
+        "financing_trigger": "Wave-2 valuation approved"
+      },
+      {
+        "id": "COMMISSIONING",
+        "label": "Testing & commissioning",
+        "kind": "COMMISSIONING",
+        "sort_order": 50,
+        "scope": "MEP / services / building systems",
+        "objective": "Commission systems and snag.",
+        "exit_criteria": "Commissioning certificates.",
+        "financing_pct": 10,
+        "financing_trigger": "Commissioning complete"
+      },
+      {
+        "id": "HANDOVER",
+        "label": "Handover",
+        "kind": "HANDOVER",
+        "sort_order": 60,
+        "scope": "As-built + O&M",
+        "objective": "Hand over to employer / operator.",
+        "exit_criteria": "Handover pack accepted.",
+        "financing_pct": 5,
+        "financing_trigger": "Final account / retention start"
+      }
+    ],
+    "bom_lines": [
+      {"item_code": "CEM", "description": "Cement / binders", "unit": "t", "quantity": 0, "unit_cost": 0, "phase": "WAVE_1", "sort_order": 10},
+      {"item_code": "STL", "description": "Reinforcement steel", "unit": "t", "quantity": 0, "unit_cost": 0, "phase": "WAVE_1", "sort_order": 20},
+      {"item_code": "BLK", "description": "Blocks / masonry", "unit": "Nr", "quantity": 0, "unit_cost": 0, "phase": "WAVE_1", "sort_order": 30},
+      {"item_code": "MEP", "description": "MEP equipment package", "unit": "Lot", "quantity": 1, "unit_cost": 0, "phase": "COMMISSIONING", "sort_order": 40}
+    ]
+  }
 }

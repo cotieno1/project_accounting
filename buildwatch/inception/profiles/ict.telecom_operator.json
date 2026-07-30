@@ -73,5 +73,98 @@
       "requires": ["requirements.locked", "funding.committed"]
     }
   ],
-  "downstream_modules": ["vendor_rfp", "license_track", "site_build", "fibre_build"]
+  "downstream_modules": ["vendor_rfp", "license_track", "site_build", "fibre_build"],
+  "work_plan": {
+    "title": "Telecom network rollout work plan",
+    "currency": "USD",
+    "strategy_note": "Stagger coverage by corridor and site class. Prove RF and power on a test cluster, lock financing release on pilot acceptance, then wave rollout to commissioning.",
+    "phases": [
+      {
+        "id": "TEST",
+        "label": "Test / proof cluster",
+        "kind": "TEST",
+        "sort_order": 10,
+        "scope": "2-5 sites (BTS + backhaul + power)",
+        "objective": "Validate RF design, power mix, and install method before scale.",
+        "exit_criteria": "Test sites on-air; KPIs within target; lessons logged.",
+        "financing_pct": 5,
+        "financing_trigger": "Test plan approved; materials for proof cluster released"
+      },
+      {
+        "id": "PILOT",
+        "label": "Pilot wave",
+        "kind": "PILOT",
+        "sort_order": 20,
+        "scope": "First commercial corridor / city cluster",
+        "objective": "Prove unit economics and installer cadence.",
+        "exit_criteria": "Pilot acceptance signed; O&M ready.",
+        "financing_pct": 15,
+        "financing_trigger": "Pilot acceptance certificate"
+      },
+      {
+        "id": "WAVE_1",
+        "label": "Rollout wave 1",
+        "kind": "WAVE",
+        "sort_order": 30,
+        "scope": "Priority urban / highway sites",
+        "objective": "Scale towers, BTS, and fibre backhaul on priority footprint.",
+        "exit_criteria": "Wave-1 sites integrated to core; quality gates passed.",
+        "financing_pct": 30,
+        "financing_trigger": "Wave-1 RF complete + integration sign-off"
+      },
+      {
+        "id": "WAVE_2",
+        "label": "Rollout wave 2",
+        "kind": "WAVE",
+        "sort_order": 40,
+        "scope": "Secondary markets / rural fill-in",
+        "objective": "Extend coverage with staggered logistics and cash.",
+        "exit_criteria": "Wave-2 coverage targets met.",
+        "financing_pct": 25,
+        "financing_trigger": "Wave-1 closed and Wave-2 kickoff approved"
+      },
+      {
+        "id": "INTEGRATION",
+        "label": "Network integration & acceptance",
+        "kind": "INTEGRATION",
+        "sort_order": 50,
+        "scope": "Core, OSS/BSS, transmission end-to-end",
+        "objective": "End-to-end acceptance before formal commissioning.",
+        "exit_criteria": "Integration test pack signed.",
+        "financing_pct": 10,
+        "financing_trigger": "Integration test report approved"
+      },
+      {
+        "id": "COMMISSIONING",
+        "label": "Commissioning to commercial service",
+        "kind": "COMMISSIONING",
+        "sort_order": 60,
+        "scope": "All accepted sites / clusters",
+        "objective": "Commission, optimize, and hand to operations.",
+        "exit_criteria": "Commissioning certificates; service launch.",
+        "financing_pct": 10,
+        "financing_trigger": "Commissioning complete; handover to O&M"
+      },
+      {
+        "id": "HANDOVER",
+        "label": "Handover / close-out",
+        "kind": "HANDOVER",
+        "sort_order": 70,
+        "scope": "As-built, spares, training",
+        "objective": "Close programme documentation and residual financing.",
+        "exit_criteria": "Close-out pack filed; residual retention released.",
+        "financing_pct": 5,
+        "financing_trigger": "Close-out approved"
+      }
+    ],
+    "bom_lines": [
+      {"item_code": "TWR-30", "description": "30m lattice / monopole tower kit", "unit": "Nr", "quantity": 0, "unit_cost": 0, "phase": "WAVE_1", "sort_order": 10},
+      {"item_code": "BTS-RRU", "description": "BTS / RRU / antenna sector kit", "unit": "Nr", "quantity": 0, "unit_cost": 0, "phase": "PILOT", "sort_order": 20},
+      {"item_code": "PWR-HYB", "description": "Hybrid power (rectifier / solar / genset)", "unit": "Nr", "quantity": 0, "unit_cost": 0, "phase": "TEST", "sort_order": 30},
+      {"item_code": "FO-CABLE", "description": "Fibre cable + duct / aerial kit", "unit": "km", "quantity": 0, "unit_cost": 0, "phase": "WAVE_1", "sort_order": 40},
+      {"item_code": "MW-HOP", "description": "Microwave hop (if no fibre)", "unit": "Nr", "quantity": 0, "unit_cost": 0, "phase": "PILOT", "sort_order": 50},
+      {"item_code": "CIVIL-PAD", "description": "Civil pad / shelter / fence", "unit": "Nr", "quantity": 0, "unit_cost": 0, "phase": "WAVE_1", "sort_order": 60},
+      {"item_code": "TEST-KIT", "description": "RF / fibre test & commissioning kit", "unit": "Set", "quantity": 1, "unit_cost": 0, "phase": "COMMISSIONING", "sort_order": 70}
+    ]
+  }
 }

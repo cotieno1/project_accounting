@@ -20,6 +20,7 @@ from buildwatch import views_delivery as deliv
 from buildwatch import views_execution as execn
 from buildwatch import views_open_tender as ot
 from buildwatch import views_inception as inception
+from buildwatch import views_workplan as workplan
 
 # ── BuildWatch core (Sprint 1) ────────────────────────────────────────────────
 buildwatch_patterns = [
@@ -43,6 +44,14 @@ buildwatch_patterns = [
     path('inception/',
          inception.inception_workspace,
          name='inception-workspace'),
+
+    # ── Project Work Plan (rollout + financing + programme BOM) ──────────
+    path('work-plan/',
+         workplan.work_plan_workspace,
+         name='work-plan-workspace'),
+    path('work-plan/<int:project_id>/',
+         workplan.work_plan_workspace,
+         name='work-plan-project'),
 ]
 
 # ── Tender Exchange (Sprint 2) ────────────────────────────────────────────────

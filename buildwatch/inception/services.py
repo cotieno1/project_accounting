@@ -451,6 +451,27 @@ def approve_concept(
         who,
     )
     inception.save()
+
+    # Unlock programme work plan (rollout + financing + BOM)
+    try:
+        from buildwatch.workplan.services import get_or_create_work_plan
+
+        get_or_create_work_plan(
+            infra_project=project,
+            inception=inception,
+            profile_id=inception.profile_id,
+            who=who,
+        )
+        append_activity(
+            inception,
+            "Project work plan seeded (test -> commissioning)",
+            who,
+        )
+        inception.save(update_fields=["activity_log", "updated_at"])
+    except Exception:
+        # Work plan is additive; never block concept approval
+        pass
+
     return approval, project
 
 
