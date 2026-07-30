@@ -147,9 +147,10 @@
     </section>
     {% endif %}
 
-	   <div class="nav-tabs">
+	   <div class="nav-tabs nav-tabs--compact">
         {% if is_platform_main_admin %}
 		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+		<span class="tab tab--disabled" aria-disabled="true" title="Project inception workspace — coming soon">Project Concept</span>
 		{% if not is_sponsor_account %}
 		<div class="tab" onclick="showSection('platform-tenants')">Building Contractors</div>
 		{% endif %}
@@ -160,6 +161,7 @@
         <a href="{% url 'ops_dashboard' %}" class="tab">Close Tender - Financial Dashboard</a>
         {% else %}
 		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+		<span class="tab tab--disabled" aria-disabled="true" title="Project inception workspace — coming soon">Project Concept</span>
 		<a href="{% url 'tender-list' %}" class="tab">Public Procurement Bid Dashboard</a>
 		<a href="{% url 'open-tender-dashboard' %}" class="tab">Open Tender - Financial Dashboard</a>
 		<a href="{% url 'public-tender-fin-ops-index' %}" class="tab">Public Tender Internal Fin Ops</a>
