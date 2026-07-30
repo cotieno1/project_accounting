@@ -163,11 +163,6 @@ def inception_workspace(request):
                     brief["seed_project_ref"] = defaults["project_ref"]
                 _append_activity(brief, f"Switched profile to {new_profile.get('title')}", who)
                 _save_brief(request, brief, org)
-                messages.info(
-                    request,
-                    "Profile changed. Living brief reset for the new sector pack "
-                    "(core gates stay the same).",
-                )
                 return redirect(f"{request.path}?profile={new_profile['id']}")
             messages.error(request, "Unknown profile.")
             return redirect("inception-workspace")
