@@ -161,7 +161,7 @@ html.command-center-root {
 
 .command-center .header-title-row h2 {
     margin: 0;
-    font-size: clamp(1.35rem, 4vw, 1.75rem);
+    font-size: clamp(1.12rem, 2vw, 1.36rem);
     font-weight: 800;
     color: var(--text-strong);
     letter-spacing: -0.02em;
@@ -171,7 +171,7 @@ html.command-center-root {
 
 .command-center .header h2 {
     margin: 0;
-    font-size: clamp(1.35rem, 4vw, 1.75rem);
+    font-size: clamp(1.12rem, 2vw, 1.36rem);
     font-weight: 800;
     color: var(--text-strong);
     letter-spacing: -0.02em;
@@ -181,7 +181,7 @@ html.command-center-root {
 .command-center .header-client {
     display: block;
     margin-top: 2px;
-    font-size: clamp(1rem, 3.2vw, 1.125rem);
+    font-size: clamp(0.92rem, 1.8vw, 1rem);
     font-weight: 700;
     color: var(--text-strong);
     line-height: 1.3;
@@ -438,7 +438,7 @@ html.command-center-root {
 
 .command-center .kpi-card h2 {
     margin: 10px 0 0;
-    font-size: clamp(1.35rem, 4vw, 1.75rem);
+    font-size: clamp(1.18rem, 2.3vw, 1.45rem);
     font-weight: 700;
     color: var(--text-strong);
 }
@@ -484,14 +484,14 @@ html.command-center-root {
 
 .command-center .chart-container h3 {
     margin: 0 0 16px;
-    font-size: 1.1rem;
+    font-size: clamp(1rem, 1.5vw, 1.14rem);
     font-weight: 700;
     color: var(--text-strong);
 }
 
 .command-center .chart-container table {
     width: 100%;
-    font-size: var(--font-sm);
+    font-size: 0.875rem;
 }
 
 .command-center .chart-container td {
@@ -523,7 +523,7 @@ html.command-center-root {
 
 .command-center .stat h2 {
     margin: 10px 0 0;
-    font-size: clamp(1.25rem, 3vw, 26px);
+    font-size: clamp(1.18rem, 2.3vw, 1.45rem);
 }
 
 .command-center .modules {
@@ -549,13 +549,13 @@ html.command-center-root {
 
 .command-center .card h3 {
     margin-top: 0;
-    font-size: 1.1rem;
+    font-size: clamp(1rem, 1.5vw, 1.14rem);
     font-weight: 700;
     color: var(--text-strong);
 }
 
 .command-center .card p {
-    font-size: var(--font-sm);
+    font-size: 0.875rem;
     color: var(--text-muted);
     line-height: 1.5;
 }
@@ -587,7 +587,7 @@ html.command-center-root {
 }
 
 .command-center .table h3 {
-    font-size: 1.15rem;
+    font-size: clamp(1rem, 1.5vw, 1.14rem);
     font-weight: 700;
     color: var(--text-strong);
     margin-top: 0;
@@ -609,7 +609,7 @@ html.command-center-root {
 .command-center th {
     padding: 12px 14px;
     border-bottom: 1px solid var(--border);
-    font-size: var(--font-sm);
+    font-size: 0.875rem;
     color: var(--text);
 }
 
@@ -1478,7 +1478,7 @@ html.command-center-root {
 
 .command-center .platform-workspace-head h2 {
     margin: 0 0 8px;
-    font-size: clamp(1.2rem, 3vw, 1.5rem);
+    font-size: clamp(1.12rem, 2vw, 1.36rem);
     font-weight: 800;
     color: var(--text-strong);
 }
@@ -1486,7 +1486,7 @@ html.command-center-root {
 .command-center .platform-workspace-lead {
     margin: 0;
     max-width: 52rem;
-    font-size: 0.92rem;
+    font-size: 0.875rem;
     line-height: 1.5;
     color: var(--text-muted);
 }
@@ -1511,7 +1511,7 @@ html.command-center-root {
 
 .command-center .platform-workspace-active strong {
     display: block;
-    font-size: 0.95rem;
+    font-size: 0.875rem;
     line-height: 1.35;
     color: var(--text-strong);
     word-break: break-word;
@@ -1526,7 +1526,7 @@ html.command-center-root {
 .command-center .platform-workspace-field label {
     display: block;
     margin-bottom: 6px;
-    font-size: 12px;
+    font-size: 0.875rem;
     font-weight: 700;
     color: var(--text-muted);
 }
@@ -1534,7 +1534,7 @@ html.command-center-root {
 .command-center .platform-workspace-field select {
     width: 100%;
     padding: 10px 12px;
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 @media (max-width: 900px) {
@@ -1565,7 +1565,7 @@ html.command-center-root {
 
 .command-center .platform-panel-head h3 {
     margin: 0 0 6px;
-    font-size: 1.15rem;
+    font-size: clamp(1rem, 1.5vw, 1.14rem);
     font-weight: 700;
     color: var(--text-strong);
 }
@@ -1573,7 +1573,7 @@ html.command-center-root {
 .command-center .platform-panel-head p {
     margin: 0;
     color: var(--text-muted);
-    font-size: var(--font-sm);
+    font-size: 0.875rem;
     max-width: 52ch;
     line-height: 1.5;
 }
@@ -1587,7 +1587,7 @@ html.command-center-root {
 .command-center .platform-tenant-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--font-sm);
+    font-size: 0.875rem;
 }
 
 .command-center .platform-tenant-table th,
@@ -1627,7 +1627,7 @@ html.command-center-root {
 
 .command-center .platform-pending h4 {
     margin: 0 0 12px;
-    font-size: 1rem;
+    font-size: clamp(1rem, 1.5vw, 1.14rem);
     font-weight: 700;
     color: var(--text-strong);
 }
