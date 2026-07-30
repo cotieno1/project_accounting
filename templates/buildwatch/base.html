@@ -496,6 +496,7 @@
       <span aria-hidden="true"></span>
     </button>
     <div class="bw-topnav__links" id="bw-topnav-links">
+      {% block bw_topnav_links %}
       {% if user.is_authenticated %}
       <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">← Main dashboard</a>
       {% endif %}
@@ -534,6 +535,7 @@
       <a href="{% url 'home' %}" class="bw-topnav__link">Home</a>
       <a href="{% url 'login' %}?next={% url 'tender-list' %}" class="bw-topnav__link">Sign in</a>
       {% endif %}
+      {% endblock %}
     </div>
   </nav>
 
@@ -551,6 +553,7 @@
   </main>
 
   <footer class="bw-footer">
+    {% block bw_footer %}
     <span>&copy; Charles Otieno {% now "Y" %} {{ bw_brand_title|default:"BuildWatch" }} &middot; Global infrastructure integrity platform</span>
     <span>
       <a href="{% url 'home' %}">Home</a>
@@ -559,6 +562,7 @@
       &nbsp;&middot;&nbsp;
       <a href="{% url 'buildwatch-register' %}">Register</a>
     </span>
+    {% endblock %}
   </footer>
 </div>
 <script>
