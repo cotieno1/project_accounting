@@ -149,23 +149,23 @@
 
 	   <div class="nav-tabs nav-tabs--compact">
         {% if is_platform_main_admin %}
-		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+		<div class="tab" data-section="overview" onclick="showSection('overview')">Executive Overview</div>
 		<span class="tab tab--disabled" aria-disabled="true" title="Project inception workspace — coming soon">Project Concept</span>
 		{% if not is_sponsor_account %}
-		<div class="tab" onclick="showSection('platform-tenants')">Building Contractors</div>
+		<div class="tab" data-section="platform-tenants" onclick="showSection('platform-tenants')">Building Contractors</div>
 		{% endif %}
 		<a href="{% url 'tender-list' %}" class="tab">Public Procurement Bid Dashboard</a>
 		<a href="{% url 'open-tender-dashboard' %}" class="tab">Open Tender - Financial Dashboard</a>
 		<a href="{% url 'public-tender-fin-ops-index' %}" class="tab">Public Tender Internal Fin Ops</a>
-		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
+		<div class="tab" data-section="budget" onclick="showSection('budget')">Budget Variance</div>
         <a href="{% url 'ops_dashboard' %}" class="tab">Close Tender - Financial Dashboard</a>
         {% else %}
-		<div class="tab active" onclick="showSection('overview')">Executive Overview</div>
+		<div class="tab" data-section="overview" onclick="showSection('overview')">Executive Overview</div>
 		<span class="tab tab--disabled" aria-disabled="true" title="Project inception workspace — coming soon">Project Concept</span>
 		<a href="{% url 'tender-list' %}" class="tab">Public Procurement Bid Dashboard</a>
 		<a href="{% url 'open-tender-dashboard' %}" class="tab">Open Tender - Financial Dashboard</a>
 		<a href="{% url 'public-tender-fin-ops-index' %}" class="tab">Public Tender Internal Fin Ops</a>
-		<div class="tab" onclick="showSection('budget')">Budget Variance</div>
+		<div class="tab" data-section="budget" onclick="showSection('budget')">Budget Variance</div>
         <a href="{% url 'ops_dashboard' %}" class="tab">Close Tender - Financial Dashboard</a>
         {% endif %}
 	</div>
@@ -717,9 +717,28 @@ function showSection(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'block';
     document.querySelectorAll('.nav-tabs .tab').forEach(function (t) {
-        if (t.getAttribute('onclick') && t.getAttribute('onclick').indexOf(id) >= 0) t.classList.add('active');
+        if (t.dataset.section === id) t.classList.add('active');
     });
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    var tabs = document.querySelectorAll('.nav-tabs .tab');
+    if (!tabs.length) return;
+
+    tabs.forEach(function (tab) {
+        if (tab.classList.contains('tab--disabled')) return;
+        tab.addEventListener('click', function () {
+            tabs.forEach(function (t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+        });
+    });
+
+    var visibleSection = document.querySelector('.section:not([style*="display:none"])');
+    var sectionId = visibleSection ? visibleSection.id : 'overview';
+    tabs.forEach(function (t) { t.classList.remove('active'); });
+    var initial = document.querySelector('.nav-tabs .tab[data-section="' + sectionId + '"]');
+    if (initial) initial.classList.add('active');
+});
 </script>
 <script>
 (function () {
