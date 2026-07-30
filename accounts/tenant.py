@@ -92,6 +92,7 @@ CONTRACTOR_ORG_TYPES = {
     "CONSULTANT",
     "BUILDING",
     "ROADS",
+    "TELECOM",
     "SPECIALIST",
     "GENERAL",
 }
@@ -120,7 +121,7 @@ def get_exchange_persona(org=None, request=None):
         return "contractor"
 
     ctype = (getattr(org, "contractor_type", "") or "").strip().upper()
-    if ctype in {"BUILDING", "ROADS", "CONSULTANT"}:
+    if ctype in {"BUILDING", "ROADS", "TELECOM", "CONSULTANT"}:
         return "contractor"
     return "contractor"
 

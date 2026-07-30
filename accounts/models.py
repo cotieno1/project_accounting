@@ -267,10 +267,12 @@ class Organization(models.Model):
 
     CONTRACTOR_BUILDING = "BUILDING"
     CONTRACTOR_ROADS = "ROADS"
+    CONTRACTOR_TELECOM = "TELECOM"
     CONTRACTOR_CONSULTANT = "CONSULTANT"
     CONTRACTOR_TYPE_CHOICES = [
         (CONTRACTOR_BUILDING, "Building contractor"),
         (CONTRACTOR_ROADS, "Roads contractor"),
+        (CONTRACTOR_TELECOM, "Telecom infrastructure contractor"),
         (CONTRACTOR_CONSULTANT, "Consultant"),
     ]
 

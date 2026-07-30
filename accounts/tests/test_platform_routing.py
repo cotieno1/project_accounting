@@ -47,6 +47,15 @@ class PlatformRoutingTests(TestCase):
             access_level=UserCategory.objects.get(code=USER_ADMIN),
         )
 
+    def test_telecom_contractor_category_maps_to_telecom_type(self):
+        from accounts.views import _buildwatch_contractor_type_from_registration
+        from accounts.models import Organization
+
+        self.assertEqual(
+            _buildwatch_contractor_type_from_registration("CONTRACTOR", "TELECOM", ""),
+            Organization.CONTRACTOR_TELECOM,
+        )
+
     def test_main_admin_login_redirects_to_platform(self):
         response = self.client.post(
             reverse("login"),

@@ -130,6 +130,7 @@ def _platform_workspace_contractors():
             contractor_type__in=[
                 Organization.CONTRACTOR_BUILDING,
                 Organization.CONTRACTOR_ROADS,
+                Organization.CONTRACTOR_TELECOM,
             ]
         ).exclude(organization_type__in=EMPLOYER_ORG_TYPES)
     )
@@ -534,8 +535,14 @@ def home(request):
     roads_contractors = _organizations_for_public_home(
         active_orgs.filter(contractor_type=Organization.CONTRACTOR_ROADS)
     )
+    telecom_contractors = _organizations_for_public_home(
+        active_orgs.filter(contractor_type=Organization.CONTRACTOR_TELECOM)
+    )
     tenant_count = (
-        len(building_contractors) + len(consultant_orgs) + len(roads_contractors)
+        len(building_contractors)
+        + len(consultant_orgs)
+        + len(roads_contractors)
+        + len(telecom_contractors)
     )
     return render(
         request,
@@ -544,6 +551,7 @@ def home(request):
             "building_contractors": building_contractors,
             "consultant_orgs": consultant_orgs,
             "roads_contractors": roads_contractors,
+            "telecom_contractors": telecom_contractors,
             "contractor_categories": BUILDWATCH_CONTRACTOR_CATEGORIES,
             "consultant_disciplines": BUILDWATCH_CONSULTANT_DISCIPLINES,
             "sponsor_types": BUILDWATCH_SPONSOR_TYPES,
@@ -1821,6 +1829,7 @@ ORG_TYPE_TO_CONTRACTOR = {
 BUILDWATCH_CONTRACTOR_CATEGORIES = [
     ("BUILDING", "Building contractors"),
     ("ROADS", "Roads / civil infrastructure contractors"),
+    ("TELECOM", "Telecom infrastructure contractors"),
     ("SPECIALIST", "Specialist contractors"),
     ("GENERAL", "General civil contractors"),
 ]
@@ -1885,6 +1894,8 @@ def _buildwatch_contractor_type_from_registration(org_type, contractor_category,
         return Organization.CONTRACTOR_CONSULTANT
     if contractor_category == "ROADS":
         return Organization.CONTRACTOR_ROADS
+    if contractor_category == "TELECOM":
+        return Organization.CONTRACTOR_TELECOM
     if contractor_category:
         return Organization.CONTRACTOR_BUILDING
     return _buildwatch_contractor_type(org_type)

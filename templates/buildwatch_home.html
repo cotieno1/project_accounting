@@ -199,7 +199,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
     <article class="card">
       <span class="card-tag">Contractor</span>
       <h3>Register as a contractor</h3>
-      <p>Choose the broad category that best describes your firm — building, roads and civil infrastructure, specialist trades, or general civil works. Full procurement workflow today; inspection and certification lanes roll out on the same platform.</p>
+      <p>Choose the broad category that best describes your firm — building, roads and civil infrastructure, telecom infrastructure, specialist trades, or general civil works. Full procurement workflow today; inspection and certification lanes roll out on the same platform.</p>
       <form class="card-actions" method="get" action="{% url 'buildwatch-register' %}">
         <input type="hidden" name="track" value="contractor">
         <select class="reg-select" name="category" required aria-label="Contractor category">
@@ -257,7 +257,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
   </div>
 </section>
 
-{% if building_contractors or consultant_orgs or roads_contractors %}
+{% if building_contractors or consultant_orgs or roads_contractors or telecom_contractors %}
 <section class="section">
   <div class="section-head">
     <h2>Active organisations on the platform{% if tenant_count %} ({{ tenant_count }}){% endif %}</h2>
@@ -269,6 +269,9 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
     {% endfor %}
     {% for org in roads_contractors %}
     <span class="tenant-pill">{{ org|org_display_short_name }} · Roads</span>
+    {% endfor %}
+    {% for org in telecom_contractors %}
+    <span class="tenant-pill">{{ org|org_display_short_name }} · Telecom</span>
     {% endfor %}
     {% for org in consultant_orgs %}
     <span class="tenant-pill">{{ org|org_display_short_name }} · Consultant</span>
