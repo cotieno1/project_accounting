@@ -496,7 +496,18 @@
       <span aria-hidden="true"></span>
     </button>
     <div class="bw-topnav__links" id="bw-topnav-links">
-      {% block bw_topnav_links %}
+      {% if bw_nav_mode == 'inception' %}
+        {% if user.is_authenticated %}
+        <a href="{{ main_dashboard_url|default:'/platform/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">Main Dashboard</a>
+        <span class="bw-topnav__user" title="Signed in">{{ user.get_full_name|default:user.get_username }}</span>
+        <form method="post" action="{% url 'logout' %}" class="bw-topnav__logout">
+          {% csrf_token %}
+          <button type="submit" class="bw-btn bw-btn--ghost bw-btn--sm">Log out</button>
+        </form>
+        {% else %}
+        <a href="{% url 'login' %}?next={% url 'inception-workspace' %}" class="bw-topnav__link">Sign in</a>
+        {% endif %}
+      {% else %}
       {% if user.is_authenticated %}
       <a href="{{ main_dashboard_url|default:'/dashboard/' }}" class="bw-btn bw-btn--ghost bw-btn--sm">← Main dashboard</a>
       {% endif %}
@@ -535,7 +546,7 @@
       <a href="{% url 'home' %}" class="bw-topnav__link">Home</a>
       <a href="{% url 'login' %}?next={% url 'tender-list' %}" class="bw-topnav__link">Sign in</a>
       {% endif %}
-      {% endblock %}
+      {% endif %}
     </div>
   </nav>
 
@@ -553,7 +564,12 @@
   </main>
 
   <footer class="bw-footer">
-    {% block bw_footer %}
+    {% if bw_nav_mode == 'inception' %}
+    <span>&copy; Charles Otieno {% now "Y" %} {{ bw_brand_title|default:"BuildWatch" }} &middot; Project Concept / Inception</span>
+    <span>
+      <a href="{{ main_dashboard_url|default:'/platform/' }}">Main Dashboard</a>
+    </span>
+    {% else %}
     <span>&copy; Charles Otieno {% now "Y" %} {{ bw_brand_title|default:"BuildWatch" }} &middot; Global infrastructure integrity platform</span>
     <span>
       <a href="{% url 'home' %}">Home</a>
@@ -562,7 +578,7 @@
       &nbsp;&middot;&nbsp;
       <a href="{% url 'buildwatch-register' %}">Register</a>
     </span>
-    {% endblock %}
+    {% endif %}
   </footer>
 </div>
 <script>

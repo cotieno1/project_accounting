@@ -216,5 +216,6 @@ def inception_workspace(request):
         ],
         "active_org": org,
         **branding_template_context(request),
+        "bw_nav_mode": "inception",
     }
     return render(request, "buildwatch/inception_workspace.html", ctx)
