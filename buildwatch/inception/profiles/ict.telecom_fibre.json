@@ -44,6 +44,12 @@
     {"id": "usf", "label": "Universal service fund"},
     {"id": "commercial", "label": "Operator / private capital"}
   ],
+  "budget_lines": [
+    {"id": "civil_duct", "label": "Civil / duct works", "group": "fibre", "sort_order": 10},
+    {"id": "cable", "label": "Cable & splicing", "group": "fibre", "sort_order": 20},
+    {"id": "nodes", "label": "Nodes / shelters", "group": "fibre", "sort_order": 30},
+    {"id": "contingency", "label": "Contingency", "group": "contingency", "sort_order": 40}
+  ],
   "gates": [
     {
       "id": "concept_approved",

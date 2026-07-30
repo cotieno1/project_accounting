@@ -44,6 +44,12 @@
     {"id": "commercial", "label": "Commercial / consortium"},
     {"id": "international", "label": "International partnership basket"}
   ],
+  "budget_lines": [
+    {"id": "landing_system", "label": "Landing / surface systems", "group": "mission", "sort_order": 10},
+    {"id": "power_thermal", "label": "Power & thermal", "group": "mission", "sort_order": 20},
+    {"id": "comms", "label": "Comms / data", "group": "mission", "sort_order": 30},
+    {"id": "contingency", "label": "Programme contingency", "group": "contingency", "sort_order": 40}
+  ],
   "gates": [
     {
       "id": "concept_approved",

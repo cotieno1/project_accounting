@@ -436,8 +436,9 @@
     {% if inception_org %}
     <p class="bw-incept__org-banner" style="margin:0 0 10px;font-size:.92rem;font-weight:700;color:var(--bw-teal);">
       {{ inception_org.short_name|default:inception_org.name }}
+      {% if brief.inception_ref %} · {{ brief.inception_ref }}{% endif %}
       {% if brief.seed_project_ref %} · {{ brief.seed_project_ref }}{% endif %}
-      · Conceptualization
+      · {{ brief.stage_label|default:"Conceptualization" }}
     </p>
     {% endif %}
 
@@ -489,7 +490,7 @@
 
       {% if brief.project_id %}
 
-      <div class="bw-incept__id" title="Provisional until Django models mint a permanent ProjectTask">
+      <div class="bw-incept__id" title="Minted from inception approval">
 
         Identity: {{ brief.project_id }}
 
@@ -499,7 +500,7 @@
 
       <div class="bw-incept__id" style="background:#f3f6fb;color:#5a6b80;">
 
-        No BuildWatch ID yet - concept gate mints identity
+        No BuildWatch ID yet - sponsor approval mints InfraProject
 
       </div>
 
@@ -678,6 +679,45 @@
       </section>
 
     </div>
+
+
+
+    {% if budget_lines %}
+    <section class="bw-incept-panel" style="margin-bottom:18px;">
+      <h3>Concept budget (profile lines)</h3>
+      <p class="hint">OME / elemental lines seeded from the programme profile. Buildings pack uses classic QS elements; telecom / dam / lunar use sector lines.</p>
+      <div class="bw-incept-fields" style="grid-template-columns:1fr 1fr;display:grid;gap:10px;">
+        <div>
+          <label for="budget_currency">Currency</label>
+          <input id="budget_currency" type="text" name="budget_currency" value="{{ budget.currency|default:'KES' }}">
+        </div>
+        <div>
+          <label for="budget_accuracy">Accuracy</label>
+          <select id="budget_accuracy" name="budget_accuracy">
+            <option value="PM30"{% if budget.accuracy == "PM30" %} selected{% endif %}>+/-30% OME</option>
+            <option value="PM20"{% if budget.accuracy == "PM20" %} selected{% endif %}>+/-20%</option>
+            <option value="PM10"{% if budget.accuracy == "PM10" %} selected{% endif %}>+/-10%</option>
+            <option value="PM5"{% if budget.accuracy == "PM5" %} selected{% endif %}>+/-5%</option>
+          </select>
+        </div>
+        <div style="grid-column:1 / -1;">
+          <label for="budget_basis">Basis of estimate</label>
+          <textarea id="budget_basis" name="budget_basis" rows="2">{{ budget.basis_of_estimate }}</textarea>
+        </div>
+        {% for line in budget_lines %}
+        <div>
+          <label for="budget_line_{{ line.code }}">{{ line.label }}{% if line.group %} ({{ line.group }}){% endif %}</label>
+          <input id="budget_line_{{ line.code }}" type="text" name="budget_line_{{ line.code }}" value="{{ line.amount }}">
+        </div>
+        {% endfor %}
+      </div>
+      {% if budget %}
+      <p class="hint" style="margin-top:10px;">Line total: <strong>{{ budget.currency }} {{ budget.total_amount }}</strong>
+        {% if budget.is_approved %} · Approved{% endif %}
+      </p>
+      {% endif %}
+    </section>
+    {% endif %}
 
 
 

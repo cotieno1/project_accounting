@@ -1,0 +1,87 @@
+{
+  "id": "buildings.works",
+  "title": "Buildings / works (housing & civic)",
+  "summary": "Sponsor + business + QS/architect inception for building programmes. Emurua Dikirr / MoW are examples of this pack, not the core schema.",
+  "lanes": [
+    {
+      "id": "mandate",
+      "label": "WHY - Mandate",
+      "owner_role": "SPONSOR",
+      "prompts": [
+        "Why does this building / estate need to exist now?",
+        "Who is the funder and what outcomes matter?",
+        "Any policy, housing, or civic obligations?"
+      ]
+    },
+    {
+      "id": "requirements",
+      "label": "WHAT - Requirements",
+      "owner_role": "BUSINESS_OWNER",
+      "prompts": [
+        "Users, unit mix, and functional wish list?",
+        "Must-have vs nice-to-have priorities?",
+        "Site constraints known to the operator / employer?"
+      ]
+    },
+    {
+      "id": "feasibility",
+      "label": "HOW + HOW MUCH - Feasibility",
+      "owner_role": "TECHNICAL_LEAD",
+      "prompts": [
+        "Concept design approach and structural systems?",
+        "OME elemental budget and key cost drivers?",
+        "Programme and technical risks?"
+      ]
+    }
+  ],
+  "custody_types": [
+    {"id": "freehold", "label": "Freehold / title land"},
+    {"id": "leasehold", "label": "Leasehold site"},
+    {"id": "allocation", "label": "Government allocation / temporary occupation"},
+    {"id": "easement", "label": "Access easement / shared services"}
+  ],
+  "funding_types": [
+    {"id": "exchequer", "label": "Public / exchequer"},
+    {"id": "housing_fund", "label": "Housing / development fund"},
+    {"id": "commercial", "label": "Private / developer capital"},
+    {"id": "dfi", "label": "Development finance"}
+  ],
+  "budget_lines": [
+    {"id": "substructure", "label": "Substructure", "group": "construction", "sort_order": 10},
+    {"id": "superstructure", "label": "Superstructure", "group": "construction", "sort_order": 20},
+    {"id": "finishes", "label": "Finishes", "group": "construction", "sort_order": 30},
+    {"id": "fittings_furnishings", "label": "Fittings & furnishings", "group": "construction", "sort_order": 40},
+    {"id": "services_mechanical", "label": "Services - mechanical", "group": "construction", "sort_order": 50},
+    {"id": "services_electrical", "label": "Services - electrical", "group": "construction", "sort_order": 60},
+    {"id": "external_works", "label": "External works", "group": "construction", "sort_order": 70},
+    {"id": "consultant_fees", "label": "Consultant fees", "group": "fees", "sort_order": 80},
+    {"id": "statutory_contributions", "label": "Statutory contributions", "group": "statutory", "sort_order": 90},
+    {"id": "contingency", "label": "Contingency", "group": "contingency", "sort_order": 100},
+    {"id": "land_acquisition", "label": "Land acquisition", "group": "client", "sort_order": 110},
+    {"id": "legal_insurance", "label": "Legal & insurance", "group": "client", "sort_order": 120}
+  ],
+  "contribution_types": [
+    {"id": "SPONSOR_WHY", "label": "Why: Strategic rationale", "role": "SPONSOR"},
+    {"id": "SPONSOR_FUNDING", "label": "Funding: Source and structure", "role": "SPONSOR"},
+    {"id": "BUSINESS_WISHLIST", "label": "Wish list: Requirements", "role": "BUSINESS"},
+    {"id": "TECH_BUDGET", "label": "Budget: High-level estimate (QS)", "role": "TECHNICAL"}
+  ],
+  "gates": [
+    {
+      "id": "concept_approved",
+      "label": "Concept approved",
+      "requires": ["mandate.minimal", "custody.route", "funding.envelope"]
+    },
+    {
+      "id": "design_direction_approved",
+      "label": "Design direction approved",
+      "requires": ["feasibility.ome_refined", "custody.in_progress_or_secured"]
+    },
+    {
+      "id": "package_approved",
+      "label": "Tender package approved",
+      "requires": ["requirements.locked", "funding.committed"]
+    }
+  ],
+  "downstream_modules": ["tender_exchange", "works_execution"]
+}

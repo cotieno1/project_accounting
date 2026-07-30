@@ -39,6 +39,12 @@
     {"id": "land_acquisition", "label": "Land / inundation acquisition"},
     {"id": "international_waters", "label": "Transboundary water agreement"}
   ],
+  "budget_lines": [
+    {"id": "dam_structure", "label": "Dam structure", "group": "works", "sort_order": 10},
+    {"id": "spillway", "label": "Spillway / outlet works", "group": "works", "sort_order": 20},
+    {"id": "resettlement", "label": "Resettlement / social", "group": "social", "sort_order": 30},
+    {"id": "contingency", "label": "Contingency", "group": "contingency", "sort_order": 40}
+  ],
   "funding_types": [
     {"id": "exchequer", "label": "National exchequer / sector vote"},
     {"id": "mfi", "label": "Multilateral / development finance"},

@@ -2232,3 +2232,15 @@ class SOPPartySignoff(models.Model):
 
     def __str__(self):
         return f"{self.get_role_display()} - {'signed' if self.signed else 'pending'}"
+
+# Inception engine (pre-project collaboration)
+from buildwatch.models_inception import (  # noqa: E402
+    ConceptBudget,
+    ConceptBudgetLine,
+    InceptionApproval,
+    InceptionDocument,
+    InceptionParticipant,
+    ProjectInception,
+    WorkshopContribution,
+)
+

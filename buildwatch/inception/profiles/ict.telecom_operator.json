@@ -47,6 +47,15 @@
     {"id": "vendor_finance", "label": "Vendor financing / equipment supply credit"},
     {"id": "dfi", "label": "Development finance / partner funding"}
   ],
+  "budget_lines": [
+    {"id": "towers_civil", "label": "Towers / masts & civil", "group": "radio", "sort_order": 10},
+    {"id": "bts_ran", "label": "BTS / RAN equipment", "group": "radio", "sort_order": 20},
+    {"id": "fibre_civil", "label": "Fibre civil & duct", "group": "fibre", "sort_order": 30},
+    {"id": "fibre_cable", "label": "Fibre cable & splicing", "group": "fibre", "sort_order": 40},
+    {"id": "power", "label": "Site power (grid / solar / genset)", "group": "power", "sort_order": 50},
+    {"id": "transmission", "label": "Microwave / transmission", "group": "backhaul", "sort_order": 60},
+    {"id": "contingency", "label": "Contingency", "group": "contingency", "sort_order": 70}
+  ],
   "gates": [
     {
       "id": "concept_approved",
