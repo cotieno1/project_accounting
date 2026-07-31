@@ -23,12 +23,18 @@
             background: linear-gradient(135deg, #0f172a, #1e293b);
             color: var(--home-text);
             min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        .login-main {
+            flex: 1 0 auto;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
-            -webkit-font-smoothing: antialiased;
-            text-rendering: optimizeLegibility;
         }
         .login-card {
             background: var(--home-surface);
@@ -127,6 +133,7 @@
 </head>
 <body>
 {% include "partials/dev_environment_banner.html" %}
+<main class="login-main">
     <div class="login-card">
         <div class="login-brand">
             <h1>{{ app_name|default:"Project Accounting" }}<span class="login-saas-tag">SaaS</span></h1>
@@ -162,6 +169,7 @@
         </form>
         <p class="login-footer mb-0"><a href="{% url 'home' %}">Back to home</a></p>
     </div>
+</main>
     <script>
     (function () {
         var input = document.getElementById('id_password');

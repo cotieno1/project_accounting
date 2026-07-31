@@ -1,9 +1,12 @@
 {# Visible on public and authenticated surfaces while the Railway demo is pre-production. #}
 <style>
 .dev-env-banner {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 1000;
+  display: block;
+  width: 100%;
+  flex: 0 0 auto;
+  box-sizing: border-box;
   background: #7c2d12;
   color: #fff7ed;
   border-bottom: 1px solid #9a3412;
@@ -27,6 +30,13 @@
 .dev-env-banner a {
   color: #ffedd5;
   text-decoration: underline;
+}
+/* The banner adds height above viewport-sized shells; shrink them by the same
+   amount so inner scroll regions keep their scrollbars. */
+body:has(> .dev-env-banner) .cockpit-shell,
+body:has(> .dev-env-banner) .sidebar,
+body:has(> .dev-env-banner) .main-content {
+  min-height: calc(100dvh - 62px);
 }
 </style>
 <div class="dev-env-banner" role="status" aria-live="polite">
