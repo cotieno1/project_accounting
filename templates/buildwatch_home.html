@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BuildWatch — Under Development (Test Data)</title>
+<title>BuildWatch - Under Development (Test Data)</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="description" content="BuildWatch preview environment. Under development. Not for public use. Dummy test data only.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -100,8 +100,8 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
 <section class="hero">
   <div class="hero-grid">
     <div>
-      <div class="hero-eyebrow">Preview environment · Under development · Test data only</div>
-      <h1>From site inspection to final account — one accountable platform.</h1>
+      <div class="hero-eyebrow">Preview environment | Under development | Test data only</div>
+      <h1>From site inspection to final account - one accountable platform.</h1>
       <p>BuildWatch is the global home for building contractors, civil infrastructure firms, specialist contractors, and professional consultants. Register your organisation, run your tenant command center, and build on a platform designed for procurement, financial control, and construction compliance.</p>
       <p class="hero-note"><strong>This Railway deployment is not a public launch.</strong> Organisations, projects, and figures on this site are dummy / test data for development and demos. Do not treat registrations, tenders, or balances as live production records.</p>
       <div class="hero-actions">
@@ -114,9 +114,9 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
       <h3>Two layers, one platform</h3>
       <p>Every tenant keeps their own branding, users, and audit trail. Platform admin governs onboarding and the national view.</p>
       <ul>
-        <li><strong>Live today</strong> — procurement &amp; financial ops command center</li>
-        <li><strong>Rolling out</strong> — site inspections, certificates, compliance gates</li>
-        <li><strong>Roadmap</strong> — standards library, quality engine, national dashboard</li>
+        <li><strong>Live today</strong> - procurement &amp; financial ops command center</li>
+        <li><strong>Rolling out</strong> - site inspections, certificates, compliance gates</li>
+        <li><strong>Roadmap</strong> - standards library, quality engine, national dashboard</li>
       </ul>
     </div>
   </div>
@@ -124,12 +124,12 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
 
 <section class="section">
   <div class="section-head">
-    <h2>Platform A to Z — what BuildWatch covers</h2>
+    <h2>Platform A to Z - what BuildWatch covers</h2>
     <p>BuildWatch spans the full project lifecycle: mobilisation and onboarding, execution on site, certification and payments, through to close-out and national reporting. The backbone is operational; the construction integrity layer complements it.</p>
   </div>
   <div class="layer-grid">
     <article class="layer-card">
-      <span class="layer-badge layer-badge--live">Live · financial &amp; procurement backbone</span>
+      <span class="layer-badge layer-badge--live">Live | financial &amp; procurement backbone</span>
       <h3>Command center &amp; cockpit lanes</h3>
       <p>Multi-tenant SaaS with per-organisation dashboards. Pioneer and peer contractors run the same proven workflow today.</p>
       <div class="cap-list">
@@ -140,9 +140,9 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
       </div>
     </article>
     <article class="layer-card">
-      <span class="layer-badge layer-badge--next">Building · construction integrity layer</span>
+      <span class="layer-badge layer-badge--next">Building | construction integrity layer</span>
       <h3>Inspections, gates &amp; accountability</h3>
-      <p>Proactive quality and compliance — recorded against professional licence numbers with an immutable audit ledger (as committed at registration).</p>
+      <p>Proactive quality and compliance - recorded against professional licence numbers with an immutable audit ledger (as committed at registration).</p>
       <div class="cap-list">
         <div class="cap-item"><strong>Site inspections</strong>Hold-points, checklists, photos, NCRs</div>
         <div class="cap-item"><strong>Compliance gates</strong>Programme → inspection → payment lock</div>
@@ -158,7 +158,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
 <section class="section" style="background:var(--mist);padding-top:36px;padding-bottom:36px;">
   <div class="section-head">
     <h2>Three-gate compliance lock</h2>
-    <p>No payment certificate is approved unless all three gates are satisfied. This connects site reality to money — the same discipline already used for CEO budget and fund-release gates in financial ops.</p>
+    <p>No payment certificate is approved unless all three gates are satisfied. This connects site reality to money - the same discipline already used for CEO budget and fund-release gates in financial ops.</p>
   </div>
   <div class="gate-strip">
     <div class="gate">
@@ -182,7 +182,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
 <section class="section">
   <div class="section-head">
     <h2>Project lifecycle stages</h2>
-    <p>Every inspection and certificate is tied to a project task — creating the audit trail from mobilisation through to final account.</p>
+    <p>Every inspection and certificate is tied to a project task - creating the audit trail from mobilisation through to final account.</p>
   </div>
   <div class="stage-flow">
     <div class="stage-pill">01 Mobilisation<span>Site setup, HSE, ITP registered</span></div>
@@ -202,11 +202,11 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
     <article class="card">
       <span class="card-tag">Contractor</span>
       <h3>Register as a contractor</h3>
-      <p>Choose the broad category that best describes your firm — building, roads and civil infrastructure, telecom infrastructure, specialist trades, or general civil works. Full procurement workflow today; inspection and certification lanes roll out on the same platform.</p>
+      <p>Choose the broad category that best describes your firm - building, roads and civil infrastructure, telecom infrastructure, specialist trades, or general civil works. Full procurement workflow today; inspection and certification lanes roll out on the same platform.</p>
       <form class="card-actions" method="get" action="{% url 'buildwatch-register' %}">
         <input type="hidden" name="track" value="contractor">
         <select class="reg-select" name="category" required aria-label="Contractor category">
-          <option value="" disabled selected>Select contractor category…</option>
+          <option value="" disabled selected>Select contractor category...</option>
           {% for code, label in contractor_categories %}
           <option value="{{ code }}">{{ label }}</option>
           {% endfor %}
@@ -221,7 +221,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
       <form class="card-actions" method="get" action="{% url 'buildwatch-register' %}">
         <input type="hidden" name="track" value="consultant">
         <select class="reg-select" name="discipline" required aria-label="Consultant discipline">
-          <option value="" disabled selected>Select consultant discipline…</option>
+          <option value="" disabled selected>Select consultant discipline...</option>
           {% for code, label in consultant_disciplines %}
           <option value="{{ code }}">{{ label }}</option>
           {% endfor %}
@@ -236,7 +236,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
       <form class="card-actions" method="get" action="{% url 'buildwatch-register' %}">
         <input type="hidden" name="track" value="sponsor">
         <select class="reg-select" name="sponsor_type" required aria-label="Project owner / sponsor type">
-          <option value="" disabled selected>Select owner / sponsor type…</option>
+          <option value="" disabled selected>Select owner / sponsor type...</option>
           {% for code, label in sponsor_types %}
           <option value="{{ code }}">{{ label }}</option>
           {% endfor %}
@@ -250,7 +250,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
 <section class="section" style="padding-top:32px;padding-bottom:32px;">
   <div class="section-head">
     <h2>How onboarding closes the loop</h2>
-    <p>Public registration, admin approval, secure set-password email, then your tenant command center — procurement live now; compliance lanes added as you work.</p>
+    <p>Public registration, admin approval, secure set-password email, then your tenant command center - procurement live now; compliance lanes added as you work.</p>
   </div>
   <div class="flow">
     <div class="step"><div class="step-num">01</div><strong>BuildWatch home</strong><span>Choose contractor, consultant, or project owner / sponsor and register your organisation.</span></div>
@@ -268,21 +268,21 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
   </div>
   <div class="tenants">
     {% for org in building_contractors %}
-    <span class="tenant-pill">{{ org|org_display_short_name }} · Building</span>
+    <span class="tenant-pill">{{ org|org_display_short_name }} | Building</span>
     {% endfor %}
     {% for org in roads_contractors %}
-    <span class="tenant-pill">{{ org|org_display_short_name }} · Roads</span>
+    <span class="tenant-pill">{{ org|org_display_short_name }} | Roads</span>
     {% endfor %}
     {% for org in telecom_contractors %}
-    <span class="tenant-pill">{{ org|org_display_short_name }} · Telecom</span>
+    <span class="tenant-pill">{{ org|org_display_short_name }} | Telecom</span>
     {% endfor %}
     {% for org in consultant_orgs %}
-    <span class="tenant-pill">{{ org|org_display_short_name }} · Consultant</span>
+    <span class="tenant-pill">{{ org|org_display_short_name }} | Consultant</span>
     {% endfor %}
   </div>
 </section>
 {% endif %}
 
-<footer>&copy; {% now "Y" %} Charles Otieno · BuildWatch preview (under development) · Dummy / test data only · {{ app_name }}</footer>
+<footer>&copy; {% now "Y" %} Charles Otieno | BuildWatch preview (under development) | Dummy / test data only | {{ app_name }}</footer>
 </body>
 </html>
