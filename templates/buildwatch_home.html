@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BuildWatch — Global Infrastructure Integrity Platform</title>
+<title>BuildWatch — Under Development (Test Data)</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="BuildWatch preview environment. Under development. Not for public use. Dummy test data only.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
 {% load pioneer_tags %}
@@ -83,6 +85,7 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
 </style>
 </head>
 <body>
+{% include "partials/dev_environment_banner.html" %}
 <nav class="bw-nav">
   <div class="bw-brand">
     <div class="bw-mark"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
@@ -97,10 +100,10 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
 <section class="hero">
   <div class="hero-grid">
     <div>
-      <div class="hero-eyebrow">BuildWatch global · A to Z infrastructure integrity</div>
+      <div class="hero-eyebrow">Preview environment · Under development · Test data only</div>
       <h1>From site inspection to final account — one accountable platform.</h1>
       <p>BuildWatch is the global home for building contractors, civil infrastructure firms, specialist contractors, and professional consultants. Register your organisation, run your tenant command center, and build on a platform designed for procurement, financial control, and construction compliance.</p>
-      <p class="hero-note"><strong>Not starting from scratch.</strong> The financial and procurement backbone is already live — BOM, RO, RFQ, LPO, GRN, budget control, and GM payments. BuildWatch is adding the construction-specific layer on top: inspections, compliance gates, standards, and national visibility.</p>
+      <p class="hero-note"><strong>This Railway deployment is not a public launch.</strong> Organisations, projects, and figures on this site are dummy / test data for development and demos. Do not treat registrations, tenders, or balances as live production records.</p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="{% url 'tender-list' %}">Browse open tenders</a>
         <a class="btn btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.35)" href="{% url 'login' %}">Sign in to dashboard</a>
@@ -280,6 +283,6 @@ footer{padding:28px clamp(20px,4vw,48px);border-top:1px solid var(--rule);color:
 </section>
 {% endif %}
 
-<footer>&copy; {% now "Y" %} Charles Otieno · BuildWatch global infrastructure integrity platform · {{ app_name }}</footer>
+<footer>&copy; {% now "Y" %} Charles Otieno · BuildWatch preview (under development) · Dummy / test data only · {{ app_name }}</footer>
 </body>
 </html>

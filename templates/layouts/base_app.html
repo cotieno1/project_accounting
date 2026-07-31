@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>{% block title %}{{ app_short_name|default:"Project Accounting" }}{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/pioneer/tokens.css' %}">
@@ -15,6 +16,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="cockpit-app {% block body_class %}{% endblock %}">
+    {% include "partials/dev_environment_banner.html" %}
     {% block body %}{% endblock %}
     {% block extra_js %}{% endblock %}
 </body>

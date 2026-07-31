@@ -1,0 +1,36 @@
+{# Visible on public and authenticated surfaces while the Railway demo is pre-production. #}
+<style>
+.dev-env-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #7c2d12;
+  color: #fff7ed;
+  border-bottom: 1px solid #9a3412;
+  padding: 10px 16px;
+  text-align: center;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+.dev-env-banner strong {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.14);
+  vertical-align: middle;
+}
+.dev-env-banner a {
+  color: #ffedd5;
+  text-decoration: underline;
+}
+</style>
+<div class="dev-env-banner" role="status" aria-live="polite">
+  <strong>Under development</strong>
+  This site is a private preview for testing only — not a public production service.
+  Data shown here is dummy / test data and may be reset at any time.
+</div>
