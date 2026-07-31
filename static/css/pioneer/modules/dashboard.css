@@ -4,7 +4,6 @@ body.command-center {
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
-    max-height: 100dvh;
 }
 
 body.command-center {
@@ -339,17 +338,13 @@ html.command-center-root {
     margin: 0 auto;
     box-sizing: border-box;
     flex: 1 1 auto;
-    min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    width: 100%;
 }
 
 .command-center .dashboard-scroll {
     flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8px;
 }
@@ -1419,6 +1414,8 @@ html.command-center-root {
 
     .command-center .nav-tabs--compact {
         flex-wrap: nowrap;
+        /* Header is already sticky on mobile; a second sticky strip would hide under it. */
+        position: static;
     }
 
     .command-center .nav-tabs--compact .tab {
