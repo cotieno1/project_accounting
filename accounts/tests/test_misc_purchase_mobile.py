@@ -118,7 +118,7 @@ class MiscPurchaseMobileTests(TestCase):
         url = reverse("misc_purchase_builder") + f"?task_id={self.task.project_id}"
         self.client.post(url, {"new_ro": "1", "task_id": self.task.project_id})
         page = self.client.get(url)
-        self.assertContains(page, "select category")
+        self.assertContains(page, "Load main BOM item categories")
         self.assertContains(page, "EL-01")
         self.assertContains(page, "CV-01")
         self.assertNotContains(page, 'placeholder="Item description"')
@@ -151,7 +151,9 @@ class MiscPurchaseMobileTests(TestCase):
             follow=True,
         )
         self.assertContains(loaded, "Isiolo feeder cable")
-        self.assertContains(loaded, "Known price")
+        self.assertContains(loaded, "Item / specification")
+        self.assertContains(loaded, "Standard unit price")
+        self.assertContains(loaded, 'name="qty_%s"' % line.pk)
         self.assertNotContains(loaded, "Civil blinding")
 
         added = self.client.post(
@@ -160,7 +162,7 @@ class MiscPurchaseMobileTests(TestCase):
                 "add_misc_bom_priced_lines": "1",
                 "task_id": self.task.project_id,
                 "bom_item_id": str(line.pk),
-                f"qty_{line.pk}": "12",
+                f"qty_{line.pk}": "12.5",
                 f"unit_price_{line.pk}": "87.25",
             },
         )
@@ -168,9 +170,9 @@ class MiscPurchaseMobileTests(TestCase):
         item = MiscPurchaseItem.objects.get(task=self.task, source_bom_item=line)
         self.assertEqual(item.description, "Isiolo feeder cable")
         self.assertEqual(item.uom, "m")
-        self.assertEqual(item.qty, Decimal("12"))
+        self.assertEqual(item.qty, Decimal("12.50"))
         self.assertEqual(item.unit_price, Decimal("87.25"))
-        self.assertEqual(item.total, Decimal("1047.00"))
+        self.assertEqual(item.total, Decimal("1090.62"))
         self.assertFalse(
             MiscPurchaseItem.objects.filter(description="Civil blinding").exists()
         )

@@ -252,6 +252,18 @@
             font-size: 13px;
             line-height: 1.35;
         }
+        .misc-bom-source-panel {
+            margin-bottom: 14px;
+        }
+        .misc-bom-ro-table .misc-bom-qty,
+        .misc-bom-ro-table .misc-bom-price {
+            min-width: 96px;
+            width: 100%;
+        }
+        .misc-bom-ro-table th:nth-child(7),
+        .misc-bom-ro-table th:nth-child(8) {
+            min-width: 110px;
+        }
 
         @media (max-width: 768px) {
             .misc-workspace-task-bar {

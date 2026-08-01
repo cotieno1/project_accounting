@@ -6972,11 +6972,27 @@ def _misc_bom_categories(task, mpo=None):
     """Group remaining main-BOM lines by package/category for Misc RO selection."""
     from collections import OrderedDict
 
+    title_by_code = {}
+    try:
+        from accounts.bom_award import awarded_boq_source
+
+        source = awarded_boq_source(task)
+        if source:
+            for cat in source.get("categories") or []:
+                code = (cat.get("code") or "").strip()
+                if code:
+                    title_by_code[code] = cat.get("title") or code
+    except Exception:
+        title_by_code = {}
+
     grouped = OrderedDict()
     for line in _misc_bom_picker_lines(task, mpo):
         code = line["package_code"]
         if code not in grouped:
-            title = "Uncategorized BOM lines" if code == "UNCATEGORIZED" else code
+            if code == "UNCATEGORIZED":
+                title = "Uncategorized BOM lines"
+            else:
+                title = title_by_code.get(code) or code
             grouped[code] = {
                 "code": code,
                 "title": title,
@@ -6986,6 +7002,14 @@ def _misc_bom_categories(task, mpo=None):
         grouped[code]["lines"].append(line)
         grouped[code]["line_count"] += 1
     return list(grouped.values())
+
+
+def _normalize_misc_bom_qty(qty):
+    """Qty for BOM-sourced Misc RO lines — keep BOM precision (2 d.p.)."""
+    q = Decimal(str(qty or 0))
+    if q <= 0:
+        raise ValueError("Quantity must be greater than zero.")
+    return q.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def _misc_bom_lines_for_packages(task, package_codes, mpo=None):
@@ -7109,14 +7133,23 @@ def _apply_supplier_to_mpo(mpo, misc_sup):
 
 def _mpo_to_batch(mpo, misc_sup=None):
     items = []
-    for it in mpo.items.all().order_by("id"):
+    for it in mpo.items.select_related("source_bom_item").all().order_by("id"):
+        src = it.source_bom_item
+        # Preserve BOM decimal qty; free-form ad-hoc stays whole-number display.
+        if src is not None or (it.qty % 1) != 0:
+            qty_display = float(it.qty)
+        else:
+            qty_display = _misc_qty_raw(it.qty)
         items.append({
             "id": it.id,
             "description": it.description,
             "uom": getattr(it, "uom", None) or "EA",
-            "qty": _misc_qty_raw(it.qty),
+            "qty": qty_display,
             "unit_price": float(it.unit_price),
             "total": float(it.total),
+            "package_code": (src.source_package_code if src else "") or "",
+            "bill_ref": (src.source_bill_ref if src else "") or "",
+            "from_bom": bool(src),
         })
     misc_sup = misc_sup or {}
     name = misc_sup.get("name") or mpo.messenger_name or ""
@@ -7546,7 +7579,7 @@ def misc_purchase_builder(request):
                             if mpo.items.filter(source_bom_item=bom_item).exists():
                                 continue
                             qty_raw = request.POST.get(f"qty_{bom_item_id}")
-                            qty = _normalize_misc_qty(
+                            qty = _normalize_misc_bom_qty(
                                 qty_raw if qty_raw not in (None, "") else bom_item.qty
                             )
                             line_total = qty * price
