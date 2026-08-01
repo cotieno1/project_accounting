@@ -104,11 +104,23 @@ class MiscPurchaseMobileTests(TestCase):
             source_bill_ref="E1",
             source_line_key="tender-line:test-1",
         )
+        BOMItem.objects.create(
+            header=bom,
+            pillar_id=2,
+            description="Civil blinding",
+            qty=Decimal("5"),
+            uom="m3",
+            unit_price=Decimal("50"),
+            source_package_code="CV-01",
+            source_bill_ref="C1",
+            source_line_key="tender-line:test-2",
+        )
         url = reverse("misc_purchase_builder") + f"?task_id={self.task.project_id}"
         self.client.post(url, {"new_ro": "1", "task_id": self.task.project_id})
         page = self.client.get(url)
-        self.assertContains(page, "from main BOM")
-        self.assertContains(page, "Isiolo feeder cable")
+        self.assertContains(page, "select category")
+        self.assertContains(page, "EL-01")
+        self.assertContains(page, "CV-01")
         self.assertNotContains(page, 'placeholder="Item description"')
 
         # Free-text create is rejected once a main BOM exists.
@@ -124,19 +136,32 @@ class MiscPurchaseMobileTests(TestCase):
             },
             follow=True,
         )
-        self.assertContains(blocked, "Select an item from the main BOM")
+        self.assertContains(blocked, "Select a BOM category")
         self.assertFalse(
             MiscPurchaseItem.objects.filter(description="Should not create").exists()
         )
 
+        loaded = self.client.post(
+            url,
+            {
+                "load_misc_bom_categories": "1",
+                "task_id": self.task.project_id,
+                "package_codes": ["EL-01"],
+            },
+            follow=True,
+        )
+        self.assertContains(loaded, "Isiolo feeder cable")
+        self.assertContains(loaded, "Known price")
+        self.assertNotContains(loaded, "Civil blinding")
+
         added = self.client.post(
             url,
             {
-                "add_misc_purchase": "1",
+                "add_misc_bom_priced_lines": "1",
                 "task_id": self.task.project_id,
                 "bom_item_id": str(line.pk),
-                "qty": "12",
-                "unit_price": "87.25",
+                f"qty_{line.pk}": "12",
+                f"unit_price_{line.pk}": "87.25",
             },
         )
         self.assertEqual(added.status_code, 302)
@@ -146,6 +171,9 @@ class MiscPurchaseMobileTests(TestCase):
         self.assertEqual(item.qty, Decimal("12"))
         self.assertEqual(item.unit_price, Decimal("87.25"))
         self.assertEqual(item.total, Decimal("1047.00"))
+        self.assertFalse(
+            MiscPurchaseItem.objects.filter(description="Civil blinding").exists()
+        )
 
 
 class PrintGuardHelperTests(TestCase):

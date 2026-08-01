@@ -6945,6 +6945,7 @@ def _misc_bom_picker_lines(task, mpo=None):
     ):
         if item.pk in used_ids:
             continue
+        code = (item.source_package_code or "").strip() or "UNCATEGORIZED"
         rows.append(
             {
                 "id": item.pk,
@@ -6960,11 +6961,48 @@ def _misc_bom_picker_lines(task, mpo=None):
                 "uom": item.uom or "EA",
                 "qty": item.qty,
                 "hint_price": item.unit_price or Decimal("0"),
-                "package_code": item.source_package_code or "",
+                "package_code": code,
                 "bill_ref": item.source_bill_ref or "",
             }
         )
     return rows
+
+
+def _misc_bom_categories(task, mpo=None):
+    """Group remaining main-BOM lines by package/category for Misc RO selection."""
+    from collections import OrderedDict
+
+    grouped = OrderedDict()
+    for line in _misc_bom_picker_lines(task, mpo):
+        code = line["package_code"]
+        if code not in grouped:
+            title = "Uncategorized BOM lines" if code == "UNCATEGORIZED" else code
+            grouped[code] = {
+                "code": code,
+                "title": title,
+                "line_count": 0,
+                "lines": [],
+            }
+        grouped[code]["lines"].append(line)
+        grouped[code]["line_count"] += 1
+    return list(grouped.values())
+
+
+def _misc_bom_lines_for_packages(task, package_codes, mpo=None):
+    """Remaining BOM lines for the selected package codes (category load)."""
+    wanted = {str(c).strip() for c in (package_codes or []) if str(c).strip()}
+    if not wanted:
+        return []
+    return [
+        line
+        for line in _misc_bom_picker_lines(task, mpo)
+        if line["package_code"] in wanted
+    ]
+
+
+def _misc_session_bom_packages(request):
+    raw = request.session.get("misc_bom_package_codes") or []
+    return [str(c).strip() for c in raw if str(c).strip()]
 
 
 def _ensure_mpo_reference(mpo):
@@ -7336,9 +7374,10 @@ def misc_purchase_builder(request):
                             total_amount=Decimal("0.00"),
                         )
                         request.session.pop("misc_supplier", None)
+                        request.session.pop("misc_bom_package_codes", None)
                         messages.success(
                             request,
-                            "RO started â€” add item lines (qty Â· price). "
+                            "RO started — add item lines (qty · price). "
                             "RO Number is assigned when the first line is saved.",
                         )
                     _sync_session_from_mpo(request, active_task, mpo)
@@ -7350,6 +7389,8 @@ def misc_purchase_builder(request):
                         "register_supplier",
                         "save_ad_hoc_supplier",
                         "update_supplier",
+                        "load_misc_bom_categories",
+                        "add_misc_bom_priced_lines",
                         "add_misc_purchase",
                         "delete_item",
                     )
@@ -7438,6 +7479,107 @@ def misc_purchase_builder(request):
                             f"/misc-purchase/?task_id={active_task.project_id}"
                         )
 
+                    elif "load_misc_bom_categories" in request.POST:
+                        if not mpo.is_sourcing:
+                            raise ValueError("RO total is locked — remove lock is not allowed; submit or start a new RO.")
+                        if not _misc_task_has_main_bom(active_task):
+                            raise ValueError("This task has no main BOM categories to load.")
+                        codes = [
+                            str(c).strip()
+                            for c in request.POST.getlist("package_codes")
+                            if str(c).strip()
+                        ]
+                        if not codes:
+                            raise ValueError("Select at least one BOM category.")
+                        available = {
+                            cat["code"] for cat in _misc_bom_categories(active_task, mpo)
+                        }
+                        codes = [c for c in codes if c in available]
+                        if not codes:
+                            raise ValueError("Those BOM categories have no remaining lines.")
+                        request.session["misc_bom_package_codes"] = codes
+                        request.session.modified = True
+                        line_count = len(
+                            _misc_bom_lines_for_packages(active_task, codes, mpo)
+                        )
+                        messages.success(
+                            request,
+                            f"Loaded {line_count} BOM line(s) from selected categor"
+                            f"{'y' if len(codes) == 1 else 'ies'}. Enter known unit prices below.",
+                        )
+
+                    elif "add_misc_bom_priced_lines" in request.POST:
+                        if not mpo.is_sourcing:
+                            raise ValueError("RO total is locked — remove lock is not allowed; submit or start a new RO.")
+                        if not default_gl:
+                            raise ValueError("Add a GL account before adding line items.")
+                        if not _misc_task_has_main_bom(active_task):
+                            raise ValueError(
+                                "Select items from the main BOM by category. Do not create free-text items."
+                            )
+                        bom_ids = [
+                            str(v).strip()
+                            for v in request.POST.getlist("bom_item_id")
+                            if str(v).strip()
+                        ]
+                        if not bom_ids:
+                            raise ValueError("Select at least one BOM line and enter its unit price.")
+                        added = 0
+                        for bom_item_id in bom_ids:
+                            price_raw = (
+                                request.POST.get(f"unit_price_{bom_item_id}")
+                                or request.POST.get("unit_price")
+                                or ""
+                            ).strip()
+                            if price_raw == "":
+                                continue
+                            price = Decimal(str(price_raw))
+                            if price < 0:
+                                raise ValueError("Unit price cannot be negative.")
+                            bom_item = (
+                                BOMItem.objects.filter(
+                                    pk=bom_item_id, header__task=active_task
+                                ).first()
+                            )
+                            if bom_item is None:
+                                raise ValueError("That BOM line is not on this task.")
+                            if mpo.items.filter(source_bom_item=bom_item).exists():
+                                continue
+                            qty_raw = request.POST.get(f"qty_{bom_item_id}")
+                            qty = _normalize_misc_qty(
+                                qty_raw if qty_raw not in (None, "") else bom_item.qty
+                            )
+                            line_total = qty * price
+                            MiscPurchaseItem.objects.create(
+                                mpo=mpo,
+                                task=active_task,
+                                gl_expense_account=default_gl,
+                                description=bom_item.description,
+                                uom=(bom_item.uom or "EA")[:50],
+                                qty=qty,
+                                unit_price=price,
+                                total=line_total,
+                                source_bom_item=bom_item,
+                            )
+                            added += 1
+                        if added == 0:
+                            raise ValueError(
+                                "Enter a known unit price for at least one selected BOM line."
+                            )
+                        _recalc_mpo_total(mpo)
+                        remaining = _misc_bom_lines_for_packages(
+                            active_task,
+                            _misc_session_bom_packages(request),
+                            mpo,
+                        )
+                        if not remaining:
+                            request.session.pop("misc_bom_package_codes", None)
+                            request.session.modified = True
+                        messages.success(
+                            request,
+                            f"Added {added} BOM line(s) with known price.",
+                        )
+
                     elif "add_misc_purchase" in request.POST:
                         if not mpo.is_sourcing:
                             raise ValueError("RO total is locked — remove lock is not allowed; submit or start a new RO.")
@@ -7448,7 +7590,8 @@ def misc_purchase_builder(request):
                         if _misc_task_has_main_bom(active_task):
                             if not bom_item_id:
                                 raise ValueError(
-                                    "Select an item from the main BOM. Do not create a new Misc RO item."
+                                    "Select a BOM category, then price the populated lines. "
+                                    "Do not create a new Misc RO item."
                                 )
                             bom_item = (
                                 BOMItem.objects.filter(
@@ -7642,6 +7785,23 @@ def misc_purchase_builder(request):
     )
     bom_source_lines = _misc_bom_picker_lines(active_task, display_mpo)
     use_bom_source = bool(bom_source_lines) or _misc_task_has_main_bom(active_task)
+    bom_source_categories = _misc_bom_categories(active_task, display_mpo) if use_bom_source else []
+    selected_bom_package_codes = _misc_session_bom_packages(request)
+    if selected_bom_package_codes:
+        available_codes = {c["code"] for c in bom_source_categories}
+        selected_bom_package_codes = [
+            c for c in selected_bom_package_codes if c in available_codes
+        ]
+        if not selected_bom_package_codes:
+            request.session.pop("misc_bom_package_codes", None)
+            request.session.modified = True
+    bom_category_lines = (
+        _misc_bom_lines_for_packages(
+            active_task, selected_bom_package_codes, display_mpo
+        )
+        if selected_bom_package_codes
+        else []
+    )
 
     return render(
         request,
@@ -7709,6 +7869,9 @@ def misc_purchase_builder(request):
             ),
             "use_bom_source": use_bom_source,
             "bom_source_lines": bom_source_lines,
+            "bom_source_categories": bom_source_categories,
+            "selected_bom_package_codes": selected_bom_package_codes,
+            "bom_category_lines": bom_category_lines,
         },
     )
     

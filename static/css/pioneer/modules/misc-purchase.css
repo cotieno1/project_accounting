@@ -208,6 +208,50 @@
         .misc-workspace-task-bar.is-always-visible {
             display: block;
         }
+        .misc-bom-category-panel {
+            margin: 0 0 12px;
+            padding: 12px;
+            border: 1px solid rgba(20, 184, 166, 0.35);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.35);
+        }
+        .misc-bom-category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+        }
+        .misc-bom-category {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.45);
+            cursor: pointer;
+        }
+        .misc-bom-category.is-loaded {
+            border-color: rgba(20, 184, 166, 0.5);
+            background: rgba(20, 184, 166, 0.08);
+        }
+        .misc-bom-category input {
+            margin-top: 3px;
+        }
+        .misc-bom-category strong {
+            display: block;
+            font-size: 13px;
+            color: var(--light);
+        }
+        .misc-bom-category small {
+            display: block;
+            margin-top: 2px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .misc-bom-line-desc {
+            font-size: 13px;
+            line-height: 1.35;
+        }
 
         @media (max-width: 768px) {
             .misc-workspace-task-bar {
