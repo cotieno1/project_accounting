@@ -936,11 +936,34 @@
 
         function roMaterialTotal() {
             let sum = 0;
-            document.querySelectorAll('#roLinesBody tr[data-line-total]').forEach(tr => {
+            let hasRows = false;
+            document.querySelectorAll('#roLinesBody tr.ro-saved-line[data-line-total]').forEach(tr => {
+                hasRows = true;
                 sum += num(tr.getAttribute('data-line-total'));
             });
-            const hidden = document.getElementById('ro_grand_total_val');
-            if (sum === 0 && hidden) sum = num(hidden.value);
+            // Pending BOM category lines (qty × standard unit price) before Add.
+            document.querySelectorAll('#roLinesBody tr.misc-bom-price-row').forEach(tr => {
+                hasRows = true;
+                const check = tr.querySelector('.misc-bom-line-check');
+                if (check && !check.checked) return;
+                const qty = num(tr.querySelector('.misc-bom-qty')?.value);
+                const price = num(tr.querySelector('.misc-bom-price')?.value);
+                sum += qty * price;
+            });
+            // Free-form draft row (tfoot) before Add.
+            const qtyEl = document.getElementById('input_qty');
+            const priceEl = document.getElementById('input_unit_price');
+            if (qtyEl && priceEl && !document.querySelector('#roLinesBody tr.misc-bom-price-row')) {
+                const draft = num(qtyEl.value) * num(priceEl.value);
+                if (draft > 0) {
+                    hasRows = true;
+                    sum += draft;
+                }
+            }
+            if (!hasRows) {
+                const hidden = document.getElementById('ro_grand_total_val');
+                if (hidden) sum = num(hidden.value);
+            }
             return sum;
         }
 
@@ -950,23 +973,39 @@
             }
             const materialVal = roMaterialTotal();
             const matStr = materialVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const matLabel = CURRENCY_SYMBOL + ' ' + matStr;
 
-            document.getElementById('material_display').innerText = CURRENCY_SYMBOL + ' ' + matStr;
-            document.getElementById('material_val').value = materialVal.toFixed(2);
-            document.getElementById('ro_grand_total_display').innerText = CURRENCY_SYMBOL + ' ' + matStr;
-            document.getElementById('ro_grand_total_val').value = materialVal.toFixed(2);
+            const matDisplay = document.getElementById('material_display');
+            const matVal = document.getElementById('material_val');
+            const roDisplay = document.getElementById('ro_grand_total_display');
+            const roVal = document.getElementById('ro_grand_total_val');
+            if (matDisplay) matDisplay.innerText = matLabel;
+            if (matVal) matVal.value = materialVal.toFixed(2);
+            if (roDisplay) roDisplay.innerText = matLabel;
+            if (roVal) roVal.value = materialVal.toFixed(2);
 
-            const labour = document.getElementById('labour_mode').value === 'percent'
-                ? materialVal * (num(document.getElementById('labour_input').value) / 100)
-                : num(document.getElementById('labour_input').value);
-            const misc = num(document.getElementById('misc_input').value);
+            const labourMode = document.getElementById('labour_mode');
+            const labourInput = document.getElementById('labour_input');
+            const miscInput = document.getElementById('misc_input');
+            if (!labourMode || !labourInput || !miscInput) {
+                syncSidebarBudgetStatus(materialVal);
+                return;
+            }
+            const labour = labourMode.value === 'percent'
+                ? materialVal * (num(labourInput.value) / 100)
+                : num(labourInput.value);
+            const misc = num(miscInput.value);
             const grand = materialVal + labour + misc;
 
-            document.getElementById('grand_total_display').innerText = CURRENCY_SYMBOL + ' ' + grand.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('grand_total_val').value = grand.toFixed(2);
+            const grandDisplay = document.getElementById('grand_total_display');
+            const grandVal = document.getElementById('grand_total_val');
+            if (grandDisplay) {
+                grandDisplay.innerText = CURRENCY_SYMBOL + ' ' + grand.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            if (grandVal) grandVal.value = grand.toFixed(2);
 
             const liveMat = document.getElementById('budgetModalLiveMat');
-            if (liveMat) liveMat.innerText = CURRENCY_SYMBOL + ' ' + matStr;
+            if (liveMat) liveMat.innerText = matLabel;
             syncSidebarBudgetStatus(materialVal);
         }
 
@@ -1135,16 +1174,21 @@
                 const q = Math.round(parseFloat(qtyEl?.value) || 0);
                 const p = parseFloat(priceEl?.value) || 0;
                 if (previewEl) previewEl.textContent = (q * p).toFixed(2);
+                calculateBudget();
             }
             function updateBomCategoryRow(row) {
                 const qty = parseFloat(row.querySelector('.misc-bom-qty')?.value) || 0;
                 const price = parseFloat(row.querySelector('.misc-bom-price')?.value) || 0;
                 const totalEl = row.querySelector('.misc-bom-line-total');
                 if (totalEl) totalEl.textContent = (qty * price).toFixed(2);
+                calculateBudget();
             }
             document.querySelectorAll('.misc-bom-price-row').forEach((row) => {
                 row.querySelectorAll('.misc-bom-qty, .misc-bom-price').forEach((el) => {
                     el.addEventListener('input', () => updateBomCategoryRow(row));
+                });
+                row.querySelector('.misc-bom-line-check')?.addEventListener('change', () => {
+                    updateBomCategoryRow(row);
                 });
                 updateBomCategoryRow(row);
             });
