@@ -5,7 +5,7 @@
 {% block title %}Pioneer | Bills of Materials (BOM){% endblock %}
 {% block body_class %}bom-builder{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}?v=3">
 {% endblock %}
 
 {% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="BOM" process="Major Bill of Materials" only %}{% endblock %}
@@ -109,6 +109,7 @@
         <form method="POST">
             {% csrf_token %}
             <input type="hidden" name="task_id" value="{{ active_pick_id|clean_task_id }}">
+            <div class="bom-award-category-scroll">
             <div class="bom-award-category-grid">
                 {% for category in award_boq_source.categories %}
                 <label class="bom-award-category {% if category.code in loaded_award_category_codes %}is-loaded{% endif %}">
@@ -129,6 +130,7 @@
                     </span>
                 </label>
                 {% endfor %}
+            </div>
             </div>
             {% if screen_lane == 'bom' and not bom_locked and not bom_submitted %}
             <div class="bom-form-actions">

@@ -302,6 +302,36 @@ body.bom-builder .cockpit-shell {
     margin-top: 16px;
 }
 
+.bom-award-category-scroll {
+    max-height: min(36vh, 320px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: 16px;
+    padding-right: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.bom-award-category-scroll .bom-award-category-grid {
+    margin-top: 0;
+}
+
+.bom-award-category-scroll::-webkit-scrollbar {
+    width: 10px;
+}
+
+.bom-award-category-scroll::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.55);
+    border-radius: 8px;
+}
+
+.bom-award-category-scroll::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.35);
+    border-radius: 8px;
+}
+
 .bom-award-category {
     display: flex;
     align-items: flex-start;
@@ -346,11 +376,35 @@ body.bom-builder .cockpit-shell {
 .bom-table-wrap {
     width: 100%;
     max-width: 100%;
+    max-height: min(58vh, 560px);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: rgba(15, 23, 42, 0.25);
+}
+
+.bom-table-wrap::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.bom-table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.55);
+    border-radius: 8px;
+}
+
+.bom-table-wrap::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.35);
+    border-radius: 8px;
 }
 
 .bom-table {
     width: 100%;
-    min-width: 520px;
+    min-width: 720px;
     border-collapse: collapse;
 }
 
@@ -360,6 +414,10 @@ body.bom-builder .cockpit-shell {
     padding: 12px;
     border-bottom: 1px solid var(--border);
     font-size: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #0b1220;
 }
 
 .bom-table td {

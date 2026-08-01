@@ -3,8 +3,8 @@
 {% load pioneer_tags %}
 {% block title %}Pioneer | Misc RO — Ad-Hoc Requisition{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}?v=2">
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-purchase.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-purchase.css' %}?v=4">
 {% endblock %}
 {% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Ad-Hoc Requisition" process="Misc Purchase (MRO)" only %}{% endblock %}
 {% block sidebar %}
@@ -232,6 +232,7 @@
                         <form method="POST" id="loadBomCategoriesForm">
                             {% csrf_token %}
                             <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
+                            <div class="bom-award-category-scroll">
                             <div class="bom-award-category-grid">
                                 {% for category in bom_source_categories %}
                                 <label class="bom-award-category {% if category.code in selected_bom_package_codes %}is-loaded{% endif %}">
@@ -250,6 +251,7 @@
                                     </span>
                                 </label>
                                 {% endfor %}
+                            </div>
                             </div>
                             <div class="bom-form-actions">
                                 <button type="submit" name="load_misc_bom_categories" class="btn-action btn-success">
@@ -273,7 +275,7 @@
                         <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
 
                         {% if use_bom_source and not ro_locked and ro_mode != 'detail' %}
-                        <div class="table-scroll bom-table-wrap">
+                        <div class="table-scroll bom-table-wrap misc-bom-lines-scroll">
                         <table class="bom-table misc-bom-ro-table">
                             <thead>
                                 <tr>

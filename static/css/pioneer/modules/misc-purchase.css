@@ -264,6 +264,14 @@
         .misc-bom-ro-table th:nth-child(8) {
             min-width: 110px;
         }
+        /* Tall tenders: keep MRO line entry inside a dedicated scroll pane */
+        .misc-bom-source-panel .bom-award-category-scroll {
+            max-height: min(34vh, 300px);
+        }
+        .bom-table-wrap.misc-bom-lines-scroll,
+        .misc-bom-lines-scroll {
+            max-height: min(62vh, 640px);
+        }
 
         @media (max-width: 768px) {
             .misc-workspace-task-bar {
