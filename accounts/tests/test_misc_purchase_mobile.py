@@ -136,7 +136,7 @@ class MiscPurchaseMobileTests(TestCase):
             },
             follow=True,
         )
-        self.assertContains(blocked, "Select a BOM category")
+        self.assertContains(blocked, "Select a BOQ category")
         self.assertFalse(
             MiscPurchaseItem.objects.filter(description="Should not create").exists()
         )

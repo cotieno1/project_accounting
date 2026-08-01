@@ -4,7 +4,7 @@
 {% block title %}Pioneer | Misc RO — Ad-Hoc Requisition{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}?v=3">
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-purchase.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-purchase.css' %}?v=5">
 {% endblock %}
 {% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Ad-Hoc Requisition" process="Misc Purchase (MRO)" only %}{% endblock %}
 {% block sidebar %}
@@ -164,7 +164,7 @@
                     <div class="ro-detail-banner" style="background:rgba(245,158,11,0.12);border-color:var(--warning);color:#fcd34d;">
                         <strong>Provisional budget</strong> — Misc RO {{ ro_number|default:"Draft" }}. Lock lines and review to confirm the MRO baseline (issues MRO Number; one per task).
                     </div>
-                    {% elif officer_journey_visible and active_task %}
+                    {% elif officer_journey_visible and active_task and not use_bom_source %}
                     <div class="ro-empty-state mro-stage-b-panel" id="mroStageBPanel" tabindex="0">
                         <span class="mro-stage-badge">Stage B — MRO path</span>
                         {% if ro_mode == 'draft' %}
@@ -195,7 +195,7 @@
                         </div>
                         <p class="mro-stage-b-hint"><kbd>Esc</kbd> returns to the main menu · Budget figures stay at zero until you add Misc RO lines</p>
                     </div>
-                    {% elif ro_mode == 'empty' %}
+                    {% elif ro_mode == 'empty' and not use_bom_source %}
                     <div class="ro-empty-state mro-stage-b-panel" id="mroStageBPanel" tabindex="0">
                         <h4>Ad-hoc MRO baseline exists</h4>
                         <p class="mro-stage-b-lead">One <strong>Misc RO</strong> and one <strong>MRO</strong> baseline per task. This task already has a confirmed baseline{% if baseline_mro_ref %} (MRO {{ baseline_mro_ref }}){% endif %}.</p>
@@ -207,26 +207,31 @@
                     </div>
                     {% endif %}
 
-                    {% if ro_mode != 'empty' %}
-                    <div class="ro-add-header">
-                        <span class="nav-label section-title">{% if use_bom_source %}Misc RO — known-price buy from main BOM{% else %}Misc RO lines — item · qty · unit price{% endif %}</span>
-                    </div>
                     {% if use_bom_source and not ro_locked and ro_mode != 'detail' %}
                     <div class="panel bom-award-source misc-bom-source-panel" style="margin:0 0 14px;">
                         <div class="bom-lines-header">
                             <div class="bom-lines-header-text">
-                                <h2>Load main BOM item categories</h2>
+                                <h2>{% if award_boq_source %}Load awarded BOQ item categories{% else %}Load main BOM item categories{% endif %}</h2>
                                 <p>
-                                    Same category format as BOM Builder. BOM Builder sources suppliers by bidding;
-                                    here you buy selected lines at the common product / country standard unit price.
+                                    {% if award_boq_source %}
+                                    Tender {{ award_boq_source.tender_ref }} — {{ award_boq_source.tender_title }}
+                                    {% if award_boq_source.contractor %} · Awarded contractor: {{ award_boq_source.contractor.name }}{% endif %}
+                                    {% else %}
+                                    Same category format as BOM Builder for known-price Misc RO buys.
+                                    {% endif %}
                                 </p>
                             </div>
-                            <span class="bom-status-badge bom-status-draft">KNOWN PRICE</span>
+                            <span class="bom-status-badge bom-status-draft">{% if award_boq_source %}KNOWN PRICE{% else %}FROM BOM{% endif %}</span>
                         </div>
                         <p class="bom-stage-lead">
-                            Select categories below. Lines load with Category, BOQ ref, Item, UOM and Qty
-                            (same layout as BOM Builder). Enter qty if needed and the standard unit price — do not create free-text items.
-                            {% if not bom_source_categories %} All BOM lines on this Misc RO are already listed below.{% endif %}
+                            {% if award_boq_source %}
+                            Same category list as BOM Builder. BOM Builder is for supplier bidding;
+                            here you select categories, then enter <strong>qty</strong> and the
+                            <strong>country / market standard unit price</strong>.
+                            {% else %}
+                            Select categories below. Enter qty and the standard unit price — do not create free-text items.
+                            {% endif %}
+                            {% if not bom_source_categories %} All available lines on this Misc RO are already listed below.{% endif %}
                         </p>
                         {% if bom_source_categories %}
                         <form method="POST" id="loadBomCategoriesForm">
@@ -245,8 +250,9 @@
                                     <span>
                                         <strong>{{ category.code }} — {{ category.title }}</strong>
                                         <small>
-                                            {{ category.line_count }} remaining line{{ category.line_count|pluralize }}
-                                            {% if category.code in selected_bom_package_codes %} · loaded{% endif %}
+                                            {{ category.line_count }} line{{ category.line_count|pluralize }}
+                                            {% if category.priced_total %} · awarded value {{ category.priced_total|floatformat:2 }}{% endif %}
+                                            {% if category.code in selected_bom_package_codes %} · loaded for pricing{% endif %}
                                         </small>
                                     </span>
                                 </label>
@@ -255,13 +261,18 @@
                             </div>
                             <div class="bom-form-actions">
                                 <button type="submit" name="load_misc_bom_categories" class="btn-action btn-success">
-                                    Load selected BOM categories
+                                    {% if award_boq_source %}Load selected awarded categories{% else %}Load selected BOM categories{% endif %}
                                 </button>
                             </div>
                         </form>
                         {% endif %}
                     </div>
                     {% endif %}
+
+                    {% if ro_mode != 'empty' or bom_category_lines or batch.items %}
+                    <div class="ro-add-header">
+                        <span class="nav-label section-title">{% if use_bom_source %}Misc RO — qty + standard unit price{% else %}Misc RO lines — item · qty · unit price{% endif %}</span>
+                    </div>
                     {% if ro_locked %}
                     <div class="ro-locked-banner">
                         {% if ro_number %}Misc RO <strong style="font-family:monospace;">{{ ro_number }}</strong> is locked — view only.{% else %}Grand total locked — view only.{% endif %}
@@ -320,10 +331,10 @@
                                     <td data-label="Item">{{ line.description }}</td>
                                     <td data-label="UOM">{{ line.uom }}</td>
                                     <td data-label="Qty">
-                                        <input type="number" step="0.01" min="0.01" name="qty_{{ line.id }}" class="form-input misc-bom-qty" value="{{ line.qty }}" title="Quantity from main BOM — adjust if needed">
+                                        <input type="number" step="0.01" min="0.01" name="qty_{{ line.id }}" class="form-input misc-bom-qty" value="{{ line.qty }}">
                                     </td>
                                     <td data-label="Standard unit price">
-                                        <input type="number" step="0.01" min="0" name="unit_price_{{ line.id }}" class="form-input misc-bom-price" placeholder="Country / market std price" title="Common product or country standard unit price">
+                                        <input type="number" step="0.01" min="0" name="unit_price_{{ line.id }}" class="form-input misc-bom-price" placeholder="Country / market std price">
                                     </td>
                                     <td data-label="Line total" class="line-total-cell"><span class="misc-bom-line-total">0.00</span></td>
                                 </tr>
@@ -331,14 +342,12 @@
                                 {% elif bom_source_categories %}
                                 <tr>
                                     <td colspan="9" class="bom-empty">
-                                        Select one or more BOM categories above, then click <strong>Load selected BOM categories</strong>.
-                                        Qty and standard unit price are entered on each loaded line.
+                                        Select categories above, then click
+                                        <strong>{% if award_boq_source %}Load selected awarded categories{% else %}Load selected BOM categories{% endif %}</strong>.
                                     </td>
                                 </tr>
                                 {% elif not batch.items %}
-                                <tr>
-                                    <td colspan="9" class="bom-empty">All available BOM lines are already on this Misc RO.</td>
-                                </tr>
+                                <tr><td colspan="9" class="bom-empty">All available BOM lines are already on this Misc RO.</td></tr>
                                 {% endif %}
                             </tbody>
                         </table>
@@ -348,12 +357,9 @@
                             <button type="submit" name="add_misc_bom_priced_lines" class="btn-action btn-success">
                                 Add selected lines with qty &amp; standard price
                             </button>
-                            <span style="font-size:12px;color:var(--muted);margin-left:10px;">
-                                Format matches BOM Builder; add qty and the country / market standard unit price.
-                            </span>
                         </div>
                         {% endif %}
-                        {% else %}
+                        {% elif not use_bom_source %}
                         <div class="table-scroll">
                         <table class="ro-lines-table">
                             <thead>
@@ -390,9 +396,7 @@
                                     <td><input type="number" step="1" min="1" name="qty" id="input_qty" class="form-input" placeholder="0" required></td>
                                     <td><input type="number" step="0.01" min="0" name="unit_price" id="input_unit_price" class="form-input" placeholder="0.00" required></td>
                                     <td class="line-total-cell"><span id="lineTotalPreview">0.00</span></td>
-                                    <td>
-                                        <button type="submit" name="add_misc_purchase" class="btn-action btn-success btn-compact">Add</button>
-                                    </td>
+                                    <td><button type="submit" name="add_misc_purchase" class="btn-action btn-success btn-compact">Add</button></td>
                                 </tr>
                             </tfoot>
                             {% endif %}
@@ -406,6 +410,8 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
+                                    <th>Category</th>
+                                    <th>BOQ ref</th>
                                     <th>Item / specification</th>
                                     <th>UOM</th>
                                     <th>Qty</th>
@@ -417,6 +423,8 @@
                                 {% for item in batch.items %}
                                 <tr>
                                     <td>{{ forloop.counter }}</td>
+                                    <td>{{ item.package_code|default:"—" }}</td>
+                                    <td>{{ item.bill_ref|default:"—" }}</td>
                                     <td>{{ item.description }}</td>
                                     <td>{{ item.uom }}</td>
                                     <td>{{ item.qty }}</td>
@@ -424,16 +432,13 @@
                                     <td class="line-total-cell">{{ item.total|floatformat:2 }}</td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="6" class="bom-empty">No lines on this Misc RO.</td></tr>
+                                <tr><td colspan="8" class="bom-empty">No lines on this Misc RO.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                         </div>
                         {% endif %}
 
-                        {% if not batch.items and not ro_locked and ro_mode != 'detail' %}
-                        <p style="text-align:center;color:var(--muted);font-size:12px;margin:8px 0 0;">{% if use_bom_source %}Select BOM categories (same format as BOM Builder), load lines, enter <strong>qty</strong> and <strong>standard unit price</strong>, then add.{% else %}List each item and cost in the row above, then click <strong>Add</strong>.{% endif %} When finished, <strong>Lock Misc RO total</strong> and <strong>Submit Misc RO</strong> — your officer task here is done.</p>
-                        {% endif %}
                         <div class="ro-grand-total">
                             {% if ro_locked %}Misc RO grand total (locked) — Material line:{% else %}Misc RO running total — Material line:{% endif %}
                             <span id="ro_grand_total_display">{{ currency_symbol }} {{ actual|floatformat:2 }}</span>
@@ -442,7 +447,6 @@
                         {% if ro_mode == 'draft' and batch.items and not ro_locked %}
                         <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
                             <button type="submit" form="lockRoForm" name="lock_ro_total" class="btn-action" style="background:#047857;">Lock Misc RO total</button>
-                            <span style="font-size:11px;color:var(--muted);align-self:center;">Lock when you have entered your last line item.</span>
                         </div>
                         {% elif ro_mode == 'draft' or ro_mode == 'locked' %}
                         {% if ro_locked and not ro_submitted %}
@@ -450,7 +454,6 @@
                             {% csrf_token %}
                             <input type="hidden" name="task_id" value="{{ active_task.project_id }}">
                             <button type="submit" name="submit_ro" class="btn-action btn-success">Submit Misc RO</button>
-                            <span style="font-size:11px;color:var(--muted);margin-left:10px;">Moves this Misc RO to Misc RO List only.</span>
                         </form>
                         {% endif %}
                         {% endif %}
