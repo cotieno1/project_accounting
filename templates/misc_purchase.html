@@ -208,8 +208,14 @@
 
                     {% if ro_mode != 'empty' %}
                     <div class="ro-add-header">
-                        <span class="nav-label section-title">Misc RO lines — item · qty · unit price</span>
+                        <span class="nav-label section-title">{% if use_bom_source %}Misc RO lines — from main BOM · enter known price{% else %}Misc RO lines — item · qty · unit price{% endif %}</span>
                     </div>
+                    {% if use_bom_source and not ro_locked and ro_mode != 'detail' %}
+                    <p style="font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.45;">
+                        Items come from the main BOM on this task. Select a BOM line, confirm quantity if needed, and enter the known unit price. Do not create a new free-text item.
+                        {% if not bom_source_lines %} All BOM lines on this Misc RO are already listed below.{% endif %}
+                    </p>
+                    {% endif %}
                     {% if ro_locked %}
                     <div class="ro-locked-banner">
                         {% if ro_number %}Misc RO <strong style="font-family:monospace;">{{ ro_number }}</strong> is locked — view only.{% else %}Grand total locked — view only.{% endif %}
@@ -252,6 +258,30 @@
                             </tbody>
                             {% if not ro_locked and ro_mode != 'detail' %}
                             <tfoot>
+                                {% if use_bom_source %}
+                                <tr class="input-row">
+                                    <td>
+                                        <select name="bom_item_id" id="input_bom_item" class="form-input" required {% if not bom_source_lines %}disabled{% endif %}>
+                                            <option value="">{% if bom_source_lines %}Select BOM item…{% else %}No remaining BOM lines{% endif %}</option>
+                                            {% for line in bom_source_lines %}
+                                            <option
+                                                value="{{ line.id }}"
+                                                data-uom="{{ line.uom }}"
+                                                data-qty="{{ line.qty }}"
+                                                data-hint-price="{{ line.hint_price }}"
+                                            >{{ line.label }} ({{ line.qty }} {{ line.uom }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="uom" id="input_uom" class="form-input" value="EA" readonly></td>
+                                    <td><input type="number" step="1" min="1" name="qty" id="input_qty" class="form-input" placeholder="0" required {% if not bom_source_lines %}disabled{% endif %}></td>
+                                    <td><input type="number" step="0.01" min="0" name="unit_price" id="input_unit_price" class="form-input" placeholder="Known price" required {% if not bom_source_lines %}disabled{% endif %}></td>
+                                    <td class="line-total-cell"><span id="lineTotalPreview">0.00</span></td>
+                                    <td>
+                                        <button type="submit" name="add_misc_purchase" class="btn-action btn-success btn-compact" {% if not bom_source_lines %}disabled{% endif %}>Add from BOM</button>
+                                    </td>
+                                </tr>
+                                {% else %}
                                 <tr class="input-row">
                                     <td><input type="text" name="description" id="input_description" class="form-input" placeholder="Item description" required></td>
                                     <td><input type="text" name="uom" id="input_uom" class="form-input" value="EA" required></td>
@@ -262,12 +292,13 @@
                                         <button type="submit" name="add_misc_purchase" class="btn-action btn-success btn-compact">Add</button>
                                     </td>
                                 </tr>
+                                {% endif %}
                             </tfoot>
                             {% endif %}
                         </table>
                         </div>
                         {% if not batch.items and not ro_locked and ro_mode != 'detail' %}
-                        <p style="text-align:center;color:var(--muted);font-size:12px;margin:8px 0 0;">List each item and cost in the row above, then click <strong>Add</strong>. When finished, <strong>Lock Misc RO total</strong> and <strong>Submit Misc RO</strong> — your officer task here is done.</p>
+                        <p style="text-align:center;color:var(--muted);font-size:12px;margin:8px 0 0;">{% if use_bom_source %}Select a main BOM item above, enter the known unit price, then click <strong>Add from BOM</strong>.{% else %}List each item and cost in the row above, then click <strong>Add</strong>.{% endif %} When finished, <strong>Lock Misc RO total</strong> and <strong>Submit Misc RO</strong> — your officer task here is done.</p>
                         {% endif %}
                         <div class="ro-grand-total">
                             {% if ro_locked %}Misc RO grand total (locked) — Material line:{% else %}Misc RO running total — Material line:{% endif %}
@@ -963,13 +994,27 @@
             const qtyEl = document.getElementById('input_qty');
             const priceEl = document.getElementById('input_unit_price');
             const previewEl = document.getElementById('lineTotalPreview');
+            const bomSel = document.getElementById('input_bom_item');
+            const uomEl = document.getElementById('input_uom');
             function updateLineTotalPreview() {
                 const q = Math.round(parseFloat(qtyEl?.value) || 0);
                 const p = parseFloat(priceEl?.value) || 0;
                 if (previewEl) previewEl.textContent = (q * p).toFixed(2);
             }
+            function applyBomSelection() {
+                if (!bomSel) return;
+                const opt = bomSel.options[bomSel.selectedIndex];
+                if (!opt || !opt.value) return;
+                if (uomEl) uomEl.value = opt.dataset.uom || 'EA';
+                if (qtyEl) qtyEl.value = Math.round(parseFloat(opt.dataset.qty) || 0) || '';
+                const hint = parseFloat(opt.dataset.hintPrice) || 0;
+                if (priceEl && !priceEl.value && hint > 0) priceEl.value = hint.toFixed(2);
+                updateLineTotalPreview();
+            }
+            bomSel?.addEventListener('change', applyBomSelection);
             qtyEl?.addEventListener('input', () => { updateLineTotalPreview(); });
             priceEl?.addEventListener('input', () => { updateLineTotalPreview(); });
+            applyBomSelection();
             updateLineTotalPreview();
             calculateBudget();
 

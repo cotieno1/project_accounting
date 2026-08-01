@@ -1,10 +1,18 @@
 """Regression tests for misc-purchase mobile task selection."""
 
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from accounts.models import ProjectTask
+from accounts.models import (
+    BOMHeader,
+    BOMItem,
+    GLAccount,
+    MiscPurchaseItem,
+    ProjectTask,
+)
 from accounts.views import _misc_channel_allowed, _misc_purchase_task_list, _print_items_count
 
 
@@ -21,6 +29,13 @@ class MiscPurchaseMobileTests(TestCase):
         self.task = ProjectTask.objects.create(
             project_id="TOMOG-PIONEER-HWF-00026",
             description="Pioneer HWF misc requisition task",
+        )
+        GLAccount.objects.create(
+            gl_account_id="6000",
+            debit_credit="DR",
+            description="Misc expense",
+            currency="KES",
+            amount=Decimal("0"),
         )
 
     def test_misc_channel_allowed_for_fresh_task(self):
@@ -57,6 +72,80 @@ class MiscPurchaseMobileTests(TestCase):
         html = response.content.decode()
         self.assertIn('id="miscTaskSelect-sidebar"', html)
 
+    def test_free_form_add_still_works_without_bom(self):
+        url = reverse("misc_purchase_builder") + f"?task_id={self.task.project_id}"
+        self.client.post(url, {"new_ro": "1", "task_id": self.task.project_id})
+        response = self.client.post(
+            url,
+            {
+                "add_misc_purchase": "1",
+                "task_id": self.task.project_id,
+                "description": "Ad-hoc cable",
+                "uom": "m",
+                "qty": "10",
+                "unit_price": "25.50",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        item = MiscPurchaseItem.objects.get(task=self.task, description="Ad-hoc cable")
+        self.assertIsNone(item.source_bom_item_id)
+        self.assertEqual(item.unit_price, Decimal("25.50"))
+
+    def test_bom_backed_task_adds_from_main_bom_with_known_price(self):
+        bom = BOMHeader.objects.create(task=self.task, status=BOMHeader.STATUS_DRAFT)
+        line = BOMItem.objects.create(
+            header=bom,
+            pillar_id=2,
+            description="Isiolo feeder cable",
+            qty=Decimal("12"),
+            uom="m",
+            unit_price=Decimal("100"),
+            source_package_code="EL-01",
+            source_bill_ref="E1",
+            source_line_key="tender-line:test-1",
+        )
+        url = reverse("misc_purchase_builder") + f"?task_id={self.task.project_id}"
+        self.client.post(url, {"new_ro": "1", "task_id": self.task.project_id})
+        page = self.client.get(url)
+        self.assertContains(page, "from main BOM")
+        self.assertContains(page, "Isiolo feeder cable")
+        self.assertNotContains(page, 'placeholder="Item description"')
+
+        # Free-text create is rejected once a main BOM exists.
+        blocked = self.client.post(
+            url,
+            {
+                "add_misc_purchase": "1",
+                "task_id": self.task.project_id,
+                "description": "Should not create",
+                "uom": "EA",
+                "qty": "1",
+                "unit_price": "9",
+            },
+            follow=True,
+        )
+        self.assertContains(blocked, "Select an item from the main BOM")
+        self.assertFalse(
+            MiscPurchaseItem.objects.filter(description="Should not create").exists()
+        )
+
+        added = self.client.post(
+            url,
+            {
+                "add_misc_purchase": "1",
+                "task_id": self.task.project_id,
+                "bom_item_id": str(line.pk),
+                "qty": "12",
+                "unit_price": "87.25",
+            },
+        )
+        self.assertEqual(added.status_code, 302)
+        item = MiscPurchaseItem.objects.get(task=self.task, source_bom_item=line)
+        self.assertEqual(item.description, "Isiolo feeder cable")
+        self.assertEqual(item.uom, "m")
+        self.assertEqual(item.qty, Decimal("12"))
+        self.assertEqual(item.unit_price, Decimal("87.25"))
+        self.assertEqual(item.total, Decimal("1047.00"))
 
 
 class PrintGuardHelperTests(TestCase):

@@ -2585,14 +2585,15 @@ def _misc_purchase_task_list(active_task=None):
     if tasks.filter(pk=active_task.pk).exists():
         return tasks
     allowed, _ = _misc_channel_allowed(active_task)
-    if not allowed or _task_on_major_bom_lane(active_task):
+    if not allowed:
         return tasks
+    # Keep BOM-backed tasks visible: Misc RO pulls lines from the main BOM at known price.
     pks = list(tasks.values_list("pk", flat=True)) + [active_task.pk]
     return ProjectTask.objects.filter(pk__in=pks).order_by("project_id")
 
 
 def _task_on_major_bom_lane(task):
-    """True when BOM (Y) lane is active â€” hide from ad-hoc MRO unless real MRO work exists."""
+    """True when a main BOM exists and no Misc RO path has started yet (advisory only)."""
     if not task:
         return False
     if not BOMItem.objects.filter(header__task=task).exists():
@@ -2633,7 +2634,8 @@ def _resolve_misc_purchase_task(request, *, include_post=False):
         if _task_on_major_bom_lane(task) and not _task_has_misc_po_path(task):
             messages.info(
                 request,
-                "This task is on the Major (BOM) path. Continue in BOM Builder unless you intend ad-hoc MRO.",
+                "This task has a main BOM. For known-price buys, start a Misc RO and "
+                "select lines from that BOM — do not create free-text items.",
             )
         pick_id = _bom_task_pick_id(task)
         request.session["active_task_id"] = pick_id
@@ -6913,6 +6915,58 @@ def _misc_default_gl():
     return GLAccount.objects.first()
 
 
+def _misc_task_has_main_bom(task):
+    """True when this task already has a main BOM the Misc RO should consume."""
+    if not task:
+        return False
+    return BOMItem.objects.filter(header__task=task).exists()
+
+
+def _misc_bom_picker_lines(task, mpo=None):
+    """
+    Main BOM lines available for known-price Misc RO entry.
+
+    Description / UOM / qty come from the BOM; the officer only enters the price.
+    Lines already attached to the current draft MPO are excluded.
+    """
+    if not task:
+        return []
+    used_ids = set()
+    if mpo is not None:
+        used_ids = set(
+            mpo.items.exclude(source_bom_item_id=None).values_list(
+                "source_bom_item_id", flat=True
+            )
+        )
+    rows = []
+    for item in (
+        BOMItem.objects.filter(header__task=task)
+        .order_by("source_package_code", "source_bill_ref", "id")
+    ):
+        if item.pk in used_ids:
+            continue
+        rows.append(
+            {
+                "id": item.pk,
+                "label": (
+                    "%s%s%s"
+                    % (
+                        ("%s · " % item.source_package_code) if item.source_package_code else "",
+                        ("%s · " % item.source_bill_ref) if item.source_bill_ref else "",
+                        item.description,
+                    )
+                ),
+                "description": item.description,
+                "uom": item.uom or "EA",
+                "qty": item.qty,
+                "hint_price": item.unit_price or Decimal("0"),
+                "package_code": item.source_package_code or "",
+                "bill_ref": item.source_bill_ref or "",
+            }
+        )
+    return rows
+
+
 def _ensure_mpo_reference(mpo):
     """Assign the permanent Misc RO number when the officer locks the grand total."""
     if not mpo.mpo_number:
@@ -7125,7 +7179,8 @@ def misc_purchase_builder(request):
             blocked_task = ProjectTask.objects.filter(project_id=requested).first()
             if blocked_task:
                 allowed, reason = _misc_channel_allowed(blocked_task)
-                if _task_on_major_bom_lane(blocked_task) or not allowed:
+                # BOM-backed tasks stay on Misc for known-price buys from the main BOM.
+                if not allowed:
                     messages.error(
                         request,
                         reason
@@ -7385,24 +7440,60 @@ def misc_purchase_builder(request):
 
                     elif "add_misc_purchase" in request.POST:
                         if not mpo.is_sourcing:
-                            raise ValueError("RO total is locked â€” remove lock is not allowed; submit or start a new RO.")
+                            raise ValueError("RO total is locked — remove lock is not allowed; submit or start a new RO.")
                         if not default_gl:
                             raise ValueError("Add a GL account before adding line items.")
-                        qty = _normalize_misc_qty(request.POST.get("qty", 0) or 0)
+                        bom_item_id = (request.POST.get("bom_item_id") or "").strip()
+                        bom_item = None
+                        if _misc_task_has_main_bom(active_task):
+                            if not bom_item_id:
+                                raise ValueError(
+                                    "Select an item from the main BOM. Do not create a new Misc RO item."
+                                )
+                            bom_item = (
+                                BOMItem.objects.filter(
+                                    pk=bom_item_id, header__task=active_task
+                                ).first()
+                            )
+                            if bom_item is None:
+                                raise ValueError("That BOM line is not on this task.")
+                            if mpo.items.filter(source_bom_item=bom_item).exists():
+                                raise ValueError(
+                                    "That BOM line is already on this Misc RO."
+                                )
+                            description = bom_item.description
+                            uom = (bom_item.uom or "EA")[:50]
+                            qty = _normalize_misc_qty(
+                                request.POST.get("qty", bom_item.qty) or bom_item.qty
+                            )
+                        else:
+                            description = (request.POST.get("description") or "").strip()
+                            if not description:
+                                raise ValueError("Item description is required.")
+                            uom = (request.POST.get("uom") or "EA")[:50]
+                            qty = _normalize_misc_qty(request.POST.get("qty", 0) or 0)
                         price = Decimal(str(request.POST.get("unit_price", 0) or 0))
+                        if price < 0:
+                            raise ValueError("Unit price cannot be negative.")
                         line_total = qty * price
                         MiscPurchaseItem.objects.create(
                             mpo=mpo,
                             task=active_task,
                             gl_expense_account=default_gl,
-                            description=request.POST.get("description", ""),
-                            uom=request.POST.get("uom", "EA")[:50],
+                            description=description,
+                            uom=uom,
                             qty=qty,
                             unit_price=price,
                             total=line_total,
+                            source_bom_item=bom_item,
                         )
                         _recalc_mpo_total(mpo)
-                        messages.success(request, "Line item saved to database.")
+                        messages.success(
+                            request,
+                            "BOM line added with known price."
+                            if bom_item
+                            else "Line item saved to database.",
+                        )
 
                     elif "delete_item" in request.POST:
                         item_id = request.POST.get("item_id")
@@ -7549,6 +7640,8 @@ def misc_purchase_builder(request):
     can_submit_budget_to_ceo = bool(
         has_committed_adhoc_material and gm_can_submit_budget(project_budget)
     )
+    bom_source_lines = _misc_bom_picker_lines(active_task, display_mpo)
+    use_bom_source = bool(bom_source_lines) or _misc_task_has_main_bom(active_task)
 
     return render(
         request,
@@ -7614,6 +7707,8 @@ def misc_purchase_builder(request):
             "last_return_reason": (
                 project_budget.last_return_reason if project_budget else ""
             ),
+            "use_bom_source": use_bom_source,
+            "bom_source_lines": bom_source_lines,
         },
     )
     
