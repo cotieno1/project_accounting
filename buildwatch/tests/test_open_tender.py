@@ -260,12 +260,12 @@ class OpenTenderFinOpsTests(TestCase):
         resp = c.get(reverse("public-tender-fin-ops", args=[profile.pk]))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
-        self.assertIn("Public Tender Internal Fin Ops", html)
-        self.assertIn("Cement", html)
-        self.assertIn("5000", html)
-        self.assertIn("Site Eng: Load awarded BOM categories", html)
-        self.assertIn("bom-builder", html)
-        self.assertIn("task_id=CLOSE-TASK-001", html)
+        self.assertIn("Public Tender Fin Ops", html)
+        self.assertIn("Contractor claims", html)
+        self.assertIn("Kick", html)
+        self.assertIn("Site clearing", html)
+        self.assertNotIn("Site Eng: Load awarded BOM categories", html)
+        self.assertNotIn("RFQ best price", html)
 
         from accounts.models import BOMHeader, BOMItem, RequisitionOrder, RequisitionOrderItem
         from buildwatch.models import TenderBoqLine

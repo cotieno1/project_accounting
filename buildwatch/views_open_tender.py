@@ -29,6 +29,7 @@ from .open_tender import (
     add_resource,
     build_project_wbs,
     ensure_public_profile,
+    fin_ops_delivery_context,
     fin_ops_overview,
     generate_activities_from_boq_lines,
     generate_subtasks_from_boq,
@@ -322,7 +323,7 @@ def open_tender_action(request, task_id):
 
 @login_required
 def public_tender_fin_ops(request, task_id=None):
-    """Public Tender Internal Fin Ops - products/resources with phased quantities."""
+    """Public Tender Fin Ops — contractor claims + kick / preamble roll plan."""
     org = _contractor_org(request)
     if task_id:
         profile = get_object_or_404(
@@ -333,6 +334,7 @@ def public_tender_fin_ops(request, task_id=None):
             messages.error(request, "Access denied.")
             return redirect("public-tender-fin-ops-index")
         overview = fin_ops_overview(profile)
+        delivery = fin_ops_delivery_context(profile)
         execution_project = getattr(profile.tender.event, "project", None)
         purchasing_task = getattr(execution_project, "task", None)
         ctx = {
@@ -343,6 +345,7 @@ def public_tender_fin_ops(request, task_id=None):
             ),
             "subtasks": list(profile.subtasks.all()),
             "org_name": getattr(org, "name", ""),
+            **delivery,
             **branding_template_context(request),
         }
         return render(request, "tenders/public_tender_fin_ops.html", ctx)

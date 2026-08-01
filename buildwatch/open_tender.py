@@ -515,6 +515,84 @@ def fin_ops_overview(profile):
     }
 
 
+def fin_ops_delivery_context(profile):
+    """
+    Contractor claims + kick / preamble roll-plan context for Fin Ops.
+
+    Purchasing (BOM / RO / RFQ / LPO / Misc) stays on the Close Tender execution
+    task — this page is for delivered-work claims and kick confirmation.
+    """
+    from buildwatch.delivery import value_for_money
+    from buildwatch.kickoff import generate_sop_for_tender, sop_progress
+    from buildwatch.models import PaymentCertificate, WorkSubTask
+
+    tender = profile.tender
+    project = getattr(getattr(tender, "event", None), "project", None)
+    sop = None
+    kick = None
+    if project is not None:
+        sop, _created = generate_sop_for_tender(tender, ua=None)
+        kick = sop_progress(sop) if sop else None
+
+    subtasks = list(
+        WorkSubTask.objects.filter(profile=profile)
+        .select_related("preamble")
+        .order_by("kind", "seq", "id")
+    )
+    work_rows = []
+    for st in subtasks:
+        impact = []
+        if st.has_financial_impact:
+            impact.append("cash")
+        if st.has_non_financial_impact:
+            impact.append("non-cash")
+        work_rows.append(
+            {
+                "subtask": st,
+                "impact_label": " + ".join(impact) if impact else "—",
+                "preamble_title": (
+                    (st.preamble.title if st.preamble_id else "")
+                    or (st.package_code or "")
+                    or "—"
+                ),
+                "is_claim_ready": st.is_payable or st.is_paid,
+                "gate_label": st.get_status_display(),
+            }
+        )
+
+    certs = []
+    claims = None
+    if project is not None:
+        claims = value_for_money(project)
+        certs = list(
+            PaymentCertificate.objects.filter(
+                project=project,
+                payee_kind=PaymentCertificate.CONTRACTOR,
+            ).order_by("-created_at", "-pk")[:12]
+        )
+
+    payable = [r for r in work_rows if r["subtask"].is_payable]
+    paid = [r for r in work_rows if r["subtask"].is_paid]
+    kick_done = sum(
+        1
+        for r in work_rows
+        if r["subtask"].status != WorkSubTask.STATUS_PLANNED
+    )
+
+    return {
+        "kick_sop": sop,
+        "kick_progress": kick,
+        "work_rows": work_rows,
+        "work_total": len(work_rows),
+        "work_started": kick_done,
+        "payable_rows": payable,
+        "paid_rows": paid,
+        "contractor_certs": certs,
+        "claims": claims,
+        "execution_project": project,
+    }
+
+
 def add_resource(subtask, name, resource_kind, unit, total_qty, notes=""):
     return SubTaskResource.objects.create(
         subtask=subtask,

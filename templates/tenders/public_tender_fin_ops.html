@@ -1,7 +1,7 @@
 {% extends "buildwatch/base.html" %}
 {% load pioneer_tags %}
 
-{% block title %}Public Tender Internal Fin Ops - {{ profile.task_id }}{% endblock %}
+{% block title %}Public Tender Fin Ops - {{ profile.task_id }}{% endblock %}
 
 {% block bw_content %}
 <style>
@@ -11,126 +11,171 @@
   .fo-panel{border:1px solid #e6ebf2;border-radius:12px;background:#fff;margin-bottom:16px}
   .fo-panel__h{padding:12px 14px;border-bottom:1px solid #eef2f7;font-weight:700}
   .fo-panel__b{padding:14px}
+  .fo-muted{font-size:.82rem;line-height:1.55;color:#5b6b82}
+  .fo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:0 0 12px}
+  .fo-stat{border:1px solid #e6ebf2;border-radius:10px;padding:10px 12px;background:#f8fafc}
+  .fo-stat strong{display:block;font-size:1.05rem;font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace;margin-top:4px}
+  .fo-stat span{font:700 .62rem sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#8494a8}
   table.fo{width:100%;border-collapse:collapse;font-size:.82rem}
   table.fo th{text-align:left;font:700 .62rem sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#8494a8;padding:8px;border-bottom:1px solid #e6ebf2}
   table.fo td{padding:8px;border-bottom:1px solid #f0f3f8;vertical-align:top}
   .num{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace}
-  .fo-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;align-items:end}
-  .fo-form label{font-size:.68rem;font-weight:700;color:#8494a8;display:block;margin-bottom:3px}
-  .fo-form input,.fo-form select{width:100%;padding:6px 8px;border:1px solid #cfd8e6;border-radius:6px;font-size:.8rem}
-  .phase{font-size:.72rem;color:#5b6b82;margin:2px 0}
+  .fo-pill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:.68rem;font-weight:700;background:#eef2f7;color:#5b6b82}
+  .fo-pill--cash{background:rgba(15,138,138,.12);color:#0f8a8a}
+  .fo-pill--ready{background:rgba(16,185,129,.12);color:#047857}
   .bw-btn--sm{padding:5px 10px;font-size:.75rem}
+  .fo-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 </style>
 <div class="fo-wrap">
   <div style="margin-bottom:8px">
-    <a href="{% url 'public-tender-fin-ops-index' %}" style="font-size:.75rem;color:#0f8a8a;text-decoration:none">&larr; Public Tender Internal Fin Ops</a>
-    - <a href="{% url 'open-tender-detail' profile.task_id %}" style="font-size:.75rem;color:#1a4f8a;text-decoration:none">Open Tender Financial</a>
+    <a href="{% url 'public-tender-fin-ops-index' %}" style="font-size:.75rem;color:#0f8a8a;text-decoration:none">&larr; Public Tender Fin Ops</a>
+    · <a href="{% url 'open-tender-detail' profile.task_id %}" style="font-size:.75rem;color:#1a4f8a;text-decoration:none">Open Tender Financial</a>
+    {% if overview.tender %}<span style="font-size:.75rem;color:#8494a8"> · <a href="{% url 'tender-detail' overview.tender.pk %}" style="color:#1a4f8a;text-decoration:none">Tender workspace</a></span>{% endif %}
   </div>
-  <span class="fo-tag">Just-in-time - phased quantities</span>
+  <span class="fo-tag">Contractor claims · Kick / preambles</span>
   <h1 class="fo-h1">{{ overview.tender.event.ref }}</h1>
-  <div style="font-size:.84rem;color:#5b6b82;margin-bottom:12px">Task {{ overview.task_id }} - products &amp; resources for CCTV, clearing, securing, equipment, explosives, materials</div>
+  <div class="fo-muted" style="margin-bottom:14px">
+    Task {{ overview.task_id }} — contractors file claims for delivered equipment and work done under the contract.
+    Purchasing (BOM · RO · RFQ · Misc known-price) stays on execution task
+    <strong>{{ purchasing_task_id }}</strong>, not on this Fin Ops pack.
+  </div>
 
   <div class="fo-panel" style="border-color:#0f8a8a">
-    <div class="fo-panel__h">Pioneer internal purchase pack (Major lane — one RO path)</div>
-    <div class="fo-panel__b" style="font-size:.82rem;line-height:1.55;color:#5b6b82">
-      <p style="margin:0 0 10px">
-        For this won public tender, the Fin Ops pack is <strong>{{ overview.task_id }}</strong>,
-        while purchasing executes on the existing project task
-        <strong>{{ purchasing_task_id }}</strong>. Use that one execution task only so no second MRO/BOM is created.
+    <div class="fo-panel__h">Kick — confirm preambles &amp; start works (cash + non-cash)</div>
+    <div class="fo-panel__b">
+      <p class="fo-muted" style="margin:0 0 12px">
+        The phased roll plan is a combination of works that confirm BOQ preambles are in force —
+        both <strong>cash</strong> (claimable) and <strong>non-cash</strong> (mobilisation, QA, security) activities.
+        Advance the gate chain on Open Tender Financial; raise payment certificates when work is payable.
       </p>
-      <ol style="margin:0 0 12px;padding-left:18px">
-        <li>Add resources and split phases below.</li>
-        <li>Site Eng loads the awarded BOQ item categories into the existing project BOM.</li>
-        <li><strong>Raise RO</strong> then pushes each phase to the same execution task.</li>
-        <li>Site Eng locks BOM, then RO &rarr; RFQ best price &rarr; LPO.</li>
-      </ol>
-      <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <a class="bw-btn bw-btn--primary bw-btn--sm" href="{% url 'bom_builder' %}?task_id={{ purchasing_task_id|urlencode }}">Site Eng: Load awarded BOM categories</a>
-        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'ro_builder' %}?task_id={{ purchasing_task_id|urlencode }}">RO builder</a>
-        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'rfq_manager' %}?task_id={{ purchasing_task_id|urlencode }}">RFQ best price</a>
+      {% if kick_progress %}
+      <div class="fo-grid">
+        <div class="fo-stat"><span>Kick SOP prerequisites</span><strong>{{ kick_progress.prereq_done }}/{{ kick_progress.prereq_total }}</strong></div>
+        <div class="fo-stat"><span>Required sign-offs</span><strong>{{ kick_progress.sign_done }}/{{ kick_progress.sign_total }}</strong></div>
+        <div class="fo-stat"><span>Works started</span><strong>{{ work_started }}/{{ work_total }}</strong></div>
+        <div class="fo-stat"><span>Payable now</span><strong>{{ payable_rows|length }}</strong></div>
+      </div>
+      {% endif %}
+      <div class="fo-actions">
+        <a class="bw-btn bw-btn--primary bw-btn--sm" href="{% url 'open-tender-detail' profile.task_id %}">Open Kick / works gate chain →</a>
+        {% if overview.tender %}
+        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'tender-detail' overview.tender.pk %}">Tender · Delivery / certificates</a>
+        {% endif %}
       </div>
     </div>
   </div>
 
   <div class="fo-panel">
-    <div class="fo-panel__h">Add resource / product under a sub-task</div>
+    <div class="fo-panel__h">Contractor claims — delivered equipment &amp; work done</div>
     <div class="fo-panel__b">
-      <form method="post" action="{% url 'public-tender-fin-ops-action' profile.task_id %}" class="fo-form">{% csrf_token %}
-        <input type="hidden" name="action" value="add_resource">
-        <div>
-          <label>Sub-task</label>
-          <select name="subtask_id" required>
-            {% for st in subtasks %}
-            <option value="{{ st.pk }}">{{ st.code }} - {{ st.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div><label>Name</label><input name="name" required placeholder="e.g. Cement bags / CCTV kit"></div>
-        <div>
-          <label>Kind</label>
-          <select name="resource_kind">
-            {% for k,v in overview.resource_kinds %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
-          </select>
-        </div>
-        <div><label>Unit</label><input name="unit" value="No"></div>
-        <div><label>Total qty (project)</label><input name="total_qty" value="10000" required></div>
-        <div><button class="bw-btn bw-btn--primary bw-btn--sm" type="submit">Add</button></div>
-      </form>
+      {% if claims %}
+      <div class="fo-grid">
+        <div class="fo-stat"><span>Contract sum</span><strong>{{ claims.contract_sum }}</strong></div>
+        <div class="fo-stat"><span>Certified (gross)</span><strong>{{ claims.certified_gross }}</strong></div>
+        <div class="fo-stat"><span>Paid to date</span><strong>{{ claims.paid_to_date }}</strong></div>
+        <div class="fo-stat"><span>Outstanding</span><strong>{{ claims.outstanding }}</strong></div>
+      </div>
+      {% else %}
+      <p class="fo-muted" style="margin:0 0 10px">No contract sum / certificates linked yet. Claims appear once the project award and payment certificates are recorded.</p>
+      {% endif %}
+
+      {% if contractor_certs %}
+      <table class="fo">
+        <thead><tr><th>Certificate</th><th>Payee</th><th>Status</th><th class="num">Net payable</th></tr></thead>
+        <tbody>
+        {% for c in contractor_certs %}
+        <tr>
+          <td><strong>{{ c.cert_no|default:"Draft" }}</strong></td>
+          <td>{{ c.payee_name }}</td>
+          <td>{{ c.get_status_display }}</td>
+          <td class="num">{{ c.net_payable }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="fo-muted" style="margin:8px 0 0">No contractor payment certificates yet. When a work package is <strong>Payable</strong>, raise a certificate for delivered work / equipment.</p>
+      {% endif %}
+
+      {% if payable_rows %}
+      <p class="fo-muted" style="margin:14px 0 8px"><strong>Ready to claim</strong> — works at Payable gate:</p>
+      <ul style="margin:0;padding-left:18px;font-size:.82rem">
+        {% for row in payable_rows %}
+        <li>{{ row.subtask.code }} — {{ row.subtask.name }} <span class="fo-pill fo-pill--ready">payable</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
     </div>
   </div>
 
   <div class="fo-panel">
-    <div class="fo-panel__h">Resources - phase split &amp; internal RO</div>
+    <div class="fo-panel__h">Kick roll plan — works &amp; preambles</div>
     <div class="fo-panel__b" style="padding:0">
-      {% if overview.rows %}
+      {% if work_rows %}
       <table class="fo">
-        <thead><tr><th>Resource</th><th>Sub-task</th><th class="num">Total</th><th>Phases</th><th>Actions</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Work</th>
+            <th>Preamble / package</th>
+            <th>Impact</th>
+            <th>Gate</th>
+          </tr>
+        </thead>
         <tbody>
-        {% for row in overview.rows %}
+        {% for row in work_rows %}
         <tr>
           <td>
-            <strong>{{ row.resource.name }}</strong>
-            <div style="font-size:.7rem;color:#8494a8">{{ row.resource.get_resource_kind_display }}</div>
+            <strong>{{ row.subtask.code }}</strong> — {{ row.subtask.name }}
+            <div style="font-size:.7rem;color:#8494a8">{{ row.subtask.get_kind_display }}</div>
           </td>
-          <td>{{ row.subtask.code }}</td>
-          <td class="num">{{ row.resource.total_qty }} {{ row.resource.unit }}</td>
+          <td>{{ row.preamble_title }}</td>
+          <td><span class="fo-pill{% if 'cash' in row.impact_label %} fo-pill--cash{% endif %}">{{ row.impact_label }}</span></td>
           <td>
-            {% for p in row.phases %}
-            <div class="phase">{{ p.phase_name|default:p.phase_index }}: <strong>{{ p.qty }}</strong> - {{ p.get_status_display }}{% if p.ro_ref %} - RO {{ p.ro_ref }}{% endif %}</div>
-            {% empty %}
-            <div class="phase">No phases yet - split total (e.g. 5000,2500,2500)</div>
-            {% endfor %}
-          </td>
-          <td>
-            <form method="post" action="{% url 'public-tender-fin-ops-action' profile.task_id %}" style="margin-bottom:6px">{% csrf_token %}
-              <input type="hidden" name="action" value="set_phases">
-              <input type="hidden" name="resource_id" value="{{ row.resource.pk }}">
-              <input name="phase_qtys" placeholder="5000,2500,2500" style="width:140px;padding:4px 8px;font-size:.75rem;border:1px solid #cfd8e6;border-radius:6px">
-              <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Set phases</button>
-            </form>
-            {% for p in row.phases %}
-              {% if p.status == 'PLANNED' %}
-              <form method="post" action="{% url 'public-tender-fin-ops-action' profile.task_id %}" style="margin-bottom:4px">{% csrf_token %}
-                <input type="hidden" name="action" value="raise_phase_ro">
-                <input type="hidden" name="phase_id" value="{{ p.pk }}">
-                <button class="bw-btn bw-btn--ghost bw-btn--sm" type="submit">Raise RO - {{ p.phase_name|default:p.phase_index }}</button>
-              </form>
-              {% endif %}
-            {% endfor %}
-            {% if row.phases %}
-            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'bom_builder' %}?task_id={{ purchasing_task_id|urlencode }}">Load awarded BOM</a>
-            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'ro_builder' %}?task_id={{ purchasing_task_id|urlencode }}">RO builder</a>
-            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'rfq_manager' %}?task_id={{ purchasing_task_id|urlencode }}">RFQ best price</a>
-            {% endif %}
+            {{ row.gate_label }}
+            {% if row.is_claim_ready %}<span class="fo-pill fo-pill--ready">claim</span>{% endif %}
           </td>
         </tr>
         {% endfor %}
         </tbody>
       </table>
       {% else %}
-      <div style="padding:20px;color:#5b6b82;font-size:.88rem">No resources yet. Add cement, CCTV, clearing, equipment, etc. above, then split into phases.</div>
+      <div style="padding:20px" class="fo-muted">
+        No kick works yet. Generate BOQ / internal sub-tasks from
+        <a href="{% url 'open-tender-detail' profile.task_id %}">Open Tender Financial</a>,
+        then confirm preambles and advance cash / non-cash activities here.
+      </div>
       {% endif %}
     </div>
   </div>
+
+  <details class="fo-panel">
+    <summary class="fo-panel__h" style="cursor:pointer">Optional — internal materials schedule (not the purchase desk)</summary>
+    <div class="fo-panel__b fo-muted">
+      Resource phase splits can still be recorded for planning. Actual buying is on execution task
+      <strong>{{ purchasing_task_id }}</strong> (BOM Builder / Misc known-price / RO→RFQ).
+      This Fin Ops page does not open those purchase screens.
+      {% if overview.rows %}
+      <table class="fo" style="margin-top:12px">
+        <thead><tr><th>Resource</th><th>Sub-task</th><th class="num">Total</th><th>Phases</th></tr></thead>
+        <tbody>
+        {% for row in overview.rows %}
+        <tr>
+          <td><strong>{{ row.resource.name }}</strong></td>
+          <td>{{ row.subtask.code }}</td>
+          <td class="num">{{ row.resource.total_qty }} {{ row.resource.unit }}</td>
+          <td>
+            {% for p in row.phases %}
+            <div>{{ p.phase_name|default:p.phase_index }}: {{ p.qty }} — {{ p.get_status_display }}</div>
+            {% empty %}—{% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="margin:10px 0 0">No internal material resources scheduled.</p>
+      {% endif %}
+    </div>
+  </details>
 </div>
 {% endblock %}
