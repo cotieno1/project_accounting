@@ -3115,12 +3115,14 @@ def _bom_page_heading(task, screen_lane, *, can_start_bom=False, has_existing_bo
 @login_required
 def bom_builder(request):
     """BOM path for Snr Site Engineer — all tasks visible; create BOM only when allowed."""
+    from accounts.bom_award import awarded_boq_source, load_awarded_boq_categories
     from django.db import IntegrityError, transaction
     from django.urls import reverse
     from urllib.parse import quote
 
     active_task = _bom_active_task(request)
     active_pick_id = _bom_task_pick_id(active_task)
+    award_source = awarded_boq_source(active_task)
     if request.method == "GET":
         raw_get = (request.GET.get("task_id") or "").strip()
         if raw_get and active_task and active_pick_id:
@@ -3153,6 +3155,8 @@ def bom_builder(request):
             "print_bom_url": "",
             "print_bom_pdf_url": "",
             "bom_heading": None,
+            "award_boq_source": award_source,
+            "loaded_award_category_codes": [],
         }
         ctx.update(extra)
         return render(request, "bom_builder.html", ctx)
@@ -3198,15 +3202,37 @@ def bom_builder(request):
         )
 
     bom_header = _get_task_bom(active_task)
-    can_start_bom = task_status["can_create_bom"]
+    # Award-linked execution tasks load measured BOQ categories instead of
+    # starting a second, blank BOM.
+    can_start_bom = task_status["can_create_bom"] and award_source is None
 
     if request.method == "POST":
         try:
             with transaction.atomic():
-                if "new_bom" in request.POST:
+                if "load_award_categories" in request.POST:
+                    bom_header, created_count, skipped_count = load_awarded_boq_categories(
+                        active_task,
+                        request.POST.getlist("package_codes"),
+                    )
+                    messages.success(
+                        request,
+                        "%d awarded BOQ line(s) loaded into BOM %s%s."
+                        % (
+                            created_count,
+                            bom_header.bom_id,
+                            (
+                                " (%d already loaded and skipped)" % skipped_count
+                                if skipped_count
+                                else ""
+                            ),
+                        ),
+                    )
+                elif "new_bom" in request.POST:
                     if not can_start_bom:
                         raise ValueError(
-                            "Cannot start a BOM on this task — see current status above."
+                            "Cannot start a blank BOM on this task — load its awarded BOQ categories."
+                            if award_source
+                            else "Cannot start a BOM on this task — see current status above."
                         )
                     if bom_header and bom_header.items.exists():
                         messages.info(
@@ -3279,6 +3305,13 @@ def bom_builder(request):
         return redirect(redirect_url)
 
     bom_header = _get_task_bom(active_task)
+    loaded_award_category_codes = []
+    if bom_header:
+        loaded_award_category_codes = list(
+            bom_header.items.exclude(source_package_code="")
+            .values_list("source_package_code", flat=True)
+            .distinct()
+        )
     if not bom_header:
         bom_mode = "empty"
         bom_locked = bom_submitted = False
@@ -3307,7 +3340,13 @@ def bom_builder(request):
         task_status=task_status,
         can_start_bom=can_start_bom,
         bom_header=bom_header,
-        bom_items=bom_header.items.all().order_by("id") if bom_header else [],
+        bom_items=(
+            bom_header.items.all().order_by(
+                "source_package_code", "source_bill_ref", "id"
+            )
+            if bom_header
+            else []
+        ),
         bom_no=bom_header.bom_id if bom_header else "",
         bom_mode=bom_mode,
         bom_locked=bom_locked,
@@ -3323,6 +3362,8 @@ def bom_builder(request):
             has_existing_bom=bool(bom_header),
             print_bom_pdf_url=print_bom_pdf_url if can_print_bom else "",
         ),
+        award_boq_source=award_source,
+        loaded_award_category_codes=loaded_award_category_codes,
     )
 
 

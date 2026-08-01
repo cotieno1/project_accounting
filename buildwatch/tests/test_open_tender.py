@@ -9,7 +9,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import Organization, ProjectTask, UserAccount
+from accounts.models import BOMHeader, BOMItem, Organization, ProjectTask, UserAccount
 from buildwatch.models import (
     BidWorkspace,
     EvaluationEvent,
@@ -56,11 +56,11 @@ class OpenTenderFinOpsTests(TestCase):
             email="pioneer_ot@example.com",
             organization=cls.contractor_org,
         )
-        close_task = ProjectTask.objects.create(
+        cls.close_task = ProjectTask.objects.create(
             project_id="CLOSE-TASK-001", description="Existing close tender task",
         )
         cls.project = InfraProject.objects.create(
-            task=close_task,
+            task=cls.close_task,
             owner_org=cls.sponsor_org,
             sector="BUILDINGS",
             project_type="GOV",
@@ -165,6 +165,57 @@ class OpenTenderFinOpsTests(TestCase):
         # Idempotent refresh adds nothing
         self.assertEqual(generate_subtasks_from_boq(profile), 0)
 
+    def test_execution_task_loads_awarded_boq_categories_not_blank_bom(self):
+        from buildwatch.models import TenderBoqLine
+
+        package = TenderBoqPackage.objects.get(
+            tender=self.listing, code="BA-B01-E01"
+        )
+        line = TenderBoqLine.objects.create(
+            package=package,
+            bill_ref="1",
+            description="Foundations",
+            unit="Item",
+            quantity=Decimal("2"),
+            sort_order=1,
+        )
+        c = self._client()
+        url = reverse("bom_builder") + "?task_id=CLOSE-TASK-001"
+
+        page = c.get(url)
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Load awarded BOQ item categories")
+        self.assertContains(page, "BA-B01-E01")
+        self.assertNotContains(page, 'name="new_bom"')
+
+        loaded = c.post(
+            url,
+            {
+                "load_award_categories": "1",
+                "package_codes": ["BA-B01-E01"],
+                "task_id": self.close_task.project_id,
+            },
+        )
+        self.assertEqual(loaded.status_code, 302)
+        bom = BOMHeader.objects.get(task=self.close_task)
+        item = BOMItem.objects.get(header=bom, source_line_key=f"tender-line:{line.pk}")
+        self.assertEqual(item.source_tender_ref, self.event.ref)
+        self.assertEqual(item.source_package_code, "BA-B01-E01")
+        self.assertEqual(item.source_bill_ref, "1")
+        self.assertEqual(item.qty, Decimal("2"))
+        self.assertEqual(item.unit_price, Decimal("1000000"))
+
+        # Reloading the same category is idempotent on the source line.
+        c.post(
+            url,
+            {
+                "load_award_categories": "1",
+                "package_codes": ["BA-B01-E01"],
+                "task_id": self.close_task.project_id,
+            },
+        )
+        self.assertEqual(BOMItem.objects.filter(header=bom).count(), 1)
+
     def test_open_tender_dashboard_renders(self):
         task = ProjectTask.objects.create(project_id="PT-TEST-1", description="Public")
         PublicTenderProfile.objects.create(
@@ -212,10 +263,32 @@ class OpenTenderFinOpsTests(TestCase):
         self.assertIn("Public Tender Internal Fin Ops", html)
         self.assertIn("Cement", html)
         self.assertIn("5000", html)
-        self.assertIn("Site Eng: Build BOM", html)
+        self.assertIn("Site Eng: Load awarded BOM categories", html)
         self.assertIn("bom-builder", html)
+        self.assertIn("task_id=CLOSE-TASK-001", html)
 
         from accounts.models import BOMHeader, BOMItem, RequisitionOrder, RequisitionOrderItem
+        from buildwatch.models import TenderBoqLine
+
+        package = TenderBoqPackage.objects.get(
+            tender=self.listing, code="BA-B01-E01"
+        )
+        TenderBoqLine.objects.create(
+            package=package,
+            bill_ref="1",
+            description="Foundations",
+            unit="Item",
+            quantity=Decimal("2"),
+            sort_order=1,
+        )
+        c.post(
+            reverse("bom_builder") + "?task_id=CLOSE-TASK-001",
+            {
+                "load_award_categories": "1",
+                "package_codes": ["BA-B01-E01"],
+                "task_id": self.close_task.project_id,
+            },
+        )
 
         raise_resp = c.post(reverse("public-tender-fin-ops-action", args=[profile.pk]), {
             "action": "raise_phase_ro",
@@ -225,18 +298,21 @@ class OpenTenderFinOpsTests(TestCase):
         phases[0].refresh_from_db()
         self.assertEqual(phases[0].status, "RO_RAISED")
         self.assertTrue(phases[0].ro_ref)
-        bom = BOMHeader.objects.get(task=task)
-        self.assertTrue(BOMItem.objects.filter(header=bom, description__contains="Cement").exists())
-        ro = RequisitionOrder.objects.get(task=task)
+        bom = BOMHeader.objects.get(task=self.close_task)
+        self.assertTrue(BOMItem.objects.filter(header=bom, description="Foundations").exists())
+        self.assertFalse(BOMItem.objects.filter(header=bom, description__contains="Cement").exists())
+        ro = RequisitionOrder.objects.get(task=self.close_task)
         self.assertTrue(
             RequisitionOrderItem.objects.filter(ro=ro, tech_spec_summary__contains="Cement").exists()
         )
-        # Major lane only — no Misc RO created for this public tender pack
+        self.assertFalse(BOMHeader.objects.filter(task=task).exists())
+        self.assertFalse(RequisitionOrder.objects.filter(task=task).exists())
+        # Major lane only — no Misc RO created on either task.
         from accounts.models import MiscRequisitionOrder, MiscPurchaseOrder
-        self.assertFalse(MiscRequisitionOrder.objects.filter(task=task).exists())
-        self.assertFalse(MiscPurchaseOrder.objects.filter(task=task).exists())
+        self.assertFalse(MiscRequisitionOrder.objects.filter(task=self.close_task).exists())
+        self.assertFalse(MiscPurchaseOrder.objects.filter(task=self.close_task).exists())
 
-        bom_page = c.get(reverse("bom_builder"), {"task_id": task.project_id})
+        bom_page = c.get(reverse("bom_builder"), {"task_id": self.close_task.project_id})
         self.assertEqual(bom_page.status_code, 200)
         self.assertContains(bom_page, bom.bom_id)
 

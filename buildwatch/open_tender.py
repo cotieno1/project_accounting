@@ -566,33 +566,47 @@ def raise_phase_to_major_bom_ro(phase, *, created_by=None):
     )
 
     resource = phase.resource
-    task = resource.subtask.profile.task
+    profile = resource.subtask.profile
+    execution_project = getattr(profile.tender.event, "project", None)
+    task = (
+        getattr(execution_project, "task", None)
+        or profile.task
+    )
     phase_label = phase.phase_name or ("Phase %s" % phase.phase_index)
     line_desc = ("%s - %s" % (resource.name, phase_label))[:255]
     unit = (resource.unit or "No")[:50]
     qty = phase.qty or Z
 
-    bom, _ = BOMHeader.objects.get_or_create(
-        task=task,
-        defaults={"status": BOMHeader.STATUS_DRAFT},
-    )
+    from accounts.bom_award import awarded_boq_source
+
+    award_source = awarded_boq_source(task)
+    bom = BOMHeader.objects.filter(task=task).first()
+    if bom is None and award_source:
+        raise ValueError(
+            "Open Site Eng BOM for task %s and load the awarded BOQ item categories "
+            "before raising a phase RO." % task.project_id
+        )
+    if bom is None:
+        bom = BOMHeader.objects.create(task=task, status=BOMHeader.STATUS_DRAFT)
     if bom.items_locked or bom.status != BOMHeader.STATUS_DRAFT:
         raise ValueError(
             "BOM %s is locked or submitted — unlock/revise before raising more phase ROs."
             % (bom.bom_id or bom.pk)
         )
 
-    bom_item = BOMItem.objects.filter(
-        header=bom, description=line_desc, qty=qty, uom=unit[:50],
-    ).first()
-    if bom_item is None:
-        bom_item = BOMItem.objects.create(
-            header=bom,
-            pillar_id=2,
-            description=line_desc,
-            qty=qty,
-            uom=unit[:50],
-        )
+    bom_item = None
+    if not award_source:
+        bom_item = BOMItem.objects.filter(
+            header=bom, description=line_desc, qty=qty, uom=unit[:50],
+        ).first()
+        if bom_item is None:
+            bom_item = BOMItem.objects.create(
+                header=bom,
+                pillar_id=2,
+                description=line_desc,
+                qty=qty,
+                uom=unit[:50],
+            )
 
     ro = RequisitionOrder.objects.filter(task=task, status="DRAFT").order_by("-id").first()
     if ro is None:

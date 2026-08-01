@@ -34,19 +34,20 @@
     <div class="fo-panel__h">Pioneer internal purchase pack (Major lane — one RO path)</div>
     <div class="fo-panel__b" style="font-size:.82rem;line-height:1.55;color:#5b6b82">
       <p style="margin:0 0 10px">
-        For this won public tender, buy materials on <strong>task {{ overview.task_id }}</strong> only.
-        Do <strong>not</strong> open Misc Purchase on Close Tender task
-        <code>SK_004_2025</code> for the same items — that would create a second MRO.
+        For this won public tender, the Fin Ops pack is <strong>{{ overview.task_id }}</strong>,
+        while purchasing executes on the existing project task
+        <strong>{{ purchasing_task_id }}</strong>. Use that one execution task only so no second MRO/BOM is created.
       </p>
       <ol style="margin:0 0 12px;padding-left:18px">
         <li>Add resources and split phases below.</li>
-        <li><strong>Raise RO</strong> pushes each phase into Site Eng BOM + draft RO (same task).</li>
-        <li>Site Eng completes / locks BOM, then RO &rarr; RFQ best price &rarr; LPO.</li>
+        <li>Site Eng loads the awarded BOQ item categories into the existing project BOM.</li>
+        <li><strong>Raise RO</strong> then pushes each phase to the same execution task.</li>
+        <li>Site Eng locks BOM, then RO &rarr; RFQ best price &rarr; LPO.</li>
       </ol>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
-        <a class="bw-btn bw-btn--primary bw-btn--sm" href="{% url 'bom_builder' %}?task_id={{ profile.task_id|urlencode }}">Site Eng: Build BOM</a>
-        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'ro_builder' %}?task_id={{ profile.task_id|urlencode }}">RO builder</a>
-        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'rfq_manager' %}?task_id={{ profile.task_id|urlencode }}">RFQ best price</a>
+        <a class="bw-btn bw-btn--primary bw-btn--sm" href="{% url 'bom_builder' %}?task_id={{ purchasing_task_id|urlencode }}">Site Eng: Load awarded BOM categories</a>
+        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'ro_builder' %}?task_id={{ purchasing_task_id|urlencode }}">RO builder</a>
+        <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'rfq_manager' %}?task_id={{ purchasing_task_id|urlencode }}">RFQ best price</a>
       </div>
     </div>
   </div>
@@ -117,9 +118,9 @@
               {% endif %}
             {% endfor %}
             {% if row.phases %}
-            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'bom_builder' %}?task_id={{ profile.task_id|urlencode }}">Build BOM</a>
-            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'ro_builder' %}?task_id={{ profile.task_id|urlencode }}">RO builder</a>
-            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'rfq_manager' %}?task_id={{ profile.task_id|urlencode }}">RFQ best price</a>
+            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'bom_builder' %}?task_id={{ purchasing_task_id|urlencode }}">Load awarded BOM</a>
+            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'ro_builder' %}?task_id={{ purchasing_task_id|urlencode }}">RO builder</a>
+            <a class="bw-btn bw-btn--ghost bw-btn--sm" href="{% url 'rfq_manager' %}?task_id={{ purchasing_task_id|urlencode }}">RFQ best price</a>
             {% endif %}
           </td>
         </tr>

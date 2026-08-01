@@ -291,6 +291,58 @@ body.bom-builder .cockpit-shell {
     border-radius: var(--radius-md);
 }
 
+.bom-award-source {
+    border-color: rgba(20, 184, 166, 0.45);
+}
+
+.bom-award-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.bom-award-category {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: rgba(15, 23, 42, 0.35);
+    cursor: pointer;
+}
+
+.bom-award-category.is-loaded {
+    border-color: rgba(20, 184, 166, 0.5);
+    background: rgba(20, 184, 166, 0.08);
+}
+
+.bom-award-category input {
+    margin-top: 3px;
+    flex: 0 0 auto;
+}
+
+.bom-award-category span,
+.bom-award-category strong,
+.bom-award-category small {
+    display: block;
+    min-width: 0;
+}
+
+.bom-award-category strong {
+    color: var(--light);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.bom-award-category small {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
 .bom-table-wrap {
     width: 100%;
     max-width: 100%;

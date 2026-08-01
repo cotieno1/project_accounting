@@ -5,7 +5,7 @@
 {% block title %}Pioneer | Bills of Materials (BOM){% endblock %}
 {% block body_class %}bom-builder{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}?v=2">
 {% endblock %}
 
 {% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="BOM" process="Major Bill of Materials" only %}{% endblock %}
@@ -86,6 +86,58 @@
             <a href="{{ bom_heading.view_pdf_url }}" class="btn-action btn-success" target="_blank" rel="noopener">View BOM PDF</a>
         </div>
         {% endif %}
+    </div>
+    {% endif %}
+
+    {% if award_boq_source %}
+    <div class="panel bom-award-source">
+        <div class="bom-lines-header">
+            <div class="bom-lines-header-text">
+                <h2>Load awarded BOQ item categories</h2>
+                <p>
+                    Tender {{ award_boq_source.tender_ref }} — {{ award_boq_source.tender_title }}
+                    {% if award_boq_source.contractor %} · Awarded contractor: {{ award_boq_source.contractor.name }}{% endif %}
+                </p>
+            </div>
+            <span class="bom-status-badge bom-status-draft">SOURCE CONTROLLED</span>
+        </div>
+        <p class="bom-stage-lead">
+            This is a large awarded project. Select measured BOQ categories below; the system loads
+            their item references, descriptions, units, quantities and awarded unit rates into the
+            execution BOM. It will not create a separate blank BOM.
+        </p>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ active_pick_id|clean_task_id }}">
+            <div class="bom-award-category-grid">
+                {% for category in award_boq_source.categories %}
+                <label class="bom-award-category {% if category.code in loaded_award_category_codes %}is-loaded{% endif %}">
+                    <input
+                        type="checkbox"
+                        name="package_codes"
+                        value="{{ category.code }}"
+                        {% if category.code in loaded_award_category_codes %}checked disabled{% endif %}
+                        {% if screen_lane != 'bom' or bom_locked or bom_submitted %}disabled{% endif %}
+                    >
+                    <span>
+                        <strong>{{ category.code }} — {{ category.title }}</strong>
+                        <small>
+                            {{ category.line_count }} measured line{{ category.line_count|pluralize }}
+                            {% if category.priced_total %} · awarded value {{ category.priced_total|floatformat:2 }}{% endif %}
+                            {% if category.code in loaded_award_category_codes %} · loaded{% endif %}
+                        </small>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+            {% if screen_lane == 'bom' and not bom_locked and not bom_submitted %}
+            <div class="bom-form-actions">
+                <button type="submit" name="load_award_categories" class="btn-action btn-success">
+                    Load selected awarded categories
+                </button>
+            </div>
+            {% endif %}
+        </form>
     </div>
     {% endif %}
 
@@ -213,21 +265,25 @@
             <div class="table-scroll bom-table-wrap">
             <table class="bom-table">
                 <thead>
-                    <tr><th>#</th><th>Item / specification</th><th>UOM</th><th>Qty</th><th></th></tr>
+                    <tr><th>#</th>{% if award_boq_source %}<th>Category</th><th>BOQ ref</th>{% endif %}<th>Item / specification</th><th>UOM</th><th>Qty</th><th></th></tr>
                 </thead>
                 <tbody>
                     {% for item in bom_items %}
                     <tr>
                         <td data-label="#">{{ forloop.counter }}</td>
+                        {% if award_boq_source %}
+                        <td data-label="Category">{{ item.source_package_code|default:"—" }}</td>
+                        <td data-label="BOQ ref">{{ item.source_bill_ref|default:"—" }}</td>
+                        {% endif %}
                         <td data-label="Item">{{ item.description }}</td>
                         <td data-label="UOM">{{ item.uom }}</td>
                         <td data-label="Qty">{{ item.qty }}</td>
-                        <td data-label="">{% if not bom_locked %}<button type="submit" form="del{{ item.id }}" class="bom-remove-btn">Remove</button>{% endif %}</td>
+                        <td data-label="">{% if not bom_locked and not item.source_line_key %}<button type="submit" form="del{{ item.id }}" class="bom-remove-btn">Remove</button>{% endif %}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="5" class="bom-empty">Add your first line below.</td></tr>
+                    <tr><td colspan="{% if award_boq_source %}7{% else %}5{% endif %}" class="bom-empty">{% if award_boq_source %}Select awarded BOQ categories above.{% else %}Add your first line below.{% endif %}</td></tr>
                     {% endfor %}
-                    {% if not bom_locked and bom_mode != 'detail' %}
+                    {% if not bom_locked and bom_mode != 'detail' and not award_boq_source %}
                     <tr class="bom-input-row">
                         <td data-label="#"></td>
                         <td data-label="Item"><input type="text" name="description" class="form-input" placeholder="Item description" required></td>
@@ -241,7 +297,7 @@
             </div>
         </form>
         {% for item in bom_items %}
-        {% if not bom_locked %}
+        {% if not bom_locked and not item.source_line_key %}
         <form method="POST" id="del{{ item.id }}" style="display:none;">
             {% csrf_token %}
             <input type="hidden" name="task_id" value="{{ active_pick_id|clean_task_id }}">

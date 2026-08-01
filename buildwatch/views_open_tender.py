@@ -333,9 +333,14 @@ def public_tender_fin_ops(request, task_id=None):
             messages.error(request, "Access denied.")
             return redirect("public-tender-fin-ops-index")
         overview = fin_ops_overview(profile)
+        execution_project = getattr(profile.tender.event, "project", None)
+        purchasing_task = getattr(execution_project, "task", None)
         ctx = {
             "overview": overview,
             "profile": profile,
+            "purchasing_task_id": (
+                purchasing_task.project_id if purchasing_task else profile.task_id
+            ),
             "subtasks": list(profile.subtasks.all()),
             "org_name": getattr(org, "name", ""),
             **branding_template_context(request),

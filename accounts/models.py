@@ -855,7 +855,41 @@ class BOMItem(models.Model):
     qty = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     uom = models.CharField(max_length=50)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    source_tender_ref = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Awarded tender reference when this line was loaded from a priced BOQ.",
+    )
+    source_package_code = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="Tender BOQ item category / package code.",
+    )
+    source_bill_ref = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text="Employer BOQ bill/item reference.",
+    )
+    source_line_key = models.CharField(
+        max_length=80,
+        blank=True,
+        default="",
+        help_text="Stable tender-line key used to prevent duplicate imports.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["header", "source_line_key"],
+                condition=~models.Q(source_line_key=""),
+                name="unique_bom_award_source_line",
+            ),
+        ]
     
 
     
