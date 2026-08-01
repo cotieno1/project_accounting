@@ -4,7 +4,7 @@
 {% block title %}Pioneer | Misc RO — Ad-Hoc Requisition{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/pioneer/modules/bom-builder.css' %}?v=3">
-<link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-purchase.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'css/pioneer/modules/misc-purchase.css' %}?v=6">
 {% endblock %}
 {% block cockpit_mobile_subtitle %}{% include "includes/cockpit_lane_subtitle.html" with lane="Ad-Hoc Requisition" process="Misc Purchase (MRO)" only %}{% endblock %}
 {% block sidebar %}
@@ -99,8 +99,8 @@
         <p style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.4;">{{ provisional_budget_ref }} locked — send GM memo to CEO for budget confirmation before payment vouchers.</p>
         {% endif %}
         <button type="button" class="btn-action" onclick="window.location.href='{% url 'misc_budget_actuals' %}?task_id={{ active_task.project_id }}'" style="width:100%;margin-top:10px;background:#047857;">Purchase Audit</button>
-        <div style="margin-top: auto; padding-top: 20px;">
-            <a href="/ops-dashboard/?task_id={{ active_task.project_id }}" style="color: var(--muted); font-size: 12px; text-decoration: none;">← Dashboard</a>
+        <div class="sidebar-footer misc-sidebar-back">
+            <a href="{% url 'ops_dashboard' %}?task_id={{ active_task.project_id }}" class="sidebar-back-link">← Dashboard</a>
         </div>
 {% endblock %}
 {% block workspace %}
