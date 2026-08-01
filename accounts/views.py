@@ -5343,6 +5343,15 @@ def _task_budget_record(task):
 
 def _misc_channel_allowed(task):
     """Ad-hoc misc flow only when task is not on RFQ/LPO budget channel."""
+    if not task:
+        return False, "Select a project task first."
+    # Won public tenders purchase on the Major BOM/RO lane (Fin Ops pack), not Misc MRO.
+    from buildwatch.models import PublicTenderProfile
+    if PublicTenderProfile.objects.filter(task_id=task.pk).exists():
+        return False, (
+            "This is a Public Tender Fin Ops task. Use Site Eng BOM Builder and "
+            "RO builder on this task — do not open Misc Purchase (avoids a duplicate MRO)."
+        )
     budget = _task_budget_record(task)
     if budget and budget.budget_type == ProjectBudget.BUDGET_RFQ_LPO:
         return False, (

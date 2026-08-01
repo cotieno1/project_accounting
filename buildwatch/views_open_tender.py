@@ -33,6 +33,7 @@ from .open_tender import (
     generate_activities_from_boq_lines,
     generate_subtasks_from_boq,
     open_tender_overview,
+    raise_phase_to_major_bom_ro,
     set_resource_phases,
 )
 from .views_compliance import _current_ua, _name
@@ -407,14 +408,22 @@ def public_tender_fin_ops_action(request, task_id):
             pk=request.POST.get("phase_id"),
             resource__subtask__profile=profile,
         )
-        phase.status = SubTaskResourcePhase.STATUS_RO_RAISED
-        phase.ro_ref = (request.POST.get("ro_ref") or phase.ro_ref or "INT-RO-%s" % phase.pk)[:80]
-        phase.save(update_fields=["status", "ro_ref"])
+        try:
+            phase, bom, ro, _bom_item, _ro_item = raise_phase_to_major_bom_ro(
+                phase, created_by=_current_ua(request),
+            )
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return redirect("public-tender-fin-ops", task_id=profile.pk)
         messages.success(
             request,
-            "Internal RO raised for %s - %s (qty %s). Continue in RO builder for task %s."
-            % (phase.resource.name, phase.phase_name or ("P%s" % phase.phase_index),
-               phase.qty, profile.task_id),
+            "Phase pushed to Site Eng BOM %s and RO %s (qty %s). "
+            "Continue on the Major lane — not Misc Purchase."
+            % (
+                bom.bom_id or bom.pk,
+                ro.ro_no or ("Draft #%s" % ro.pk),
+                phase.qty,
+            ),
         )
 
     else:

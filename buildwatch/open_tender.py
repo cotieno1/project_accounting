@@ -550,6 +550,85 @@ def set_resource_phases(resource, phase_qtys):
         )
     return created
 
+
+def raise_phase_to_major_bom_ro(phase, *, created_by=None):
+    """
+    Push a Fin Ops phase onto the Major (BOM -> RO -> RFQ) lane for the
+    Public Tender ProjectTask. Does not create MiscPurchaseOrder / MRO.
+
+    Returns (phase, bom_header, ro, bom_item, ro_item).
+    """
+    from accounts.models import (
+        BOMHeader,
+        BOMItem,
+        RequisitionOrder,
+        RequisitionOrderItem,
+    )
+
+    resource = phase.resource
+    task = resource.subtask.profile.task
+    phase_label = phase.phase_name or ("Phase %s" % phase.phase_index)
+    line_desc = ("%s - %s" % (resource.name, phase_label))[:255]
+    unit = (resource.unit or "No")[:50]
+    qty = phase.qty or Z
+
+    bom, _ = BOMHeader.objects.get_or_create(
+        task=task,
+        defaults={"status": BOMHeader.STATUS_DRAFT},
+    )
+    if bom.items_locked or bom.status != BOMHeader.STATUS_DRAFT:
+        raise ValueError(
+            "BOM %s is locked or submitted — unlock/revise before raising more phase ROs."
+            % (bom.bom_id or bom.pk)
+        )
+
+    bom_item = BOMItem.objects.filter(
+        header=bom, description=line_desc, qty=qty, uom=unit[:50],
+    ).first()
+    if bom_item is None:
+        bom_item = BOMItem.objects.create(
+            header=bom,
+            pillar_id=2,
+            description=line_desc,
+            qty=qty,
+            uom=unit[:50],
+        )
+
+    ro = RequisitionOrder.objects.filter(task=task, status="DRAFT").order_by("-id").first()
+    if ro is None:
+        ro = RequisitionOrder.objects.filter(task=task).order_by("-id").first()
+    if ro is None:
+        ro = RequisitionOrder.objects.create(
+            task=task,
+            status="DRAFT",
+            created_by=created_by,
+        )
+    elif not ro.is_editable:
+        raise ValueError(
+            "Requisition %s is no longer editable — open RO builder to continue sourcing."
+            % (ro.ro_no or ("#%s" % ro.pk))
+        )
+
+    if bom.ro_id != ro.id:
+        bom.ro = ro
+        bom.save(update_fields=["ro"])
+
+    ro_item = RequisitionOrderItem.objects.filter(
+        ro=ro, tech_spec_summary=line_desc, quantity=qty, uom=unit[:20],
+    ).first()
+    if ro_item is None:
+        ro_item = RequisitionOrderItem.objects.create(
+            ro=ro,
+            quantity=qty,
+            uom=unit[:20],
+            tech_spec_summary=line_desc,
+        )
+
+    phase.status = SubTaskResourcePhase.STATUS_RO_RAISED
+    phase.ro_ref = (ro.ro_no or ("Draft-RO-%s" % ro.pk))[:80]
+    phase.save(update_fields=["status", "ro_ref"])
+    return phase, bom, ro, bom_item, ro_item
+
 def _wbs_group_key(package):
     """Group packages by building / works area from code prefix (BA, SH, CV...)."""
     code = (package.code or "").strip()

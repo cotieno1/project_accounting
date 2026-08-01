@@ -212,6 +212,33 @@ class OpenTenderFinOpsTests(TestCase):
         self.assertIn("Public Tender Internal Fin Ops", html)
         self.assertIn("Cement", html)
         self.assertIn("5000", html)
+        self.assertIn("Site Eng: Build BOM", html)
+        self.assertIn("bom-builder", html)
+
+        from accounts.models import BOMHeader, BOMItem, RequisitionOrder, RequisitionOrderItem
+
+        raise_resp = c.post(reverse("public-tender-fin-ops-action", args=[profile.pk]), {
+            "action": "raise_phase_ro",
+            "phase_id": phases[0].pk,
+        })
+        self.assertEqual(raise_resp.status_code, 302)
+        phases[0].refresh_from_db()
+        self.assertEqual(phases[0].status, "RO_RAISED")
+        self.assertTrue(phases[0].ro_ref)
+        bom = BOMHeader.objects.get(task=task)
+        self.assertTrue(BOMItem.objects.filter(header=bom, description__contains="Cement").exists())
+        ro = RequisitionOrder.objects.get(task=task)
+        self.assertTrue(
+            RequisitionOrderItem.objects.filter(ro=ro, tech_spec_summary__contains="Cement").exists()
+        )
+        # Major lane only — no Misc RO created for this public tender pack
+        from accounts.models import MiscRequisitionOrder, MiscPurchaseOrder
+        self.assertFalse(MiscRequisitionOrder.objects.filter(task=task).exists())
+        self.assertFalse(MiscPurchaseOrder.objects.filter(task=task).exists())
+
+        bom_page = c.get(reverse("bom_builder"), {"task_id": task.project_id})
+        self.assertEqual(bom_page.status_code, 200)
+        self.assertContains(bom_page, bom.bom_id)
 
     def test_close_tender_excludes_public_tasks(self):
         from accounts.views import fin_mgmt_ops_view
