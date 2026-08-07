@@ -1688,3 +1688,45 @@ class MiscVariation(models.Model):
             return (total / contingency * 100).quantize(Decimal('0.1'))
         except Exception:
             return Decimal('0')
+
+class LoginAuditEvent(models.Model):
+    """Append-only record of sign-in attempts for incident detection."""
+
+    OUTCOME_SUCCESS = "success"
+    OUTCOME_FAILED = "failed"
+    OUTCOME_BLOCKED = "blocked"
+    OUTCOME_CHOICES = (
+        (OUTCOME_SUCCESS, "Success"),
+        (OUTCOME_FAILED, "Failed"),
+        (OUTCOME_BLOCKED, "Blocked"),
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    username_attempted = models.CharField(max_length=150, blank=True, db_index=True)
+    user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="login_audits",
+    )
+    success = models.BooleanField(default=False, db_index=True)
+    outcome = models.CharField(
+        max_length=20,
+        choices=OUTCOME_CHOICES,
+        default=OUTCOME_FAILED,
+        db_index=True,
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True, db_index=True)
+    user_agent = models.CharField(max_length=400, blank=True, default="")
+    path = models.CharField(max_length=200, blank=True, default="")
+    detail = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Login audit event"
+        verbose_name_plural = "Login audit events"
+
+    def __str__(self):
+        who = self.username_attempted or (self.user.username if self.user_id else "?")
+        return f"{self.created_at:%Y-%m-%d %H:%M} {self.outcome} {who} @{self.ip_address or '-'}"

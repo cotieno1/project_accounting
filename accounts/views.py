@@ -364,6 +364,16 @@ class CustomLoginView(LoginView):
             ua = user.useraccount
             if getattr(ua, "partial_bid_access_ended_at", None):
                 from django.contrib import messages
+                from .login_audit import record_login_event
+
+                record_login_event(
+                    request=self.request,
+                    username=getattr(user, "username", "") or "",
+                    user=user,
+                    success=False,
+                    outcome="blocked",
+                    detail="partial_bid_access_ended",
+                )
                 messages.error(
                     self.request,
                     "Your partial bid access has ended. "
@@ -685,6 +695,25 @@ def platform_admin(request):
             {"username": request.user.username},
             status=503,
         )
+
+
+@login_required
+def login_audit_log(request):
+    """Platform admin: recent sign-in attempts (IP / user / outcome) for incident review."""
+    if not _is_platform_main_admin(request.user):
+        messages.error(request, "Only platform administrators can view login audit.")
+        return redirect("dashboard")
+    from .models import LoginAuditEvent
+
+    events = LoginAuditEvent.objects.select_related("user").order_by("-created_at")[:300]
+    return render(
+        request,
+        "login_audit.html",
+        {
+            "events": events,
+            "username": request.user.username,
+        },
+    )
 
 
 @login_required

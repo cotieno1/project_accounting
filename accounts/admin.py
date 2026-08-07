@@ -4,7 +4,7 @@ from .models import (
     GLAnalysisCategory, GLAccount, ProjectTask, ProjectBuildCategory,
     Product, RequisitionOrder, RequisitionOrderItem, BOMHeader, BOMItem,
     ProjectBudget, BudgetTransaction, RFQTransaction, LPOTransaction,
-    TaskDisbursementPayment,
+    TaskDisbursementPayment, LoginAuditEvent,
 )
 
 # -------------------------------
@@ -108,3 +108,23 @@ class LPOTransactionAdmin(admin.ModelAdmin):
         'supplier__description',
         'project_task__description'
     )
+
+
+@admin.register(LoginAuditEvent)
+class LoginAuditEventAdmin(admin.ModelAdmin):
+    list_display = (
+        'created_at', 'outcome', 'username_attempted', 'user', 'ip_address', 'detail',
+    )
+    list_filter = ('outcome', 'success', 'created_at')
+    search_fields = ('username_attempted', 'ip_address', 'user_agent', 'detail')
+    readonly_fields = (
+        'created_at', 'username_attempted', 'user', 'success', 'outcome',
+        'ip_address', 'user_agent', 'path', 'detail',
+    )
+    ordering = ('-created_at',)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

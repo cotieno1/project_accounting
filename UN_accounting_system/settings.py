@@ -97,7 +97,7 @@ for origin in _csrf_origins_for_hosts(ALLOWED_HOSTS):
 # Application definition
 
 INSTALLED_APPS = [
-    'accounts',
+    'accounts.apps.AccountsConfig',
     'buildwatch',  # Sprint 1+2: core registry + tender exchange
     'django.contrib.admin',
     'django.contrib.auth',

@@ -66,6 +66,7 @@ urlpatterns = [
     ),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('platform/', views.platform_admin, name='platform_admin'),
+    path('platform/login-audit/', views.login_audit_log, name='login_audit_log'),
     path('docs/android-rollout-plan/', views.android_rollout_plan_doc, name='android_rollout_plan_doc'),
     path('api/switch-organization/', views.switch_active_organization, name='switch_active_organization'),
     path('ops-dashboard/', views.fin_mgmt_ops_view, name='ops_dashboard'),

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Login audit{% endblock %}
+{% block content %}
+<style>
+  .la-wrap{max-width:1100px;margin:24px auto;padding:0 16px 48px;color:#16233b}
+  .la-h1{font-size:1.35rem;font-weight:800;margin:0 0 6px}
+  .la-lead{color:#5b6b82;font-size:.88rem;line-height:1.5;margin:0 0 16px;max-width:48rem}
+  .la-nav{margin-bottom:14px;font-size:.8rem}
+  .la-nav a{color:#0f8a8a;text-decoration:none}
+  table.la{width:100%;border-collapse:collapse;font-size:.82rem;background:#fff;border:1px solid #e6ebf2;border-radius:12px;overflow:hidden}
+  table.la th{text-align:left;font:700 .62rem sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#8494a8;padding:10px 8px;border-bottom:1px solid #e6ebf2;background:#f8fafc}
+  table.la td{padding:8px;border-bottom:1px solid #f0f3f8;vertical-align:top}
+  .la-ok{color:#047857;font-weight:700}
+  .la-fail{color:#b91c1c;font-weight:700}
+  .la-block{color:#b45309;font-weight:700}
+  .mono{font-family:ui-monospace,monospace;font-size:.78rem}
+  .muted{color:#8494a8}
+</style>
+<div class="la-wrap">
+  <div class="la-nav"><a href="{% url 'platform_admin' %}">&larr; Platform admin</a></div>
+  <h1 class="la-h1">Login audit</h1>
+  <p class="la-lead">
+    Recent sign-in attempts with IP address, username, outcome, and browser.
+    Use this after a suspected leak: match successful logins and unknown IPs to people who had credentials.
+    Screen captures of pages are not listed here - this only records who tried to sign in.
+  </p>
+  {% if events %}
+  <div style="overflow-x:auto">
+    <table class="la">
+      <thead>
+        <tr>
+          <th>When (server)</th>
+          <th>Outcome</th>
+          <th>Username</th>
+          <th>IP</th>
+          <th>Browser / device</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in events %}
+        <tr>
+          <td class="mono">{{ e.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td>
+            {% if e.outcome == "success" %}<span class="la-ok">success</span>
+            {% elif e.outcome == "blocked" %}<span class="la-block">blocked</span>
+            {% else %}<span class="la-fail">failed</span>{% endif %}
+          </td>
+          <td>{{ e.username_attempted|default:"-" }}</td>
+          <td class="mono">{{ e.ip_address|default:"-" }}</td>
+          <td class="muted" title="{{ e.user_agent }}">{{ e.user_agent|default:"-"|truncatechars:72 }}</td>
+          <td class="muted">{{ e.detail|default:"" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="la-lead">No login events recorded yet. They appear after the next sign-in attempts on this deployment.</p>
+  {% endif %}
+</div>
+{% endblock %}
