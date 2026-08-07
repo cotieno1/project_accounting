@@ -113,13 +113,18 @@ class LPOTransactionAdmin(admin.ModelAdmin):
 @admin.register(LoginAuditEvent)
 class LoginAuditEventAdmin(admin.ModelAdmin):
     list_display = (
-        'created_at', 'outcome', 'username_attempted', 'user', 'ip_address', 'detail',
+        'created_at', 'outcome', 'username_attempted', 'user',
+        'ip_address', 'location_label', 'country_code', 'detail',
     )
-    list_filter = ('outcome', 'success', 'created_at')
-    search_fields = ('username_attempted', 'ip_address', 'user_agent', 'detail')
+    list_filter = ('outcome', 'success', 'country_code', 'geo_source', 'created_at')
+    search_fields = (
+        'username_attempted', 'ip_address', 'location_label',
+        'city', 'region', 'user_agent', 'detail',
+    )
     readonly_fields = (
         'created_at', 'username_attempted', 'user', 'success', 'outcome',
-        'ip_address', 'user_agent', 'path', 'detail',
+        'ip_address', 'location_label', 'country_code', 'region', 'city',
+        'latitude', 'longitude', 'geo_source', 'user_agent', 'path', 'detail',
     )
     ordering = ('-created_at',)
 

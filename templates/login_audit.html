@@ -20,9 +20,8 @@
   <div class="la-nav"><a href="{% url 'platform_admin' %}">&larr; Platform admin</a></div>
   <h1 class="la-h1">Login audit</h1>
   <p class="la-lead">
-    Recent sign-in attempts with IP address, username, outcome, and browser.
-    Use this after a suspected leak: match successful logins and unknown IPs to people who had credentials.
-    Screen captures of pages are not listed here - this only records who tried to sign in.
+    Recent sign-in attempts with IP, approximate location (from IP), username, outcome, and browser.
+    Location is estimated from the network address when device GPS is off or unavailable.
   </p>
   {% if events %}
   <div style="overflow-x:auto">
@@ -33,6 +32,7 @@
           <th>Outcome</th>
           <th>Username</th>
           <th>IP</th>
+          <th>Location (IP)</th>
           <th>Browser / device</th>
           <th>Detail</th>
         </tr>
@@ -48,7 +48,8 @@
           </td>
           <td>{{ e.username_attempted|default:"-" }}</td>
           <td class="mono">{{ e.ip_address|default:"-" }}</td>
-          <td class="muted" title="{{ e.user_agent }}">{{ e.user_agent|default:"-"|truncatechars:72 }}</td>
+          <td>{{ e.location_label|default:"-" }}{% if e.country_code %} <span class="muted">({{ e.country_code }})</span>{% endif %}</td>
+          <td class="muted" title="{{ e.user_agent }}">{{ e.user_agent|default:"-"|truncatechars:56 }}</td>
           <td class="muted">{{ e.detail|default:"" }}</td>
         </tr>
         {% endfor %}

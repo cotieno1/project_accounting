@@ -1718,6 +1718,23 @@ class LoginAuditEvent(models.Model):
         db_index=True,
     )
     ip_address = models.GenericIPAddressField(null=True, blank=True, db_index=True)
+    location_label = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Approximate place from IP (city / region / country).",
+    )
+    country_code = models.CharField(max_length=8, blank=True, default="")
+    region = models.CharField(max_length=100, blank=True, default="")
+    city = models.CharField(max_length=100, blank=True, default="")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    geo_source = models.CharField(
+        max_length=20,
+        blank=True,
+        default="ip",
+        help_text="How location was resolved (ip).",
+    )
     user_agent = models.CharField(max_length=400, blank=True, default="")
     path = models.CharField(max_length=200, blank=True, default="")
     detail = models.CharField(max_length=255, blank=True, default="")
